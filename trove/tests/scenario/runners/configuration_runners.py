@@ -49,9 +49,10 @@ class ConfigurationRunner(TestRunner):
     def assert_action_on_conf_group_failure(
             self, group_values, expected_exception, expected_http_code):
         json_def = json.dumps(group_values)
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.configurations.create,
+            client, client.configurations.create,
             'conf_group',
             json_def,
             'Group with Bad or Invalid entries',
@@ -128,13 +129,14 @@ class ConfigurationRunner(TestRunner):
     def assert_create_group(self, name, description, values,
                             expected_http_code):
         json_def = json.dumps(values)
-        result = self.auth_client.configurations.create(
+        client = self.auth_client
+        result = client.configurations.create(
             name,
             json_def,
             description,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
 
         with TypeCheck('Configuration', result) as configuration:
             configuration.has_field('name', basestring)
@@ -269,12 +271,10 @@ class ConfigurationRunner(TestRunner):
     def assert_conf_get_unauthorized_user(
             self, config_id, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.unauth_client
         self.assert_raises(
-            expected_exception, None,
-            self.unauth_client.configurations.get, config_id)
-        # we're using a different client, so we'll check the return code
-        # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code, client=self.unauth_client)
+            expected_exception, expected_http_code,
+            client, client.configurations.get, config_id)
 
     def run_non_dynamic_conf_get_unauthorized_user(
             self, expected_exception=exceptions.NotFound,
@@ -372,9 +372,10 @@ class ConfigurationRunner(TestRunner):
     def assert_update_group(
             self, instance_id, group_id, values,
             expected_states, expected_http_code, restart_inst=False):
-        self.auth_client.configurations.update(group_id, values)
-        self.assert_instance_action(
-            instance_id, expected_states, expected_http_code)
+        client = self.auth_client
+        client.configurations.update(group_id, values)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(instance_id, expected_states)
         if restart_inst:
             self._restart_instance(instance_id)
 
@@ -445,9 +446,10 @@ class ConfigurationRunner(TestRunner):
     def assert_instance_modify(
             self, instance_id, group_id, expected_states, expected_http_code,
             restart_inst=False):
-        self.auth_client.instances.modify(instance_id, configuration=group_id)
-        self.assert_instance_action(
-            instance_id, expected_states, expected_http_code)
+        client = self.auth_client
+        client.instances.modify(instance_id, configuration=group_id)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(instance_id, expected_states)
 
         # Verify the group has been attached.
         instance = self.get_instance(instance_id)
@@ -470,9 +472,10 @@ class ConfigurationRunner(TestRunner):
     def assert_instance_modify_failure(
             self, instance_id, group_id, expected_exception,
             expected_http_code):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.instances.modify,
+            client, client.instances.modify,
             instance_id, configuration=group_id)
 
     def run_delete_dynamic_group(self, expected_http_code=202):
@@ -481,8 +484,9 @@ class ConfigurationRunner(TestRunner):
                                      expected_http_code)
 
     def assert_group_delete(self, group_id, expected_http_code):
-        self.auth_client.configurations.delete(group_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        client.configurations.delete(group_id)
+        self.assert_client_code(client, expected_http_code)
 
     def run_delete_non_dynamic_group(self, expected_http_code=202):
         if self.non_dynamic_group_id:
@@ -491,16 +495,18 @@ class ConfigurationRunner(TestRunner):
 
     def assert_group_delete_failure(self, group_id, expected_exception,
                                     expected_http_code):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.configurations.delete, group_id)
+            client, client.configurations.delete, group_id)
 
     def _restart_instance(
             self, instance_id, expected_states=['REBOOT', 'ACTIVE'],
             expected_http_code=202):
-        self.auth_client.instances.restart(instance_id)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
+        client = self.auth_client
+        client.instances.restart(instance_id)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(instance_id, expected_states)
 
     def run_create_instance_with_conf(self):
         self.config_id_for_inst = (
@@ -514,7 +520,8 @@ class ConfigurationRunner(TestRunner):
 
     def assert_create_instance_with_conf(self, config_id):
         # test that a new instance will apply the configuration on create
-        result = self.auth_client.instances.create(
+        client = self.auth_client
+        result = client.instances.create(
             self.instance_info.name + "_config",
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
@@ -524,7 +531,7 @@ class ConfigurationRunner(TestRunner):
             nics=self.instance_info.nics,
             availability_zone="nova",
             configuration=config_id)
-        self.assert_client_code(200, client=self.auth_client)
+        self.assert_client_code(client, 200)
         self.assert_equal("BUILD", result.status, 'Unexpected inst status')
         return result.id
 
@@ -554,8 +561,9 @@ class ConfigurationRunner(TestRunner):
             raise SkipTest("No instance created with a configuration group.")
 
     def assert_delete_conf_instance(self, instance_id, expected_http_code):
-        self.auth_client.instances.delete(instance_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        client.instances.delete(instance_id)
+        self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_delete_conf_instance(
             self, expected_last_state=['SHUTDOWN']):

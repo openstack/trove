@@ -142,53 +142,59 @@ class ModuleRunner(TestRunner):
     def run_module_create_bad_type(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, 'invalid-type', self.MODULE_NEG_CONTENTS)
 
     def run_module_create_non_admin_auto(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             auto_apply=True)
 
     def run_module_create_non_admin_all_tenant(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             all_tenants=True)
 
     def run_module_create_non_admin_hidden(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             visible=False)
 
     def run_module_create_bad_datastore(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             datastore='bad-datastore')
 
     def run_module_create_bad_datastore_version(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version='bad-datastore-version')
@@ -196,9 +202,10 @@ class ModuleRunner(TestRunner):
     def run_module_create_missing_datastore(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             datastore_version=self.instance_info.dbaas_datastore_version)
 
@@ -242,8 +249,9 @@ class ModuleRunner(TestRunner):
             datastore=datastore, datastore_version=datastore_version,
             auto_apply=auto_apply,
             live_update=live_update, visible=visible)
-        if (client == self.auth_client or
-                (client == self.admin_client and visible)):
+        username = client.real_client.client.username
+        if (('alt' in username and 'admin' not in username) or
+                ('admin' in username and visible)):
             self.module_create_count += 1
             if datastore:
                 self.module_ds_create_count += 1
@@ -358,17 +366,19 @@ class ModuleRunner(TestRunner):
     def run_module_create_dupe(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.create,
+            client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS)
 
     def run_module_update_missing_datastore(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update,
+            client, client.modules.update,
             self.update_test_module.id,
             datastore_version=self.instance_info.dbaas_datastore_version)
 
@@ -414,12 +424,10 @@ class ModuleRunner(TestRunner):
     def run_module_show_unauth_user(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.unauth_client
         self.assert_raises(
-            expected_exception, None,
-            self.unauth_client.modules.get, self.main_test_module.id)
-        # we're using a different client, so we'll check the return code
-        # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code, client=self.unauth_client)
+            expected_exception, expected_http_code,
+            client, client.modules.get, self.main_test_module.id)
 
     def run_module_list(self):
         self.assert_module_list(
@@ -551,9 +559,10 @@ class ModuleRunner(TestRunner):
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
         module = self._find_invisible_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.get, module.id)
+            client, client.modules.get, module.id)
 
     def run_module_list_admin(self):
         self.assert_module_list(
@@ -632,82 +641,92 @@ class ModuleRunner(TestRunner):
     def run_module_update_unauth(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.unauth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.unauth_client.modules.update,
+            client, client.modules.update,
             self.main_test_module.id, description='Upd')
 
     def run_module_update_non_admin_auto(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update,
+            client, client.modules.update,
             self.main_test_module.id, visible=False)
 
     def run_module_update_non_admin_auto_off(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_auto_apply_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update, module.id, auto_apply=False)
+            client, client.modules.update, module.id, auto_apply=False)
 
     def run_module_update_non_admin_auto_any(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_auto_apply_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update, module.id, description='Upd')
+            client, client.modules.update, module.id, description='Upd')
 
     def run_module_update_non_admin_all_tenant(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update,
+            client, client.modules.update,
             self.main_test_module.id, all_tenants=True)
 
     def run_module_update_non_admin_all_tenant_off(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_all_tenant_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update, module.id, all_tenants=False)
+            client, client.modules.update, module.id, all_tenants=False)
 
     def run_module_update_non_admin_all_tenant_any(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_all_tenant_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update, module.id, description='Upd')
+            client, client.modules.update, module.id, description='Upd')
 
     def run_module_update_non_admin_invisible(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update,
+            client, client.modules.update,
             self.main_test_module.id, visible=False)
 
     def run_module_update_non_admin_invisible_off(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
         module = self._find_invisible_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update, module.id, visible=True)
+            client, client.modules.update, module.id, visible=True)
 
     def run_module_update_non_admin_invisible_any(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
         module = self._find_invisible_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.update, module.id, description='Upd')
+            client, client.modules.update, module.id, description='Upd')
 
     # ModuleInstanceGroup methods
     def run_module_list_instance_empty(self):
@@ -718,7 +737,7 @@ class ModuleRunner(TestRunner):
     def assert_module_list_instance(self, client, instance_id, expected_count,
                                     expected_http_code=200):
         module_list = client.instances.modules(instance_id)
-        self.assert_client_code(expected_http_code, client=client)
+        self.assert_client_code(client, expected_http_code)
         count = len(module_list)
         self.assert_equal(expected_count, count,
                           "Wrong number of modules from list instance")
@@ -733,7 +752,7 @@ class ModuleRunner(TestRunner):
     def assert_module_instances(self, client, module_id, expected_count,
                                 expected_http_code=200):
         instance_list = client.modules.instances(module_id)
-        self.assert_client_code(expected_http_code, client=client)
+        self.assert_client_code(client, expected_http_code)
         count = len(instance_list)
         self.assert_equal(expected_count, count,
                           "Wrong number of instances applied from module")
@@ -751,7 +770,7 @@ class ModuleRunner(TestRunner):
     def assert_module_query(self, client, instance_id, expected_count,
                             expected_http_code=200, expected_results=None):
         modquery_list = client.instances.module_query(instance_id)
-        self.assert_client_code(expected_http_code, client=client)
+        self.assert_client_code(client, expected_http_code)
         count = len(modquery_list)
         self.assert_equal(expected_count, count,
                           "Wrong number of modules from query")
@@ -774,7 +793,7 @@ class ModuleRunner(TestRunner):
                             expected_http_code=200):
         module_apply_list = client.instances.module_apply(
             instance_id, [module.id])
-        self.assert_client_code(expected_http_code, client=client)
+        self.assert_client_code(client, expected_http_code)
         admin_only = (not module.visible or module.auto_apply or
                       not module.tenant_id)
         expected_status = expected_status or 'OK'
@@ -919,7 +938,8 @@ class ModuleRunner(TestRunner):
 
     def assert_inst_mod_create(self, module_id, name_suffix,
                                expected_http_code):
-        inst = self.auth_client.instances.create(
+        client = self.auth_client
+        inst = client.instances.create(
             self.instance_info.name + name_suffix,
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
@@ -928,15 +948,16 @@ class ModuleRunner(TestRunner):
             nics=self.instance_info.nics,
             modules=[module_id],
         )
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
         return inst.id
 
     def run_module_delete_applied(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.delete, self.main_test_module.id)
+            client, client.modules.delete, self.main_test_module.id)
 
     def run_module_remove(self):
         self.assert_module_remove(self.auth_client, self.instance_info.id,
@@ -945,10 +966,10 @@ class ModuleRunner(TestRunner):
     def assert_module_remove(self, client, instance_id, module_id,
                              expected_http_code=200):
         client.instances.module_remove(instance_id, module_id)
-        self.assert_client_code(expected_http_code, client=client)
+        self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_inst_with_mods(self, expected_states=['BUILD', 'ACTIVE']):
-        self.assert_instance_action(self.mod_inst_id, expected_states, None)
+        self.assert_instance_action(self.mod_inst_id, expected_states)
 
     def run_module_query_after_inst_create(self):
         auto_modules = self._find_all_auto_apply_modules(visible=True)
@@ -975,7 +996,7 @@ class ModuleRunner(TestRunner):
             prefix = 'contents'
             modretrieve_list = client.instances.module_retrieve(
                 instance_id, directory=temp_dir, prefix=prefix)
-            self.assert_client_code(expected_http_code, client=client)
+            self.assert_client_code(client, expected_http_code)
             count = len(modretrieve_list)
             self.assert_equal(expected_count, count,
                               "Wrong number of modules from retrieve")
@@ -1027,16 +1048,18 @@ class ModuleRunner(TestRunner):
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_auto_apply_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.delete, module.id)
+            client, client.modules.delete, module.id)
 
     def run_delete_inst_with_mods(self, expected_http_code=202):
         self.assert_delete_instance(self.mod_inst_id, expected_http_code)
 
     def assert_delete_instance(self, instance_id, expected_http_code):
-        self.auth_client.instances.delete(instance_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        client.instances.delete(instance_id)
+        self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_delete_inst_with_mods(
             self, expected_last_state=['SHUTDOWN']):
@@ -1046,40 +1069,45 @@ class ModuleRunner(TestRunner):
     def run_module_delete_non_existent(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.delete, 'bad_id')
+            client, client.modules.delete, 'bad_id')
 
     def run_module_delete_unauth_user(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.unauth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.unauth_client.modules.delete, self.main_test_module.id)
+            client, client.modules.delete, self.main_test_module.id)
 
     def run_module_delete_hidden_by_non_admin(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
         module = self._find_invisible_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.delete, module.id)
+            client, client.modules.delete, module.id)
 
     def run_module_delete_all_tenant_by_non_admin(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_all_tenant_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.delete, module.id)
+            client, client.modules.delete, module.id)
 
     def run_module_delete_auto_by_non_admin(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
         module = self._find_auto_apply_module()
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.modules.delete, module.id)
+            client, client.modules.delete, module.id)
 
     def run_module_delete(self):
         expected_count = len(self.auth_client.modules.list()) - 1

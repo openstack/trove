@@ -69,14 +69,14 @@ class InstanceCreateRunner(TestRunner):
         values = dynamic_config or non_dynamic_config
         if values:
             json_def = json.dumps(values)
-            result = self.auth_client.configurations.create(
+            client = self.auth_client
+            result = client.configurations.create(
                 'initial_configuration_for_instance_create',
                 json_def,
                 "Configuration group used by instance create tests.",
                 datastore=self.instance_info.dbaas_datastore,
                 datastore_version=self.instance_info.dbaas_datastore_version)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            self.assert_client_code(client, expected_http_code)
 
             self.config_group_id = result.id
         else:
@@ -184,7 +184,8 @@ class InstanceCreateRunner(TestRunner):
             instance_info.name = instance.name
         else:
             self.report.log("Creating a new instance.")
-            instance = self.auth_client.instances.create(
+            client = self.auth_client
+            instance = client.instances.create(
                 instance_info.name,
                 instance_info.dbaas_flavor_href,
                 instance_info.volume,
@@ -196,8 +197,8 @@ class InstanceCreateRunner(TestRunner):
                 datastore=instance_info.dbaas_datastore,
                 datastore_version=instance_info.dbaas_datastore_version,
                 locality=locality)
-            self.assert_instance_action(
-                instance.id, expected_states[0:1], expected_http_code)
+            self.assert_client_code(client, expected_http_code)
+            self.assert_instance_action(instance.id, expected_states[0:1])
 
         instance_info.id = instance.id
 
@@ -246,11 +247,12 @@ class InstanceCreateRunner(TestRunner):
     def wait_for_test_helpers(self, inst_info):
         self.report.log("Waiting for helper users and databases to be "
                         "created on instance: %s" % inst_info.id)
+        client = self.auth_client
         if inst_info.helper_user:
-            self.wait_for_user_create(inst_info.id,
+            self.wait_for_user_create(client, inst_info.id,
                                       [inst_info.helper_user])
         if inst_info.helper_database:
-            self.wait_for_database_create(inst_info.id,
+            self.wait_for_database_create(client, inst_info.id,
                                           [inst_info.helper_database])
         self.report.log("Test helpers are ready.")
 
@@ -299,13 +301,15 @@ class InstanceCreateRunner(TestRunner):
                               "No configuration group expected")
 
     def assert_database_list(self, instance_id, expected_databases):
-        self.wait_for_database_create(instance_id, expected_databases)
+        self.wait_for_database_create(self.auth_client,
+                                      instance_id, expected_databases)
 
     def _get_names(self, definitions):
         return [item['name'] for item in definitions]
 
     def assert_user_list(self, instance_id, expected_users):
-        self.wait_for_user_create(instance_id, expected_users)
+        self.wait_for_user_create(self.auth_client,
+                                  instance_id, expected_users)
         # Verify that user definitions include only created databases.
         all_databases = self._get_names(
             self.test_helper.get_valid_database_definitions())
@@ -318,9 +322,9 @@ class InstanceCreateRunner(TestRunner):
 
     def run_initialized_instance_delete(self, expected_http_code=202):
         if self.init_inst_info:
-            self.auth_client.instances.delete(self.init_inst_info.id)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            client = self.auth_client
+            client.instances.delete(self.init_inst_info.id)
+            self.assert_client_code(client, expected_http_code)
         else:
             raise SkipTest("Cleanup is not required.")
 
@@ -341,9 +345,9 @@ class InstanceCreateRunner(TestRunner):
 
     def run_initial_configuration_delete(self, expected_http_code=202):
         if self.config_group_id:
-            self.auth_client.configurations.delete(self.config_group_id)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            client = self.auth_client
+            client.configurations.delete(self.config_group_id)
+            self.assert_client_code(client, expected_http_code)
         else:
             raise SkipTest("Cleanup is not required.")
         self.config_group_id = None

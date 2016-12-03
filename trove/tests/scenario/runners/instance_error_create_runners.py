@@ -33,14 +33,15 @@ class InstanceErrorCreateRunner(TestRunner):
         name = self.instance_info.name + '_error'
         flavor = self.get_instance_flavor(fault_num=1)
 
-        inst = self.auth_client.instances.create(
+        client = self.auth_client
+        inst = client.instances.create(
             name,
             self.get_flavor_href(flavor),
             self.instance_info.volume,
             nics=self.instance_info.nics,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
         self.error_inst_id = inst.id
 
     def run_create_error2_instance(self, expected_http_code=200):
@@ -50,14 +51,15 @@ class InstanceErrorCreateRunner(TestRunner):
         name = self.instance_info.name + '_error2'
         flavor = self.get_instance_flavor(fault_num=2)
 
-        inst = self.auth_client.instances.create(
+        client = self.auth_client
+        inst = client.instances.create(
             name,
             self.get_flavor_href(flavor),
             self.instance_info.volume,
             nics=self.instance_info.nics,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
         self.error2_inst_id = inst.id
 
     def run_wait_for_error_instances(self, expected_states=['ERROR']):
@@ -100,14 +102,13 @@ class InstanceErrorCreateRunner(TestRunner):
                          (instance.fault['message'], err_msg))
 
     def run_delete_error_instances(self, expected_http_code=202):
+        client = self.auth_client
         if self.error_inst_id:
-            self.auth_client.instances.delete(self.error_inst_id)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            client.instances.delete(self.error_inst_id)
+            self.assert_client_code(client, expected_http_code)
         if self.error2_inst_id:
-            self.auth_client.instances.delete(self.error2_inst_id)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            client.instances.delete(self.error2_inst_id)
+            self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_error_delete(self, expected_states=['SHUTDOWN']):
         delete_ids = []

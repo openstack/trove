@@ -60,8 +60,9 @@ class NegativeClusterActionsRunner(TestRunner):
 
     def _assert_cluster_create_raises(self, cluster_name, instances_def,
                                       expected_http_code):
+        client = self.auth_client
         self.assert_raises(exceptions.BadRequest, expected_http_code,
-                           self.auth_client.clusters.create,
+                           client, client.clusters.create,
                            cluster_name,
                            self.instance_info.dbaas_datastore,
                            self.instance_info.dbaas_datastore_version,
