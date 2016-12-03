@@ -23,8 +23,8 @@
 import os
 # import sys
 
-
 import openstackdocstheme
+from trove.version import version_info as trove_version
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -63,10 +63,8 @@ copyright = u'2016, OpenStack contributors'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-# The short X.Y version.
-version = '0.1'
-# The full version, including alpha/beta/rc tags.
-release = '0.1'
+version = trove_version.canonical_version_string()
+release = trove_version.version_string_with_vcs()
 
 # A few variables have to be set for the log-a-bug feature.
 #   giturl: The location of conf.py on Git. Must be set manually.
