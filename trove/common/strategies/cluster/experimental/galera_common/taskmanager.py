@@ -78,7 +78,8 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
             LOG.debug("Waiting for instances to get to cluster-ready status.")
             # Wait for cluster members to get to cluster-ready status.
             if not self._all_instances_ready(instance_ids, cluster_id):
-                raise TroveError("Instances in cluster did not report ACTIVE")
+                raise TroveError(_("Instances in cluster did not report "
+                                   "ACTIVE"))
 
             LOG.debug("All members ready, proceeding for cluster setup.")
             instances = [Instance.load(context, instance_id) for instance_id
@@ -173,8 +174,8 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                                   for db_inst in db_instances
                                   if db_inst.id not in new_instance_ids]
             if not existing_instances:
-                raise TroveError("Unable to determine existing cluster "
-                                 "member(s)")
+                raise TroveError(_("Unable to determine existing cluster "
+                                   "member(s)"))
 
             # get list of ips of existing cluster members
             existing_cluster_ips = [self.get_ip(instance) for instance in
@@ -187,7 +188,8 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
 
             # Wait for cluster members to get to cluster-ready status.
             if not self._all_instances_ready(new_instance_ids, cluster_id):
-                raise TroveError("Instances in cluster did not report ACTIVE")
+                raise TroveError(_("Instances in cluster did not report "
+                                   "ACTIVE"))
 
             LOG.debug("All members ready, proceeding for cluster setup.")
 

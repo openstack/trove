@@ -112,8 +112,8 @@ class RedisClusterTasks(task_models.ClusterTasks):
                                 for db_inst in db_instances
                                 if db_inst.id not in new_instance_ids)
             if not cluster_head:
-                raise TroveError("Unable to determine existing Redis cluster "
-                                 "member")
+                raise TroveError(_("Unable to determine existing Redis cluster"
+                                   " member"))
 
             (cluster_head_ip, cluster_head_port) = (
                 self.get_guest(cluster_head).get_node_ip())
