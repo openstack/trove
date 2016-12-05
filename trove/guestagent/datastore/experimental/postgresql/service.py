@@ -257,7 +257,7 @@ class PgSqlApp(object):
         if not self.configuration_manager.has_system_override(
                 BACKUP_CFG_OVERRIDE):
             return
-        LOG.info("Removing configuration changes for backups")
+        LOG.info(_("Removing configuration changes for backups"))
         self.configuration_manager.remove_system_override(BACKUP_CFG_OVERRIDE)
         self.remove_wal_archive_dir()
         self.restart()
@@ -272,7 +272,7 @@ class PgSqlApp(object):
         if self.configuration_manager.has_system_override(BACKUP_CFG_OVERRIDE):
             return
 
-        LOG.info("Applying changes to WAL config for use by base backups")
+        LOG.info(_("Applying changes to WAL config for use by base backups"))
         wal_arch_loc = self.wal_archive_location
         if not os.path.isdir(wal_arch_loc):
             raise RuntimeError(_("Cannot enable backup as WAL dir '%s' does "
@@ -335,8 +335,8 @@ class PgSqlApp(object):
                     pkg.PkgDownloadError, pkg.PkgSignError,
                     pkg.PkgBrokenError):
                 LOG.exception(
-                    "{guest_id}: There was a package manager error while "
-                    "trying to install ({packages}).".format(
+                    _("{guest_id}: There was a package manager error while "
+                      "trying to install ({packages}).").format(
                         guest_id=CONF.guest_id,
                         packages=packages,
                     )
@@ -344,8 +344,8 @@ class PgSqlApp(object):
                 raise
             except Exception:
                 LOG.exception(
-                    "{guest_id}: The package manager encountered an unknown "
-                    "error while trying to install ({packages}).".format(
+                    _("{guest_id}: The package manager encountered an unknown "
+                      "error while trying to install ({packages}).").format(
                         guest_id=CONF.guest_id,
                         packages=packages,
                     )
