@@ -23,6 +23,7 @@ import oslo_messaging as messaging
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common.notification import NotificationCastWrapper
 from trove.common.strategies.cluster import strategy
 from trove.guestagent import models as agent_models
@@ -89,7 +90,7 @@ class API(object):
             if obj_dict.get('manager'):
                 del obj_dict['manager']
             return obj_dict
-        raise ValueError("Could not transform %s" % obj_ref)
+        raise ValueError(_("Could not transform %s") % obj_ref)
 
     def _delete_heartbeat(self, instance_id):
         agent_heart_beat = agent_models.AgentHeartBeat()

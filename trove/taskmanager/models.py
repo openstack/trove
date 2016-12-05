@@ -724,7 +724,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             try:
                 heat_template = heat_template_unicode.encode('utf-8')
             except UnicodeEncodeError:
-                raise TroveError("Failed to utf-8 encode Heat template.")
+                raise TroveError(_("Failed to utf-8 encode Heat template."))
 
             parameters = {"Flavor": flavor["name"],
                           "VolumeSize": volume_size,
@@ -746,23 +746,24 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     sleep_time=USAGE_SLEEP_TIME,
                     time_out=HEAT_TIME_OUT)
             except PollTimeOut:
-                raise TroveError("Failed to obtain Heat stack status. "
-                                 "Timeout occurred.")
+                raise TroveError(_("Failed to obtain Heat stack status. "
+                                   "Timeout occurred."))
 
             stack = client.stacks.get(stack_name)
             if ((stack.action, stack.stack_status)
                     not in HEAT_STACK_SUCCESSFUL_STATUSES):
-                raise TroveError("Failed to create Heat stack.")
+                raise TroveError(_("Failed to create Heat stack."))
 
             resource = client.resources.get(stack.id, 'BaseInstance')
             if resource.resource_status != HEAT_RESOURCE_SUCCESSFUL_STATE:
-                raise TroveError("Failed to provision Heat base instance.")
+                raise TroveError(_("Failed to provision Heat base instance."))
             instance_id = resource.physical_resource_id
 
             if self.volume_support:
                 resource = client.resources.get(stack.id, 'DataVolume')
                 if resource.resource_status != HEAT_RESOURCE_SUCCESSFUL_STATE:
-                    raise TroveError("Failed to provision Heat data volume.")
+                    raise TroveError(_("Failed to provision Heat data "
+                                       "volume."))
                 volume_id = resource.physical_resource_id
                 self.update_db(compute_instance_id=instance_id,
                                volume_id=volume_id)
@@ -1000,8 +1001,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.debug("Creating dns entry...")
             ip = self.dns_ip_address
             if not ip:
-                raise TroveError("Failed to create DNS entry for instance %s. "
-                                 "No IP available." % self.id)
+                raise TroveError(_("Failed to create DNS entry for instance "
+                                   "%s. No IP available.") % self.id)
             dns_client.create_instance_entry(self.id, ip)
             LOG.debug("Successfully created DNS entry for instance: %s" %
                       self.id)
@@ -1507,8 +1508,8 @@ class BackupTasks(object):
                                 "Details: %s") % e)
                 backup.state = bkup_models.BackupState.DELETE_FAILED
                 backup.save()
-                raise TroveError("Failed to delete swift object for backup %s."
-                                 % backup_id)
+                raise TroveError(_("Failed to delete swift object for backup "
+                                   "%s.") % backup_id)
         else:
             backup.delete()
         LOG.info(_("Deleted backup %s successfully.") % backup_id)
