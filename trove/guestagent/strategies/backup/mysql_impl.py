@@ -97,7 +97,7 @@ class InnoBackupExIncremental(InnoBackupEx):
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get('lsn'):
-            raise AttributeError('lsn attribute missing, bad parent?')
+            raise AttributeError(_('lsn attribute missing, bad parent?'))
         super(InnoBackupExIncremental, self).__init__(*args, **kwargs)
         self.parent_location = kwargs.get('parent_location')
         self.parent_checksum = kwargs.get('parent_checksum')

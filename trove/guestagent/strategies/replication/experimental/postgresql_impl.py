@@ -253,7 +253,7 @@ class PostgresqlReplicationStreaming(base.Replication):
 
     def _write_standby_recovery_file(self, service, snapshot,
                                      sslmode='prefer'):
-        LOG.info("Snapshot data received:" + str(snapshot))
+        LOG.info(_("Snapshot data received: %s") % str(snapshot))
 
         logging_config = snapshot['log_position']
         conninfo_params = \
