@@ -25,6 +25,7 @@ from trove.cluster import models as cluster_models
 from trove.cluster.models import DBCluster
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common.i18n import _LI
 from trove.common import policy
 from trove.common import wsgi
@@ -145,7 +146,7 @@ class ClusterRootController(DefaultRootController):
             is_root_enabled = models.ClusterRoot.load(context, instance_id)
         except exception.UnprocessableEntity:
             raise exception.UnprocessableEntity(
-                "Cluster %s is not ready." % instance_id)
+                _("Cluster %s is not ready.") % instance_id)
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
     def cluster_root_index(self, req, tenant_id, cluster_id):
@@ -225,7 +226,8 @@ class RootController(ExtensionController):
             return root_controller.root_create(req, body, tenant_id,
                                                instance_id, is_cluster)
         else:
-            raise NoSuchOptError('root_controller', group='datastore_manager')
+            opt = 'root_controller'
+            raise NoSuchOptError(opt, group='datastore_manager')
 
     def delete(self, req, tenant_id, instance_id):
         datastore_manager, is_cluster = self._get_datastore(tenant_id,
