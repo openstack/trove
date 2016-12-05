@@ -28,6 +28,7 @@ import six
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.dns import driver
 
 
@@ -83,7 +84,8 @@ class DesignateDriver(driver.DnsDriver):
         """Creates the entry in the driver at the given dns zone."""
         dns_zone = entry.dns_zone or self.default_dns_zone
         if not dns_zone.id:
-            raise TypeError("The entry's dns_zone must have an ID specified.")
+            raise TypeError(_("The entry's dns_zone must have an ID "
+                              "specified."))
         name = entry.name
         LOG.debug("Creating DNS entry %s." % name)
         client = self.dns_client
@@ -125,16 +127,16 @@ class DesignateDriver(driver.DnsDriver):
 
     def modify_content(self, name, content, dns_zone):
         # We dont need this in trove for now
-        raise NotImplementedError("Not implemented for Designate DNS.")
+        raise NotImplementedError(_("Not implemented for Designate DNS."))
 
     def rename_entry(self, content, name, dns_zone):
         # We dont need this in trove for now
-        raise NotImplementedError("Not implemented for Designate DNS.")
+        raise NotImplementedError(_("Not implemented for Designate DNS."))
 
     def _get_records(self, dns_zone):
         dns_zone = dns_zone or self.default_dns_zone
         if not dns_zone:
-            raise TypeError('DNS domain is must be specified')
+            raise TypeError(_('DNS domain is must be specified'))
         return self.dns_client.records.list(dns_zone.id)
 
 
