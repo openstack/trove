@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+# NOTE(vkmc): Using MariaDB repositories is required
+# https://mariadb.com/kb/en/mariadb/installing-mariadb-deb-files/
+apt-get -y install software-properties-common
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
+add-apt-repository 'deb http://ftp.osuosl.org/pub/mariadb/repo/10.1/ubuntu xenial main'
+
+# Pin MariaDB repository
+sudo echo -e "Package: *\nPin: origin ftp.osuosl.org\nPin-Priority: 1000" > /etc/apt/preferences.d/mariadb.pref
+
+apt-get -y update
+apt-get -y install socat percona-xtrabackup
+apt-get -y install libmariadbclient18 mariadb-server
+
+cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
+[mysqld]
+performance_schema = off
+_EOF_
+
+mv /etc/mysql/my.cnf.fallback /etc/mysql/my.cnf
+chown mysql:mysql /etc/mysql/my.cnf
+cat >/etc/mysql/my.cnf <<_EOF_
+[mysql]
+
+!includedir /etc/mysql/conf.d/
+_EOF_
+
+rm /etc/init.d/mysql
+systemctl daemon-reload
+systemctl enable mariadb

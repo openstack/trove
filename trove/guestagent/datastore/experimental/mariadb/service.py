@@ -37,7 +37,7 @@ class MariaDBApp(galera_service.GaleraApp):
     def service_candidates(self):
         service_candidates = super(MariaDBApp, self).service_candidates
         return {
-            operating_system.DEBIAN: service_candidates,
+            operating_system.DEBIAN: ["mariadb"] + service_candidates,
             operating_system.REDHAT: ["mariadb"],
             operating_system.SUSE: service_candidates
         }[self.OS]
