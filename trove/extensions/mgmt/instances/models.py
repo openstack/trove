@@ -151,7 +151,7 @@ class MgmtInstances(imodels.Instances):
             return SimpleMgmtInstance(context, db, server, status)
 
         if context is None:
-            raise TypeError("Argument context not defined.")
+            raise TypeError(_("Argument context not defined."))
         find_server = imodels.create_server_list_matcher(servers)
         instances = imodels.Instances._load_servers_status(load_instance,
                                                            context,
