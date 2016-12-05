@@ -92,7 +92,7 @@ class CouchbaseApp(object):
             LOG.info(_('Couchbase Server initial setup finished.'))
         except exception.ProcessExecutionError:
             LOG.exception(_('Error performing initial Couchbase setup.'))
-            raise RuntimeError("Couchbase Server initial setup failed")
+            raise RuntimeError(_("Couchbase Server initial setup failed"))
 
     def _install_couchbase(self, packages):
         """
@@ -130,7 +130,7 @@ class CouchbaseApp(object):
         if self.status.is_running:
             LOG.error(_("Cannot start Couchbase with configuration changes. "
                         "Couchbase state == %s.") % self.status)
-            raise RuntimeError("Couchbase is not stopped.")
+            raise RuntimeError(_("Couchbase is not stopped."))
         self._write_config(config_contents)
         self.start_db(True)
 
