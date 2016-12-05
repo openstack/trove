@@ -118,7 +118,7 @@ class BasePackagerMixin(object):
             self.pexpect_wait_and_close_proc(child)
         except pexpect.TIMEOUT:
             self.pexpect_kill_proc(child)
-            raise PkgTimeout("Process timeout after %i seconds." % time_out)
+            raise PkgTimeout(_("Process timeout after %i seconds.") % time_out)
         return (i, match)
 
 
@@ -151,7 +151,7 @@ class RPMPackagerMixin(BasePackagerMixin):
             while result == CONFLICT_REMOVED:
                 result = self._install(packages, time_out)
             if result != OK:
-                raise PkgPackageStateError("Cannot install packages.")
+                raise PkgPackageStateError(_("Cannot install packages."))
 
     def pkg_is_installed(self, packages):
         packages = packages if isinstance(packages, list) else packages.split()
@@ -188,7 +188,7 @@ class RPMPackagerMixin(BasePackagerMixin):
             return
         result = self._remove(package_name, time_out)
         if result != OK:
-            raise PkgPackageStateError("Package %s is in a bad state."
+            raise PkgPackageStateError(_("Package %s is in a bad state.")
                                        % package_name)
 
 
@@ -218,18 +218,19 @@ class RedhatPackagerMixin(RPMPackagerMixin):
         LOG.debug("Running package install command: %s" % cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
-            raise PkgPermissionError("Invalid permissions.")
+            raise PkgPermissionError(_("Invalid permissions."))
         elif i == 1:
-            raise PkgNotFoundError("Could not find pkg %s" % match.group(1))
+            raise PkgNotFoundError(_("Could not find package %s") %
+                                   match.group(1))
         elif i == 2 or i == 3 or i == 4:
             self._rpm_remove_nodeps(match.group(1))
             return CONFLICT_REMOVED
         elif i == 5:
-            raise PkgScriptletError("Package scriptlet failed")
+            raise PkgScriptletError(_("Package scriptlet failed"))
         elif i == 6 or i == 7:
-            raise PkgDownloadError("Package download problem")
+            raise PkgDownloadError(_("Package download problem"))
         elif i == 8:
-            raise PkgSignError("GPG key retrieval failed")
+            raise PkgSignError(_("GPG key retrieval failed"))
         return OK
 
     def _remove(self, package_name, time_out):
@@ -247,9 +248,10 @@ class RedhatPackagerMixin(RPMPackagerMixin):
                           'Removed:']
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
-            raise PkgPermissionError("Invalid permissions.")
+            raise PkgPermissionError(_("Invalid permissions."))
         elif i == 1:
-            raise PkgNotFoundError("Could not find pkg %s" % package_name)
+            raise PkgNotFoundError(_("Could not find package %s") %
+                                   package_name)
         return OK
 
 
@@ -294,7 +296,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                 utils.execute("dpkg", "--configure", "-a",
                               run_as_root=True, root_helper="sudo")
             except ProcessExecutionError:
-                raise PkgConfigureError("Error configuring package.")
+                raise PkgConfigureError(_("Error configuring package."))
             finally:
                 os.remove(fname)
 
@@ -324,9 +326,10 @@ class DebianPackagerMixin(BasePackagerMixin):
         LOG.debug("Running package install command: %s" % cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
-            raise PkgPermissionError("Invalid permissions.")
+            raise PkgPermissionError(_("Invalid permissions."))
         elif i == 1 or i == 2 or i == 3:
-            raise PkgNotFoundError("Could not find apt %s" % match.group(1))
+            raise PkgNotFoundError(_("Could not find package %s") %
+                                   match.group(1))
         elif i == 4:
             return RUN_DPKG_FIRST
         elif i == 5:
@@ -356,9 +359,10 @@ class DebianPackagerMixin(BasePackagerMixin):
         LOG.debug("Running remove package command %s" % cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
-            raise PkgPermissionError("Invalid permissions.")
+            raise PkgPermissionError(_("Invalid permissions."))
         elif i == 1:
-            raise PkgNotFoundError("Could not find pkg %s" % package_name)
+            raise PkgNotFoundError(_("Could not find package %s") %
+                                   package_name)
         elif i == 2 or i == 3:
             return REINSTALL_FIRST
         elif i == 4:
@@ -381,7 +385,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                 self._fix(time_out)
             result = self._install(packages, time_out)
             if result != OK:
-                raise PkgPackageStateError("Packages is in a bad state.")
+                raise PkgPackageStateError(_("Packages are in a bad state."))
         # even after successful install, packages can stay unconfigured
         # config_opts - is dict with name/value for questions asked by
         # interactive configure script
@@ -429,7 +433,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                 self._fix(time_out)
             result = self._remove(package_name, time_out)
             if result != OK:
-                raise PkgPackageStateError("Package %s is in a bad state."
+                raise PkgPackageStateError(_("Package %s is in a bad state.")
                                            % package_name)
 
 
