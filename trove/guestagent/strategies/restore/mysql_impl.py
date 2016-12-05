@@ -173,7 +173,7 @@ class MySQLRestoreMixin(object):
             try:
                 operating_system.remove(file_path, force=True, as_root=True)
             except Exception:
-                LOG.exception("Could not remove file: '%s'" % file_path)
+                LOG.exception(_("Could not remove file: '%s'") % file_path)
 
     @classmethod
     def _is_non_zero_file(self, fp):
