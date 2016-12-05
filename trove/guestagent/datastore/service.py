@@ -63,7 +63,7 @@ class BaseDbStatus(object):
 
     def __init__(self):
         if self._instance is not None:
-            raise RuntimeError("Cannot instantiate twice.")
+            raise RuntimeError(_("Cannot instantiate twice."))
         self.status = None
         self.restart_mode = False
 

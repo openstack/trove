@@ -763,7 +763,7 @@ class BaseMySqlApp(object):
                                        shell=True)
         except KeyError:
             LOG.exception(_("Error enabling MySQL start on boot."))
-            raise RuntimeError("Service is not discovered.")
+            raise RuntimeError(_("Service is not discovered."))
 
     def _disable_mysql_on_boot(self):
         try:
@@ -771,7 +771,7 @@ class BaseMySqlApp(object):
                                        shell=True)
         except KeyError:
             LOG.exception(_("Error disabling MySQL start on boot."))
-            raise RuntimeError("Service is not discovered.")
+            raise RuntimeError(_("Service is not discovered."))
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         LOG.info(_("Stopping MySQL."))
@@ -782,13 +782,13 @@ class BaseMySqlApp(object):
                                        shell=True)
         except KeyError:
             LOG.exception(_("Error stopping MySQL."))
-            raise RuntimeError("Service is not discovered.")
+            raise RuntimeError(_("Service is not discovered."))
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Could not stop MySQL."))
             self.status.end_restart()
-            raise RuntimeError("Could not stop MySQL!")
+            raise RuntimeError(_("Could not stop MySQL!"))
 
     def _remove_anonymous_user(self, client):
         LOG.debug("Removing anonymous user.")
@@ -858,7 +858,7 @@ class BaseMySqlApp(object):
                                         % (self.get_data_dir(), index),
                                         force=True, as_root=True)
             except exception.ProcessExecutionError:
-                LOG.exception("Could not delete logfile.")
+                LOG.exception(_("Could not delete logfile."))
                 raise
 
     def remove_overrides(self):
@@ -976,7 +976,7 @@ class BaseMySqlApp(object):
             utils.execute_with_timeout(self.mysql_service['cmd_start'],
                                        shell=True, timeout=timeout)
         except KeyError:
-            raise RuntimeError("Service is not discovered.")
+            raise RuntimeError(_("Service is not discovered."))
         except exception.ProcessExecutionError:
             # it seems mysql (percona, at least) might come back with [Fail]
             # but actually come up ok. we're looking into the timing issue on
@@ -996,7 +996,7 @@ class BaseMySqlApp(object):
                 LOG.exception(_("Error killing stalled MySQL start command."))
                 # There's nothing more we can do...
             self.status.end_restart()
-            raise RuntimeError("Could not start MySQL!")
+            raise RuntimeError(_("Could not start MySQL!"))
 
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_("Starting MySQL with conf changes."))
@@ -1005,7 +1005,7 @@ class BaseMySqlApp(object):
         if self.status.is_running:
             LOG.error(_("Cannot execute start_db_with_conf_changes because "
                         "MySQL state == %s.") % self.status)
-            raise RuntimeError("MySQL not stopped.")
+            raise RuntimeError(_("MySQL not stopped."))
         LOG.info(_("Resetting configuration."))
         self._reset_configuration(config_contents)
         self.start_mysql(True)
