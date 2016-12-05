@@ -287,8 +287,8 @@ class SimpleInstance(object):
     def datastore_status(self, datastore_status):
         if datastore_status and not isinstance(datastore_status,
                                                InstanceServiceStatus):
-            raise ValueError("datastore_status must be of type "
-                             "InstanceServiceStatus. Got %s instead." %
+            raise ValueError(_("datastore_status must be of type "
+                               "InstanceServiceStatus. Got %s instead.") %
                              datastore_status.__class__.__name__)
         self.__datastore_status = datastore_status
 
@@ -478,9 +478,9 @@ def get_db_info(context, id, cluster_id=None, include_deleted=False):
     :rtype: trove.instance.models.DBInstance
     """
     if context is None:
-        raise TypeError("Argument context not defined.")
+        raise TypeError(_("Argument context not defined."))
     elif id is None:
-        raise TypeError("Argument id not defined.")
+        raise TypeError(_("Argument id not defined."))
 
     args = {'id': id}
     if cluster_id is not None:
@@ -1390,7 +1390,7 @@ class Instances(object):
             return SimpleInstance(context, db_info, status)
 
         if context is None:
-            raise TypeError("Argument context not defined.")
+            raise TypeError(_("Argument context not defined."))
         client = create_nova_client(context)
         servers = client.servers.list()
         query_opts = {'tenant_id': context.tenant,
