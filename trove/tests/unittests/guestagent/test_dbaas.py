@@ -3167,7 +3167,7 @@ class VerticaAppTest(trove_testtools.TestCase):
     def test_failure__enable_db_on_boot(self, *args):
         with patch.object(subprocess, 'Popen', side_effect=OSError):
             self.assertRaisesRegexp(RuntimeError,
-                                    'Could not enable db on boot.',
+                                    'Could not enable database on boot.',
                                     self.app._enable_db_on_boot)
 
     def test__disable_db_on_boot(self):
@@ -3189,7 +3189,7 @@ class VerticaAppTest(trove_testtools.TestCase):
         with patch.object(vertica_system, 'shell_execute',
                           side_effect=ProcessExecutionError('Error')):
             self.assertRaisesRegexp(RuntimeError,
-                                    'Could not disable db on boot.',
+                                    'Could not disable database on boot.',
                                     self.app._disable_db_on_boot)
 
     def test_read_config(self):
