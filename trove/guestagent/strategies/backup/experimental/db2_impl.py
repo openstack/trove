@@ -130,7 +130,7 @@ class DB2OnlineBackup(DB2Backup):
                 log_size = log_size + int(out[0])
             log_size = log_size * 1024
         except exception.ProcessExecutionError:
-            LOG.exception(_("An error occured while trying to estimate log "
+            LOG.exception(_("An error occurred while trying to estimate log "
                             "size"))
         LOG.debug("Estimated log size for all databases: " + str(log_size))
         return log_size
