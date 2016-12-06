@@ -31,6 +31,7 @@ __all__ = [
 
 from oslo_config import cfg
 import oslo_messaging as messaging
+from oslo_messaging.rpc import dispatcher
 
 import trove.common.exception
 from trove.common.rpc import secure_serializer as ssz
@@ -118,11 +119,13 @@ def get_server(target, endpoints, key, serializer=None,
     serializer = secure_serializer(
         sz.TroveRequestContextSerializer(serializer), key)
 
-    return messaging.get_rpc_server(TRANSPORT,
-                                    target,
-                                    endpoints,
-                                    executor=executor,
-                                    serializer=serializer)
+    return messaging.get_rpc_server(
+        TRANSPORT,
+        target,
+        endpoints,
+        executor=executor,
+        serializer=serializer,
+        access_policy=dispatcher.LegacyRPCAccessPolicy)
 
 
 def get_notifier(service=None, host=None, publisher_id=None):
