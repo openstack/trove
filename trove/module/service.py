@@ -22,6 +22,7 @@ import trove.common.apischema as apischema
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import pagination
+from trove.common import policy
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
 from trove.instance import models as instance_models
@@ -37,8 +38,20 @@ class ModuleController(wsgi.Controller):
 
     schemas = apischema.module
 
+    @classmethod
+    def authorize_module_action(cls, context, module_rule_name, module):
+        """If a modules in not owned by any particular tenant just check
+        the current tenant is allowed to perform the action.
+        """
+        if module.tenant_id is not None:
+            policy.authorize_on_target(context, 'module:%s' % module_rule_name,
+                                       {'tenant': module.tenant_id})
+        else:
+            policy.authorize_on_tenant(context, 'module:%s' % module_rule_name)
+
     def index(self, req, tenant_id):
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'module:index')
         datastore = req.GET.get('datastore', '')
         if datastore and datastore.lower() != models.Modules.MATCH_ALL_NAME:
             ds, ds_ver = datastore_models.get_datastore_version(
@@ -53,6 +66,7 @@ class ModuleController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
+        self.authorize_module_action(context, 'show', module)
         module.instance_count = len(models.InstanceModules.load(
             context, module_id=module.id, md5=module.md5))
 
@@ -65,6 +79,7 @@ class ModuleController(wsgi.Controller):
         LOG.info(_("Creating module '%s'") % name)
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'module:create')
         module_type = body['module']['module_type']
         contents = body['module']['contents']
 
@@ -89,6 +104,7 @@ class ModuleController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
+        self.authorize_module_action(context, 'delete', module)
         models.Module.delete(context, module)
         return wsgi.Result(None, 200)
 
@@ -97,6 +113,7 @@ class ModuleController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
+        self.authorize_module_action(context, 'update', module)
         original_module = copy.deepcopy(module)
         if 'name' in body['module']:
             module.name = body['module']['name']
@@ -146,6 +163,10 @@ class ModuleController(wsgi.Controller):
         LOG.info(_("Getting instances for module %s") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        module = models.Module.load(context, id)
+        self.authorize_module_action(context, 'instances', module)
+
         instance_modules, marker = models.InstanceModules.load(
             context, module_id=id)
         if instance_modules:

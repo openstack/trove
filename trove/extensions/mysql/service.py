@@ -30,6 +30,7 @@ from trove.common import pagination
 from trove.common.utils import correct_id_with_req
 from trove.common import wsgi
 from trove.extensions.common.service import DefaultRootController
+from trove.extensions.common.service import ExtensionController
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.extensions.mysql.common import unquote_user_host
@@ -42,7 +43,7 @@ import_class = importutils.import_class
 CONF = cfg.CONF
 
 
-class UserController(wsgi.Controller):
+class UserController(ExtensionController):
     """Controller for instance functionality."""
     schemas = apischema.user
 
@@ -60,6 +61,7 @@ class UserController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'user:index', instance_id)
         users, next_marker = models.Users.load(context, instance_id)
         view = views.UsersView(users)
         paged = pagination.SimplePaginatedDataView(req.url, 'users', view,
@@ -75,6 +77,7 @@ class UserController(wsgi.Controller):
                   "req": strutils.mask_password(req),
                   "body": strutils.mask_password(body)})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'user:create', instance_id)
         context.notification = notification.DBaaSUserCreate(context,
                                                             request=req)
         users = body['users']
@@ -94,6 +97,7 @@ class UserController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'user:delete', instance_id)
         id = correct_id_with_req(id, req)
         username, host = unquote_user_host(id)
         user = None
@@ -122,6 +126,7 @@ class UserController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'user:show', instance_id)
         id = correct_id_with_req(id, req)
         username, host = unquote_user_host(id)
         user = None
@@ -141,6 +146,7 @@ class UserController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": strutils.mask_password(req)})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'user:update', instance_id)
         id = correct_id_with_req(id, req)
         username, hostname = unquote_user_host(id)
         user = None
@@ -171,6 +177,7 @@ class UserController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": strutils.mask_password(req)})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'user:update_all', instance_id)
         context.notification = notification.DBaaSUserChangePassword(
             context, request=req)
         users = body['users']
@@ -203,7 +210,7 @@ class UserController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
 
-class UserAccessController(wsgi.Controller):
+class UserAccessController(ExtensionController):
     """Controller for adding and removing database access for a user."""
     schemas = apischema.user
 
@@ -232,6 +239,8 @@ class UserAccessController(wsgi.Controller):
                  {"id": instance_id, "req": req})
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'user_access:index', instance_id)
         # Make sure this user exists.
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
@@ -249,6 +258,8 @@ class UserAccessController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'user_access:update', instance_id)
         context.notification = notification.DBaaSUserGrant(
             context, request=req)
         user_id = correct_id_with_req(user_id, req)
@@ -270,6 +281,8 @@ class UserAccessController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'user_access:delete', instance_id)
         context.notification = notification.DBaaSUserRevoke(
             context, request=req)
         user_id = correct_id_with_req(user_id, req)
@@ -288,7 +301,7 @@ class UserAccessController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
 
-class SchemaController(wsgi.Controller):
+class SchemaController(ExtensionController):
     """Controller for instance functionality."""
     schemas = apischema.dbschema
 
@@ -299,6 +312,8 @@ class SchemaController(wsgi.Controller):
                  {"id": instance_id, "req": req})
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'database:index', instance_id)
         schemas, next_marker = models.Schemas.load(context, instance_id)
         view = views.SchemasView(schemas)
         paged = pagination.SimplePaginatedDataView(req.url, 'databases', view,
@@ -315,6 +330,8 @@ class SchemaController(wsgi.Controller):
                   "body": body})
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'database:create', instance_id)
         schemas = body['databases']
         context.notification = notification.DBaaSDatabaseCreate(context,
                                                                 request=req)
@@ -334,6 +351,8 @@ class SchemaController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'database:delete', instance_id)
         context.notification = notification.DBaaSDatabaseDelete(
             context, request=req)
         with StartNotification(context, instance_id=instance_id, dbname=id):
@@ -349,6 +368,9 @@ class SchemaController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):
+        context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(
+            context, 'database:show', instance_id)
         raise webob.exc.HTTPNotImplemented()
 
 

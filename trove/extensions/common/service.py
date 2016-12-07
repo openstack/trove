@@ -21,14 +21,17 @@ from oslo_log import log as logging
 from oslo_utils import importutils
 import six
 
+from trove.cluster import models as cluster_models
 from trove.cluster.models import DBCluster
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _LI
+from trove.common import policy
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
 from trove.extensions.common import models
 from trove.extensions.common import views
+from trove.instance import models as instance_models
 from trove.instance.models import DBInstance
 
 
@@ -37,8 +40,30 @@ import_class = importutils.import_class
 CONF = cfg.CONF
 
 
+class ExtensionController(wsgi.Controller):
+
+    @classmethod
+    def authorize_target_action(cls, context, target_rule_name,
+                                target_id, is_cluster=False):
+        target = None
+        if is_cluster:
+            target = cluster_models.Cluster.load(context, target_id)
+        else:
+            target = instance_models.Instance.load(context, target_id)
+
+        if not target:
+            if is_cluster:
+                raise exception.ClusterNotFound(cluster=target_id)
+            raise exception.InstanceNotFound(instance=target_id)
+
+        target_type = 'cluster' if is_cluster else 'instance'
+        policy.authorize_on_target(
+            context, '%s:extension:%s' % (target_type, target_rule_name),
+            {'tenant': target.tenant_id})
+
+
 @six.add_metaclass(abc.ABCMeta)
-class BaseDatastoreRootController(wsgi.Controller):
+class BaseDatastoreRootController(ExtensionController):
     """Base class that defines the contract for root controllers."""
 
     @abc.abstractmethod
@@ -174,13 +199,16 @@ class ClusterRootController(DefaultRootController):
         return single_instance_id, instance_ids
 
 
-class RootController(wsgi.Controller):
+class RootController(ExtensionController):
     """Controller for instance functionality."""
 
     def index(self, req, tenant_id, instance_id):
         """Returns True if root is enabled; False otherwise."""
         datastore_manager, is_cluster = self._get_datastore(tenant_id,
                                                             instance_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'root:index', instance_id,
+                                     is_cluster=is_cluster)
         root_controller = self.load_root_controller(datastore_manager)
         return root_controller.root_index(req, tenant_id, instance_id,
                                           is_cluster)
@@ -189,6 +217,9 @@ class RootController(wsgi.Controller):
         """Enable the root user for the db instance."""
         datastore_manager, is_cluster = self._get_datastore(tenant_id,
                                                             instance_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'root:create', instance_id,
+                                     is_cluster=is_cluster)
         root_controller = self.load_root_controller(datastore_manager)
         if root_controller is not None:
             return root_controller.root_create(req, body, tenant_id,
@@ -199,6 +230,9 @@ class RootController(wsgi.Controller):
     def delete(self, req, tenant_id, instance_id):
         datastore_manager, is_cluster = self._get_datastore(tenant_id,
                                                             instance_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        self.authorize_target_action(context, 'root:delete', instance_id,
+                                     is_cluster=is_cluster)
         root_controller = self.load_root_controller(datastore_manager)
         if root_controller is not None:
             return root_controller.root_delete(req, tenant_id,

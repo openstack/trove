@@ -209,8 +209,7 @@ class GuestLog(object):
                 'metafile': self._metafile_name()
             }
         else:
-            raise exception.UnauthorizedRequest(_(
-                "Not authorized to show log '%s'.") % self._name)
+            raise exception.LogAccessForbidden(action='show', log=self._name)
 
     def _refresh_details(self):
 
@@ -310,16 +309,16 @@ class GuestLog(object):
                     self._file)
             return self.show()
         else:
-            raise exception.UnauthorizedRequest(_(
-                "Not authorized to publish log '%s'.") % self._name)
+            raise exception.LogAccessForbidden(
+                action='publish', log=self._name)
 
     def discard_log(self):
         if self.exposed:
             self._delete_log_components()
             return self.show()
         else:
-            raise exception.UnauthorizedRequest(_(
-                "Not authorized to discard log '%s'.") % self._name)
+            raise exception.LogAccessForbidden(
+                action='discard', log=self._name)
 
     def _delete_log_components(self):
         container_name = self.get_container_name(force=True)
