@@ -817,3 +817,23 @@ def _build_command_options(options):
     """
 
     return ['-' + item[0] for item in options if item[1]]
+
+
+def get_device(path, as_root=False):
+    """Get the device that a given path exists on."""
+    stdout = _execute_shell_cmd('df', [], path, as_root=as_root)
+    return stdout.splitlines()[1].split()[0]
+
+
+def is_mount(path):
+    """Check if the given directory path is a mountpoint. Try the standard
+    ismount first. This fails if the path is not accessible though, so resort
+    to checking as the root user (which is slower).
+    """
+    if os.access(path, os.R_OK):
+        return os.path.ismount(path)
+    if not exists(path, is_directory=True, as_root=True):
+        return False
+    directory_dev = get_device(path, as_root=True)
+    parent_dev = get_device(os.path.join(path, '..'), as_root=True)
+    return directory_dev != parent_dev

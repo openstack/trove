@@ -1,0 +1,4 @@
+---
+fixes:
+  - Improved mountpoint detection by running it as root. This prevents guests
+    that have undiscoverable mount points from failing to unmount.
