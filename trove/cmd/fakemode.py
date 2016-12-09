@@ -54,7 +54,7 @@ def start_fake_taskmanager(conf):
     from trove.common.rpc import service as rpc_service
     from trove.common.rpc import version as rpc_version
     taskman_service = rpc_service.RpcService(
-        topic=topic, rpc_api_version=rpc_version.RPC_API_VERSION,
+        key='', topic=topic, rpc_api_version=rpc_version.RPC_API_VERSION,
         manager='trove.taskmanager.manager.Manager')
     taskman_service.start()
 

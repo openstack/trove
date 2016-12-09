@@ -7,6 +7,7 @@
         },
         "deleted": false,
         "deleted_at": null,
+        "encrypted_rpc_messaging": true,
         "flavor": {
             "id": "3",
             "links": [
@@ -80,3 +81,4 @@
         "volume_id": "VOL_44b277eb-39be-4921-be31-3d61b43651d7"
     }
 }
+

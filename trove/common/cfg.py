@@ -444,6 +444,16 @@ common_opts = [
                help='Maximum size of a chunk saved in guest log container.'),
     cfg.IntOpt('guest_log_expiry', default=2592000,
                help='Expiry (in seconds) of objects in guest log container.'),
+    cfg.BoolOpt('enable_secure_rpc_messaging', default=True,
+                help='Should RPC messaging traffic be secured by encryption.'),
+    cfg.StrOpt('taskmanager_rpc_encr_key',
+               default='bzH6y0SGmjuoY0FNSTptrhgieGXNDX6PIhvz',
+               help='Key (OpenSSL aes_cbc) for taskmanager RPC encryption.'),
+    cfg.StrOpt('inst_rpc_key_encr_key',
+               default='emYjgHFqfXNB1NGehAFIUeoyw4V4XwWHEaKP',
+               help='Key (OpenSSL aes_cbc) to encrypt instance keys in DB.'),
+    cfg.StrOpt('instance_rpc_encr_key',
+               help='Key (OpenSSL aes_cbc) for instance RPC encryption.'),
 ]
 
 

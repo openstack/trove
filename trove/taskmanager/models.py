@@ -31,6 +31,7 @@ from trove.cluster.models import Cluster
 from trove.cluster.models import DBCluster
 from trove.cluster import tasks
 from trove.common import cfg
+from trove.common import crypto_utils as cu
 from trove.common import exception
 from trove.common.exception import BackupCreationError
 from trove.common.exception import GuestError
@@ -1419,6 +1420,24 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 volume = self.volume_client.volumes.get(self.volume_id)
                 volume_device = self._fix_device_path(
                     volume.attachments[0]['device'])
+
+            # BUG(1650518): Cleanup in the Pike release some instances
+            # that we will be upgrading will be pre secureserialier
+            # and will have no instance_key entries. If this is one of
+            # those instances, make a key. That will make it appear in
+            # the injected files that are generated next. From this
+            # point, and until the guest comes up, attempting to send
+            # messages to it will fail because the RPC framework will
+            # encrypt messages to a guest which potentially doesn't
+            # have the code to handle it.
+            if CONF.enable_secure_rpc_messaging and (
+                    self.db_info.encrypted_key is None):
+                encrypted_key = cu.encode_data(cu.encrypt_data(
+                    cu.generate_random_key(),
+                    CONF.inst_rpc_key_encr_key))
+                self.update_db(encrypted_key=encrypted_key)
+                LOG.debug("Generated unique RPC encryption key for "
+                          "instance = %s, key = %s" % (self.id, encrypted_key))
 
             injected_files = self.get_injected_files(
                 datastore_version.manager)

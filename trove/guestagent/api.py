@@ -69,13 +69,16 @@ class API(object):
 
         version_cap = self.VERSION_ALIASES.get(
             CONF.upgrade_levels.guestagent, CONF.upgrade_levels.guestagent)
-        target = messaging.Target(topic=self._get_routing_key(),
-                                  version=version_cap)
+        self.target = messaging.Target(topic=self._get_routing_key(),
+                                       version=version_cap)
 
-        self.client = self.get_client(target, version_cap)
+        self.client = self.get_client(self.target, version_cap)
 
     def get_client(self, target, version_cap, serializer=None):
-        return rpc.get_client(target,
+        from trove.instance.models import get_instance_encryption_key
+
+        instance_key = get_instance_encryption_key(self.id)
+        return rpc.get_client(target, key=instance_key,
                               version_cap=version_cap,
                               serializer=serializer)
 
@@ -328,12 +331,15 @@ class API(object):
            method do nothing in case a queue is already created by
            the guest
         """
+        from trove.instance.models import DBInstance
         server = None
         target = messaging.Target(topic=self._get_routing_key(),
                                   server=self.id,
                                   version=self.API_BASE_VERSION)
         try:
-            server = rpc.get_server(target, [])
+            instance = DBInstance.get_by(id=self.id)
+            instance_key = instance.key if instance else None
+            server = rpc.get_server(target, [], key=instance_key)
             server.start()
         finally:
             if server is not None:
@@ -352,6 +358,10 @@ class API(object):
         """Recover the guest after upgrading the guest's image."""
         LOG.debug("Recover the guest after upgrading the guest's image.")
         version = self.API_BASE_VERSION
+        LOG.debug("Recycling the client ...")
+        version_cap = self.VERSION_ALIASES.get(
+            CONF.upgrade_levels.guestagent, CONF.upgrade_levels.guestagent)
+        self.client = self.get_client(self.target, version_cap)
 
         self._call("post_upgrade", AGENT_HIGH_TIMEOUT, version=version,
                    upgrade_info=upgrade_info)

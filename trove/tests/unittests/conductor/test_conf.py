@@ -32,7 +32,8 @@ def mocked_conf(manager):
         'conductor_manager': manager,
         'trove_conductor_workers': 1,
         'host': 'mockhost',
-        'report_interval': 1})
+        'report_interval': 1,
+        'instance_rpc_encr_key': ''})
 
 
 class NoopManager(object):

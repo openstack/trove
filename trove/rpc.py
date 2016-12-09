@@ -23,7 +23,6 @@ __all__ = [
     'add_extra_exmods',
     'clear_extra_exmods',
     'get_allowed_exmods',
-    'RequestContextSerializer',
     'get_client',
     'get_server',
     'get_notifier',
@@ -32,12 +31,10 @@ __all__ = [
 
 from oslo_config import cfg
 import oslo_messaging as messaging
-from oslo_serialization import jsonutils
-from osprofiler import profiler
 
-from trove.common.context import TroveContext
 import trove.common.exception
-
+from trove.common.rpc import secure_serializer as ssz
+from trove.common.rpc import serializer as sz
 
 CONF = cfg.CONF
 TRANSPORT = None
@@ -56,7 +53,8 @@ def init(conf):
     TRANSPORT = messaging.get_transport(conf,
                                         allowed_remote_exmods=exmods)
 
-    serializer = RequestContextSerializer(JsonPayloadSerializer())
+    serializer = sz.TroveRequestContextSerializer(
+        messaging.JsonPayloadSerializer())
     NOTIFIER = messaging.Notifier(TRANSPORT, serializer=serializer)
 
 
@@ -84,60 +82,26 @@ def get_allowed_exmods():
     return ALLOWED_EXMODS + EXTRA_EXMODS
 
 
-class JsonPayloadSerializer(messaging.NoOpSerializer):
-    @staticmethod
-    def serialize_entity(context, entity):
-        return jsonutils.to_primitive(entity, convert_instances=True)
-
-
-class RequestContextSerializer(messaging.Serializer):
-
-    def __init__(self, base):
-        self._base = base
-
-    def serialize_entity(self, context, entity):
-        if not self._base:
-            return entity
-        return self._base.serialize_entity(context, entity)
-
-    def deserialize_entity(self, context, entity):
-        if not self._base:
-            return entity
-        return self._base.deserialize_entity(context, entity)
-
-    def serialize_context(self, context):
-        _context = context.to_dict()
-        prof = profiler.get()
-        if prof:
-            trace_info = {
-                "hmac_key": prof.hmac_key,
-                "base_id": prof.get_base_id(),
-                "parent_id": prof.get_id()
-            }
-            _context.update({"trace_info": trace_info})
-        return _context
-
-    def deserialize_context(self, context):
-        trace_info = context.pop("trace_info", None)
-        if trace_info:
-            profiler.init(**trace_info)
-        return TroveContext.from_dict(context)
-
-
 def get_transport_url(url_str=None):
     return messaging.TransportURL.parse(CONF, url_str)
 
 
-def get_client(target, version_cap=None, serializer=None):
+def get_client(target, key, version_cap=None, serializer=None,
+               secure_serializer=ssz.SecureSerializer):
     assert TRANSPORT is not None
-    serializer = RequestContextSerializer(serializer)
+    # BUG(1650518): Cleanup in the Pike release
+    # uncomment this (following) line in the pike release
+    # assert key is not None
+    serializer = secure_serializer(
+        sz.TroveRequestContextSerializer(serializer), key)
     return messaging.RPCClient(TRANSPORT,
                                target,
                                version_cap=version_cap,
                                serializer=serializer)
 
 
-def get_server(target, endpoints, serializer=None):
+def get_server(target, endpoints, key, serializer=None,
+               secure_serializer=ssz.SecureSerializer):
     assert TRANSPORT is not None
 
     # Thread module is not monkeypatched if remote debugging is enabled.
@@ -148,7 +112,12 @@ def get_server(target, endpoints, serializer=None):
 
     executor = "blocking" if debug_utils.enabled() else "eventlet"
 
-    serializer = RequestContextSerializer(serializer)
+    # BUG(1650518): Cleanup in the Pike release
+    # uncomment this (following) line in the pike release
+    # assert key is not None
+    serializer = secure_serializer(
+        sz.TroveRequestContextSerializer(serializer), key)
+
     return messaging.get_rpc_server(TRANSPORT,
                                     target,
                                     endpoints,

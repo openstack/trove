@@ -77,7 +77,12 @@ class API(object):
             cctxt.cast(self.context, method_name, **kwargs)
 
     def get_client(self, target, version_cap, serializer=None):
-        return rpc.get_client(target,
+        if CONF.enable_secure_rpc_messaging:
+            key = CONF.taskmanager_rpc_encr_key
+        else:
+            key = None
+
+        return rpc.get_client(target, key=key,
                               version_cap=version_cap,
                               serializer=serializer)
 

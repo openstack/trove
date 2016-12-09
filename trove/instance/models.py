@@ -26,6 +26,7 @@ from oslo_log import log as logging
 
 from trove.backup.models import Backup
 from trove.common import cfg
+from trove.common import crypto_utils as cu
 from trove.common import exception
 from trove.common.glance_remote import create_glance_client
 from trove.common.i18n import _, _LE, _LI, _LW
@@ -433,6 +434,10 @@ class SimpleInstance(object):
     def region_name(self):
         return self.db_info.region_id
 
+    @property
+    def encrypted_rpc_messaging(self):
+        return True if self.db_info.encrypted_key is not None else False
+
 
 class DetailInstance(SimpleInstance):
     """A detailed view of an Instance.
@@ -748,6 +753,14 @@ class BaseInstance(SimpleInstance):
             "datastore_manager=%s\n"
             "tenant_id=%s\n"
             % (self.id, datastore_manager, self.tenant_id))}
+
+        instance_key = get_instance_encryption_key(self.id)
+        if instance_key:
+            files = {guest_info_file: (
+                "%s"
+                "instance_rpc_encr_key=%s\n" % (
+                    files.get(guest_info_file),
+                    instance_key))}
 
         if os.path.isfile(CONF.get('guest_config')):
             with open(CONF.get('guest_config'), "r") as f:
@@ -1502,7 +1515,8 @@ class DBInstance(dbmodels.DatabaseModelBase):
                     'task_id', 'task_description', 'task_start_time',
                     'volume_id', 'deleted', 'tenant_id',
                     'datastore_version_id', 'configuration_id', 'slave_of_id',
-                    'cluster_id', 'shard_id', 'type', 'region_id']
+                    'cluster_id', 'shard_id', 'type', 'region_id',
+                    'encrypted_key']
 
     def __init__(self, task_status, **kwargs):
         """
@@ -1515,8 +1529,26 @@ class DBInstance(dbmodels.DatabaseModelBase):
         kwargs["task_id"] = task_status.code
         kwargs["task_description"] = task_status.db_text
         kwargs["deleted"] = False
+
+        if CONF.enable_secure_rpc_messaging:
+            key = cu.generate_random_key()
+            kwargs["encrypted_key"] = cu.encode_data(cu.encrypt_data(
+                key, CONF.inst_rpc_key_encr_key))
+            LOG.debug("Generated unique RPC encryption key for "
+                      "instance. key = %s" % key)
+        else:
+            kwargs["encrypted_key"] = None
+
         super(DBInstance, self).__init__(**kwargs)
         self.set_task_status(task_status)
+
+    @property
+    def key(self):
+        if self.encrypted_key is None:
+            return None
+
+        return cu.decrypt_data(cu.decode_data(self.encrypted_key),
+                               CONF.inst_rpc_key_encr_key)
 
     def _validate(self, errors):
         if InstanceTask.from_code(self.task_id) is None:
@@ -1532,6 +1564,56 @@ class DBInstance(dbmodels.DatabaseModelBase):
         self.task_description = value.db_text
 
     task_status = property(get_task_status, set_task_status)
+
+
+class instance_encryption_key_cache(object):
+    def __init__(self, func, lru_cache_size=10):
+        self._table = {}
+        self._lru = []
+        self._lru_cache_size = lru_cache_size
+        self._func = func
+
+    def get(self, instance_id):
+        if instance_id in self._table:
+            if self._lru.index(instance_id) > 0:
+                self._lru.remove(instance_id)
+                self._lru.insert(0, instance_id)
+
+            return self._table[instance_id]
+        else:
+            val = self._func(instance_id)
+
+            # BUG(1650518): Cleanup in the Pike release
+            if val is None:
+                return val
+
+            if len(self._lru) == self._lru_cache_size:
+                tail = self._lru.pop()
+                del self._table[tail]
+
+            self._lru.insert(0, instance_id)
+            self._table[instance_id] = val
+            return self._table[instance_id]
+
+    def __getitem__(self, instance_id):
+        return self.get(instance_id)
+
+
+def _get_instance_encryption_key(instance_id):
+    instance = DBInstance.find_by(id=instance_id)
+
+    if instance is not None:
+        return instance.key
+    else:
+        raise exception.NotFound(uuid=id)
+
+
+_instance_encryption_key = instance_encryption_key_cache(
+    func=_get_instance_encryption_key)
+
+
+def get_instance_encryption_key(instance_id):
+    return _instance_encryption_key[instance_id]
 
 
 def persist_instance_fault(notification, event_qualifier):

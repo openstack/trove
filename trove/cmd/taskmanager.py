@@ -29,8 +29,14 @@ def startup(conf, topic):
 
     notification.DBaaSAPINotification.register_notify_callback(
         inst_models.persist_instance_fault)
+
+    if conf.enable_secure_rpc_messaging:
+        key = conf.taskmanager_rpc_encr_key
+    else:
+        key = None
+
     server = rpc_service.RpcService(
-        manager=conf.taskmanager_manager, topic=topic,
+        key=key, manager=conf.taskmanager_manager, topic=topic,
         rpc_api_version=task_api.API.API_LATEST_VERSION)
     launcher = openstack_service.launch(conf, server)
     launcher.wait()
