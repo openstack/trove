@@ -221,3 +221,7 @@ class ClusterTest(trove_testtools.TestCase):
             task_status=ClusterTasks.ADDING_SHARD)
         mock_task_api.mongodb_add_shard_cluster.assert_called_with(
             self.cluster.id, 'new-shard-id', 'rs2')
+
+    @patch('trove.cluster.models.LOG')
+    def test_upgrade_not_implemented(self, mock_logging):
+        self.assertRaises(exception.BadRequest, self.cluster.upgrade, "foo")

@@ -564,6 +564,17 @@ class DBaaSClusterCreate(DBaaSAPINotification):
         return ['cluster_id']
 
 
+class DBaaSClusterUpgrade(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'cluster_upgrade'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['cluster_id', 'datastore_version']
+
+
 class DBaaSClusterDelete(DBaaSAPINotification):
 
     @abc.abstractmethod

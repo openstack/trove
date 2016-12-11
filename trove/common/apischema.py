@@ -312,6 +312,21 @@ cluster = {
                 }
             }
         }
+    },
+    "upgrade": {
+        "type": "object",
+        "required": ["upgrade"],
+        "additionalProperties": True,
+        "properties": {
+            "upgrade": {
+                "type": "object",
+                "required": ["datastore_version"],
+                "additionalProperties": True,
+                "properties": {
+                    "datastore_version": non_empty_string
+                }
+            }
+        }
     }
 }
 
