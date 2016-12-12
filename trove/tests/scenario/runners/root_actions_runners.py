@@ -41,8 +41,9 @@ class RootActionsRunner(TestRunner):
     def _assert_root_state(self, instance_id, expected_state,
                            expected_http_code, message):
         # The call returns a nameless user object with 'rootEnabled' attribute.
-        response = self.auth_client.root.is_root_enabled(instance_id)
-        self.assert_instance_action(instance_id, None, expected_http_code)
+        client = self.auth_client
+        response = client.root.is_root_enabled(instance_id)
+        self.assert_client_code(client, expected_http_code)
         actual_state = getattr(response, 'rootEnabled', None)
         self.assert_equal(expected_state, actual_state, message)
 
@@ -54,8 +55,9 @@ class RootActionsRunner(TestRunner):
 
     def assert_root_disable_failure(self, instance_id, expected_exception,
                                     expected_http_code):
+        client = self.auth_client
         self.assert_raises(expected_exception, expected_http_code,
-                           self.auth_client.root.delete, instance_id)
+                           client, client.root.delete, instance_id)
 
     def run_enable_root_no_password(self, expected_http_code=200):
         root_credentials = self.test_helper.get_helper_credentials_root()
@@ -66,17 +68,18 @@ class RootActionsRunner(TestRunner):
 
     def assert_root_create(self, instance_id, root_password,
                            expected_root_name, expected_http_code):
+        client = self.auth_client
         if root_password is not None:
-            root_creds = self.auth_client.root.create_instance_root(
+            root_creds = client.root.create_instance_root(
                 instance_id, root_password)
             self.assert_equal(root_password, root_creds[1])
         else:
-            root_creds = self.auth_client.root.create(instance_id)
+            root_creds = client.root.create(instance_id)
 
+        self.assert_client_code(client, expected_http_code)
         if expected_root_name is not None:
             self.assert_equal(expected_root_name, root_creds[0])
 
-        self.assert_instance_action(instance_id, None, expected_http_code)
         self.assert_can_connect(instance_id, root_creds)
 
         return root_creds
@@ -122,8 +125,9 @@ class RootActionsRunner(TestRunner):
         self.assert_root_disable(self.instance_info.id, expected_http_code)
 
     def assert_root_disable(self, instance_id, expected_http_code):
-        self.auth_client.root.delete(instance_id)
-        self.assert_instance_action(instance_id, None, expected_http_code)
+        client = self.auth_client
+        client.root.delete(instance_id)
+        self.assert_client_code(client, expected_http_code)
         self.assert_cannot_connect(self.instance_info.id,
                                    self.current_root_creds)
 
@@ -142,8 +146,9 @@ class RootActionsRunner(TestRunner):
     def assert_root_delete_failure(self, instance_id, expected_exception,
                                    expected_http_code):
         root_user_name = self.current_root_creds[0]
+        client = self.auth_client
         self.assert_raises(expected_exception, expected_http_code,
-                           self.auth_client.users.delete,
+                           client, client.users.delete,
                            instance_id, root_user_name)
 
     def run_check_root_enabled_after_restore(

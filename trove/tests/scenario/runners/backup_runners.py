@@ -53,17 +53,19 @@ class BackupRunner(TestRunner):
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
         invalid_inst_id = 'invalid-inst-id'
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.backups.create,
+            client, client.backups.create,
             self.BACKUP_NAME, invalid_inst_id, self.BACKUP_DESC)
 
     def run_backup_create_instance_not_found(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.backups.create,
+            client, client.backups.create,
             self.BACKUP_NAME, generate_uuid(), self.BACKUP_DESC)
 
     def run_add_data_for_backup(self):
@@ -147,32 +149,37 @@ class BackupRunner(TestRunner):
     def run_restore_instance_from_not_completed_backup(
             self, expected_exception=exceptions.Conflict,
             expected_http_code=409):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self._restore_from_backup, self.backup_info.id)
+            None, self._restore_from_backup, client, self.backup_info.id)
+        self.assert_client_code(client, expected_http_code)
 
     def run_instance_action_right_after_backup_create(
             self, expected_exception=exceptions.UnprocessableEntity,
             expected_http_code=422):
+        client = self.auth_client
         self.assert_raises(expected_exception, expected_http_code,
-                           self.auth_client.instances.resize_instance,
+                           client, client.instances.resize_instance,
                            self.instance_info.id, 1)
 
     def run_backup_create_another_backup_running(
             self, expected_exception=exceptions.UnprocessableEntity,
             expected_http_code=422):
+        client = self.auth_client
         self.assert_raises(expected_exception, expected_http_code,
-                           self.auth_client.backups.create,
+                           client, client.backups.create,
                            'backup_test2', self.instance_info.id,
                            'test description2')
 
     def run_backup_delete_while_backup_running(
             self, expected_exception=exceptions.UnprocessableEntity,
             expected_http_code=422):
-        result = self.auth_client.backups.list()
+        client = self.auth_client
+        result = client.backups.list()
         backup = result[0]
         self.assert_raises(expected_exception, expected_http_code,
-                           self.auth_client.backups.delete, backup.id)
+                           client, client.backups.delete, backup.id)
 
     def run_backup_create_completed(self):
         self._verify_backup(self.backup_info.id)
@@ -226,9 +233,10 @@ class BackupRunner(TestRunner):
     def run_backup_list_filter_datastore_not_found(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.backups.list,
+            client, client.backups.list,
             datastore='NOT_FOUND')
 
     def run_backup_list_for_instance(self):
@@ -255,12 +263,10 @@ class BackupRunner(TestRunner):
     def run_backup_get_unauthorized_user(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.unauth_client
         self.assert_raises(
-            expected_exception, None,
-            self.unauth_client.backups.get, self.backup_info.id)
-        # we're using a different client, so we'll check the return code
-        # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code, client=self.unauth_client)
+            expected_exception, expected_http_code,
+            client, client.backups.get, self.backup_info.id)
 
     def run_add_data_for_inc_backup_1(self):
         self.backup_host = self.get_instance_host()
@@ -302,15 +308,16 @@ class BackupRunner(TestRunner):
 
     def assert_restore_from_backup(self, backup_ref, suffix='',
                                    expected_http_code=200):
-        result = self._restore_from_backup(backup_ref, suffix=suffix)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        result = self._restore_from_backup(client, backup_ref, suffix=suffix)
+        self.assert_client_code(client, expected_http_code)
         self.assert_equal('BUILD', result.status,
                           'Unexpected instance status')
         return result.id
 
-    def _restore_from_backup(self, backup_ref, suffix=''):
+    def _restore_from_backup(self, client, backup_ref, suffix=''):
         restore_point = {'backupRef': backup_ref}
-        result = self.auth_client.instances.create(
+        result = client.instances.create(
             self.instance_info.name + '_restore' + suffix,
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
@@ -372,8 +379,9 @@ class BackupRunner(TestRunner):
 
     def assert_delete_restored_instance(
             self, instance_id, expected_http_code):
-        self.auth_client.instances.delete(instance_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        client.instances.delete(instance_id)
+        self.assert_client_code(client, expected_http_code)
 
     def run_delete_restored_inc_1_instance(self, expected_http_code=202):
         self.assert_delete_restored_instance(
@@ -398,20 +406,19 @@ class BackupRunner(TestRunner):
     def run_delete_unknown_backup(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.backups.delete,
+            client, client.backups.delete,
             'unknown_backup')
 
     def run_delete_backup_unauthorized_user(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
+        client = self.unauth_client
         self.assert_raises(
-            expected_exception, None,
-            self.unauth_client.backups.delete, self.backup_info.id)
-        # we're using a different client, so we'll check the return code
-        # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code, client=self.unauth_client)
+            expected_exception, expected_http_code,
+            client, client.backups.delete, self.backup_info.id)
 
     def run_delete_inc_2_backup(self, expected_http_code=202):
         self.assert_delete_backup(
@@ -420,14 +427,15 @@ class BackupRunner(TestRunner):
 
     def assert_delete_backup(
             self, backup_id, expected_http_code):
-        self.auth_client.backups.delete(backup_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
-        self._wait_until_backup_is_gone(backup_id)
+        client = self.auth_client
+        client.backups.delete(backup_id)
+        self.assert_client_code(client, expected_http_code)
+        self._wait_until_backup_is_gone(client, backup_id)
 
-    def _wait_until_backup_is_gone(self, backup_id):
+    def _wait_until_backup_is_gone(self, client, backup_id):
         def _backup_is_gone():
             try:
-                self.auth_client.backups.get(backup_id)
+                client.backups.get(backup_id)
                 return False
             except exceptions.NotFound:
                 return True
@@ -443,9 +451,10 @@ class BackupRunner(TestRunner):
             expected_http_code=404):
         if self.backup_inc_1_info is None:
             raise SkipTest("Incremental Backup not created")
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.backups.get,
+            client, client.backups.get,
             self.backup_inc_1_info.id)
         self.backup_inc_1_info = None
 

@@ -65,9 +65,10 @@ class UserActionsRunner(TestRunner):
 
     def assert_users_create(self, instance_id, serial_users_def,
                             expected_http_code):
-        self.auth_client.users.create(instance_id, serial_users_def)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
-        self.wait_for_user_create(instance_id, serial_users_def)
+        client = self.auth_client
+        client.users.create(instance_id, serial_users_def)
+        self.assert_client_code(client, expected_http_code)
+        self.wait_for_user_create(client, instance_id, serial_users_def)
         return serial_users_def
 
     def run_user_show(self, expected_http_code=200):
@@ -80,9 +81,10 @@ class UserActionsRunner(TestRunner):
         user_name = expected_user_def['name']
         user_host = expected_user_def.get('host')
 
-        queried_user = self.auth_client.users.get(
+        client = self.auth_client
+        queried_user = client.users.get(
             instance_id, user_name, user_host)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
         self._assert_user_matches(queried_user, expected_user_def)
 
     def _assert_user_matches(self, user, expected_user_def):
@@ -99,8 +101,9 @@ class UserActionsRunner(TestRunner):
 
     def assert_users_list(self, instance_id, expected_user_defs,
                           expected_http_code, limit=2):
-        full_list = self.auth_client.users.list(instance_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        full_list = client.users.list(instance_id)
+        self.assert_client_code(client, expected_http_code)
         listed_users = {user.name: user for user in full_list}
         self.assert_is_none(full_list.next,
                             "Unexpected pagination in the list.")
@@ -120,8 +123,8 @@ class UserActionsRunner(TestRunner):
             "System users should not be included in the 'user-list' output.")
 
         # Test list pagination.
-        list_page = self.auth_client.users.list(instance_id, limit=limit)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        list_page = client.users.list(instance_id, limit=limit)
+        self.assert_client_code(client, expected_http_code)
 
         self.assert_true(len(list_page) <= limit)
         if len(full_list) > limit:
@@ -137,9 +140,8 @@ class UserActionsRunner(TestRunner):
             self.assert_equal(expected_marker, marker,
                               "Pagination marker should be the last element "
                               "in the page.")
-            list_page = self.auth_client.users.list(instance_id, marker=marker)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            list_page = client.users.list(instance_id, marker=marker)
+            self.assert_client_code(client, expected_http_code)
             self.assert_pagination_match(
                 list_page, full_list, limit, len(full_list))
 
@@ -154,9 +156,10 @@ class UserActionsRunner(TestRunner):
     def assert_user_access_show(self, instance_id, user_def,
                                 expected_http_code):
         user_name, user_host = self._get_user_name_host_pair(user_def)
-        user_dbs = self.auth_client.users.list_access(instance_id, user_name,
-                                                      hostname=user_host)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        user_dbs = client.users.list_access(
+            instance_id, user_name, hostname=user_host)
+        self.assert_client_code(client, expected_http_code)
 
         expected_dbs = {db_def['name'] for db_def in user_def['databases']}
         listed_dbs = [db.name for db in user_dbs]
@@ -189,10 +192,11 @@ class UserActionsRunner(TestRunner):
 
     def assert_user_access_revoke(self, instance_id, user_name, user_host,
                                   database, expected_http_code):
-        self.auth_client.users.revoke(
+        client = self.auth_client
+        client.users.revoke(
             instance_id, user_name, database, hostname=user_host)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
-        user_dbs = self.auth_client.users.list_access(
+        self.assert_client_code(client, expected_http_code)
+        user_dbs = client.users.list_access(
             instance_id, user_name, hostname=user_host)
         self.assert_false(any(db.name == database for db in user_dbs),
                           "Database should no longer be included in the user "
@@ -205,10 +209,11 @@ class UserActionsRunner(TestRunner):
 
     def assert_user_access_grant(self, instance_id, user_name, user_host,
                                  database, expected_http_code):
-        self.auth_client.users.grant(
+        client = self.auth_client
+        client.users.grant(
             instance_id, user_name, [database], hostname=user_host)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
-        user_dbs = self.auth_client.users.list_access(
+        self.assert_client_code(client, expected_http_code)
+        user_dbs = client.users.list_access(
             instance_id, user_name, hostname=user_host)
         self.assert_true(any(db.name == database for db in user_dbs),
                          "Database should be included in the user "
@@ -278,9 +283,10 @@ class UserActionsRunner(TestRunner):
     def assert_users_create_failure(
             self, instance_id, serial_users_def,
             expected_exception, expected_http_code):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.users.create, instance_id, serial_users_def)
+            client, client.users.create, instance_id, serial_users_def)
 
     def run_user_update_with_blank_name(
             self, expected_exception=exceptions.BadRequest,
@@ -302,9 +308,10 @@ class UserActionsRunner(TestRunner):
             expected_exception, expected_http_code):
         user_name, user_host = self._get_user_name_host_pair(user_def)
 
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.users.update_attributes, instance_id,
+            client, client.users.update_attributes, instance_id,
             user_name, update_attribites, user_host)
 
     def _get_user_name_host_pair(self, user_def):
@@ -338,9 +345,10 @@ class UserActionsRunner(TestRunner):
                                      update_attribites, expected_http_code):
         user_name, user_host = self._get_user_name_host_pair(user_def)
 
-        self.auth_client.users.update_attributes(
+        client = self.auth_client
+        client.users.update_attributes(
             instance_id, user_name, update_attribites, user_host)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
 
         # Update the stored definitions with the new value.
         expected_def = None
@@ -350,7 +358,7 @@ class UserActionsRunner(TestRunner):
                 user_def.update(update_attribites)
                 expected_def = user_def
 
-        self.wait_for_user_create(instance_id, self.user_defs)
+        self.wait_for_user_create(client, instance_id, self.user_defs)
 
         # Verify using 'user-show' and 'user-list'.
         self.assert_user_show(instance_id, expected_def, 200)
@@ -388,16 +396,17 @@ class UserActionsRunner(TestRunner):
     def assert_user_delete(self, instance_id, user_def, expected_http_code):
         user_name, user_host = self._get_user_name_host_pair(user_def)
 
-        self.auth_client.users.delete(instance_id, user_name, user_host)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
-        self._wait_for_user_delete(instance_id, user_name)
+        client = self.auth_client
+        client.users.delete(instance_id, user_name, user_host)
+        self.assert_client_code(client, expected_http_code)
+        self._wait_for_user_delete(client, instance_id, user_name)
 
-    def _wait_for_user_delete(self, instance_id, deleted_user_name):
+    def _wait_for_user_delete(self, client, instance_id, deleted_user_name):
         self.report.log("Waiting for deleted user to disappear from the "
                         "listing: %s" % deleted_user_name)
 
         def _db_is_gone():
-            all_users = self.get_user_names(instance_id)
+            all_users = self.get_user_names(client, instance_id)
             return deleted_user_name not in all_users
 
         try:
@@ -419,9 +428,10 @@ class UserActionsRunner(TestRunner):
                                  expected_exception, expected_http_code):
         user_name, user_host = self._get_user_name_host_pair(user_def)
 
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.users.get, instance_id, user_name, user_host)
+            client, client.users.get, instance_id, user_name, user_host)
 
     def run_system_user_show(
             self, expected_exception=exceptions.BadRequest,
@@ -456,8 +466,9 @@ class UserActionsRunner(TestRunner):
             expected_exception, expected_http_code):
         user_name, user_host = self._get_user_name_host_pair(user_def)
 
+        client = self.auth_client
         self.assert_raises(expected_exception, expected_http_code,
-                           self.auth_client.users.delete,
+                           client, client.users.delete,
                            instance_id, user_name, user_host)
 
     def run_system_user_delete(

@@ -41,6 +41,7 @@ class InstanceUpgradeRunner(TestRunner):
         self.report.log("Testing upgrade on instance: %s" % instance_id)
 
         target_version = self.instance_info.dbaas_datastore_version
-        self.auth_client.instances.upgrade(instance_id, target_version)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
+        client = self.auth_client
+        client.instances.upgrade(instance_id, target_version)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(instance_id, expected_states)

@@ -62,7 +62,8 @@ class ReplicationRunner(TestRunner):
         self.test_helper.verify_data(data_type, host)
 
     def run_create_non_affinity_master(self, expected_http_code=200):
-        self.non_affinity_master_id = self.auth_client.instances.create(
+        client = self.auth_client
+        self.non_affinity_master_id = client.instances.create(
             self.instance_info.name + '_non-affinity',
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
@@ -70,7 +71,7 @@ class ReplicationRunner(TestRunner):
             datastore_version=self.instance_info.dbaas_datastore_version,
             nics=self.instance_info.nics,
             locality='anti-affinity').id
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
 
     def run_create_single_replica(self, expected_http_code=200):
         self.master_backup_count = len(
@@ -80,7 +81,8 @@ class ReplicationRunner(TestRunner):
 
     def assert_replica_create(
             self, master_id, replica_name, replica_count, expected_http_code):
-        replica = self.auth_client.instances.create(
+        client = self.auth_client
+        replica = client.instances.create(
             self.instance_info.name + '_' + replica_name,
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume, replica_of=master_id,
@@ -88,7 +90,7 @@ class ReplicationRunner(TestRunner):
             datastore_version=self.instance_info.dbaas_datastore_version,
             nics=self.instance_info.nics,
             replica_count=replica_count)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
         return replica.id
 
     def run_wait_for_single_replica(self, expected_states=['BUILD', 'ACTIVE']):
@@ -99,8 +101,9 @@ class ReplicationRunner(TestRunner):
         self.replica_1_host = self.get_instance_host(self.replica_1_id)
 
     def _assert_is_master(self, instance_id, replica_ids):
-        instance = self.get_instance(instance_id, client=self.admin_client)
-        self.assert_client_code(200, client=self.admin_client)
+        client = self.admin_client
+        instance = self.get_instance(instance_id, client=client)
+        self.assert_client_code(client, 200)
         CheckInstance(instance._info).slaves()
         self.assert_true(
             set(replica_ids).issubset(self._get_replica_set(instance_id)))
@@ -111,8 +114,9 @@ class ReplicationRunner(TestRunner):
         return set([replica['id'] for replica in instance._info['replicas']])
 
     def _assert_is_replica(self, instance_id, master_id):
-        instance = self.get_instance(instance_id, client=self.admin_client)
-        self.assert_client_code(200, client=self.admin_client)
+        client = self.admin_client
+        instance = self.get_instance(instance_id, client=client)
+        self.assert_client_code(client, 200)
         CheckInstance(instance._info).replica_of()
         self.assert_equal(master_id, instance._info['replica_of']['id'],
                           'Unexpected replication master ID')
@@ -138,7 +142,8 @@ class ReplicationRunner(TestRunner):
             self.non_affinity_master_id)
 
     def run_create_non_affinity_replica(self, expected_http_code=200):
-        self.non_affinity_repl_id = self.auth_client.instances.create(
+        client = self.auth_client
+        self.non_affinity_repl_id = client.instances.create(
             self.instance_info.name + '_non-affinity-repl',
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
@@ -147,7 +152,7 @@ class ReplicationRunner(TestRunner):
             nics=self.instance_info.nics,
             replica_of=self.non_affinity_master_id,
             replica_count=1).id
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        self.assert_client_code(client, expected_http_code)
 
     def run_create_multiple_replicas(self, expected_http_code=200):
         self.replica_2_id = self.assert_replica_create(
@@ -176,10 +181,10 @@ class ReplicationRunner(TestRunner):
     def assert_delete_instances(self, instance_ids, expected_http_code):
         instance_ids = (instance_ids if utils.is_collection(instance_ids)
                         else [instance_ids])
+        client = self.auth_client
         for instance_id in instance_ids:
-            self.auth_client.instances.delete(instance_id)
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
+            client.instances.delete(instance_id)
+            self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_delete_non_affinity_repl(
             self, expected_last_status=['SHUTDOWN']):
@@ -220,32 +225,36 @@ class ReplicationRunner(TestRunner):
 
     def run_promote_master(self, expected_exception=exceptions.BadRequest,
                            expected_http_code=400):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.instances.promote_to_replica_source,
+            client, client.instances.promote_to_replica_source,
             self.instance_info.id)
 
     def run_eject_replica(self, expected_exception=exceptions.BadRequest,
                           expected_http_code=400):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.instances.eject_replica_source,
+            client, client.instances.eject_replica_source,
             self.replica_1_id)
 
     def run_eject_valid_master(self, expected_exception=exceptions.BadRequest,
                                expected_http_code=400):
+        # client = self.auth_client
         # self.assert_raises(
         #     expected_exception, expected_http_code,
-        #     self.auth_client.instances.eject_replica_source,
+        #     client, client.instances.eject_replica_source,
         #     self.instance_info.id)
         # Uncomment once BUG_EJECT_VALID_MASTER is fixed
         raise SkipKnownBug(runners.BUG_EJECT_VALID_MASTER)
 
     def run_delete_valid_master(self, expected_exception=exceptions.Forbidden,
                                 expected_http_code=403):
+        client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
-            self.auth_client.instances.delete,
+            client, client.instances.delete,
             self.instance_info.id)
 
     def run_promote_to_replica_source(self,
@@ -272,9 +281,10 @@ class ReplicationRunner(TestRunner):
 
     def assert_replica_promote(
             self, new_master_id, expected_states, expected_http_code):
-        self.auth_client.instances.promote_to_replica_source(new_master_id)
-        self.assert_instance_action(new_master_id, expected_states,
-                                    expected_http_code)
+        client = self.auth_client
+        client.instances.promote_to_replica_source(new_master_id)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(new_master_id, expected_states)
 
     def run_verify_replica_data_new_master(self):
         self.assert_verify_replication_data(
@@ -340,14 +350,15 @@ class ReplicationRunner(TestRunner):
 
     def assert_detach_replica(
             self, replica_id, expected_states, expected_http_code):
-        self.auth_client.instances.edit(replica_id,
-                                        detach_replica_source=True)
-        self.assert_instance_action(
-            replica_id, expected_states, expected_http_code)
+        client = self.auth_client
+        client.instances.edit(replica_id, detach_replica_source=True)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(replica_id, expected_states)
 
     def _assert_is_not_replica(self, instance_id):
-        instance = self.get_instance(instance_id, client=self.admin_client)
-        self.assert_client_code(200, client=self.admin_client)
+        client = self.admin_client
+        instance = self.get_instance(instance_id, client=client)
+        self.assert_client_code(client, 200)
 
         if 'replica_of' not in instance._info:
             try:

@@ -33,22 +33,23 @@ class InstanceForceDeleteRunner(TestRunner):
         name = self.instance_info.name + '_build'
         flavor = self.get_instance_flavor()
 
-        inst = self.auth_client.instances.create(
+        client = self.auth_client
+        inst = client.instances.create(
             name,
             self.get_flavor_href(flavor),
             self.instance_info.volume,
             nics=self.instance_info.nics,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
-        self.assert_instance_action([inst.id], expected_states,
-                                    expected_http_code)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action([inst.id], expected_states)
         self.build_inst_id = inst.id
 
     def run_delete_build_instance(self, expected_http_code=202):
         if self.build_inst_id:
-            self.admin_client.instances.force_delete(self.build_inst_id)
-            self.assert_client_code(expected_http_code,
-                                    client=self.admin_client)
+            client = self.admin_client
+            client.instances.force_delete(self.build_inst_id)
+            self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_force_delete(self):
         if self.build_inst_id:

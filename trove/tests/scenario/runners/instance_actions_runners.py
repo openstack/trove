@@ -59,9 +59,10 @@ class InstanceActionsRunner(TestRunner):
                                 expected_http_code):
         self.report.log("Testing restart on instance: %s" % instance_id)
 
-        self.auth_client.instances.restart(instance_id)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
+        client = self.auth_client
+        client.instances.restart(instance_id)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(instance_id, expected_states)
 
     def run_instance_resize_volume(
             self, resize_amount=1,
@@ -83,9 +84,10 @@ class InstanceActionsRunner(TestRunner):
         old_volume_size = int(instance.volume['size'])
         new_volume_size = old_volume_size + resize_amount
 
-        self.auth_client.instances.resize_volume(instance_id, new_volume_size)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
+        client = self.auth_client
+        client.instances.resize_volume(instance_id, new_volume_size)
+        self.assert_client_code(client, expected_http_code)
+        self.assert_instance_action(instance_id, expected_states)
 
         instance = self.get_instance(instance_id)
         self.assert_equal(new_volume_size, instance.volume['size'],
@@ -99,9 +101,9 @@ class InstanceActionsRunner(TestRunner):
                                       expected_http_code):
         self.report.log("Testing resize to '%s' on instance: %s" %
                         (resize_flavor_id, instance_id))
-        self.auth_client.instances.resize_instance(
-            instance_id, resize_flavor_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+        client = self.auth_client
+        client.instances.resize_instance(instance_id, resize_flavor_id)
+        self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_instance_resize_flavor(
             self, expected_states=['RESIZE', 'ACTIVE']):
