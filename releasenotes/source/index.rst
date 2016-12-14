@@ -8,4 +8,3 @@
    unreleased
    newton
    mitaka
-   liberty
