@@ -199,8 +199,10 @@ def build_polling_task(retriever, condition=lambda value: value,
         if time_out is not None and time.time() - start_time > time_out:
             raise exception.PollTimeOut
 
-    return loopingcall.FixedIntervalLoopingCall(
-        f=poll_and_check).start(sleep_time, initial_delay=False)
+    return loopingcall.BackOffLoopingCall(
+        f=poll_and_check).start(initial_delay=False,
+                                starting_interval=sleep_time,
+                                max_interval=30, timeout=time_out)
 
 
 def poll_until(retriever, condition=lambda value: value,
