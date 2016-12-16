@@ -100,9 +100,48 @@ function iniset_conditional {
 }
 
 
+# tweak_nova() - update the nova hypervisor configuration if possible
+function tweak_nova {
+    if [ -e /sys/module/kvm_*/parameters/nested ]; then
+        reconfigure_nova="F"
+
+        if [ -e /sys/module/kvm_intel/parameters/nested ]; then
+            if [[ "$(cat /sys/module/kvm_*/parameters/nested)" == "Y" ]]; then
+                reconfigure_nova="Y"
+            else
+                echo_summary "Found Intel with no support for nested KVM."
+            fi
+        elif [ -e /sys/module/kvm_amd/parameters/nested ]; then
+            if [[ "$(cat /sys/module/kvm_*/parameters/nested)" == "1" ]]; then
+                reconfigure_nova="Y"
+            else
+                echo_summary "Found AMD with no support for nested KVM."
+            fi
+        fi
+
+        if [ "${reconfigure_nova}" == "Y" ]; then
+            echo_summary "Configuring Nova to use KVM."
+
+            NOVA_CONF_DIR=${NOVA_CONF_DIR:-/etc/nova}
+            NOVA_CONF=${NOVA_CONF:-${NOVA_CONF_DIR}/nova.conf}
+            iniset $NOVA_CONF libvirt cpu_mode "none"
+            iniset $NOVA_CONF libvirt virt_type "kvm"
+        else
+            virt_type=$(iniget $NOVA_CONF libvirt virt_type)
+            echo_summary "Nested hypervisor not supported, using ${virt_type}."
+        fi
+    else
+        virt_type=$(iniget $NOVA_CONF libvirt virt_type)
+        echo_summary "Unable to configure Nova to use KVM, using ${virt_type}."
+        echo "Unable to configure Nova to use KVM, using ${virt_type}."
+    fi
+}
+
 # configure_trove() - Set config files, create data dirs, etc
 function configure_trove {
     setup_develop $TROVE_DIR
+
+    tweak_nova
 
     # Create the trove conf dir and cache dirs if they don't exist
     sudo install -d -o $STACK_USER ${TROVE_CONF_DIR} ${TROVE_AUTH_CACHE_DIR}
