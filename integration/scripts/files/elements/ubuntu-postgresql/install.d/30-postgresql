@@ -76,4 +76,4 @@ apt-get remove -y $dev_pkgs
 
 # Install the native Python client.
 apt-get -y install libpq-dev
-pip install psycopg2
+pip2 install psycopg2

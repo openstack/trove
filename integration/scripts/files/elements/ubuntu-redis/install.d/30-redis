@@ -45,9 +45,9 @@ ULIMIT=65536
 _EOF_
 
 # Install Python driver for Redis ('redis-py').
-pip install redis
+pip2 install redis
 
 # By default, redis-py will attempt to use the HiredisParser if installed.
 # Using Hiredis can provide up to a 10x speed improvement in parsing responses
 # from the Redis server.
-pip install hiredis
+pip2 install hiredis

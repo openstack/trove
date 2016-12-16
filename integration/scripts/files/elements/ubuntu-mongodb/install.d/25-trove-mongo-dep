@@ -6,4 +6,4 @@
 set -e
 set -o xtrace
 
-pip install pymongo>=3.0.2,!=3.1
+pip2 install pymongo>=3.0.2,!=3.1

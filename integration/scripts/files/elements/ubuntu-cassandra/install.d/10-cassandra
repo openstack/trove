@@ -16,9 +16,9 @@ apt-get install -qy python-migrate build-essential
 apt-get install dsc21=2.1.* cassandra=2.1.* -qy
 
 # The Python Driver 2.0 for Apache Cassandra.
-pip install cassandra-driver
+pip2 install cassandra-driver
 # Sorted sets support for the Python driver.
-pip install blist
+pip2 install blist
 
 service cassandra stop
 rm -rf /var/lib/cassandra/data/system/*
