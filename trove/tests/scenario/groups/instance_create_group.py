@@ -59,7 +59,7 @@ class InstanceCreateGroup(TestGroup):
 @test(depends_on_groups=[groups.INST_CREATE],
       groups=[GROUP, groups.INST_CREATE_WAIT],
       runs_after_groups=[groups.MODULE_CREATE, groups.CFGGRP_CREATE,
-                         groups.INST_ERROR_CREATE_WAIT])
+                         groups.INST_ERROR_DELETE])
 class InstanceCreateWaitGroup(TestGroup):
     """Test that Instance Create Completes."""
 

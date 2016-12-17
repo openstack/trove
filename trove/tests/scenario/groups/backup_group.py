@@ -31,8 +31,8 @@ class BackupRunnerFactory(test_runners.RunnerFactory):
 
 @test(depends_on_groups=[groups.INST_CREATE_WAIT],
       groups=[GROUP, groups.BACKUP, groups.BACKUP_CREATE],
-      runs_after_groups=[groups.MODULE_INST_CREATE_WAIT,
-                         groups.CFGGRP_INST_CREATE_WAIT])
+      runs_after_groups=[groups.MODULE_INST_DELETE,
+                         groups.CFGGRP_INST_DELETE])
 class BackupCreateGroup(TestGroup):
     """Test Backup Create functionality."""
 
@@ -209,9 +209,7 @@ class BackupIncCreateGroup(TestGroup):
 
 
 @test(depends_on_groups=[groups.BACKUP_CREATE],
-      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_CREATE],
-      runs_after_groups=[groups.MODULE_INST_DELETE,
-                         groups.CFGGRP_INST_DELETE])
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_CREATE])
 class BackupInstCreateGroup(TestGroup):
     """Test Backup Instance Create functionality."""
 
