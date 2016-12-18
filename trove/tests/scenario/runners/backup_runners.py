@@ -111,11 +111,15 @@ class BackupRunner(TestRunner):
 
     def assert_backup_create(self, name, desc, instance_id, parent_id=None,
                              incremental=False):
+        client = self.auth_client
+        datastore_version = client.datastore_versions.get(
+            self.instance_info.dbaas_datastore,
+            self.instance_info.dbaas_datastore_version)
         if incremental:
-            result = self.auth_client.backups.create(
+            result = client.backups.create(
                 name, instance_id, desc, incremental=incremental)
         else:
-            result = self.auth_client.backups.create(
+            result = client.backups.create(
                 name, instance_id, desc, parent_id=parent_id)
         self.assert_equal(name, result.name,
                           'Unexpected backup name')
@@ -129,11 +133,7 @@ class BackupRunner(TestRunner):
             self.assert_equal(parent_id, result.parent_id,
                               'Unexpected status for backup')
 
-        instance = self.auth_client.instances.get(instance_id)
-        datastore_version = self.auth_client.datastore_versions.get(
-            self.instance_info.dbaas_datastore,
-            self.instance_info.dbaas_datastore_version)
-
+        instance = client.instances.get(instance_id)
         self.assert_equal('BACKUP', instance.status,
                           'Unexpected instance status')
         self.assert_equal(self.instance_info.dbaas_datastore,

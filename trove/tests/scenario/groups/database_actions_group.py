@@ -136,17 +136,17 @@ class DatabaseActionsInstCreateWaitGroup(TestGroup):
 
     @test
     def wait_for_instances(self):
-        """Waiting for all instances to become active."""
-        self.instance_create_runner.run_wait_for_created_instances()
+        """Waiting for database instance to become active."""
+        self.instance_create_runner.run_wait_for_init_instance()
 
     @test(depends_on=[wait_for_instances])
     def add_initialized_instance_data(self):
-        """Add data to the initialized instance."""
+        """Add data to the database instance."""
         self.instance_create_runner.run_add_initialized_instance_data()
 
     @test(runs_after=[add_initialized_instance_data])
     def validate_initialized_instance(self):
-        """Validate the initialized instance data and properties."""
+        """Validate the database instance data and properties."""
         self.instance_create_runner.run_validate_initialized_instance()
 
 
@@ -162,7 +162,7 @@ class DatabaseActionsInstDeleteGroup(TestGroup):
 
     @test
     def delete_initialized_instance(self):
-        """Delete the initialized instance."""
+        """Delete the database instance."""
         self.instance_create_runner.run_initialized_instance_delete()
 
 
@@ -179,5 +179,5 @@ class DatabaseActionsInstDeleteWaitGroup(TestGroup):
 
     @test
     def wait_for_delete_initialized_instance(self):
-        """Wait for the initialized instance to delete."""
+        """Wait for the database instance to delete."""
         self.instance_create_runner.run_wait_for_init_delete()

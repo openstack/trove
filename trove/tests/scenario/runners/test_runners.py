@@ -493,16 +493,18 @@ class TestRunner(object):
             fast_fail_status = ['ERROR', 'FAILED']
         found = False
         for status in expected_states:
-            if require_all_states or found or self._has_status(
-                    instance_id, status, fast_fail_status=fast_fail_status):
+            found_current = self._has_status(
+                instance_id, status, fast_fail_status=fast_fail_status)
+            if require_all_states or found or found_current:
                 found = True
                 start_time = timer.time()
                 try:
-                    poll_until(lambda: self._has_status(
-                        instance_id, status,
-                        fast_fail_status=fast_fail_status),
-                        sleep_time=self.def_sleep_time,
-                        time_out=self.def_timeout)
+                    if not found_current:
+                        poll_until(lambda: self._has_status(
+                            instance_id, status,
+                            fast_fail_status=fast_fail_status),
+                            sleep_time=self.def_sleep_time,
+                            time_out=self.def_timeout)
                     self.report.log("Instance '%s' has gone '%s' in %s." %
                                     (instance_id, status,
                                      self._time_since(start_time)))

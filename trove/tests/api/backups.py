@@ -80,7 +80,8 @@ class CreateBackups(object):
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.create,
                       BACKUP_NAME, generate_uuid(), BACKUP_DESC)
 
-    @test
+    @test(runs_after=[test_backup_create_instance_invalid,
+                      test_backup_create_instance_not_found])
     def test_backup_create_instance(self):
         """Test create backup for a given instance."""
         # Necessary to test that the count increases.
@@ -89,6 +90,9 @@ class CreateBackups(object):
         global backup_count_for_instance_prior_to_create
         backup_count_for_instance_prior_to_create = len(
             instance_info.dbaas.instances.backups(instance_info.id))
+        datastore_version = instance_info.dbaas.datastore_versions.get(
+            instance_info.dbaas_datastore,
+            instance_info.dbaas_datastore_version)
 
         result = instance_info.dbaas.backups.create(BACKUP_NAME,
                                                     instance_info.id,
@@ -100,10 +104,6 @@ class CreateBackups(object):
         assert_equal(instance_info.id, result.instance_id)
         assert_equal('NEW', result.status)
         instance = instance_info.dbaas.instances.get(instance_info.id)
-
-        datastore_version = instance_info.dbaas.datastore_versions.get(
-            instance_info.dbaas_datastore,
-            instance_info.dbaas_datastore_version)
 
         assert_equal('BACKUP', instance.status)
         assert_equal(instance_info.dbaas_datastore,

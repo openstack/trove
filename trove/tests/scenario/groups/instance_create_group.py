@@ -45,7 +45,17 @@ class InstanceCreateGroup(TestGroup):
         """Create an empty instance."""
         self.test_runner.run_empty_instance_create()
 
-    @test(runs_after=[create_empty_instance])
+
+@test(depends_on_groups=[groups.INST_CREATE],
+      groups=[GROUP, groups.INST_INIT_CREATE])
+class InstanceInitCreateGroup(TestGroup):
+    """Test Instance Init Create functionality."""
+
+    def __init__(self):
+        super(InstanceInitCreateGroup, self).__init__(
+            InstanceCreateRunnerFactory.instance())
+
+    @test
     def create_initial_configuration(self):
         """Create a configuration group for a new initialized instance."""
         self.test_runner.run_initial_configuration_create()
@@ -59,7 +69,7 @@ class InstanceCreateGroup(TestGroup):
 @test(depends_on_groups=[groups.INST_CREATE],
       groups=[GROUP, groups.INST_CREATE_WAIT],
       runs_after_groups=[groups.MODULE_CREATE, groups.CFGGRP_CREATE,
-                         groups.INST_ERROR_CREATE_WAIT])
+                         groups.INST_ERROR_DELETE])
 class InstanceCreateWaitGroup(TestGroup):
     """Test that Instance Create Completes."""
 
@@ -68,11 +78,27 @@ class InstanceCreateWaitGroup(TestGroup):
             InstanceCreateRunnerFactory.instance())
 
     @test
-    def wait_for_instances(self):
-        """Waiting for all instances to become active."""
-        self.test_runner.run_wait_for_created_instances()
+    def wait_for_instance(self):
+        """Waiting for main instance to become active."""
+        self.test_runner.run_wait_for_instance()
 
-    @test(depends_on=[wait_for_instances])
+
+@test(depends_on_groups=[groups.INST_INIT_CREATE],
+      groups=[GROUP, groups.INST_INIT_CREATE_WAIT],
+      runs_after_groups=[groups.INST_CREATE_WAIT])
+class InstanceInitCreateWaitGroup(TestGroup):
+    """Test that Instance Init Create Completes."""
+
+    def __init__(self):
+        super(InstanceInitCreateWaitGroup, self).__init__(
+            InstanceCreateRunnerFactory.instance())
+
+    @test
+    def wait_for_init_instance(self):
+        """Waiting for init instance to become active."""
+        self.test_runner.run_wait_for_init_instance()
+
+    @test(depends_on=[wait_for_init_instance])
     def add_initialized_instance_data(self):
         """Add data to the initialized instance."""
         self.test_runner.run_add_initialized_instance_data()
@@ -83,7 +109,7 @@ class InstanceCreateWaitGroup(TestGroup):
         self.test_runner.run_validate_initialized_instance()
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+@test(depends_on_groups=[groups.INST_INIT_CREATE_WAIT],
       groups=[GROUP, groups.INST_INIT_DELETE])
 class InstanceInitDeleteGroup(TestGroup):
     """Test Initialized Instance Delete functionality."""

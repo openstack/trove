@@ -58,8 +58,6 @@ class InstanceCreateRunner(TestRunner):
             instance_info.dbaas_datastore_version)
         self.instance_info.dbaas_flavor_href = instance_info.dbaas_flavor_href
         self.instance_info.volume = instance_info.volume
-        self.instance_info.srv_grp_id = self.assert_server_group_exists(
-            self.instance_info.id)
         self.instance_info.helper_user = instance_info.helper_user
         self.instance_info.helper_database = instance_info.helper_database
 
@@ -230,18 +228,19 @@ class InstanceCreateRunner(TestRunner):
 
         return instance_info
 
-    def run_wait_for_created_instances(
+    def run_wait_for_instance(
             self, expected_states=['BUILD', 'ACTIVE']):
         instances = [self.instance_info.id]
-        if self.init_inst_info:
-            instances.append(self.init_inst_info.id)
         self.assert_all_instance_states(instances, expected_states)
-
-        # It may take some time before the initial users/databases
-        # appear on the instance after it went ACTIVE.
-        # We need to wait for that before we can proceed with data operations.
+        self.instance_info.srv_grp_id = self.assert_server_group_exists(
+            self.instance_info.id)
         self.wait_for_test_helpers(self.instance_info)
+
+    def run_wait_for_init_instance(
+            self, expected_states=['BUILD', 'ACTIVE']):
         if self.init_inst_info:
+            instances = [self.init_inst_info.id]
+            self.assert_all_instance_states(instances, expected_states)
             self.wait_for_test_helpers(self.init_inst_info)
 
     def wait_for_test_helpers(self, inst_info):

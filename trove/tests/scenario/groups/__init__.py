@@ -71,6 +71,8 @@ INST_UPGRADE = "scenario.inst_upgrade_grp"
 # Instance Create Group
 INST_CREATE = "scenario.inst_create_grp"
 INST_CREATE_WAIT = "scenario.inst_create_wait_grp"
+INST_INIT_CREATE = "scenario.inst_init_create_grp"
+INST_INIT_CREATE_WAIT = "scenario.inst_init_create_wait_grp"
 INST_INIT_DELETE = "scenario.inst_init_delete_grp"
 INST_INIT_DELETE_WAIT = "scenario.inst_init_delete_wait_grp"
 

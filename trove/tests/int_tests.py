@@ -154,17 +154,21 @@ cluster_actions_groups.extend([cluster_actions_group.GROUP,
 
 # Single-instance based groups
 instance_create_groups = list(base_groups)
-instance_create_groups.extend([instance_create_group.GROUP,
-                               instance_delete_group.GROUP])
+instance_create_groups.extend([groups.INST_CREATE,
+                               groups.INST_DELETE_WAIT])
 
 instance_error_create_groups = list(base_groups)
 instance_error_create_groups.extend([instance_error_create_group.GROUP])
 
-instance_upgrade_groups = list(instance_create_groups)
-instance_upgrade_groups.extend([instance_upgrade_group.GROUP])
-
 instance_force_delete_groups = list(base_groups)
 instance_force_delete_groups.extend([instance_force_delete_group.GROUP])
+
+instance_init_groups = list(base_groups)
+instance_init_groups.extend([instance_create_group.GROUP,
+                             instance_delete_group.GROUP])
+
+instance_upgrade_groups = list(instance_create_groups)
+instance_upgrade_groups.extend([instance_upgrade_group.GROUP])
 
 backup_groups = list(instance_create_groups)
 backup_groups.extend([groups.BACKUP,
@@ -214,7 +218,7 @@ user_actions_groups.extend([user_actions_group.GROUP])
 
 # groups common to all datastores
 common_groups = list(instance_groups)
-common_groups.extend([guest_log_groups, module_groups])
+common_groups.extend([guest_log_groups, instance_init_groups, module_groups])
 
 # Register: Component based groups
 register(["backup"], backup_groups)
@@ -230,6 +234,7 @@ register(["instance_actions"], instance_actions_groups)
 register(["instance_create"], instance_create_groups)
 register(["instance_error"], instance_error_create_groups)
 register(["instance_force_delete"], instance_force_delete_groups)
+register(["instance_init"], instance_init_groups)
 register(["instance_upgrade"], instance_upgrade_groups)
 register(["module"], module_groups)
 register(["module_create"], module_create_groups)
