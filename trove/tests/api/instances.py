@@ -282,8 +282,6 @@ class CreateInstanceQuotaTest(unittest.TestCase):
                       self.test_info.user.tenant_id, quota_dict)
 
     def test_create_too_many_instances(self):
-        raise SkipTest(
-            "Skipping until https://review.openstack.org/#/c/331323 merges")
         instance_quota = 0
         quota_dict = {'instances': instance_quota}
         new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
