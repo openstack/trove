@@ -15,6 +15,7 @@
 
 import os
 from tempfile import NamedTemporaryFile
+import traceback
 
 from oslo_log import log as logging
 import pexpect
@@ -131,8 +132,11 @@ class VolumeDevice(object):
                           run_as_root=True, root_helper="sudo")
         except ProcessExecutionError:
             LOG.exception(_("Error resizing file system."))
-            raise GuestError(original_message=_(
-                "Error resizing the filesystem: %s") % self.device_path)
+            msg = _("Error resizing the filesystem with device '%(dev)s'.\n"
+                    "Exc: %(exc)s") % (
+                        {'dev': self.device_path,
+                         'exc': traceback.format_exc()})
+            raise GuestError(original_message=msg)
 
     def unmount(self, mount_point):
         if operating_system.is_mount(mount_point):
