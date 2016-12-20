@@ -364,7 +364,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         finally:
             if error_message:
                 inst_models.save_instance_fault(
-                    self.id, error_message, error_details)
+                    self.id, error_message, error_details,
+                    skip_delta=USAGE_SLEEP_TIME + 1)
 
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,

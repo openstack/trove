@@ -1534,7 +1534,7 @@ def persist_instance_fault(notification, event_qualifier):
         save_instance_fault(instance_id, message, details)
 
 
-def save_instance_fault(instance_id, message, details):
+def save_instance_fault(instance_id, message, details, skip_delta=None):
     if instance_id:
         try:
             # Make sure it's a valid id - sometimes the error is related
@@ -1544,8 +1544,19 @@ def save_instance_fault(instance_id, message, details):
             det = utils.format_output(details)
             try:
                 fault = DBInstanceFault.find_by(instance_id=instance_id)
-                fault.set_info(msg, det)
-                fault.save()
+                skip = False
+                # If we were passed in a skip_delta, only update the fault
+                # if the old one is at least skip_delta seconds in the past
+                if skip_delta:
+                    skip_time = fault.updated + timedelta(seconds=skip_delta)
+                    now = datetime.now()
+                    skip = now < skip_time
+                if skip:
+                    LOG.debug(
+                        "Skipping fault message in favor of previous one")
+                else:
+                    fault.set_info(msg, det)
+                    fault.save()
             except exception.ModelNotFoundError:
                 DBInstanceFault.create(
                     instance_id=instance_id,

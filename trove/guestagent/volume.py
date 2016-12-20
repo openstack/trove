@@ -14,15 +14,14 @@
 #    under the License.
 
 import os
+import shlex
 from tempfile import NamedTemporaryFile
 import traceback
 
 from oslo_log import log as logging
-import pexpect
 
 from trove.common import cfg
-from trove.common.exception import GuestError
-from trove.common.exception import ProcessExecutionError
+from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
@@ -31,6 +30,12 @@ TMP_MOUNT_POINT = "/mnt/volume"
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+
+
+def log_and_raise(message):
+    LOG.exception(message)
+    raise_msg = message + _("\nExc: %s") % traceback.format_exc()
+    raise exception.GuestError(original_message=raise_msg)
 
 
 class VolumeDevice(object):
@@ -48,9 +53,14 @@ class VolumeDevice(object):
         target_dir = TMP_MOUNT_POINT
         if target_subdir:
             target_dir = target_dir + "/" + target_subdir
-        utils.execute("sudo", "rsync", "--safe-links", "--perms",
-                      "--recursive", "--owner", "--group", "--xattrs",
-                      "--sparse", source_dir, target_dir)
+        try:
+            utils.execute("rsync", "--safe-links", "--perms",
+                          "--recursive", "--owner", "--group", "--xattrs",
+                          "--sparse", source_dir, target_dir,
+                          run_as_root=True, root_helper="sudo")
+        except exception.ProcessExecutionError:
+            msg = _("Could not migrate data.")
+            log_and_raise(msg)
         self.unmount(TMP_MOUNT_POINT)
 
     def _check_device_exists(self):
@@ -64,46 +74,48 @@ class VolumeDevice(object):
             num_tries = CONF.num_tries
             LOG.debug("Checking if %s exists." % self.device_path)
 
-            utils.execute('sudo', 'blockdev', '--getsize64', self.device_path,
+            utils.execute("blockdev", "--getsize64", self.device_path,
+                          run_as_root=True, root_helper="sudo",
                           attempts=num_tries)
-        except ProcessExecutionError:
-            LOG.exception(_("Error getting device status"))
-            raise GuestError(original_message=_(
-                "InvalidDevicePath(path=%s)") % self.device_path)
+        except exception.ProcessExecutionError:
+            msg = _("Device '%s' is not ready.") % self.device_path
+            log_and_raise(msg)
 
     def _check_format(self):
-        """Checks that an unmounted volume is formatted."""
-        cmd = "sudo dumpe2fs %s" % self.device_path
-        LOG.debug("Checking whether %s is formatted: %s." %
-                  (self.device_path, cmd))
-
-        child = pexpect.spawn(cmd)
+        """Checks that a volume is formatted."""
+        LOG.debug("Checking whether '%s' is formatted." % self.device_path)
         try:
-            i = child.expect(['has_journal', 'Wrong magic number'])
-            if i == 0:
-                return
-            volume_fstype = CONF.volume_fstype
-            raise IOError(
-                _('Device path at {0} did not seem to be {1}.').format(
-                    self.device_path, volume_fstype))
-
-        except pexpect.EOF:
-            raise IOError(_("Volume was not formatted."))
-        child.expect(pexpect.EOF)
+            stdout, stderr = utils.execute(
+                "dumpe2fs", self.device_path,
+                run_as_root=True, root_helper="sudo")
+            if 'has_journal' not in stdout:
+                msg = _("Volume '%s' does not appear to be formatted.") % (
+                    self.device_path)
+                raise exception.GuestError(original_message=msg)
+        except exception.ProcessExecutionError as pe:
+            if 'Wrong magic number' in pe.stderr:
+                volume_fstype = CONF.volume_fstype
+                msg = _("'Device '%(dev)s' did not seem to be '%(type)s'.") % (
+                    {'dev': self.device_path, 'type': volume_fstype})
+                log_and_raise(msg)
+            msg = _("Volume '%s' was not formatted.") % self.device_path
+            log_and_raise(msg)
 
     def _format(self):
         """Calls mkfs to format the device at device_path."""
         volume_fstype = CONF.volume_fstype
-        format_options = CONF.format_options
-        cmd = "sudo mkfs -t %s %s %s" % (volume_fstype,
-                                         format_options, self.device_path)
+        format_options = shlex.split(CONF.format_options)
+        format_options.append(self.device_path)
         volume_format_timeout = CONF.volume_format_timeout
-        LOG.debug("Formatting %s. Executing: %s." %
-                  (self.device_path, cmd))
-        child = pexpect.spawn(cmd, timeout=volume_format_timeout)
-        # child.expect("(y,n)")
-        # child.sendline('y')
-        child.expect(pexpect.EOF)
+        LOG.debug("Formatting '%s'." % self.device_path)
+        try:
+            utils.execute_with_timeout(
+                "mkfs", "--type", volume_fstype, *format_options,
+                run_as_root=True, root_helper="sudo",
+                timeout=volume_format_timeout)
+        except exception.ProcessExecutionError:
+            msg = _("Could not format '%s'.") % self.device_path
+            log_and_raise(msg)
 
     def format(self):
         """Formats the device at device_path and checks the filesystem."""
@@ -120,59 +132,77 @@ class VolumeDevice(object):
         if write_to_fstab:
             mount_point.write_to_fstab()
 
+    def _wait_for_mount(self, mount_point, timeout=2):
+        """Wait for a fs to be mounted."""
+        def wait_for_mount():
+            return operating_system.is_mount(mount_point)
+
+        try:
+            utils.poll_until(wait_for_mount, sleep_time=1, time_out=timeout)
+        except exception.PollTimeOut:
+            return False
+
+        return True
+
     def resize_fs(self, mount_point):
         """Resize the filesystem on the specified device."""
         self._check_device_exists()
+        # Some OS's will mount a file systems after it's attached if
+        # an entry is put in the fstab file (like Trove does).
+        # Thus it may be necessary to wait for the mount and then unmount
+        # the fs again (since the volume was just attached).
+        if self._wait_for_mount(mount_point, timeout=2):
+            LOG.debug("Unmounting '%s' before resizing." % mount_point)
+            self.unmount(mount_point)
         try:
-            # check if the device is mounted at mount_point before e2fsck
-            if not os.path.ismount(mount_point):
-                utils.execute("e2fsck", "-f", "-p", self.device_path,
-                              run_as_root=True, root_helper="sudo")
+            utils.execute("e2fsck", "-f", "-p", self.device_path,
+                          run_as_root=True, root_helper="sudo")
             utils.execute("resize2fs", self.device_path,
                           run_as_root=True, root_helper="sudo")
-        except ProcessExecutionError:
-            LOG.exception(_("Error resizing file system."))
-            msg = _("Error resizing the filesystem with device '%(dev)s'.\n"
-                    "Exc: %(exc)s") % (
-                        {'dev': self.device_path,
-                         'exc': traceback.format_exc()})
-            raise GuestError(original_message=msg)
+        except exception.ProcessExecutionError:
+            msg = _("Error resizing the filesystem with device '%s'.") % (
+                self.device_path)
+            log_and_raise(msg)
 
     def unmount(self, mount_point):
         if operating_system.is_mount(mount_point):
-            cmd = "sudo umount %s" % mount_point
-            child = pexpect.spawn(cmd)
-            child.expect(pexpect.EOF)
+            try:
+                utils.execute("umount", mount_point,
+                              run_as_root=True, root_helper='sudo')
+            except exception.ProcessExecutionError:
+                msg = _("Error unmounting '%s'.") % mount_point
+                log_and_raise(msg)
+        else:
+            LOG.debug("'%s' is not a mounted fs, cannot unmount", mount_point)
 
     def unmount_device(self, device_path):
         # unmount if device is already mounted
         mount_points = self.mount_points(device_path)
         for mnt in mount_points:
-            LOG.info(_("Device %(device)s is already mounted in "
-                       "%(mount_point)s. Unmounting now.") %
+            LOG.info(_("Device '%(device)s' is mounted on "
+                       "'%(mount_point)s'. Unmounting now.") %
                      {'device': device_path, 'mount_point': mnt})
             self.unmount(mnt)
 
     def mount_points(self, device_path):
         """Returns a list of mount points on the specified device."""
         stdout, stderr = utils.execute(
-            "grep %s /etc/mtab" % device_path,
+            "grep '^%s ' /etc/mtab" % device_path,
             shell=True, check_exit_code=[0, 1])
         return [entry.strip().split()[1] for entry in stdout.splitlines()]
 
-    def set_readahead_size(self, readahead_size,
-                           execute_function=utils.execute):
+    def set_readahead_size(self, readahead_size):
         """Set the readahead size of disk."""
         self._check_device_exists()
         try:
-            execute_function("sudo", "blockdev", "--setra",
-                             readahead_size, self.device_path)
-        except ProcessExecutionError:
-            LOG.exception(_("Error setting readhead size to %(size)s "
-                            "for device %(device)s.") %
-                          {'size': readahead_size, 'device': self.device_path})
-            raise GuestError(original_message=_(
-                "Error setting readhead size: %s.") % self.device_path)
+            utils.execute("blockdev", "--setra",
+                          readahead_size, self.device_path,
+                          run_as_root=True, root_helper="sudo")
+        except exception.ProcessExecutionError:
+            msg = _("Error setting readahead size to %(size)s "
+                    "for device %(device)s.") % {
+                'size': readahead_size, 'device': self.device_path}
+            log_and_raise(msg)
 
 
 class VolumeMountPoint(object):
@@ -184,17 +214,21 @@ class VolumeMountPoint(object):
         self.mount_options = CONF.mount_options
 
     def mount(self):
-        if not os.path.exists(self.mount_point):
+        if not operating_system.exists(self.mount_point, is_directory=True,
+                                       as_root=True):
             operating_system.create_directory(self.mount_point, as_root=True)
         LOG.debug("Mounting volume. Device path:{0}, mount_point:{1}, "
                   "volume_type:{2}, mount options:{3}".format(
                       self.device_path, self.mount_point, self.volume_fstype,
                       self.mount_options))
-        cmd = ("sudo mount -t %s -o %s %s %s" %
-               (self.volume_fstype, self.mount_options, self.device_path,
-                self.mount_point))
-        child = pexpect.spawn(cmd)
-        child.expect(pexpect.EOF)
+        try:
+            utils.execute("mount", "-t", self.volume_fstype,
+                          "-o", self.mount_options,
+                          self.device_path, self.mount_point,
+                          run_as_root=True, root_helper="sudo")
+        except exception.ProcessExecutionError:
+            msg = _("Could not mount '%s'.") % self.mount_point
+            log_and_raise(msg)
 
     def write_to_fstab(self):
         fstab_line = ("%s\t%s\t%s\t%s\t0\t0" %
@@ -205,6 +239,11 @@ class VolumeMountPoint(object):
             fstab_content = fstab.read()
         with NamedTemporaryFile(mode='w', delete=False) as tempfstab:
             tempfstab.write(fstab_content + fstab_line)
-        utils.execute("sudo", "install", "-o", "root", "-g", "root", "-m",
-                      "644", tempfstab.name, "/etc/fstab")
+        try:
+            utils.execute("install", "-o", "root", "-g", "root",
+                          "-m", "644", tempfstab.name, "/etc/fstab",
+                          run_as_root=True, root_helper="sudo")
+        except exception.ProcessExecutionError:
+            msg = _("Could not add '%s' to fstab.") % self.mount_point
+            log_and_raise(msg)
         os.remove(tempfstab.name)
