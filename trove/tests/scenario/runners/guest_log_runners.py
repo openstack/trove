@@ -481,8 +481,9 @@ class GuestLogRunner(TestRunner):
             self.assert_log_publish(
                 self.auth_client,
                 log_name,
-                expected_status=guest_log.LogStatus.Published.name,
-                expected_published=1, expected_pending=0)
+                expected_status=[guest_log.LogStatus.Published.name,
+                                 guest_log.LogStatus.Partial.name],
+                expected_published=1, expected_pending=None)
 
     def run_test_add_data(self):
         self.test_helper.add_data(DataType.micro, self.get_instance_host())
@@ -495,9 +496,10 @@ class GuestLogRunner(TestRunner):
             self.assert_log_publish(
                 self.admin_client,
                 log_name,
-                expected_status=guest_log.LogStatus.Published.name,
+                expected_status=[guest_log.LogStatus.Published.name,
+                                 guest_log.LogStatus.Partial.name],
                 expected_published=self._get_last_log_published(log_name),
-                expected_pending=0)
+                expected_pending=None)
 
     def run_test_log_generator_user(self):
         for log_name in self._get_exposed_user_log_names():
