@@ -177,6 +177,30 @@ function ip_chunk() {
     get_ip_for_device $1 | cut -d. -f$2
 }
 
+function dump_env() {
+    # Print out the environment for debug purposes
+    if [[ -n ${TROVESTACK_DUMP_ENV} ]]; then
+        set +e
+        exclaim "Dumping configuration, starting with env vars:"
+        env | sort
+        CLOUDS_YAML=${CLOUDS_YAML:-/etc/openstack/clouds.yaml}
+        for filename in "${TEST_CONF}" "${CLOUDS_YAML}" "${TROVE_CONF}" "${PATH_DEVSTACK_SRC}/${LOCALRC}" "${PATH_DEVSTACK_SRC}/${LOCALRC_AUTO}"; do
+            if [[ -f ${filename} ]]; then
+                exclaim "Dumping contents of '${filename}':"
+                cat ${filename}
+            else
+                exclaim "File '${filename}' not found"
+            fi
+        done
+        exclaim "Dumping pip modules:"
+        pip freeze | sort
+        exclaim "Dumping domain list:"
+        openstack --os-cloud=devstack-admin domain list
+        exclaim "Dumping configuration completed"
+        set -e
+    fi
+}
+
 # Add a flavor and a corresponding flavor.resize
 # (flavor.resize adds 16 to the memory and one more vcpu)
 function add_flavor() {
@@ -994,11 +1018,12 @@ function cmd_int_tests() {
         args="$@"
     fi
 
+    dump_env
     # -- verbose makes it prettier.
     # -- logging-clear-handlers keeps the novaclient and other things from
     #    spewing logs to stdout.
     args="$INT_TEST_OPTIONS -B $TROVESTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
-    echo "python $args"
+    echo "Running: python $args"
     python $args
 }
 
@@ -1234,6 +1259,7 @@ function cmd_kick_start() {
     fi
 
     exclaim "Running kick-start for $DATASTORE_TYPE (restart trove: $RESTART_TROVE)"
+    dump_env
     cmd_test_init "${DATASTORE_TYPE}"
     cmd_build_and_upload_image "${DATASTORE_TYPE}" "${RESTART_TROVE}"
 }
@@ -1251,6 +1277,7 @@ function cmd_dsvm_gate_tests() {
     exclaim "Running cmd_dsvm_gate_tests ..."
     export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/dsvm-report/}
     export TROVE_REPORT_DIR=$HOME/dsvm-report/
+    TROVESTACK_DUMP_ENV=true
 
     # Devstack vm-gate runs as the jenkins user, but needs to connect to the guest image as ubuntu
     echo "User=ubuntu" >> /home/jenkins/.ssh/config
@@ -1430,7 +1457,7 @@ function run_command() {
         "run-ci" ) shift; cmd_run_ci $@;;
         "vagrant-ssh" ) shift; cmd_vagrant_ssh $@;;
         "debug" ) shift; echo "Enabling debugging."; \
-                  set -o xtrace; run_command $@;;
+                  set -o xtrace; TROVESTACK_DUMP_ENV=true; run_command $@;;
         "clear" ) shift; cmd_clear $@;;
         "clean" ) shift; cmd_clean $@;;
         "run" ) shift; cmd_run $@;;
