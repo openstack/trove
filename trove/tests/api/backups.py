@@ -26,7 +26,6 @@ from trove.common import exception
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
 from trove import tests
-from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
@@ -57,31 +56,6 @@ backup_count_for_instance_prior_to_create = 0
 class CreateBackups(object):
 
     @test
-    def test_backup_create_instance_invalid(self):
-        """Test create backup with unknown instance."""
-        invalid_inst_id = 'invalid-inst-id'
-        try:
-            instance_info.dbaas.backups.create(BACKUP_NAME, invalid_inst_id,
-                                               BACKUP_DESC)
-        except exceptions.BadRequest as e:
-            resp, body = instance_info.dbaas.client.last_response
-            assert_equal(resp.status, 400)
-            assert_equal(e.message,
-                         "Validation error: "
-                         "backup['instance'] u'%s' does not match "
-                         "'^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-"
-                         "([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-"
-                         "([0-9a-fA-F]){12}$'" %
-                         invalid_inst_id)
-
-    @test
-    def test_backup_create_instance_not_found(self):
-        """Test create backup with unknown instance."""
-        assert_raises(exceptions.NotFound, instance_info.dbaas.backups.create,
-                      BACKUP_NAME, generate_uuid(), BACKUP_DESC)
-
-    @test(runs_after=[test_backup_create_instance_invalid,
-                      test_backup_create_instance_not_found])
     def test_backup_create_instance(self):
         """Test create backup for a given instance."""
         # Necessary to test that the count increases.
@@ -111,37 +85,6 @@ class CreateBackups(object):
         assert_equal(instance_info.dbaas_datastore_version,
                      result.datastore['version'])
         assert_equal(datastore_version.id, result.datastore['version_id'])
-
-
-@test(runs_after=[CreateBackups],
-      groups=[GROUP, tests.INSTANCES])
-class AfterBackupCreation(object):
-
-    @test
-    def test_restore_instance_from_not_completed_backup(self):
-        assert_raises(exceptions.Conflict,
-                      RestoreUsingBackup._restore, backup_info.id)
-        assert_equal(409, instance_info.dbaas.last_http_code)
-
-    @test
-    def test_instance_action_right_after_backup_create(self):
-        """Test any instance action while backup is running."""
-        assert_unprocessable(instance_info.dbaas.instances.resize_instance,
-                             instance_info.id, 1)
-
-    @test
-    def test_backup_create_another_backup_running(self):
-        """Test create backup when another backup is running."""
-        assert_unprocessable(instance_info.dbaas.backups.create,
-                             'backup_test2', instance_info.id,
-                             'test description2')
-
-    @test
-    def test_backup_delete_still_running(self):
-        """Test delete backup when it is running."""
-        result = instance_info.dbaas.backups.list()
-        backup = result[0]
-        assert_unprocessable(instance_info.dbaas.backups.delete, backup.id)
 
 
 class BackupRestoreMixin(object):
@@ -198,7 +141,7 @@ class BackupRestoreMixin(object):
                    time_out=TIMEOUT_INSTANCE_CREATE)
 
 
-@test(runs_after=[AfterBackupCreation],
+@test(runs_after=[CreateBackups],
       groups=[GROUP, tests.INSTANCES])
 class WaitForBackupCreateToFinish(BackupRestoreMixin):
     """
