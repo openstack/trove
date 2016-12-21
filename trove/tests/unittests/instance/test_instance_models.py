@@ -292,7 +292,8 @@ class TestInstanceUpgrade(trove_testtools.TestCase):
 
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(task_api.API, 'upgrade')
-    def test_upgrade(self, task_upgrade):
+    @patch('trove.tests.fakes.nova.LOG')
+    def test_upgrade(self, mock_logging, task_upgrade):
         instance_model = DBInstance(
             InstanceTasks.NONE,
             id=str(uuid.uuid4()),
