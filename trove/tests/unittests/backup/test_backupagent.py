@@ -356,7 +356,8 @@ class BackupAgentTest(trove_testtools.TestCase):
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(conductor_api.API, 'update_backup',
                   Mock(return_value=Mock()))
-    def test_execute_bad_process_backup(self):
+    @patch('trove.guestagent.backup.backupagent.LOG')
+    def test_execute_bad_process_backup(self, mock_logging):
         agent = backupagent.BackupAgent()
         backup_info = {'id': '123',
                        'location': 'fake-location',
@@ -516,7 +517,8 @@ class BackupAgentTest(trove_testtools.TestCase):
                 ANY, ANY, metadata=expected_metadata)
 
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
-    def test_backup_incremental_bad_metadata(self):
+    @patch('trove.guestagent.backup.backupagent.LOG')
+    def test_backup_incremental_bad_metadata(self, mock_logging):
         with patch.object(backupagent, 'get_storage_strategy',
                           return_value=MockSwift):
 
