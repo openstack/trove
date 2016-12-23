@@ -21,6 +21,8 @@
 # Backup Group
 BACKUP = "scenario.backup_grp"
 BACKUP_CREATE = "scenario.backup_create_grp"
+BACKUP_CREATE_NEGATIVE = "scenario.backup_create_negative_grp"
+BACKUP_CREATE_WAIT = "scenario.backup_create_wait_grp"
 BACKUP_DELETE = "scenario.backup_delete_grp"
 BACKUP_INST = "scenario.backup_inst_grp"
 BACKUP_INST_CREATE = "scenario.backup_inst_create_grp"

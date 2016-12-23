@@ -177,6 +177,9 @@ backup_groups.extend([groups.BACKUP,
 backup_incremental_groups = list(backup_groups)
 backup_incremental_groups.extend([backup_group.GROUP])
 
+backup_negative_groups = list(backup_groups)
+backup_negative_groups.extend([groups.BACKUP_CREATE_NEGATIVE])
+
 configuration_groups = list(instance_create_groups)
 configuration_groups.extend([configuration_group.GROUP])
 
@@ -223,6 +226,7 @@ common_groups.extend([guest_log_groups, instance_init_groups, module_groups])
 # Register: Component based groups
 register(["backup"], backup_groups)
 register(["backup_incremental"], backup_incremental_groups)
+register(["backup_negative"], backup_negative_groups)
 register(["cluster"], cluster_actions_groups)
 register(["common"], common_groups)
 register(["configuration"], configuration_groups)
@@ -343,7 +347,8 @@ register(
 register(
     ["redis_supported"],
     single=[common_groups,
-            backup_groups, ],
+            backup_groups,
+            backup_negative_groups, ],
     multi=[replication_promote_groups, ]
 )
 

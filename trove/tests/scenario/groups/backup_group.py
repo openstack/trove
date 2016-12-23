@@ -60,47 +60,63 @@ class BackupCreateGroup(TestGroup):
         """Check that create backup is started successfully."""
         self.test_runner.run_backup_create()
 
-    @test(depends_on=[backup_create])
+
+@test(depends_on_groups=[groups.BACKUP_CREATE],
+      groups=[groups.BACKUP_CREATE_NEGATIVE])
+class BackupCreateNegativeGroup(TestGroup):
+    """Test Backup Create Negative functionality."""
+
+    def __init__(self):
+        super(BackupCreateNegativeGroup, self).__init__(
+            BackupRunnerFactory.instance())
+
+    @test
     def backup_delete_while_backup_running(self):
         """Ensure delete backup fails while it is running."""
         self.test_runner.run_backup_delete_while_backup_running()
 
-    @test(depends_on=[backup_create],
-          runs_after=[backup_delete_while_backup_running])
+    @test(runs_after=[backup_delete_while_backup_running])
     def restore_instance_from_not_completed_backup(self):
         """Ensure a restore fails while the backup is running."""
         self.test_runner.run_restore_instance_from_not_completed_backup()
 
-    @test(depends_on=[backup_create],
-          runs_after=[restore_instance_from_not_completed_backup])
+    @test(runs_after=[restore_instance_from_not_completed_backup])
     def backup_create_another_backup_running(self):
         """Ensure create backup fails when another backup is running."""
         self.test_runner.run_backup_create_another_backup_running()
 
-    @test(depends_on=[backup_create],
-          runs_after=[backup_create_another_backup_running])
+    @test(runs_after=[backup_create_another_backup_running])
     def instance_action_right_after_backup_create(self):
         """Ensure any instance action fails while backup is running."""
         self.test_runner.run_instance_action_right_after_backup_create()
 
-    @test
+    @test(runs_after=[instance_action_right_after_backup_create])
     def delete_unknown_backup(self):
         """Ensure deleting an unknown backup fails."""
         self.test_runner.run_delete_unknown_backup()
 
-    @test
+    @test(runs_after=[instance_action_right_after_backup_create])
     def backup_create_instance_invalid(self):
         """Ensure create backup fails with invalid instance id."""
         self.test_runner.run_backup_create_instance_invalid()
 
-    @test
+    @test(runs_after=[instance_action_right_after_backup_create])
     def backup_create_instance_not_found(self):
         """Ensure create backup fails with unknown instance id."""
         self.test_runner.run_backup_create_instance_not_found()
 
-    @test(depends_on=[backup_create],
-          runs_after=[delete_unknown_backup, backup_create_instance_invalid,
-                      backup_create_instance_not_found])
+
+@test(depends_on_groups=[groups.BACKUP_CREATE],
+      groups=[GROUP, groups.BACKUP, groups.BACKUP_CREATE_WAIT],
+      runs_after_groups=[groups.BACKUP_CREATE_NEGATIVE])
+class BackupCreateWaitGroup(TestGroup):
+    """Wait for Backup Create to Complete."""
+
+    def __init__(self):
+        super(BackupCreateWaitGroup, self).__init__(
+            BackupRunnerFactory.instance())
+
+    @test
     def backup_create_completed(self):
         """Check that the backup completes successfully."""
         self.test_runner.run_backup_create_completed()
