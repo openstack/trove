@@ -221,53 +221,54 @@ class TestHelper(object):
         Since this method may be called multiple times, the
         'add_actual_data' function should be idempotent.
         """
-        self._perform_data_action(self.FN_ADD, data_type.name, host,
-                                  *args, **kwargs)
+        self._perform_data_action(self.FN_ADD, data_type.name,
+                                  host, *args, **kwargs)
 
     def remove_data(self, data_type, host, *args, **kwargs):
         """Removes all data associated with 'data_type'.  See
         instructions for 'add_data' for implementation guidance.
         """
-        self._perform_data_action(self.FN_REMOVE, data_type.name, host,
-                                  *args, **kwargs)
+        self._perform_data_action(self.FN_REMOVE, data_type.name,
+                                  host, *args, **kwargs)
 
     def verify_data(self, data_type, host, *args, **kwargs):
         """Verify that the data of type 'data_type' exists in the
         datastore.  This can be done by testing edge cases, and possibly
         some random elements within the set.  See
         instructions for 'add_data' for implementation guidance.
-        By default, the verification is attempted 10 times, sleeping for 3
+        """
+        self._perform_data_action(self.FN_VERIFY, data_type.name,
+                                  host, *args, **kwargs)
+
+    def _perform_data_action(self, fn_type, fn_name, host,
+                             *args, **kwargs):
+        """By default, the action is attempted 10 times, sleeping for 3
         seconds between each attempt.  This can be controlled by the
         retry_count and retry_sleep kwarg values.
         """
         retry_count = kwargs.pop('retry_count', 10) or 0
         retry_sleep = kwargs.pop('retry_sleep', 3) or 0
+
+        fns = self._data_fns[fn_type]
+        data_fn_name = self.data_fn_pattern % (fn_type, fn_name)
         attempts = -1
         while True:
             attempts += 1
             try:
-                self._perform_data_action(self.FN_VERIFY, data_type.name, host,
-                                          *args, **kwargs)
+                fns[data_fn_name](self, host, *args, **kwargs)
                 break
+            except SkipTest:
+                raise
             except Exception as ex:
-                self.report.log("Attempt %d to verify data type %s failed\n%s"
-                                % (attempts, data_type.name, ex))
+                self.report.log("Attempt %d to %s data type %s failed\n%s"
+                                % (attempts, fn_type, fn_name, ex))
                 if attempts > retry_count:
-                    raise
+                    raise RuntimeError("Error calling %s from class %s - %s" %
+                                       (data_fn_name, self.__class__.__name__,
+                                        ex))
                 self.report.log("Trying again (after %d second sleep)" %
                                 retry_sleep)
                 sleep(retry_sleep)
-
-    def _perform_data_action(self, fn_type, fn_name, host, *args, **kwargs):
-        fns = self._data_fns[fn_type]
-        data_fn_name = self.data_fn_pattern % (fn_type, fn_name)
-        try:
-            fns[data_fn_name](self, host, *args, **kwargs)
-        except SkipTest:
-            raise
-        except Exception as ex:
-            raise RuntimeError("Error calling %s from class %s - %s" %
-                               (data_fn_name, self.__class__.__name__, ex))
 
     def _build_data_fns(self):
         """Build the base data functions specified by FN_TYPE_*
