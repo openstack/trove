@@ -27,7 +27,6 @@ __all__ = [
     'get_client',
     'get_server',
     'get_notifier',
-    'TRANSPORT_ALIASES',
 ]
 
 
@@ -50,23 +49,12 @@ ALLOWED_EXMODS = [
 
 EXTRA_EXMODS = []
 
-# TODO(esp): Remove or update these paths
-TRANSPORT_ALIASES = {
-    'trove.openstack.common.rpc.impl_kombu': 'rabbit',
-    'trove.openstack.common.rpc.impl_qpid': 'qpid',
-    'trove.openstack.common.rpc.impl_zmq': 'zmq',
-    'trove.rpc.impl_kombu': 'rabbit',
-    'trove.rpc.impl_qpid': 'qpid',
-    'trove.rpc.impl_zmq': 'zmq',
-}
-
 
 def init(conf):
     global TRANSPORT, NOTIFIER
     exmods = get_allowed_exmods()
     TRANSPORT = messaging.get_transport(conf,
-                                        allowed_remote_exmods=exmods,
-                                        aliases=TRANSPORT_ALIASES)
+                                        allowed_remote_exmods=exmods)
 
     serializer = RequestContextSerializer(JsonPayloadSerializer())
     NOTIFIER = messaging.Notifier(TRANSPORT, serializer=serializer)
@@ -137,7 +125,7 @@ class RequestContextSerializer(messaging.Serializer):
 
 
 def get_transport_url(url_str=None):
-    return messaging.TransportURL.parse(CONF, url_str, TRANSPORT_ALIASES)
+    return messaging.TransportURL.parse(CONF, url_str)
 
 
 def get_client(target, version_cap=None, serializer=None):
