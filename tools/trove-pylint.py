@@ -194,6 +194,13 @@ def usage():
     print("\t   rebuild: rebuild the list of exceptions to ignore.")
     return 0
 
+class ParseableTextReporter(text.TextReporter):
+    name = 'parseable'
+    line_format = '{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}'
+
+    # that's it folks
+
+
 class LintRunner(object):
     def __init__(self):
         self.config = Config()
@@ -204,7 +211,7 @@ class LintRunner(object):
         exceptions = set()
 
         buffer = csio()
-        reporter = text.ParseableTextReporter(output=buffer)
+        reporter = ParseableTextReporter(output=buffer)
         options = list(self.config.get('options'))
         options.append(filename)
         lint.Run(options, reporter=reporter, exit=False)
@@ -226,8 +233,8 @@ class LintRunner(object):
                 func = tokens[4]
                 message = tokens[5]
 
-            if not self.config.ignore(fn, code, codename, message):
-                exceptions.add((fn, ln, code, codename, func, message))
+                if not self.config.ignore(fn, code, codename, message):
+                    exceptions.add((fn, ln, code, codename, func, message))
 
         return exceptions
 
