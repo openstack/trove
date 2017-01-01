@@ -1084,12 +1084,12 @@ function cmd_example_tests() {
 
 function mysql_nova() {
     echo mysql nova --execute "$@"
-    mysql -u root -p$MYSQL_PASSWORD nova --execute "$@"
+    mysql -u root -p$MYSQL_PASSWORD nova --execute "$@"  2> /dev/null
 }
 
 function mysql_trove() {
     echo mysql trove --execute "$@"
-    mysql -u root -p$MYSQL_PASSWORD trove --execute "$@"
+    mysql -u root -p$MYSQL_PASSWORD trove --execute "$@" 2> /dev/null
 }
 
 function cmd_wipe_logs() {
@@ -1230,6 +1230,12 @@ function cmd_clean() {
         exit 1
     fi
     source "${PATH_DEVSTACK_SRC}"/accrc/${project_name}/admin
+    local cloud_arg=$CLOUD_ADMIN_ARG
+    if [[ $project_name == *"alt"* ]]; then
+        cloud_arg="--os-cloud=devstack-alt-admin"
+    elif [[ $project_name == "demo" ]]; then
+        cloud_arg="--os-cloud=devstack"
+    fi
     # delete any trove clusters
     exec_cmd_on_output "trove cluster-list" "trove cluster-delete" 20
     # delete any trove instances
@@ -1237,16 +1243,16 @@ function cmd_clean() {
     # delete any backups
     exec_cmd_on_output "trove backup-list" "trove backup-delete"
     # clean up any remaining nova instances or cinder volumes
-    exec_cmd_on_output "openstack $CLOUD_ADMIN_ARG server list" "openstack $CLOUD_ADMIN_ARG server delete" 5
-    exec_cmd_on_output "openstack $CLOUD_ADMIN_ARG volume list" "openstack $CLOUD_ADMIN_ARG volume delete" 1
+    exec_cmd_on_output "openstack $cloud_arg server list" "openstack $cloud_arg server delete" 5
+    exec_cmd_on_output "openstack $cloud_arg volume list" "openstack $cloud_arg volume delete" 1
     # delete any config groups since all instances should be gone now
     exec_cmd_on_output "trove configuration-list" "trove configuration-delete"
     # delete any modules too
     exec_cmd_on_output "trove module-list" "trove module-delete"
     # make sure that security groups are also gone, except the default
-    exec_cmd_on_output "openstack $CLOUD_ADMIN_ARG security group list" "openstack $CLOUD_ADMIN_ARG security group delete" 0 "default"
+    exec_cmd_on_output "openstack $cloud_arg security group list" "openstack $cloud_arg security group delete" 0 "default"
     # delete server groups
-    exec_cmd_on_output "openstack $CLOUD_ADMIN_ARG server group list" "openstack $CLOUD_ADMIN_ARG server group delete"
+    exec_cmd_on_output "openstack $cloud_arg server group list" "openstack $cloud_arg server group delete"
 }
 
 function cmd_kick_start() {
