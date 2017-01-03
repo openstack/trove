@@ -533,6 +533,7 @@ class ConfigurationRunner(TestRunner):
             configuration=config_id)
         self.assert_client_code(client, 200)
         self.assert_equal("BUILD", result.status, 'Unexpected inst status')
+        self.register_debug_inst_ids(result.id)
         return result.id
 
     def run_wait_for_conf_instance(

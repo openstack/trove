@@ -72,6 +72,7 @@ class ReplicationRunner(TestRunner):
             nics=self.instance_info.nics,
             locality='anti-affinity').id
         self.assert_client_code(client, expected_http_code)
+        self.register_debug_inst_ids(self.non_affinity_master_id)
 
     def run_create_single_replica(self, expected_http_code=200):
         self.master_backup_count = len(
@@ -91,6 +92,7 @@ class ReplicationRunner(TestRunner):
             nics=self.instance_info.nics,
             replica_count=replica_count)
         self.assert_client_code(client, expected_http_code)
+        self.register_debug_inst_ids(replica.id)
         return replica.id
 
     def run_wait_for_single_replica(self, expected_states=['BUILD', 'ACTIVE']):
@@ -153,6 +155,7 @@ class ReplicationRunner(TestRunner):
             replica_of=self.non_affinity_master_id,
             replica_count=1).id
         self.assert_client_code(client, expected_http_code)
+        self.register_debug_inst_ids(self.non_affinity_repl_id)
 
     def run_create_multiple_replicas(self, expected_http_code=200):
         self.replica_2_id = self.assert_replica_create(

@@ -313,6 +313,7 @@ class BackupRunner(TestRunner):
         self.assert_client_code(client, expected_http_code)
         self.assert_equal('BUILD', result.status,
                           'Unexpected instance status')
+        self.register_debug_inst_ids(result.id)
         return result.id
 
     def _restore_from_backup(self, client, backup_ref, suffix=''):

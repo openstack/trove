@@ -103,6 +103,8 @@ class ClusterRunner(TestRunner):
                 instances=instances_def, locality=locality)
             self.assert_client_code(client, expected_http_code)
             self._assert_cluster_values(cluster, expected_task_name)
+            for instance in cluster.instances:
+                self.register_debug_inst_ids(instance['id'])
         return cluster.id
 
     def run_cluster_create_wait(self,

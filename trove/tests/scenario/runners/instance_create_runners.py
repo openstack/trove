@@ -197,6 +197,7 @@ class InstanceCreateRunner(TestRunner):
                 locality=locality)
             self.assert_client_code(client, expected_http_code)
             self.assert_instance_action(instance.id, expected_states[0:1])
+            self.register_debug_inst_ids(instance.id)
 
         instance_info.id = instance.id
 

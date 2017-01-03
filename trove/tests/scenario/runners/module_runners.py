@@ -949,6 +949,7 @@ class ModuleRunner(TestRunner):
             modules=[module_id],
         )
         self.assert_client_code(client, expected_http_code)
+        self.register_debug_inst_ids(inst.id)
         return inst.id
 
     def run_module_delete_applied(

@@ -18,7 +18,9 @@ import inspect
 import netaddr
 import os
 import proboscis
+import six
 import time as timer
+import types
 
 from oslo_config.cfg import NoSuchOptError
 from proboscis import asserts
@@ -179,6 +181,105 @@ class InstanceTestInfo(object):
         self.helper_database = None  # Test helper database if exists.
 
 
+class LogOnFail(type):
+
+    """Class to log info on failure.
+    This will decorate all methods that start with 'run_' with a log wrapper
+    that will do a show and attempt to pull back the guest log on all
+    registered IDs.
+    Use by setting up as a metaclass and calling the following:
+       add_inst_ids(): Instance ID or list of IDs to report on
+       set_client(): Admin client object
+       set_report(): Report object
+    The TestRunner class shows how this can be done in register_debug_inst_ids.
+    """
+
+    _data = {}
+
+    def __new__(mcs, name, bases, attrs):
+        for attr_name, attr_value in attrs.items():
+            if (isinstance(attr_value, types.FunctionType) and
+                    attr_name.startswith('run_')):
+                attrs[attr_name] = mcs.log(attr_value)
+        return super(LogOnFail, mcs).__new__(mcs, name, bases, attrs)
+
+    @classmethod
+    def get_inst_ids(mcs):
+        return set(mcs._data.get('inst_ids', []))
+
+    @classmethod
+    def add_inst_ids(mcs, inst_ids):
+        if not utils.is_collection(inst_ids):
+            inst_ids = [inst_ids]
+        debug_inst_ids = mcs.get_inst_ids()
+        debug_inst_ids |= set(inst_ids)
+        mcs._data['inst_ids'] = debug_inst_ids
+
+    @classmethod
+    def reset_inst_ids(mcs):
+        mcs._data['inst_ids'] = []
+
+    @classmethod
+    def set_client(mcs, client):
+        mcs._data['client'] = client
+
+    @classmethod
+    def get_client(mcs):
+        return mcs._data['client']
+
+    @classmethod
+    def set_report(mcs, report):
+        mcs._data['report'] = report
+
+    @classmethod
+    def get_report(mcs):
+        return mcs._data['report']
+
+    @classmethod
+    def log(mcs, fn):
+
+        def wrapper(*args, **kwargs):
+            inst_ids = mcs.get_inst_ids()
+            client = mcs.get_client()
+            report = mcs.get_report()
+            try:
+                return fn(*args, **kwargs)
+            except proboscis.SkipTest:
+                raise
+            except Exception as test_ex:
+                msg_prefix = "*** LogOnFail: "
+                if inst_ids:
+                    report.log(msg_prefix + "Exception detected, "
+                               "dumping info for IDs: %s." % inst_ids)
+                else:
+                    report.log(msg_prefix + "Exception detected, "
+                               "but no instance IDs are registered to log.")
+
+                for inst_id in inst_ids:
+                    try:
+                        client.instances.get(inst_id)
+                    except Exception as ex:
+                        report.log(msg_prefix + "Error in instance show "
+                                   "for %s:\n%s" % (inst_id, ex))
+                    try:
+                        log_gen = client.instances.log_generator(
+                            inst_id, 'guest',
+                            publish=True, lines=0, swift=None)
+                        log_contents = "".join([chunk for chunk in log_gen()])
+                        report.log(msg_prefix + "Guest log for %s:\n%s" %
+                                   (inst_id, log_contents))
+                    except Exception as ex:
+                        report.log(msg_prefix + "Error in guest log "
+                                   "retrieval for %s:\n%s" % (inst_id, ex))
+
+                # Only report on the first error that occurs
+                mcs.reset_inst_ids()
+                raise test_ex
+
+        return wrapper
+
+
+@six.add_metaclass(LogOnFail)
 class TestRunner(object):
 
     """
@@ -245,6 +346,14 @@ class TestRunner(object):
         self._nova_client = None
         self._test_helper = None
         self._servers = {}
+
+        # Attempt to register the main instance.  If it doesn't
+        # exist, this will still set the 'report' and 'client' objects
+        # correctly in LogOnFail
+        inst_ids = []
+        if hasattr(self.instance_info, 'id') and self.instance_info.id:
+            inst_ids = [self.instance_info.id]
+        self.register_debug_inst_ids(inst_ids)
 
     @classmethod
     def fail(cls, message):
@@ -371,6 +480,15 @@ class TestRunner(object):
     @property
     def nova_client(self):
         return create_nova_client(self.instance_info.user)
+
+    def register_debug_inst_ids(self, inst_ids):
+        """Method to 'register' an instance ID (or list of instance IDs)
+        for debug purposes on failure.  Note that values are only appended
+        here, not overridden.  The LogOnFail class will handle 'missing' IDs.
+        """
+        LogOnFail.add_inst_ids(inst_ids)
+        LogOnFail.set_client(self.admin_client)
+        LogOnFail.set_report(self.report)
 
     def get_client_tenant(self, client):
         tenant_name = client.real_client.client.tenant
