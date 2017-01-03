@@ -405,10 +405,10 @@ register(
     single=[common_groups,
             backup_groups,
             configuration_groups, ],
-    multi=[
-        # cluster_actions_groups,
-        # cluster_negative_actions_groups,
-        replication_promote_groups, ]
+    multi=[replication_promote_groups, ]
+    # multi=[cluster_actions_groups,
+    #        cluster_negative_actions_groups,
+    #        replication_promote_groups, ]
 )
 
 register(

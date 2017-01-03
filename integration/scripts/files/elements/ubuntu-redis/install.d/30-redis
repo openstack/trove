@@ -32,9 +32,75 @@ fi
 
 _EOF_
 
-add-apt-repository -y ppa:chris-lea/redis-server
-apt-get -y update
-apt-get --allow-unauthenticated install -y redis-server
+# Install Redis from scratch
+ARCH_SAV=$ARCH
+unset ARCH
+apt-get update
+apt-get --allow-unauthenticated install -y build-essential tcl curl
+cd /tmp
+REDIS_VERSION=3.2.6
+REDIS_NAME=redis-$REDIS_VERSION
+REDIS_ARCHIVE=$REDIS_NAME.tar.gz
+curl -O http://download.redis.io/releases/$REDIS_ARCHIVE
+tar xzvf $REDIS_ARCHIVE
+cd $REDIS_NAME
+make distclean
+make
+make install
+export ARCH=$ARCH_SAV
+
+adduser --system --group --no-create-home redis
+# Create the data dir
+REDIS_DATA_DIR=/var/lib/redis
+REDIS_LOG_DIR=/var/log/redis
+REDIS_LOG=$REDIS_LOG_DIR/redis.log
+REDIS_RUN_DIR=/var/run/redis
+REDIS_PID=$REDIS_RUN_DIR/redis-server.pid
+mkdir -p $REDIS_DATA_DIR
+chown redis:redis $REDIS_DATA_DIR
+chmod 770 $REDIS_DATA_DIR
+mkdir -p $REDIS_LOG_DIR
+chown redis:redis $REDIS_LOG_DIR
+chmod 775 $REDIS_LOG_DIR
+mkdir -p $REDIS_RUN_DIR
+chown redis:redis $REDIS_RUN_DIR
+# Set up a proper conf file to start
+REDIS_CONF_NAME=redis.conf
+REDIS_CONF_DIR=/etc/redis
+REDIS_CONF=$REDIS_CONF_DIR/$REDIS_CONF_NAME
+mkdir $REDIS_CONF_DIR
+cp /tmp/$REDIS_NAME/$REDIS_CONF_NAME $REDIS_CONF_DIR
+chown redis:redis $REDIS_CONF
+sed -i "s#dir .*#dir $REDIS_DATA_DIR#" $REDIS_CONF
+sed -i "s#pidfile .*#pidfile $REDIS_PID#" $REDIS_CONF
+sed -i "s#logfile .*#logfile $REDIS_LOG#" $REDIS_CONF
+sed -i "s/supervised no/supervised systemd/" $REDIS_CONF
+sed -i "s/daemonize no/daemonize yes/" $REDIS_CONF
+sed -i "s/protected-mode yes/protected-mode no/" $REDIS_CONF
+
+cat > "/etc/systemd/system/redis-server.service" << _EOF_
+[Unit]
+Description=Redis In-Memory Data Store
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=$REDIS_PID
+User=redis
+Group=redis
+
+Environment=statedir=$REDIS_RUN_DIR
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p \${statedir}
+ExecStartPre=/bin/chown -R redis:redis \${statedir}
+ExecStart=/usr/local/bin/redis-server $REDIS_CONF
+ExecReload=/bin/kill -USR2 \$MAINPID
+ExecStop=/usr/local/bin/redis-cli shutdown
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+_EOF_
 
 cat > "/etc/default/redis-server" << _EOF_
 # Call ulimit -n with this argument prior to invoking Redis itself.
@@ -46,8 +112,3 @@ _EOF_
 
 # Install Python driver for Redis ('redis-py').
 pip2 install redis
-
-# By default, redis-py will attempt to use the HiredisParser if installed.
-# Using Hiredis can provide up to a 10x speed improvement in parsing responses
-# from the Redis server.
-pip2 install hiredis

@@ -39,18 +39,18 @@ class DataType(Enum):
     micro4 = 4
     # very tiny amount of data, useful for testing replication
     # propagation, etc.
-    tiny = 3
+    tiny = 5
     # another tiny dataset (also for replication propagation)
-    tiny2 = 4
+    tiny2 = 6
     # a third tiny dataset (also for replication propagation)
-    tiny3 = 5
+    tiny3 = 7
     # a forth tiny dataset (for cluster propagation)
-    tiny4 = 6
+    tiny4 = 8
     # small amount of data (this can be added to each instance
     # after creation, for example).
-    small = 7
+    small = 9
     # large data, enough to make creating a backup take 20s or more.
-    large = 8
+    large = 10
 
 
 class TestHelper(object):
