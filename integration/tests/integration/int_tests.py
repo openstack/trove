@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # # Copyright (c) 2011 OpenStack, LLC.
 # All Rights Reserved.
