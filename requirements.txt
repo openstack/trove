@@ -12,7 +12,6 @@ PasteDeploy>=1.5.0 # MIT
 Paste # MIT
 sqlalchemy-migrate>=0.9.6 # Apache-2.0
 netaddr!=0.7.16,>=0.7.13 # BSD
-netifaces>=0.10.4 # MIT
 httplib2>=0.7.5 # MIT
 lxml!=3.7.0,>=2.3 # BSD
 passlib>=1.7.0 # BSD
