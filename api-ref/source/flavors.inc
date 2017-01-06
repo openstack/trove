@@ -67,7 +67,7 @@ Lists information for all available flavors.
 This operation lists information for all available flavors.
 
 This resource is identical to the flavors found in the OpenStack
-Nova API, but without the disk property.
+Nova API.
 
 
 Normal response codes: 200
