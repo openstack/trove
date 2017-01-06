@@ -43,6 +43,9 @@ class DetailedModuleViewTest(trove_testtools.TestCase):
         self.module.datastore_version = '5.6'
         self.module.auto_apply = False
         self.module.tenant_id = 'my_tenant'
+        self.module.is_admin = False
+        self.module.priority_apply = False
+        self.module.apply_order = 5
 
     def tearDown(self):
         super(DetailedModuleViewTest, self).tearDown()
@@ -69,3 +72,9 @@ class DetailedModuleViewTest(trove_testtools.TestCase):
                              result['module']['auto_apply'])
             self.assertEqual(self.module.tenant_id,
                              result['module']['tenant_id'])
+            self.assertEqual(self.module.is_admin,
+                             result['module']['is_admin'])
+            self.assertEqual(self.module.priority_apply,
+                             result['module']['priority_apply'])
+            self.assertEqual(self.module.apply_order,
+                             result['module']['apply_order'])

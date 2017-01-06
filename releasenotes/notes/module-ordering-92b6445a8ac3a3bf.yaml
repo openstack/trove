@@ -1,0 +1,9 @@
+---
+features:
+  - Modules can now be applied in a consistent order,
+    based on the new 'priority_apply' and 'apply_order'
+    attributes when creating them.
+    Blueprint module-management-ordering
+upgrade:
+  - For module ordering to work, db_upgrade must be run
+    on the Trove database.
