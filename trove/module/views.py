@@ -32,12 +32,12 @@ class ModuleView(object):
             tenant_id=self.module.tenant_id,
             datastore_id=self.module.datastore_id,
             datastore_version_id=self.module.datastore_version_id,
-            auto_apply=self.module.auto_apply,
-            priority_apply=self.module.priority_apply,
+            auto_apply=bool(self.module.auto_apply),
+            priority_apply=bool(self.module.priority_apply),
             apply_order=self.module.apply_order,
-            is_admin=self.module.is_admin,
+            is_admin=bool(self.module.is_admin),
             md5=self.module.md5,
-            visible=self.module.visible,
+            visible=bool(self.module.visible),
             created=self.module.created,
             updated=self.module.updated)
         # add extra data to make results more legible
@@ -96,7 +96,7 @@ class DetailedModuleView(ModuleView):
     def data(self, include_contents=False):
         return_value = super(DetailedModuleView, self).data()
         module_dict = return_value["module"]
-        module_dict["live_update"] = self.module.live_update
+        module_dict["live_update"] = bool(self.module.live_update)
         if hasattr(self.module, 'instance_count'):
             module_dict["instance_count"] = self.module.instance_count
         if include_contents:

@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Module list/show now returns boolean values as True/False instead of
+    1/0.  Bug 1656398
