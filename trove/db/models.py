@@ -13,6 +13,7 @@
 #    under the License.
 
 from oslo_log import log as logging
+from oslo_utils import strutils
 
 from trove.common import exception
 from trove.common.i18n import _
@@ -59,13 +60,15 @@ class DatabaseModelBase(models.ModelBase):
             raise exception.InvalidModelError(errors=self.errors)
         self['updated'] = utils.utcnow()
         LOG.debug("Saving %(name)s: %(dict)s" %
-                  {'name': self.__class__.__name__, 'dict': self.__dict__})
+                  {'name': self.__class__.__name__,
+                   'dict': strutils.mask_dict_password(self.__dict__)})
         return self.db_api.save(self)
 
     def delete(self):
         self['updated'] = utils.utcnow()
         LOG.debug("Deleting %(name)s: %(dict)s" %
-                  {'name': self.__class__.__name__, 'dict': self.__dict__})
+                  {'name': self.__class__.__name__,
+                   'dict': strutils.mask_dict_password(self.__dict__)})
 
         if self.preserve_on_delete:
             self['deleted_at'] = utils.utcnow()

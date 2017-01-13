@@ -50,7 +50,9 @@ def _mock_call(cmd, timeout, version=None, username=None, hostname=None,
 
 class ApiTest(trove_testtools.TestCase):
     @mock.patch.object(rpc, 'get_client')
-    def setUp(self, *args):
+    @mock.patch('trove.instance.models.get_instance_encryption_key',
+                return_value='2LMDgren5citVxmSYNiRFCyFfVDjJtDaQT9LYV08')
+    def setUp(self, mock_get_encryption_key, *args):
         super(ApiTest, self).setUp()
         self.context = context.TroveContext()
         self.guest = api.API(self.context, 0)
@@ -58,6 +60,7 @@ class ApiTest(trove_testtools.TestCase):
         self.guest._call = _mock_call
         self.api = api.API(self.context, "instance-id-x23d2d")
         self._mock_rpc_client()
+        mock_get_encryption_key.assert_called()
 
     def test_change_passwords(self):
         self.assertIsNone(self.guest.change_passwords("dummy"))

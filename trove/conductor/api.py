@@ -16,6 +16,7 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 
 from trove.common import cfg
+from trove.common.rpc import conductor_guest_serializer as sz
 from trove.common.serializable_notification import SerializableNotification
 from trove import rpc
 
@@ -62,9 +63,10 @@ class API(object):
         self.client = self.get_client(target, version_cap)
 
     def get_client(self, target, version_cap, serializer=None):
-        return rpc.get_client(target,
+        return rpc.get_client(target, key=CONF.instance_rpc_encr_key,
                               version_cap=version_cap,
-                              serializer=serializer)
+                              serializer=serializer,
+                              secure_serializer=sz.ConductorGuestSerializer)
 
     def heartbeat(self, instance_id, payload, sent=None):
         LOG.debug("Making async call to cast heartbeat for instance: %s"

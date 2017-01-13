@@ -37,7 +37,9 @@ def _mock_call(cmd, timeout, version=None, user=None,
 
 class ApiTest(trove_testtools.TestCase):
     @mock.patch.object(rpc, 'get_client')
-    def setUp(self, *args):
+    @mock.patch('trove.instance.models.get_instance_encryption_key',
+                return_value='2LMDgren5citVxmSYNiRFCyFfVDjJtDaQT9LYV08')
+    def setUp(self, mock_get_encryption_key, *args):
         super(ApiTest, self).setUp()
         cluster_guest_api = (GaleraCommonGuestAgentStrategy()
                              .guest_client_class)
@@ -46,6 +48,7 @@ class ApiTest(trove_testtools.TestCase):
         self.guest._call = _mock_call
         self.api = cluster_guest_api(self.context, "instance-id-x23d2d")
         self._mock_rpc_client()
+        mock_get_encryption_key.assert_called()
 
     def test_get_routing_key(self):
         self.assertEqual('guestagent.instance-id-x23d2d',

@@ -76,7 +76,8 @@ def initialize_trove(config_file):
     rpc.init(CONF)
 
     taskman_service = rpc_service.RpcService(
-        None, topic=topic, rpc_api_version=rpc_version.RPC_API_VERSION,
+        CONF.taskmanager_rpc_encr_key, topic=topic,
+        rpc_api_version=rpc_version.RPC_API_VERSION,
         manager='trove.taskmanager.manager.Manager')
     taskman_service.start()
 

@@ -22,6 +22,7 @@ from trove.conductor import api as conductor_api
 @with_initialize
 def main(conf):
     from trove.common import notification
+    from trove.common.rpc import conductor_host_serializer as sz
     from trove.common.rpc import service as rpc_service
     from trove.instance import models as inst_models
 
@@ -29,8 +30,9 @@ def main(conf):
         inst_models.persist_instance_fault)
     topic = conf.conductor_queue
     server = rpc_service.RpcService(
-        manager=conf.conductor_manager, topic=topic,
-        rpc_api_version=conductor_api.API.API_LATEST_VERSION)
+        key=None, manager=conf.conductor_manager, topic=topic,
+        rpc_api_version=conductor_api.API.API_LATEST_VERSION,
+        secure_serializer=sz.ConductorHostSerializer)
     workers = conf.trove_conductor_workers or processutils.get_worker_count()
     launcher = openstack_service.launch(conf, server, workers=workers)
     launcher.wait()

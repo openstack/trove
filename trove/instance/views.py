@@ -127,6 +127,8 @@ class InstanceDetailView(InstanceView):
         if self.context.is_admin:
             result['instance']['server_id'] = self.instance.server_id
             result['instance']['volume_id'] = self.instance.volume_id
+            result['instance']['encrypted_rpc_messaging'] = (
+                self.instance.encrypted_rpc_messaging)
 
         return result
 

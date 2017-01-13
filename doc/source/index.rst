@@ -51,6 +51,7 @@ functionality, the following resources are provided.
   dev/guest_cloud_init.rst
   dev/notifier.rst
   dev/trove_api_extensions.rst
+  dev/secure_oslo_messaging.rst
 
 * Source Code Repositories
 

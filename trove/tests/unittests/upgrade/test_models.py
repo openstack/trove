@@ -66,7 +66,11 @@ class TestUpgradeModel(trove_testtools.TestCase):
 
     @patch('trove.guestagent.api.API.upgrade')
     @patch.object(rpc, 'get_client')
-    def _assert_create_with_metadata(self, mock_client, api_upgrade_mock,
+    @patch('trove.instance.models.get_instance_encryption_key',
+           return_value='2LMDgren5citVxmSYNiRFCyFfVDjJtDaQT9LYV08')
+    def _assert_create_with_metadata(self, mock_get_encryption_key,
+                                     mock_client,
+                                     api_upgrade_mock,
                                      metadata=None):
         """Exercise UpgradeMessageSender.create() call.
         """
@@ -85,3 +89,4 @@ class TestUpgradeModel(trove_testtools.TestCase):
         func()  # This call should translate to the API call asserted below.
         api_upgrade_mock.assert_called_once_with(instance_version, location,
                                                  metadata)
+        mock_get_encryption_key.assert_called()

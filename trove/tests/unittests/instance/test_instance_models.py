@@ -26,6 +26,7 @@ from trove.instance.models import DBInstance
 from trove.instance.models import DBInstanceFault
 from trove.instance.models import filter_ips
 from trove.instance.models import Instance
+from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
 from trove.instance.tasks import InstanceTasks
@@ -469,3 +470,53 @@ class TestModules(trove_testtools.TestCase):
                             expected_exception,
                             models.validate_modules_for_apply,
                             modules, ds_id, ds_ver_id)
+
+
+def trivial_key_function(id):
+    return id * id
+
+
+class TestInstanceKeyCaching(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(TestInstanceKeyCaching, self).setUp()
+
+    def tearDown(self):
+        super(TestInstanceKeyCaching, self).tearDown()
+
+    def test_basic_caching(self):
+        keycache = instance_encryption_key_cache(trivial_key_function, 5)
+        self.assertEqual(keycache[5], 25)
+        self.assertEqual(keycache[5], 25)
+        self.assertEqual(keycache[25], 625)
+
+    def test_caching(self):
+        keyfn = Mock(return_value=123)
+        keycache = instance_encryption_key_cache(keyfn, 5)
+        self.assertEqual(keycache[5], 123)
+        self.assertEqual(keyfn.call_count, 1)
+        self.assertEqual(keycache[5], 123)
+        self.assertEqual(keyfn.call_count, 1)
+        self.assertEqual(keycache[6], 123)
+        self.assertEqual(keyfn.call_count, 2)
+        self.assertEqual(keycache[7], 123)
+        self.assertEqual(keyfn.call_count, 3)
+        self.assertEqual(keycache[8], 123)
+        self.assertEqual(keyfn.call_count, 4)
+        self.assertEqual(keycache[9], 123)
+        self.assertEqual(keyfn.call_count, 5)
+        self.assertEqual(keycache[10], 123)
+        self.assertEqual(keyfn.call_count, 6)
+        self.assertEqual(keycache[10], 123)
+        self.assertEqual(keyfn.call_count, 6)
+        self.assertEqual(keycache[5], 123)
+        self.assertEqual(keyfn.call_count, 7)
+
+    # BUG(1650518): Cleanup in the Pike release
+    def test_not_caching_none(self):
+        keyfn = Mock(return_value=None)
+        keycache = instance_encryption_key_cache(keyfn, 5)
+        self.assertIsNone(keycache[30])
+        self.assertEqual(keyfn.call_count, 1)
+        self.assertIsNone(keycache[30])
+        self.assertEqual(keyfn.call_count, 2)

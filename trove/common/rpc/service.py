@@ -29,6 +29,7 @@ from osprofiler import profiler
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import profile
+from trove.common.rpc import secure_serializer as ssz
 from trove import rpc
 
 
@@ -38,9 +39,10 @@ LOG = logging.getLogger(__name__)
 
 class RpcService(service.Service):
 
-    def __init__(self, host=None, binary=None, topic=None, manager=None,
-                 rpc_api_version=None):
+    def __init__(self, key, host=None, binary=None, topic=None, manager=None,
+                 rpc_api_version=None, secure_serializer=ssz.SecureSerializer):
         super(RpcService, self).__init__()
+        self.key = key
         self.host = host or CONF.host
         self.binary = binary or os.path.basename(inspect.stack()[-1][1])
         self.topic = topic or self.binary.rpartition('trove-')[2]
@@ -48,6 +50,7 @@ class RpcService(service.Service):
         self.manager_impl = profiler.trace_cls("rpc")(_manager)
         self.rpc_api_version = rpc_api_version or \
             self.manager_impl.RPC_API_VERSION
+        self.secure_serializer = secure_serializer
         profile.setup_profiler(self.binary, self.host)
 
     def start(self):
@@ -60,7 +63,9 @@ class RpcService(service.Service):
             self.manager_impl.target = target
 
         endpoints = [self.manager_impl]
-        self.rpcserver = rpc.get_server(target, endpoints)
+        self.rpcserver = rpc.get_server(
+            target, endpoints, key=self.key,
+            secure_serializer=self.secure_serializer)
         self.rpcserver.start()
 
         # TODO(hub-cap): Currently the context is none... do we _need_ it here?
