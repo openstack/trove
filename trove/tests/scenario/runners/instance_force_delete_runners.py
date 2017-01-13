@@ -15,6 +15,8 @@
 
 from proboscis import SkipTest
 
+from trove.tests.scenario import runners
+from trove.tests.scenario.runners.test_runners import SkipKnownBug
 from trove.tests.scenario.runners.test_runners import TestRunner
 
 
@@ -52,5 +54,6 @@ class InstanceForceDeleteRunner(TestRunner):
             self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_force_delete(self):
-        if self.build_inst_id:
-            self.assert_all_gone([self.build_inst_id], ['SHUTDOWN'])
+        raise SkipKnownBug(runners.BUG_FORCE_DELETE_FAILS)
+        # if self.build_inst_id:
+        #     self.assert_all_gone([self.build_inst_id], ['SHUTDOWN'])
