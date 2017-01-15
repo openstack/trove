@@ -99,7 +99,7 @@ class DatastoreSchema(DatastoreModelsBase):
         self._character_set = None
         # If both or neither are passed in this is a bug.
         if bool(deserializing) == bool(name):
-            raise RuntimeError("Bug in DatastoreSchema()")
+            raise RuntimeError(_("Bug in DatastoreSchema()"))
         if not deserializing:
             self.name = name
 
