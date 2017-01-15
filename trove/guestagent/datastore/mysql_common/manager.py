@@ -415,7 +415,7 @@ class MySqlManager(manager.Manager):
                 self._validate_slave_for_replication(context, replica_info)
             self.replication.enable_as_slave(app, replica_info, slave_config)
         except Exception:
-            LOG.exception("Error enabling replication.")
+            LOG.exception(_("Error enabling replication."))
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
 
