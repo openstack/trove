@@ -54,8 +54,10 @@ class BackupAgent(object):
         try:
             runner = get_restore_strategy(backup_type, RESTORE_NAMESPACE)
         except ImportError:
-            raise UnknownBackupType("Unknown Backup type: %s in namespace %s"
-                                    % (backup_type, RESTORE_NAMESPACE))
+            raise UnknownBackupType(_("Unknown Backup type: %(type)s in "
+                                      "namespace %(ns)s")
+                                    % {"type": backup_type,
+                                       "ns": RESTORE_NAMESPACE})
         return runner
 
     def stream_backup_to_storage(self, context, backup_info, runner, storage,
