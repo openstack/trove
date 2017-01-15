@@ -119,7 +119,7 @@ class PgBaseBackup(base.RestoreRunner):
 
     def pre_restore(self):
         self.app.stop_db()
-        LOG.info("Preparing WAL archive dir")
+        LOG.info(_("Preparing WAL archive dir"))
         self.app.recreate_wal_archive_dir()
         datadir = self.app.pgsql_data_dir
         operating_system.remove(datadir, force=True, recursive=True,
