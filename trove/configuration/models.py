@@ -39,9 +39,9 @@ class Configurations(object):
     @staticmethod
     def load(context):
         if context is None:
-            raise TypeError("Argument context not defined.")
+            raise TypeError(_("Argument context not defined."))
         elif id is None:
-            raise TypeError("Argument is not defined.")
+            raise TypeError(_("Argument is not defined."))
 
         if context.is_admin:
             db_info = DBConfiguration.find_all(deleted=False)
