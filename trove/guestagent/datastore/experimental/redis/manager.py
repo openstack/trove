@@ -192,7 +192,7 @@ class Manager(manager.Manager):
             self.replication.enable_as_slave(self._app, replica_info,
                                              slave_config)
         except Exception:
-            LOG.exception("Error enabling replication.")
+            LOG.exception(_("Error enabling replication."))
             raise
 
     def make_read_only(self, context, read_only):
