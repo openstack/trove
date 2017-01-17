@@ -1281,6 +1281,27 @@ function cmd_dsvm_gate_tests() {
     local ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
 
     exclaim "Running cmd_dsvm_gate_tests ..."
+
+    # Sometimes in the gate the ACTUAL_HOSTNAME is blank - this code attempts to debug it
+    if [[ -z "${CONTROLLER_ID}" ]]; then
+        echo "*** CONTROLLER_IP is blank, trying to determine actual hostname"
+        local hostname_part=$(hostname -I)
+        echo "Hostname pass 1: $hostname_part"
+        hostname_part=$(echo $hostname_part | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g')
+        echo "Hostname pass 2: $hostname_part"
+        hostname_part=$(echo $hostname_part | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g')
+        echo "Hostname pass 3: $hostname_part"
+        hostname_part=$(echo $hostname_part | sed 's/ /\n/g')
+        echo "Hostname pass 4: $hostname_part"
+        hostname_part=$(echo $hostname_part | sed '/^$/d')
+        echo "Hostname pass 5: $hostname_part"
+        hostname_part=$(echo $hostname_part | sort -bu)
+        echo "Hostname pass 6: $hostname_part"
+        hostname_part=$(echo $hostname_part | head -1)
+        echo "Hostname pass 7: $hostname_part"
+        echo "*** CONTROLLER_IP is blank, actual hostname test over"
+    fi
+
     export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/dsvm-report/}
     export TROVE_REPORT_DIR=$HOME/dsvm-report/
     TROVESTACK_DUMP_ENV=true
