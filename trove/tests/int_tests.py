@@ -236,7 +236,7 @@ user_actions_groups = list(instance_create_groups)
 user_actions_groups.extend([user_actions_group.GROUP])
 
 # groups common to all datastores
-common_groups = list(instance_groups)
+common_groups = list(instance_create_groups)
 common_groups.extend([guest_log_groups, instance_init_groups, module_groups])
 
 # Register: Component based groups
@@ -343,6 +343,7 @@ register(
             backup_incremental_groups,
             configuration_groups,
             database_actions_groups,
+            instance_groups,
             instance_upgrade_groups,
             root_actions_groups,
             user_actions_groups, ],
