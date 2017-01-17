@@ -18,6 +18,7 @@ from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import remote
 from trove.network import base
 
@@ -38,7 +39,7 @@ class NovaNetwork(base.NetworkDriver):
         try:
             return self.client.security_groups.get(group_id)
         except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to get remote security group')
+            LOG.exception(_('Failed to get remote security group'))
             raise exception.TroveError(str(e))
 
     def create_security_group(self, name, description):
@@ -47,14 +48,14 @@ class NovaNetwork(base.NetworkDriver):
                 name=name, description=description)
             return sec_group
         except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to create remote security group')
+            LOG.exception(_('Failed to create remote security group'))
             raise exception.SecurityGroupCreationError(str(e))
 
     def delete_security_group(self, sec_group_id):
         try:
             self.client.security_groups.delete(sec_group_id)
         except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to delete remote security group')
+            LOG.exception(_('Failed to delete remote security group'))
             raise exception.SecurityGroupDeletionError(str(e))
 
     def add_security_group_rule(self, sec_group_id, protocol,
@@ -69,7 +70,7 @@ class NovaNetwork(base.NetworkDriver):
 
             return sec_group_rule
         except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to add rule to remote security group')
+            LOG.exception(_('Failed to add rule to remote security group'))
             raise exception.SecurityGroupRuleCreationError(str(e))
 
     def delete_security_group_rule(self, sec_group_rule_id):
@@ -77,5 +78,5 @@ class NovaNetwork(base.NetworkDriver):
             self.client.security_group_rules.delete(sec_group_rule_id)
 
         except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to delete rule to remote security group')
+            LOG.exception(_('Failed to delete rule to remote security group'))
             raise exception.SecurityGroupRuleDeletionError(str(e))
