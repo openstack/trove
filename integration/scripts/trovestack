@@ -1271,7 +1271,7 @@ function cmd_kick_start() {
 }
 
 function cmd_dsvm_gate_tests() {
-    ACTUAL_HOSTNAME=$(hostname -I | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g' | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1)
+    ACTUAL_HOSTNAME=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1)
 
     local DATASTORE_TYPE=${1:-'mysql'}
     local TEST_GROUP=${2:-${DATASTORE_TYPE}}
@@ -1283,14 +1283,21 @@ function cmd_dsvm_gate_tests() {
     exclaim "Running cmd_dsvm_gate_tests ..."
 
     # Sometimes in the gate the ACTUAL_HOSTNAME is blank - this code attempts to debug it
-    if [[ -z "${CONTROLLER_ID}" ]]; then
+    if [[ -z "${CONTROLLER_IP}" ]]; then
         echo "*** CONTROLLER_IP is blank, trying to determine actual hostname"
         local hostname_part=$(hostname -I)
         echo "Hostname pass 1: $hostname_part"
-        hostname_part=$(echo $hostname_part | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g')
-        echo "Hostname pass 2: $hostname_part"
         hostname_part=$(echo $hostname_part | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g')
+        echo "Hostname pass 2: $hostname_part"
+        hostname_part_no_ip6=$hostname_part
+        hostname_part=$(echo $hostname_part | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g')
         echo "Hostname pass 3: $hostname_part"
+        if [[ -z "${hostname_part}" ]]; then
+            # This seems to occur when the actual hostname ends with '.1'
+            # If this happens, take the first one that doesn't start with '192' or '172'
+            hostname_part=$(echo $hostname_part_no_ip6 | sed 's/1[79]2\.[0-9]*\.[0-9]*\.1\b//g')
+            echo "Hostname pass 3a: $hostname_part"
+        fi
         hostname_part=$(echo $hostname_part | sed 's/ /\n/g')
         echo "Hostname pass 4: $hostname_part"
         hostname_part=$(echo $hostname_part | sed '/^$/d')
@@ -1299,7 +1306,8 @@ function cmd_dsvm_gate_tests() {
         echo "Hostname pass 6: $hostname_part"
         hostname_part=$(echo $hostname_part | head -1)
         echo "Hostname pass 7: $hostname_part"
-        echo "*** CONTROLLER_IP is blank, actual hostname test over"
+        CONTROLLER_IP=$hostname_part
+        echo "*** CONTROLLER_IP was blank (CONTROLLER_IP now set to '$CONTROLLER_IP')"
     fi
 
     export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/dsvm-report/}
