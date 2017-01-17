@@ -18,6 +18,7 @@
 from oslo_utils.importutils import import_class
 
 from trove.common import cfg
+from trove.common.i18n import _
 from trove.common import remote
 
 CONF = cfg.CONF
@@ -91,7 +92,7 @@ class RemoteModelBase(ModelBase):
     # if the object is a list, it will turn it into a list of hash's again
     def data(self, **options):
         if self._data_object is None:
-            raise LookupError("data object is None")
+            raise LookupError(_("data object is None"))
         if isinstance(self._data_object, list):
             return [self._data_item(item) for item in self._data_object]
         else:
