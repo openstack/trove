@@ -266,7 +266,7 @@ class GuestLog(object):
                                  LogStatus.Published, LogStatus.Enabled)
             # We've already handled this case (log rotated) so what gives?
             else:
-                raise ("Bug in _log_rotated ?")
+                raise Exception(_("Bug in _log_rotated ?"))
         else:
             self._published_size = 0
             self._size = 0
