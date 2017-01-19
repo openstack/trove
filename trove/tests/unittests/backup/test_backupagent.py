@@ -230,7 +230,8 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertIsNotNone(inno_backup_ex.cmd)
         str_innobackup_cmd = ('sudo innobackupex'
                               ' --stream=xbstream'
-                              ' %(extra_opts)s'
+                              ' %(extra_opts)s '
+                              ' --user=os_admin --password=123'
                               ' /var/lib/mysql/data 2>/tmp/innobackupex.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '

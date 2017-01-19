@@ -50,10 +50,17 @@ class InnoBackupEx(base.BackupRunner):
     __strategy_name__ = 'innobackupex'
 
     @property
+    def user_and_pass(self):
+        return (' --user=%(user)s --password=%(password)s ' %
+                {'user': ADMIN_USER_NAME,
+                 'password': MySqlApp.get_auth_password()})
+
+    @property
     def cmd(self):
         cmd = ('sudo innobackupex'
                ' --stream=xbstream'
                ' %(extra_opts)s ' +
+               self.user_and_pass +
                MySqlApp.get_data_dir() +
                ' 2>/tmp/innobackupex.log'
                )
@@ -109,6 +116,7 @@ class InnoBackupExIncremental(InnoBackupEx):
                ' --incremental'
                ' --incremental-lsn=%(lsn)s'
                ' %(extra_opts)s ' +
+               self.user_and_pass +
                MySqlApp.get_data_dir() +
                ' 2>/tmp/innobackupex.log')
         return cmd + self.zip_cmd + self.encrypt_cmd
