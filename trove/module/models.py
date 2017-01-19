@@ -46,9 +46,9 @@ class Modules(object):
     @staticmethod
     def load(context, datastore=None):
         if context is None:
-            raise TypeError("Argument context not defined.")
+            raise TypeError(_("Argument context not defined."))
         elif id is None:
-            raise TypeError("Argument is not defined.")
+            raise TypeError(_("Argument is not defined."))
 
         query_opts = {'deleted': False}
         if datastore:
@@ -75,9 +75,9 @@ class Modules(object):
     def load_auto_apply(context, datastore_id, datastore_version_id):
         """Return all the auto-apply modules for the given criteria."""
         if context is None:
-            raise TypeError("Argument context not defined.")
+            raise TypeError(_("Argument context not defined."))
         elif id is None:
-            raise TypeError("Argument is not defined.")
+            raise TypeError(_("Argument is not defined."))
 
         query_opts = {'deleted': False,
                       'auto_apply': True}
@@ -113,9 +113,9 @@ class Modules(object):
         for other tenants, unless the user is admin.
         """
         if context is None:
-            raise TypeError("Argument context not defined.")
+            raise TypeError(_("Argument context not defined."))
         elif id is None:
-            raise TypeError("Argument is not defined.")
+            raise TypeError(_("Argument is not defined."))
 
         modules = []
         if module_ids:
