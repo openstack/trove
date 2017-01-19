@@ -13,6 +13,7 @@
 
 import re
 
+from trove.common.i18n import _
 from trove.common import utils
 
 ALTER_DB_CFG = "ALTER DATABASE %s SET %s = %s"
@@ -97,7 +98,7 @@ class VSqlError(object):
         """
         parse = re.match("^(ERROR|WARNING) (\d+): (.+)$", stderr)
         if not parse:
-            raise ValueError("VSql stderr %(msg)s not recognized."
+            raise ValueError(_("VSql stderr %(msg)s not recognized.")
                              % {'msg': stderr})
         self.type = parse.group(1)
         self.code = int(parse.group(2))
