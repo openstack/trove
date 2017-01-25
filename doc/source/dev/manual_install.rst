@@ -88,7 +88,7 @@ Some packages in Ubuntu repositories are outdated. Please make sure to update to
 
 Use latest setuptools:
 
-Go https://pypi.python.org/pypi/setuptools, download the lastest source setuptools, and move it under ~
+Go https://pypi.python.org/pypi/setuptools, download the latest source setuptools, and move it under ~
 
 .. code-block:: bash
 
@@ -99,7 +99,7 @@ Go https://pypi.python.org/pypi/setuptools, download the lastest source setuptoo
 
 Use latest pip:
 
-Go https://pypi.python.org/pypi/pip, download the lastest source pip, and move it under ~
+Go https://pypi.python.org/pypi/pip, download the latest source pip, and move it under ~
 
 .. code-block:: bash
 

@@ -247,7 +247,7 @@ To regenerate the list of ignored errors, you run the command(s):
 Warning: trove-pylint is very sensitive to the version(s) of pylint
 and astroid that are installed on your system and for this reason, a
 tox environment is provided that will mimic the environment that
-pylint will encouter in the gate.
+pylint will encounter in the gate.
 
 Pre-commit checklist
 ====================
