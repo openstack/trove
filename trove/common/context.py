@@ -65,6 +65,9 @@ class TroveContext(context.RequestContext):
 
     @classmethod
     def _remove_incompatible_context_args(cls, values):
+        LOG.debug("Running in unsafe mode and ignoring incompatible context.")
+        return values
+
         context_keys = vars(cls()).keys()
         for dict_key in values.keys():
             if dict_key not in context_keys:

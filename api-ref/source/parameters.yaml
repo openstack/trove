@@ -48,6 +48,12 @@ parameter_name:
   in: path
   required: false
   type: string
+user_name:
+  description: |
+      The name of the user.
+  in: path
+  required: false
+  type: string
 # variables in body
 characterSet:
   description: |

@@ -98,9 +98,13 @@ def nova_client(context, region_name=None):
                            endpoint_region=region_name or CONF.os_region_name,
                            endpoint_type=CONF.nova_compute_endpoint_type)
 
-    client = Client(CONF.nova_client_version, context.user, context.auth_token,
-                    bypass_url=url, tenant_id=context.tenant,
-                    auth_url=PROXY_AUTH_URL)
+    client = Client(CONF.nova_client_version,
+                    username=context.user,
+                    bypass_url=url,
+                    tenant_id=context.tenant,
+                    project_domain_name=context.project_domain_name,
+                    auth_url=PROXY_AUTH_URL,
+                    auth_token=context.auth_token)
     client.client.auth_token = context.auth_token
     client.client.management_url = url
     return client
@@ -112,7 +116,6 @@ def create_admin_nova_client(context):
     :return: a client for nova for the trove admin
     """
     client = create_nova_client(context)
-    client.client.auth_token = None
     return client
 
 
