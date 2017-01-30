@@ -521,13 +521,13 @@ class MongoDBAdmin(object):
                 try:
                     user.check_create()
                     if self._get_user_record(user.name, client=client):
-                        raise ValueError('User with name %(user)s already '
-                                         'exists.' % {'user': user.name})
+                        raise ValueError(_('User with name %(user)s already '
+                                           'exists.') % {'user': user.name})
                     self.create_validated_user(user, client=client)
                 except (ValueError, pymongo.errors.PyMongoError) as e:
                     LOG.error(e)
-                    LOG.warning('Skipping creation of user with name %(user)s'
-                                % {'user': user.name})
+                    LOG.warning(_('Skipping creation of user with name '
+                                  '%(user)s') % {'user': user.name})
 
     def delete_validated_user(self, user):
         """Deletes a user from their database. The caller should ensure that
@@ -551,8 +551,8 @@ class MongoDBAdmin(object):
         """Get the user's record."""
         user = models.MongoDBUser(name)
         if user.is_ignored:
-            LOG.warning('Skipping retrieval of user with reserved '
-                        'name %(user)s' % {'user': user.name})
+            LOG.warning(_('Skipping retrieval of user with reserved '
+                          'name %(user)s') % {'user': user.name})
             return None
         if client:
             user_info = client.admin.system.users.find_one(
@@ -570,8 +570,8 @@ class MongoDBAdmin(object):
         """Check that a user exists."""
         user = self._get_user_record(name)
         if not user:
-            raise ValueError('User with name %(user)s does not'
-                             'exist.' % {'user': name})
+            raise ValueError(_('User with name %(user)s does not'
+                               'exist.') % {'user': name})
         return user
 
     def get_user(self, name):
@@ -611,8 +611,8 @@ class MongoDBAdmin(object):
                     self._create_user_with_client(user, admin_client)
                 except (ValueError, pymongo.errors.PyMongoError) as e:
                     LOG.error(e)
-                    LOG.warning('Skipping password change for user with '
-                                'name %(user)s' % {'user': user.name})
+                    LOG.warning(_('Skipping password change for user with '
+                                  'name %(user)s') % {'user': user.name})
 
     def update_attributes(self, name, user_attrs):
         """Update user attributes."""
@@ -622,9 +622,9 @@ class MongoDBAdmin(object):
             user.password = password
             self.change_passwords([user.serialize()])
         if user_attrs.get('name'):
-            LOG.warning('Changing user name is not supported.')
+            LOG.warning(_('Changing user name is not supported.'))
         if user_attrs.get('host'):
-            LOG.warning('Changing user host is not supported.')
+            LOG.warning(_('Changing user host is not supported.'))
 
     def enable_root(self, password=None):
         """Create a user 'root' with role 'root'."""
