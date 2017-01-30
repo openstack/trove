@@ -148,11 +148,12 @@ class Manager(periodic_task.PeriodicTasks):
                 self._set_task_status(exception_replicas,
                                       InstanceTasks.PROMOTION_ERROR)
                 msg = (_("promote-to-replica-source %(id)s: The following "
-                         "replicas may not have been switched: %(replicas)s") %
+                         "replicas may not have been switched: %(replicas)s:"
+                         "\n%(err)s") %
                        {"id": master_candidate.id,
-                        "replicas": [repl.id for repl in exception_replicas]})
-                raise ReplicationSlaveAttachError("%s:\n%s" %
-                                                  (msg, error_messages))
+                        "replicas": [repl.id for repl in exception_replicas],
+                        "err": error_messages})
+                raise ReplicationSlaveAttachError(msg)
 
         with EndNotification(context):
             master_candidate = BuiltInstanceTasks.load(context, instance_id)
@@ -228,11 +229,12 @@ class Manager(periodic_task.PeriodicTasks):
                 self._set_task_status(exception_replicas,
                                       InstanceTasks.EJECTION_ERROR)
                 msg = (_("eject-replica-source %(id)s: The following "
-                         "replicas may not have been switched: %(replicas)s") %
+                         "replicas may not have been switched: %(replicas)s:"
+                         "\n%(err)s") %
                        {"id": master_candidate.id,
-                        "replicas": [repl.id for repl in exception_replicas]})
-                raise ReplicationSlaveAttachError("%s:\n%s" %
-                                                  (msg, error_messages))
+                        "replicas": [repl.id for repl in exception_replicas],
+                        "err": error_messages})
+                raise ReplicationSlaveAttachError(msg)
 
         with EndNotification(context):
             master = BuiltInstanceTasks.load(context, instance_id)
