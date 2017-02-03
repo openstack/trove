@@ -21,8 +21,9 @@ from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.notification import DBaaSClusterGrow, DBaaSClusterShrink
-from trove.common.notification import DBaaSClusterResetStatus
+from trove.common.notification import (DBaaSClusterGrow, DBaaSClusterShrink,
+                                       DBaaSClusterResetStatus,
+                                       DBaaSClusterRestart)
 from trove.common.notification import DBaaSClusterUpgrade
 from trove.common.notification import StartNotification
 from trove.common import remote
@@ -316,6 +317,11 @@ class Cluster(object):
             with StartNotification(context, cluster_id=self.id):
                 return self.reset_status()
 
+        elif action == 'restart':
+            context.notification = DBaaSClusterRestart(context, request=req)
+            with StartNotification(context, cluster_id=self.id):
+                return self.restart()
+
         elif action == 'upgrade':
             context.notification = DBaaSClusterUpgrade(context, request=req)
             dv_id = param['datastore_version']
@@ -332,8 +338,43 @@ class Cluster(object):
     def shrink(self, instance_ids):
         raise exception.BadRequest(_("Action 'shrink' not supported"))
 
+    def rolling_restart(self):
+        self.validate_cluster_available()
+        self.db_info.update(task_status=ClusterTasks.RESTARTING_CLUSTER)
+        try:
+            cluster_id = self.db_info.id
+            task_api.load(self.context, self.ds_version.manager
+                          ).restart_cluster(cluster_id)
+        except Exception:
+            self.db_info.update(task_status=ClusterTasks.NONE)
+            raise
+
+        return self.__class__(self.context, self.db_info,
+                              self.ds, self.ds_version)
+
+    def rolling_upgrade(self, datastore_version):
+        """Upgrades a cluster to a new datastore version."""
+        LOG.debug("Upgrading cluster %s." % self.id)
+
+        self.validate_cluster_available()
+        self.db_info.update(task_status=ClusterTasks.UPGRADING_CLUSTER)
+        try:
+            cluster_id = self.db_info.id
+            ds_ver_id = datastore_version.id
+            task_api.load(self.context, self.ds_version.manager
+                          ).upgrade_cluster(cluster_id, ds_ver_id)
+        except Exception:
+            self.db_info.update(task_status=ClusterTasks.NONE)
+            raise
+
+        return self.__class__(self.context, self.db_info,
+                              self.ds, self.ds_version)
+
+    def restart(self):
+        raise exception.BadRequest(_("Action 'restart' not supported"))
+
     def upgrade(self, datastore_version):
-            raise exception.BadRequest(_("Action 'upgrade' not supported"))
+        raise exception.BadRequest(_("Action 'upgrade' not supported"))
 
     @staticmethod
     def load_instance(context, cluster_id, instance_id):

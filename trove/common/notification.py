@@ -368,7 +368,7 @@ class DBaaSAPINotification(object):
                                 })
         elif 'request_id' not in kwargs:
             raise TroveError(_("Notification %s must include 'request'"
-                             " property") % self.__class__.__name__)
+                               " property") % self.__class__.__name__)
 
         self.payload.update(kwargs)
 
@@ -385,7 +385,7 @@ class DBaaSAPINotification(object):
                                 'keys': list(required_keys - provided_keys)})
         if 'server_type' not in self.payload:
             raise TroveError(_("Notification %s must include a"
-                             " 'server_type' for correct routing")
+                               " 'server_type' for correct routing")
                              % self.__class__.__name__)
 
     def _notify(self, event_qualifier, required_traits, optional_traits,
@@ -561,6 +561,15 @@ class DBaaSClusterCreate(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_end_traits(self):
+        return ['cluster_id']
+
+
+class DBaaSClusterRestart(DBaaSAPINotification):
+
+    def event_type(self):
+        return 'cluster_restart'
+
+    def required_start_traits(self):
         return ['cluster_id']
 
 
