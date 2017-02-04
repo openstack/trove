@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import mock
 from mock import Mock
 
 from testtools.matchers import Equals, Is
@@ -63,3 +64,24 @@ class TestTroveContext(trove_testtools.TestCase):
         self.assertThat(n_dict.get('notification_classname'),
                         Equals('trove.common.notification.'
                                'DBaaSInstanceCreate'))
+
+    def test_create_with_bogus(self):
+        with mock.patch('trove.common.context.LOG') as mock_log:
+            ctx = context.TroveContext.from_dict(
+                {'user': 'test_user_id',
+                 'request_id': 'test_req_id',
+                 'tenant': 'abc',
+                 'blah_blah': 'blah blah'})
+            mock_log.warning.assert_called()
+            mock_log.warning.assert_called_with('Argument being removed '
+                                                'before instantiating '
+                                                'TroveContext object - '
+                                                '%(key)s = %(value)s',
+                                                {'value': 'blah blah',
+                                                 'key': 'blah_blah'})
+        self.assertThat(ctx.user, Equals('test_user_id'))
+        self.assertThat(ctx.request_id, Equals('test_req_id'))
+        self.assertThat(ctx.tenant, Equals('abc'))
+        self.assertThat(ctx.limit, Is(None))
+        self.assertThat(ctx.marker, Is(None))
+        self.assertThat(ctx.service_catalog, Is(None))

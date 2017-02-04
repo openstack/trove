@@ -20,9 +20,12 @@ Projects should subclass this class if they wish to enhance the request
 context or provide additional information in their specific WSGI pipeline.
 """
 
+
 from oslo_context import context
 from oslo_log import log as logging
+from oslo_utils import reflection
 
+from trove.common.i18n import _
 from trove.common import local
 from trove.common.serializable_notification import SerializableNotification
 
@@ -34,15 +37,15 @@ class TroveContext(context.RequestContext):
     Stores information about the security context under which the user
     accesses the system, as well as additional request information.
     """
-    def __init__(self, **kwargs):
-        self.limit = kwargs.pop('limit', None)
-        self.marker = kwargs.pop('marker', None)
-        self.service_catalog = kwargs.pop('service_catalog', None)
-        self.user_identity = kwargs.pop('user_identity', None)
-        self.instance_id = kwargs.pop('instance_id', None)
-
-        # TODO(esp): not sure we need this
-        self.timeout = kwargs.pop('timeout', None)
+    def __init__(self, limit=None, marker=None, service_catalog=None,
+                 user_identity=None, instance_id=None, timeout=None,
+                 **kwargs):
+        self.limit = limit
+        self.marker = marker
+        self.service_catalog = service_catalog
+        self.user_identity = user_identity
+        self.instance_id = instance_id
+        self.timeout = timeout
         super(TroveContext, self).__init__(**kwargs)
 
         if not hasattr(local.store, 'context'):
@@ -65,16 +68,20 @@ class TroveContext(context.RequestContext):
 
     @classmethod
     def _remove_incompatible_context_args(cls, values):
-        LOG.debug("Running in unsafe mode and ignoring incompatible context.")
-        return values
+        realvalues = {}
 
-        context_keys = vars(cls()).keys()
+        args = (reflection.get_callable_args(context.RequestContext.__init__) +
+                reflection.get_callable_args(TroveContext.__init__))
+
         for dict_key in values.keys():
-            if dict_key not in context_keys:
-                LOG.debug("Argument being removed before instantiating "
-                          "TroveContext object - %s" % dict_key)
-                values.pop(dict_key, None)
-        return values
+            if dict_key in args:
+                realvalues[dict_key] = values.get(dict_key)
+            else:
+                LOG.warning(_("Argument being removed before instantiating "
+                              "TroveContext object - %(key)s = %(value)s"),
+                            {'key': dict_key, 'value': values.get(dict_key)})
+
+        return realvalues
 
     @classmethod
     def from_dict(cls, values):
