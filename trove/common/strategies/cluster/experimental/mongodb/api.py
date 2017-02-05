@@ -58,7 +58,10 @@ class MongoDbCluster(models.Cluster):
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties, locality):
+               instances, extended_properties, locality, configuration):
+
+        if configuration:
+            raise exception.ConfigurationNotSupported()
 
         # TODO(amcreynolds): consider moving into CONF and even supporting
         # TODO(amcreynolds): an array of values, e.g. [3, 5, 7]

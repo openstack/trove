@@ -53,7 +53,7 @@ class ClusterTest(trove_testtools.TestCase):
             CassandraCluster._create_cluster_instances(
                 self.context, 'test_cluster_id', 'test_cluster',
                 datastore, datastore_version,
-                test_instances, None, None)
+                test_instances, None, None, None)
 
         check_quotas.assert_called_once_with(
             ANY, instances=num_instances, volumes=get_vol_size.return_value)

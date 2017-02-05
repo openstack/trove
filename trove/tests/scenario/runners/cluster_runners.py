@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import os
 
 from proboscis import SkipTest
@@ -49,6 +50,11 @@ class ClusterRunner(TestRunner):
         self.initial_instance_count = None
         self.cluster_instances = None
         self.cluster_removed_instances = None
+        self.active_config_group_id = None
+        self.config_requires_restart = False
+        self.initial_group_id = None
+        self.dynamic_group_id = None
+        self.non_dynamic_group_id = None
 
     @property
     def is_using_existing_cluster(self):
@@ -61,6 +67,15 @@ class ClusterRunner(TestRunner):
     @property
     def min_cluster_node_count(self):
         return 2
+
+    def run_initial_configuration_create(self, expected_http_code=200):
+        group_id, requires_restart = self.create_initial_configuration(
+            expected_http_code)
+        if group_id:
+            self.initial_group_id = group_id
+            self.config_requires_restart = requires_restart
+        else:
+            raise SkipTest("No groups defined.")
 
     def run_cluster_create(self, num_nodes=None, expected_task_name='BUILDING',
                            expected_http_code=200):
@@ -84,11 +99,11 @@ class ClusterRunner(TestRunner):
 
         self.cluster_id = self.assert_cluster_create(
             self.cluster_name, instance_defs, self.locality,
-            expected_task_name, expected_http_code)
+            self.initial_group_id, expected_task_name, expected_http_code)
 
     def assert_cluster_create(
-            self, cluster_name, instances_def, locality, expected_task_name,
-            expected_http_code):
+            self, cluster_name, instances_def, locality, configuration,
+            expected_task_name, expected_http_code):
 
         self.report.log("Testing cluster create: %s" % cluster_name)
 
@@ -100,8 +115,10 @@ class ClusterRunner(TestRunner):
             cluster = client.clusters.create(
                 cluster_name, self.instance_info.dbaas_datastore,
                 self.instance_info.dbaas_datastore_version,
-                instances=instances_def, locality=locality)
+                instances=instances_def, locality=locality,
+                configuration=configuration)
             self.assert_client_code(client, expected_http_code)
+            self.active_config_group_id = configuration
             self._assert_cluster_values(cluster, expected_task_name)
             for instance in cluster.instances:
                 self.register_debug_inst_ids(instance['id'])
@@ -202,7 +219,8 @@ class ClusterRunner(TestRunner):
         self.current_root_creds = client.root.create_cluster_root(
             self.cluster_id, root_credentials['password'])
         self.assert_client_code(client, expected_http_code)
-        self._assert_cluster_response(client, cluster_id, expected_task_name)
+        self._assert_cluster_response(
+            client, self.cluster_id, expected_task_name)
         self.assert_equal(root_credentials['name'],
                           self.current_root_creds[0])
         self.assert_equal(root_credentials['password'],
@@ -506,6 +524,8 @@ class ClusterRunner(TestRunner):
             check.has_field("updated", six.text_type)
             if check_locality:
                 check.has_field("locality", six.text_type)
+            if self.active_config_group_id:
+                check.has_field("configuration", six.text_type)
             for instance in cluster.instances:
                 isinstance(instance, dict)
                 self.assert_is_not_none(instance['id'])
@@ -527,6 +547,214 @@ class ClusterRunner(TestRunner):
                 % (cluster_id, self._time_since(t0)))
         except exceptions.NotFound:
             self.assert_client_code(client, 404)
+
+    def restart_after_configuration_change(self):
+        if self.config_requires_restart:
+            self.run_cluster_restart()
+            self.run_cluster_restart_wait()
+            self.config_requires_restart = False
+        else:
+            raise SkipTest("Not required.")
+
+    def run_create_dynamic_configuration(self, expected_http_code=200):
+        values = self.test_helper.get_dynamic_group()
+        if values:
+            self.dynamic_group_id = self.assert_create_group(
+                'dynamic_cluster_test_group',
+                'a fully dynamic group should not require restart',
+                values, expected_http_code)
+        elif values is None:
+            raise SkipTest("No dynamic group defined in %s." %
+                           self.test_helper.get_class_name())
+        else:
+            raise SkipTest("Datastore has no dynamic configuration values.")
+
+    def assert_create_group(self, name, description, values,
+                            expected_http_code):
+        json_def = json.dumps(values)
+        client = self.auth_client
+        result = client.configurations.create(
+            name,
+            json_def,
+            description,
+            datastore=self.instance_info.dbaas_datastore,
+            datastore_version=self.instance_info.dbaas_datastore_version)
+        self.assert_client_code(client, expected_http_code)
+
+        return result.id
+
+    def run_create_non_dynamic_configuration(self, expected_http_code=200):
+        values = self.test_helper.get_non_dynamic_group()
+        if values:
+            self.non_dynamic_group_id = self.assert_create_group(
+                'non_dynamic_cluster_test_group',
+                'a group containing non-dynamic properties should always '
+                'require restart',
+                values, expected_http_code)
+        elif values is None:
+            raise SkipTest("No non-dynamic group defined in %s." %
+                           self.test_helper.get_class_name())
+        else:
+            raise SkipTest("Datastore has no non-dynamic configuration "
+                           "values.")
+
+    def run_attach_dynamic_configuration(
+            self, expected_states=['NONE'],
+            expected_http_code=202):
+        if self.dynamic_group_id:
+            self.assert_attach_configuration(
+                self.cluster_id, self.dynamic_group_id, expected_states,
+                expected_http_code)
+
+    def assert_attach_configuration(
+            self, cluster_id, group_id, expected_states, expected_http_code,
+            restart_inst=False):
+        client = self.auth_client
+        client.clusters.configuration_attach(cluster_id, group_id)
+        self.assert_client_code(client, expected_http_code)
+        self.active_config_group_id = group_id
+        self._assert_cluster_states(client, cluster_id, expected_states)
+        self.assert_configuration_group(client, cluster_id, group_id)
+
+        if restart_inst:
+            self.config_requires_restart = True
+            cluster_instances = self._get_cluster_instances(cluster_id)
+            for node in cluster_instances:
+                self.assert_equal(
+                    'RESTART_REQUIRED', node.status,
+                    "Node '%s' should be in 'RESTART_REQUIRED' state."
+                    % node.id)
+
+    def assert_configuration_group(
+            self, client, cluster_id, expected_group_id):
+        cluster = client.clusters.get(cluster_id)
+        self.assert_equal(
+            expected_group_id, cluster.configuration,
+            "Attached group does not have the expected ID.")
+
+        cluster_instances = self._get_cluster_instances(client, cluster_id)
+        for node in cluster_instances:
+            self.assert_equal(
+                expected_group_id, cluster.configuration,
+                "Attached group does not have the expected ID on "
+                "cluster node: %s" % node.id)
+
+    def run_attach_non_dynamic_configuration(
+            self, expected_states=['NONE'],
+            expected_http_code=202):
+        if self.non_dynamic_group_id:
+            self.assert_attach_configuration(
+                self.cluster_id, self.non_dynamic_group_id,
+                expected_states, expected_http_code, restart_inst=True)
+
+    def run_verify_initial_configuration(self):
+        if self.initial_group_id:
+            self.verify_configuration(self.cluster_id, self.initial_group_id)
+
+    def verify_configuration(self, cluster_id, expected_group_id):
+        self.assert_configuration_group(cluster_id, expected_group_id)
+        self.assert_configuration_values(cluster_id, expected_group_id)
+
+    def assert_configuration_values(self, cluster_id, group_id):
+        if group_id == self.initial_group_id:
+            if not self.config_requires_restart:
+                expected_configs = self.test_helper.get_dynamic_group()
+            else:
+                expected_configs = self.test_helper.get_non_dynamic_group()
+        if group_id == self.dynamic_group_id:
+            expected_configs = self.test_helper.get_dynamic_group()
+        elif group_id == self.non_dynamic_group_id:
+            expected_configs = self.test_helper.get_non_dynamic_group()
+
+        self._assert_configuration_values(cluster_id, expected_configs)
+
+    def _assert_configuration_values(self, cluster_id, expected_configs):
+        cluster_instances = self._get_cluster_instances(cluster_id)
+        for node in cluster_instances:
+            host = self.get_instance_host(node)
+            self.report.log(
+                "Verifying cluster configuration via node: %s" % host)
+            for name, value in expected_configs.items():
+                actual = self.test_helper.get_configuration_value(name, host)
+                self.assert_equal(str(value), str(actual),
+                                  "Unexpected value of property '%s'" % name)
+
+    def run_verify_dynamic_configuration(self):
+        if self.dynamic_group_id:
+            self.verify_configuration(self.cluster_id, self.dynamic_group_id)
+
+    def run_verify_non_dynamic_configuration(self):
+        if self.non_dynamic_group_id:
+            self.verify_configuration(
+                self.cluster_id, self.non_dynamic_group_id)
+
+    def run_detach_initial_configuration(self, expected_states=['NONE'],
+                                         expected_http_code=202):
+        if self.initial_group_id:
+            self.assert_detach_configuration(
+                self.cluster_id, expected_states, expected_http_code,
+                restart_inst=self.config_requires_restart)
+
+    def run_detach_dynamic_configuration(self, expected_states=['NONE'],
+                                         expected_http_code=202):
+        if self.dynamic_group_id:
+            self.assert_detach_configuration(
+                self.cluster_id, expected_states, expected_http_code)
+
+    def assert_detach_configuration(
+            self, cluster_id, expected_states, expected_http_code,
+            restart_inst=False):
+        client = self.auth_client
+        client.clusters.configuration_detach(cluster_id)
+        self.assert_client_code(client, expected_http_code)
+        self.active_config_group_id = None
+        self._assert_cluster_states(client, cluster_id, expected_states)
+        cluster = client.clusters.get(cluster_id)
+        self.assert_false(
+            hasattr(cluster, 'configuration'),
+            "Configuration group was not detached from the cluster.")
+
+        cluster_instances = self._get_cluster_instances(client, cluster_id)
+        for node in cluster_instances:
+            self.assert_false(
+                hasattr(node, 'configuration'),
+                "Configuration group was not detached from cluster node: %s"
+                % node.id)
+
+        if restart_inst:
+            self.config_requires_restart = True
+            cluster_instances = self._get_cluster_instances(client, cluster_id)
+            for node in cluster_instances:
+                self.assert_equal(
+                    'RESTART_REQUIRED', node.status,
+                    "Node '%s' should be in 'RESTART_REQUIRED' state."
+                    % node.id)
+
+    def run_detach_non_dynamic_configuration(
+            self, expected_states=['NONE'],
+            expected_http_code=202):
+        if self.non_dynamic_group_id:
+            self.assert_detach_configuration(
+                self.cluster_id, expected_states, expected_http_code,
+                restart_inst=True)
+
+    def run_delete_initial_configuration(self, expected_http_code=202):
+        if self.initial_group_id:
+            self.assert_group_delete(self.initial_group_id, expected_http_code)
+
+    def assert_group_delete(self, group_id, expected_http_code):
+        client = self.auth_client
+        client.configurations.delete(group_id)
+        self.assert_client_code(client, expected_http_code)
+
+    def run_delete_dynamic_configuration(self, expected_http_code=202):
+        if self.dynamic_group_id:
+            self.assert_group_delete(self.dynamic_group_id, expected_http_code)
+
+    def run_delete_non_dynamic_configuration(self, expected_http_code=202):
+        if self.non_dynamic_group_id:
+            self.assert_group_delete(self.non_dynamic_group_id,
+                                     expected_http_code)
 
 
 class CassandraClusterRunner(ClusterRunner):

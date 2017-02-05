@@ -168,6 +168,12 @@ cluster_restart_groups.extend([groups.CLUSTER_ACTIONS_RESTART_WAIT])
 cluster_upgrade_groups = list(cluster_create_groups)
 cluster_upgrade_groups.extend([groups.CLUSTER_UPGRADE_WAIT])
 
+cluster_config_groups = list(cluster_create_groups)
+cluster_config_groups.extend([groups.CLUSTER_CFGGRP_DELETE])
+
+cluster_config_actions_groups = list(cluster_config_groups)
+cluster_config_actions_groups.extend([groups.CLUSTER_ACTIONS_CFGGRP_ACTIONS])
+
 cluster_groups = list(cluster_actions_groups)
 cluster_groups.extend([cluster_group.GROUP])
 
@@ -254,6 +260,8 @@ register(["cluster_restart"], cluster_restart_groups)
 register(["cluster_root"], cluster_root_groups)
 register(["cluster_root_actions"], cluster_root_actions_groups)
 register(["cluster_upgrade"], cluster_upgrade_groups)
+register(["cluster_config"], cluster_config_groups)
+register(["cluster_config_actions"], cluster_config_actions_groups)
 register(["common"], common_groups)
 register(["configuration"], configuration_groups)
 register(["configuration_create"], configuration_create_groups)
@@ -294,7 +302,8 @@ register(
             user_actions_groups, ],
     multi=[cluster_actions_groups,
            cluster_negative_actions_groups,
-           cluster_root_actions_groups, ]
+           cluster_root_actions_groups,
+           cluster_config_actions_groups, ]
 )
 
 register(

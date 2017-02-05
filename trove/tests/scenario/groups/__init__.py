@@ -51,7 +51,10 @@ CFGGRP_INST_DELETE_WAIT = "scenario.cfggrp_inst_delete_wait_grp"
 
 
 # Cluster Actions Group
+CLUSTER_CFGGRP_CREATE = "scenario.cluster_actions_cfggrp_create_grp"
+CLUSTER_CFGGRP_DELETE = "scenario.cluster_actions_cfggrp_delete_grp"
 CLUSTER_ACTIONS = "scenario.cluster_actions_grp"
+CLUSTER_ACTIONS_CFGGRP_ACTIONS = "scenario.cluster_actions_cfggrp_actions_grp"
 CLUSTER_ACTIONS_ROOT_ENABLE = "scenario.cluster_actions_root_enable_grp"
 CLUSTER_ACTIONS_ROOT_ACTIONS = "scenario.cluster_actions_root_actions_grp"
 CLUSTER_ACTIONS_ROOT_GROW = "scenario.cluster_actions_root_grow_grp"

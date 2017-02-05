@@ -80,7 +80,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          [], None, None)
+                          [], None, None, None)
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
@@ -95,8 +95,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None
-                          )
+                          None, None, None)
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
@@ -118,8 +117,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None
-                          )
+                          None, None, None)
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
@@ -137,8 +135,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None
-                          )
+                          None, None, None)
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
@@ -162,8 +159,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None
-                          )
+                          None, None, None)
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
@@ -199,8 +195,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None
-                          )
+                          None, None, None)
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
@@ -218,8 +213,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None
-                          )
+                          None, None, None)
 
     @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(inst_models.Instance, 'create')
@@ -237,7 +231,7 @@ class ClusterTest(trove_testtools.TestCase):
                             self.datastore,
                             self.datastore_version,
                             instances,
-                            None, None)
+                            None, None, None)
         mock_task_api.return_value.create_cluster.assert_called_with(
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
@@ -276,7 +270,7 @@ class ClusterTest(trove_testtools.TestCase):
                             self.datastore,
                             self.datastore_version,
                             instances,
-                            None, None)
+                            None, None, None)
         mock_task_api.return_value.create_cluster.assert_called_with(
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)

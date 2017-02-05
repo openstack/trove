@@ -18,6 +18,7 @@ from datetime import datetime
 from oslo_log import log as logging
 import six
 
+from trove.cluster import models as cluster_models
 import trove.common.apischema as apischema
 from trove.common import cfg
 from trove.common import exception
@@ -198,6 +199,8 @@ class ConfigurationsController(wsgi.Controller):
                                                   deleted_at)
             models.Configuration.save(group, items)
             self._refresh_on_all_instances(context, id)
+            self._refresh_on_all_clusters(context, id)
+
         return wsgi.Result(None, 202)
 
     def edit(self, req, body, tenant_id, id):
@@ -211,25 +214,41 @@ class ConfigurationsController(wsgi.Controller):
                                                    body['configuration'])
             models.Configuration.save(group, items)
             self._refresh_on_all_instances(context, id)
+            self._refresh_on_all_clusters(context, id)
 
     def _refresh_on_all_instances(self, context, configuration_id):
-        """Refresh a configuration group on all its instances.
+        """Refresh a configuration group on all single instances.
         """
-        dbinstances = instances_models.DBInstance.find_all(
+        LOG.debug("Re-applying configuration group '%s' to all instances."
+                  % configuration_id)
+        single_instances = instances_models.DBInstance.find_all(
+            tenant_id=context.tenant,
+            configuration_id=configuration_id,
+            cluster_id=None,
+            deleted=False).all()
+
+        config = models.Configuration(context, configuration_id)
+        for dbinstance in single_instances:
+            LOG.debug("Re-applying configuration to instance: %s"
+                      % dbinstance.id)
+            instance = instances_models.Instance.load(context, dbinstance.id)
+            instance.update_configuration(config)
+
+    def _refresh_on_all_clusters(self, context, configuration_id):
+        """Refresh a configuration group on all clusters.
+        """
+        LOG.debug("Re-applying configuration group '%s' to all clusters."
+                  % configuration_id)
+        clusters = cluster_models.DBCluster.find_all(
             tenant_id=context.tenant,
             configuration_id=configuration_id,
             deleted=False).all()
 
-        LOG.debug(
-            "All instances with configuration group '%s' on tenant '%s': %s"
-            % (configuration_id, context.tenant, dbinstances))
-
-        config = models.Configuration(context, configuration_id)
-        for dbinstance in dbinstances:
-            LOG.debug("Applying configuration group '%s' to instance: %s"
-                      % (configuration_id, dbinstance.id))
-            instance = instances_models.Instance.load(context, dbinstance.id)
-            instance.update_overrides(config)
+        for dbcluster in clusters:
+            LOG.debug("Re-applying configuration to cluster: %s"
+                      % dbcluster.id)
+            cluster = cluster_models.Cluster.load(context, dbcluster.id)
+            cluster.configuration_attach(configuration_id)
 
     def _configuration_items_list(self, group, configuration):
         ds_version_id = group.datastore_version_id

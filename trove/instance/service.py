@@ -389,13 +389,13 @@ class InstanceController(wsgi.Controller):
                 configuration_id = kwargs['configuration_id']
                 with StartNotification(context, instance_id=instance.id,
                                        configuration_id=configuration_id):
-                    instance.assign_configuration(configuration_id)
+                    instance.attach_configuration(configuration_id)
             else:
                 context.notification = (
                     notification.DBaaSInstanceDetachConfiguration(context,
                                                                   request=req))
                 with StartNotification(context, instance_id=instance.id):
-                    instance.unassign_configuration()
+                    instance.detach_configuration()
         if 'datastore_version' in kwargs:
             datastore_version = datastore_models.DatastoreVersion.load(
                 instance.datastore, kwargs['datastore_version'])

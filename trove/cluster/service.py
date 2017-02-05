@@ -218,6 +218,8 @@ class ClusterController(wsgi.Controller):
             if locality not in locality_domain:
                 raise exception.BadRequest(msg=locality_domain_msg)
 
+        configuration = body['cluster'].get('configuration')
+
         context.notification = notification.DBaaSClusterCreate(context,
                                                                request=req)
         with StartNotification(context, name=name, datastore=datastore.name,
@@ -225,7 +227,7 @@ class ClusterController(wsgi.Controller):
             cluster = models.Cluster.create(context, name, datastore,
                                             datastore_version, instances,
                                             extended_properties,
-                                            locality)
+                                            locality, configuration)
         cluster.locality = locality
         view = views.load_view(cluster, req=req, load_servers=False)
         return wsgi.Result(view.data(), 200)

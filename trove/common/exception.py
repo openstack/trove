@@ -236,6 +236,11 @@ class UnprocessableEntity(TroveError):
     message = _("Unable to process the contained request.")
 
 
+class ConfigurationNotSupported(UnprocessableEntity):
+
+    message = _("Configuration groups not supported by the datastore.")
+
+
 class CannotResizeToSameSize(TroveError):
 
     message = _("No change was requested in the size of the instance.")
