@@ -10,7 +10,7 @@ source $_LIB/die
 
 BRANCH_OVERRIDE=${BRANCH_OVERRIDE:-default}
 ADD_BRANCH=$(basename ${BRANCH_OVERRIDE})
-REQUIREMENTS_FILE=${TROVESTACK_SCRIPTS}/files/requirements/fedora-requirements-${ADD_BRANCH}.txt
+REQUIREMENTS_FILE=${TROVESTACK_SCRIPTS}/files/requirements/fedora-requirements.txt
 
 [ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
 [ -e ${REQUIREMENTS_FILE} ] || die "Requirements not found"
