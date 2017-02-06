@@ -21,9 +21,7 @@ from trove.common.i18n import _
 from trove.common import remote
 from trove.common import utils
 from trove.extensions.mysql import models as mysql_models
-from trove.instance import models as imodels
 from trove.instance import models as instance_models
-from trove.instance.models import load_instance, InstanceServiceStatus
 from trove import rpc
 
 LOG = logging.getLogger(__name__)
@@ -54,8 +52,9 @@ def load_mgmt_instances(context, deleted=None, client=None,
 
 def load_mgmt_instance(cls, context, id, include_deleted):
     try:
-        instance = load_instance(cls, context, id, needs_server=True,
-                                 include_deleted=include_deleted)
+        instance = instance_models.load_instance(
+            cls, context, id, needs_server=True,
+            include_deleted=include_deleted)
         client = remote.create_nova_client(context, CONF.os_region_name)
         try:
             server = client.rdservers.get(instance.server_id)
@@ -74,12 +73,13 @@ def load_mgmt_instance(cls, context, id, include_deleted):
         assert instance.server is not None
     except Exception as e:
         LOG.error(e)
-        instance = load_instance(cls, context, id, needs_server=False,
-                                 include_deleted=include_deleted)
+        instance = instance_models.load_instance(
+            cls, context, id, needs_server=False,
+            include_deleted=include_deleted)
     return instance
 
 
-class SimpleMgmtInstance(imodels.BaseInstance):
+class SimpleMgmtInstance(instance_models.BaseInstance):
     def __init__(self, context, db_info, server, datastore_status):
         super(SimpleMgmtInstance, self).__init__(context, db_info, server,
                                                  datastore_status)
@@ -87,7 +87,7 @@ class SimpleMgmtInstance(imodels.BaseInstance):
     @property
     def status(self):
         if self.deleted:
-            return imodels.InstanceStatus.SHUTDOWN
+            return instance_models.InstanceStatus.SHUTDOWN
         return super(SimpleMgmtInstance, self).status
 
     @property
@@ -130,7 +130,7 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
         return instance
 
 
-class MgmtInstance(imodels.Instance):
+class MgmtInstance(instance_models.Instance):
     def get_diagnostics(self):
         return self.get_guest().get_diagnostics()
 
@@ -144,7 +144,7 @@ class MgmtInstance(imodels.Instance):
         return self.get_guest().rpc_ping()
 
 
-class MgmtInstances(imodels.Instances):
+class MgmtInstances(instance_models.Instances):
     @staticmethod
     def load_status_from_existing(context, db_infos, servers):
         def load_instance(context, db, status, server=None):
@@ -152,11 +152,9 @@ class MgmtInstances(imodels.Instances):
 
         if context is None:
             raise TypeError(_("Argument context not defined."))
-        find_server = imodels.create_server_list_matcher(servers)
-        instances = imodels.Instances._load_servers_status(load_instance,
-                                                           context,
-                                                           db_infos,
-                                                           find_server)
+        find_server = instance_models.create_server_list_matcher(servers)
+        instances = instance_models.Instances._load_servers_status(
+            load_instance, context, db_infos, find_server)
         _load_servers(instances, find_server)
         return instances
 
@@ -231,7 +229,7 @@ class NotificationTransformer(object):
         db_infos = instance_models.DBInstance.find_all(deleted=False)
         for db_info in db_infos:
             try:
-                service_status = InstanceServiceStatus.find_by(
+                service_status = instance_models.InstanceServiceStatus.find_by(
                     instance_id=db_info.id)
             except exception.ModelNotFoundError:
                 # There is a small window of opportunity during when the db
