@@ -171,7 +171,7 @@ def create_nova_client(user, service_type=None):
                        user.auth_key,
                        project_name=user.tenant,
                        auth_url=test_config.nova_client['auth_url'],
-                       service_type=service_type, no_cache=True,
+                       service_type=service_type, os_cache=False,
                        cacert=test_config.values.get('cacert', None))
     openstack.authenticate()
     return TestClient(openstack)
