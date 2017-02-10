@@ -16,6 +16,7 @@
 from datetime import datetime
 import json
 from proboscis import SkipTest
+import six
 
 from trove.common.utils import generate_uuid
 from trove.tests.scenario.runners.test_runners import TestRunner
@@ -139,12 +140,12 @@ class ConfigurationRunner(TestRunner):
         self.assert_client_code(client, expected_http_code)
 
         with TypeCheck('Configuration', result) as configuration:
-            configuration.has_field('name', basestring)
-            configuration.has_field('description', basestring)
+            configuration.has_field('name', six.string_types)
+            configuration.has_field('description', six.string_types)
             configuration.has_field('values', dict)
-            configuration.has_field('datastore_name', basestring)
+            configuration.has_field('datastore_name', six.string_types)
             configuration.has_field('datastore_version_id', unicode)
-            configuration.has_field('datastore_version_name', basestring)
+            configuration.has_field('datastore_version_name', six.string_types)
 
             self.assert_equal(name, result.name)
             self.assert_equal(description, result.description)
@@ -216,12 +217,12 @@ class ConfigurationRunner(TestRunner):
 
         # check the result field types
         with TypeCheck("configuration", result) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("description", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
+            check.has_field("description", six.string_types)
             check.has_field("values", dict)
-            check.has_field("created", basestring)
-            check.has_field("updated", basestring)
+            check.has_field("created", six.string_types)
+            check.has_field("updated", six.string_types)
             check.has_field("instance_count", int)
 
         # check for valid timestamps
@@ -243,7 +244,7 @@ class ConfigurationRunner(TestRunner):
                 if param.type == 'integer':
                     check.has_element(item_key, int)
                 if param.type == 'string':
-                    check.has_element(item_key, basestring)
+                    check.has_element(item_key, six.string_types)
                 if param.type == 'boolean':
                     check.has_element(item_key, bool)
 

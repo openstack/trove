@@ -2,6 +2,7 @@ import httplib2
 import json
 import os
 import re
+import six
 import sys
 import time
 from urlparse import urlparse
@@ -727,9 +728,11 @@ class MgmtHosts(object):
                     check.true(instance['name'] == 'json_rack_instance' or
                                instance['name'] == 'xml_rack_instance')
                     #TODO: Check with GUID regex.
-                    check.true(isinstance(instance['id'], basestring))
-                    check.true(isinstance(instance['server_id'], basestring))
-                    check.true(isinstance(instance['tenant_id'], basestring))
+                    check.true(isinstance(instance['id'], six.string_types))
+                    check.true(isinstance(instance['server_id'],
+                                          six.string_types))
+                    check.true(isinstance(instance['tenant_id'],
+                                          six.string_types))
 
     @test
     def mgmt_host_update_all(self):
@@ -827,7 +830,7 @@ class MgmtInstance(object):
     @for_both
     def created(self, result):
         #TODO: use regex
-        assert_true(isinstance(result.created, basestring))
+        assert_true(isinstance(result.created, six.string_types))
 
     @test
     def deleted(self):
@@ -862,26 +865,29 @@ class MgmtInstance(object):
         assert_true(isinstance(result.links, list))
         for link in result.links:
             assert_true(isinstance(link, dict))
-            assert_true(isinstance(link['href'], basestring))
-            assert_true(isinstance(link['rel'], basestring))
+            assert_true(isinstance(link['href'], six.string_types))
+            assert_true(isinstance(link['rel'], six.string_types))
 
     @test
     def local_id(self):
         #TODO: regex
         assert_true(isinstance(self.results[JSON_INDEX].local_id, int))
-        assert_true(isinstance(self.results[XML_INDEX].local_id, basestring))
+        assert_true(isinstance(self.results[XML_INDEX].local_id,
+                               six.string_types))
 
     @test
     @for_both
     def name(self, result):
         #TODO: regex
-        assert_true(isinstance(result.name, basestring))
+        assert_true(isinstance(result.name,
+                               six.string_types))
 
     @test
     @for_both
     def server_id(self, result):
         #TODO: regex
-        assert_true(isinstance(result.server_id, basestring))
+        assert_true(isinstance(result.server_id,
+                               six.string_types))
 
     @test
     @for_both
@@ -903,7 +909,8 @@ class MgmtInstance(object):
     @for_both
     def updated(self, result):
         #TODO: regex
-        assert_true(isinstance(result.updated, basestring))
+        assert_true(isinstance(result.updated,
+                               six.string_types))
 
     @test
     @for_both

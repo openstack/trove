@@ -104,7 +104,19 @@ def check_raised_localized_exceptions(logical_line, filename):
             yield (logical_line.index(exception_msg), msg)
 
 
+def check_no_basestring(logical_line):
+    """T104 - Don't use basestring, use six.string_types instead
+       basestring is not supported by py3, using six.string_types to ensure
+       py3 and py2 compatibility
+    """
+    if re.search(r"\, basestring\)", logical_line):
+        msg = ("T104: basestring is not Python3-compatible, use "
+               "six.string_types instead.")
+        yield(0, msg)
+
+
 def factory(register):
     register(validate_log_translations)
     register(no_translate_debug_logs)
     register(check_raised_localized_exceptions)
+    register(check_no_basestring)
