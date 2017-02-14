@@ -47,9 +47,9 @@ class MongoDbGuestAgentAPI(guest_api.API):
     def add_shard(self, replica_set_name, replica_set_member):
         LOG.debug("Adding shard with replSet %(replica_set_name)s and member "
                   "%(replica_set_member)s for instance "
-                  "%(id)s" % {'replica_set_name': replica_set_name,
-                              'replica_set_member': replica_set_member,
-                              'id': self.id})
+                  "%(id)s", {'replica_set_name': replica_set_name,
+                             'replica_set_member': replica_set_member,
+                             'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("add_shard", guest_api.AGENT_HIGH_TIMEOUT,
@@ -58,7 +58,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
                           replica_set_member=replica_set_member)
 
     def add_members(self, members):
-        LOG.debug("Adding members %(members)s on instance %(id)s" % {
+        LOG.debug("Adding members %(members)s on instance %(id)s", {
             'members': members, 'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
@@ -67,8 +67,8 @@ class MongoDbGuestAgentAPI(guest_api.API):
 
     def add_config_servers(self, config_servers):
         LOG.debug("Adding config servers %(config_servers)s for instance "
-                  "%(id)s" % {'config_servers': config_servers,
-                              'id': self.id})
+                  "%(id)s", {'config_servers': config_servers,
+                             'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("add_config_servers", guest_api.AGENT_HIGH_TIMEOUT,
@@ -129,7 +129,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
                           version=version)
 
     def is_shard_active(self, replica_set_name):
-        LOG.debug("Checking if replica set %s is active" % replica_set_name)
+        LOG.debug("Checking if replica set %s is active", replica_set_name)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("is_shard_active",

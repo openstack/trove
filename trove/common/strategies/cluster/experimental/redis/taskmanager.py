@@ -43,7 +43,7 @@ class RedisTaskManagerStrategy(base.BaseTaskManagerStrategy):
 class RedisClusterTasks(task_models.ClusterTasks):
 
     def create_cluster(self, context, cluster_id):
-        LOG.debug("Begin create_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin create_cluster for id: %s.", cluster_id)
 
         def _create_cluster():
 
@@ -100,10 +100,10 @@ class RedisClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("End create_cluster for id: %s." % cluster_id)
+        LOG.debug("End create_cluster for id: %s.", cluster_id)
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):
-        LOG.debug("Begin grow_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin grow_cluster for id: %s.", cluster_id)
 
         def _grow_cluster():
 
@@ -144,12 +144,12 @@ class RedisClusterTasks(task_models.ClusterTasks):
             LOG.exception(_("Timeout for growing cluster."))
             self.update_statuses_on_failure(cluster_id)
         except Exception:
-            LOG.exception(_("Error growing cluster %s.") % cluster_id)
+            LOG.exception(_("Error growing cluster %s."), cluster_id)
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
 
-        LOG.debug("End grow_cluster for id: %s." % cluster_id)
+        LOG.debug("End grow_cluster for id: %s.", cluster_id)
 
 
 class RedisTaskManagerAPI(task_api.API):

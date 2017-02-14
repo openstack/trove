@@ -169,7 +169,7 @@ class CassandraCluster(models.Cluster):
         return "%s-member-%s-%s-%d" % (cluster_name, dc, rack, instance_idx)
 
     def grow(self, instances):
-        LOG.debug("Processing a request for growing cluster: %s" % self.id)
+        LOG.debug("Processing a request for growing cluster: %s", self.id)
 
         self.validate_cluster_available()
 
@@ -193,7 +193,7 @@ class CassandraCluster(models.Cluster):
         return CassandraCluster(context, db_info, datastore, datastore_version)
 
     def shrink(self, removal_ids):
-        LOG.debug("Processing a request for shrinking cluster: %s" % self.id)
+        LOG.debug("Processing a request for shrinking cluster: %s", self.id)
 
         self.validate_cluster_available()
 

@@ -42,14 +42,14 @@ class VerticaGuestAgentAPI(guest_api.API):
     """
 
     def get_public_keys(self, user):
-        LOG.debug("Getting public keys for user: %s." % user)
+        LOG.debug("Getting public keys for user: %s.", user)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("get_public_keys", guest_api.AGENT_HIGH_TIMEOUT,
                           version=version, user=user)
 
     def authorize_public_keys(self, user, public_keys):
-        LOG.debug("Authorizing public keys for user: %s." % user)
+        LOG.debug("Authorizing public keys for user: %s.", user)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("authorize_public_keys",
@@ -58,28 +58,28 @@ class VerticaGuestAgentAPI(guest_api.API):
                           user=user, public_keys=public_keys)
 
     def install_cluster(self, members):
-        LOG.debug("Installing Vertica cluster on members: %s." % members)
+        LOG.debug("Installing Vertica cluster on members: %s.", members)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("install_cluster", CONF.cluster_usage_timeout,
                           version=version, members=members)
 
     def grow_cluster(self, members):
-        LOG.debug("Growing Vertica cluster with members: %s." % members)
+        LOG.debug("Growing Vertica cluster with members: %s.", members)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("grow_cluster", CONF.cluster_usage_timeout,
                           version=version, members=members)
 
     def shrink_cluster(self, members):
-        LOG.debug("Shrinking Vertica cluster with members: %s." % members)
+        LOG.debug("Shrinking Vertica cluster with members: %s.", members)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("shrink_cluster", CONF.cluster_usage_timeout,
                           version=version, members=members)
 
     def mark_design_ksafe(self, k):
-        LOG.debug("Setting vertica k-safety level to : %s." % k)
+        LOG.debug("Setting vertica k-safety level to : %s.", k)
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("mark_design_ksafe", CONF.cluster_usage_timeout,
