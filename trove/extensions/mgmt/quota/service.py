@@ -33,8 +33,7 @@ class QuotaController(wsgi.Controller):
     def show(self, req, tenant_id, id):
         """Return all quotas for this tenant."""
         LOG.info(_("Indexing quota info for tenant '%(id)s'\n"
-                   "req : '%(req)s'\n\n") % {
-                       "id": id, "req": req})
+                   "req : '%(req)s'\n\n"), {"id": id, "req": req})
 
         usages = quota_engine.get_all_quota_usages_by_tenant(id)
         limits = quota_engine.get_all_quotas_by_tenant(id)
@@ -45,8 +44,7 @@ class QuotaController(wsgi.Controller):
     @admin_context
     def update(self, req, body, tenant_id, id):
         LOG.info(_("Updating quota limits for tenant '%(id)s'\n"
-                   "req : '%(req)s'\n\n") % {
-                       "id": id, "req": req})
+                   "req : '%(req)s'\n\n"), {"id": id, "req": req})
 
         if not body:
             raise exception.BadRequest(_("Invalid request body."))

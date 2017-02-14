@@ -75,8 +75,8 @@ class ConfigurationsParameterController(wsgi.Controller):
     def create(self, req, body, tenant_id, version_id):
         """Create configuration parameter for datastore version."""
         LOG.info(_("Creating configuration parameter for datastore"))
-        LOG.debug("req : '%s'\n\n" % req)
-        LOG.debug("body : '%s'\n\n" % body)
+        LOG.debug("req : '%s'\n\n", req)
+        LOG.debug("body : '%s'\n\n", body)
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
 
@@ -102,8 +102,8 @@ class ConfigurationsParameterController(wsgi.Controller):
     def update(self, req, body, tenant_id, version_id, id):
         """Updating configuration parameter for datastore version."""
         LOG.info(_("Updating configuration parameter for datastore"))
-        LOG.debug("req : '%s'\n\n" % req)
-        LOG.debug("body : '%s'\n\n" % body)
+        LOG.debug("req : '%s'\n\n", req)
+        LOG.debug("body : '%s'\n\n", body)
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
 
@@ -127,7 +127,7 @@ class ConfigurationsParameterController(wsgi.Controller):
     def delete(self, req, tenant_id, version_id, id):
         """Delete configuration parameter for datastore version."""
         LOG.info(_("Deleting configuration parameter for datastore"))
-        LOG.debug("req : '%s'\n\n" % req)
+        LOG.debug("req : '%s'\n\n", req)
         ds_config_params = config_models.DatastoreConfigurationParameters
         try:
             ds_config_params.delete(version_id, id)

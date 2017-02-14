@@ -50,7 +50,7 @@ class AccountsSummary(object):
         db_infos = DBInstance.find_all(deleted=False)
         tenant_ids_for_instances = [db_info.tenant_id for db_info in db_infos]
         tenant_ids = set(tenant_ids_for_instances)
-        LOG.debug("All tenants with instances: %s" % tenant_ids)
+        LOG.debug("All tenants with instances: %s", tenant_ids)
         accounts = []
         for tenant_id in tenant_ids:
             num_instances = tenant_ids_for_instances.count(tenant_id)

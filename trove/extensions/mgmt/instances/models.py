@@ -38,7 +38,7 @@ def load_mgmt_instances(context, deleted=None, client=None,
         mgmt_servers = client.rdservers.list()
     except AttributeError:
         mgmt_servers = client.servers.list(search_opts={'all_tenants': 1})
-    LOG.info(_("Found %d servers in Nova") %
+    LOG.info(_("Found %d servers in Nova"),
              len(mgmt_servers if mgmt_servers else []))
     args = {}
     if deleted is not None:
@@ -201,8 +201,8 @@ class NotificationTransformer(object):
             datastore_manager_id = id_map[datastore_manager]
         else:
             datastore_manager_id = cfg.UNKNOWN_SERVICE_ID
-            LOG.error(_("Datastore ID for Manager (%s) is not configured")
-                      % datastore_manager)
+            LOG.error(_("Datastore ID for Manager (%s) is not configured"),
+                      datastore_manager)
         return datastore_manager_id
 
     def transform_instance(self, instance, audit_start, audit_end):
@@ -240,7 +240,7 @@ class NotificationTransformer(object):
                 # message for all such instances. These instance are too new
                 # and will get picked up the next round of notifications.
                 LOG.debug("InstanceServiceStatus not found for %s. "
-                          "Will wait to send notification." % db_info.id)
+                          "Will wait to send notification.", db_info.id)
                 continue
             instance = SimpleMgmtInstance(None, db_info, None, service_status)
             message = self.transform_instance(instance, audit_start, audit_end)
@@ -257,10 +257,10 @@ class NovaNotificationTransformer(NotificationTransformer):
 
     def _lookup_flavor(self, flavor_id):
         if flavor_id in self._flavor_cache:
-            LOG.debug("Flavor cache hit for %s" % flavor_id)
+            LOG.debug("Flavor cache hit for %s", flavor_id)
             return self._flavor_cache[flavor_id]
         # fetch flavor resource from nova
-        LOG.info(_("Flavor cache miss for %s") % flavor_id)
+        LOG.info(_("Flavor cache miss for %s"), flavor_id)
         flavor = self.nova_client.flavors.get(flavor_id)
         self._flavor_cache[flavor_id] = flavor.name if flavor else 'unknown'
         return self._flavor_cache[flavor_id]

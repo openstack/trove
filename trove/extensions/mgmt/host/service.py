@@ -31,8 +31,8 @@ class HostController(InstanceController):
     @admin_context
     def index(self, req, tenant_id, detailed=False):
         """Return all hosts."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Indexing a host for tenant '%s'") % tenant_id)
+        LOG.info(_("req : '%s'\n\n"), req)
+        LOG.info(_("Indexing a host for tenant '%s'"), tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         hosts = models.SimpleHost.load_all(context)
         return wsgi.Result(views.HostsView(hosts).data(), 200)
@@ -40,9 +40,9 @@ class HostController(InstanceController):
     @admin_context
     def show(self, req, tenant_id, id):
         """Return a single host."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing a host for tenant '%s'") % tenant_id)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.info(_("req : '%s'\n\n"), req)
+        LOG.info(_("Showing a host for tenant '%s'"), tenant_id)
+        LOG.info(_("id : '%s'\n\n"), id)
         context = req.environ[wsgi.CONTEXT_KEY]
         host = models.DetailedHost.load(context, id)
         return wsgi.Result(views.HostDetailedView(host).data(), 200)
