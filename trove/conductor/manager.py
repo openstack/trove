@@ -47,11 +47,10 @@ class Manager(periodic_task.PeriodicTasks):
 
         if sent is None:
             LOG.error(_("[Instance %s] sent field not present. Cannot "
-                        "compare.") % instance_id)
+                        "compare."), instance_id)
             return False
 
-        LOG.debug("Instance %(instance)s sent %(method)s at %(sent)s "
-                  % fields)
+        LOG.debug("Instance %(instance)s sent %(method)s at %(sent)s ", fields)
 
         seen = None
         try:
@@ -63,7 +62,7 @@ class Manager(periodic_task.PeriodicTasks):
 
         if seen is None:
             LOG.debug("[Instance %s] Did not find any previous message. "
-                      "Creating." % instance_id)
+                      "Creating.", instance_id)
             seen = LastSeen.create(instance_id=instance_id,
                                    method_name=method_name,
                                    sent=sent)
@@ -73,17 +72,17 @@ class Manager(periodic_task.PeriodicTasks):
         last_sent = float(seen.sent)
         if last_sent < sent:
             LOG.debug("[Instance %s] Rec'd message is younger than last "
-                      "seen. Updating." % instance_id)
+                      "seen. Updating.", instance_id)
             seen.sent = sent
             seen.save()
             return False
 
         LOG.info(_("[Instance %s] Rec'd message is older than last seen. "
-                   "Discarding.") % instance_id)
+                   "Discarding."), instance_id)
         return True
 
     def heartbeat(self, context, instance_id, payload, sent=None):
-        LOG.debug("Instance ID: %(instance)s, Payload: %(payload)s" %
+        LOG.debug("Instance ID: %(instance)s, Payload: %(payload)s",
                   {"instance": str(instance_id),
                    "payload": str(payload)})
         status = inst_models.InstanceServiceStatus.find_by(
@@ -97,7 +96,7 @@ class Manager(periodic_task.PeriodicTasks):
 
     def update_backup(self, context, instance_id, backup_id,
                       sent=None, **backup_fields):
-        LOG.debug("Instance ID: %(instance)s, Backup ID: %(backup)s" %
+        LOG.debug("Instance ID: %(instance)s, Backup ID: %(backup)s",
                   {"instance": str(instance_id),
                    "backup": str(backup_id)})
         backup = bkup_models.DBBackup.find_by(id=backup_id)
@@ -114,7 +113,7 @@ class Manager(periodic_task.PeriodicTasks):
                 'instance': str(instance_id),
             }
             LOG.error(_("[Instance: %(instance)s] Backup IDs mismatch! "
-                        "Expected %(expected)s, found %(found)s") % fields)
+                        "Expected %(expected)s, found %(found)s"), fields)
             return
         if instance_id != backup.instance_id:
             fields = {
@@ -124,7 +123,7 @@ class Manager(periodic_task.PeriodicTasks):
             }
             LOG.error(_("[Instance: %(instance)s] Backup instance IDs "
                         "mismatch! Expected %(expected)s, found "
-                        "%(found)s") % fields)
+                        "%(found)s"), fields)
             return
 
         for k, v in backup_fields.items():
@@ -133,7 +132,7 @@ class Manager(periodic_task.PeriodicTasks):
                     'key': k,
                     'value': v,
                 }
-                LOG.debug("Backup %(key)s: %(value)s" % fields)
+                LOG.debug("Backup %(key)s: %(value)s", fields)
                 setattr(backup, k, v)
         backup.save()
 
@@ -149,6 +148,6 @@ class Manager(periodic_task.PeriodicTasks):
                         message, exception):
         notification = SerializableNotification.deserialize(
             context, serialized_notification)
-        LOG.error(_("Guest exception on request %(req)s:\n%(exc)s")
-                  % {'req': notification.request_id, 'exc': exception})
+        LOG.error(_("Guest exception on request %(req)s:\n%(exc)s"),
+                  {'req': notification.request_id, 'exc': exception})
         notification.notify_exc_info(message, exception)

@@ -51,8 +51,8 @@ class Configurations(object):
             db_info = DBConfiguration.find_all(tenant_id=context.tenant,
                                                deleted=False)
             if db_info.count() == 0:
-                LOG.debug("No configurations found for tenant %s"
-                          % context.tenant)
+                LOG.debug("No configurations found for tenant %s",
+                          context.tenant)
 
         limit = utils.pagination_limit(context.limit,
                                        Configurations.DEFAULT_LIMIT)
@@ -90,8 +90,8 @@ class Configuration(object):
 
     @staticmethod
     def create_items(cfg_id, values):
-        LOG.debug("Saving configuration values for %s - "
-                  "values: %s" % (cfg_id, values))
+        LOG.debug("Saving configuration values for %(id)s - "
+                  "values: %(values)s", {'id': cfg_id, 'values': values})
         config_items = []
         for key, val in values.items():
             config_item = DBConfigurationParameter.create(
@@ -113,7 +113,7 @@ class Configuration(object):
     def remove_all_items(context, id, deleted_at):
         items = DBConfigurationParameter.find_all(configuration_id=id,
                                                   deleted=False).all()
-        LOG.debug("Removing all configuration values for %s" % id)
+        LOG.debug("Removing all configuration values for %s", id)
         for item in items:
             item.deleted = True
             item.deleted_at = deleted_at
@@ -187,15 +187,15 @@ class Configuration(object):
             self.configuration_id)
         config_items = Configuration.load_items(self.context,
                                                 id=self.configuration_id)
-        LOG.debug("config_items: %s" % config_items)
+        LOG.debug("config_items: %s", config_items)
         detail_list = DatastoreConfigurationParameters.load_parameters(
             datastore_v.id, show_deleted=True)
 
         for i in config_items:
-            LOG.debug("config item: %s" % i)
+            LOG.debug("config item: %s", i)
             details = Configuration.find_parameter_details(
                 i.configuration_key, detail_list)
-            LOG.debug("parameter details: %s" % details)
+            LOG.debug("parameter details: %s", details)
             if not details:
                 raise exception.NotFound(uuid=i.configuration_key)
             if bool(details.restart_required):
