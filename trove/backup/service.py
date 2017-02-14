@@ -38,7 +38,7 @@ class BackupController(wsgi.Controller):
         """
         Return all backups information for a tenant ID.
         """
-        LOG.debug("Listing backups for tenant %s" % tenant_id)
+        LOG.debug("Listing backups for tenant %s", tenant_id)
         datastore = req.GET.get('datastore')
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'backup:index')
@@ -50,8 +50,8 @@ class BackupController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         """Return a single backup."""
-        LOG.debug("Showing a backup for tenant %s ID: '%s'"
-                  % (tenant_id, id))
+        LOG.debug("Showing a backup for tenant %(tenant_id)s ID: '%(id)s'",
+                  {'tenant_id': tenant_id, 'id': id})
         context = req.environ[wsgi.CONTEXT_KEY]
         backup = Backup.get_by_id(context, id)
         policy.authorize_on_target(context, 'backup:show',
@@ -78,7 +78,7 @@ class BackupController(wsgi.Controller):
 
     def delete(self, req, tenant_id, id):
         LOG.info(_('Deleting backup for tenant %(tenant_id)s '
-                   'ID: %(backup_id)s') %
+                   'ID: %(backup_id)s'),
                  {'tenant_id': tenant_id, 'backup_id': id})
         context = req.environ[wsgi.CONTEXT_KEY]
         backup = Backup.get_by_id(context, id)
