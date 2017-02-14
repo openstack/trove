@@ -60,7 +60,7 @@ class ClusterController(wsgi.Controller):
     def action(self, req, body, tenant_id, id):
         LOG.debug(("Committing Action Against Cluster for "
                    "Tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\nid : '%(id)s'\n\n") %
+                   "req : '%(req)s'\n\nid : '%(id)s'\n\n"),
                   {"req": req, "id": id, "tenant_id": tenant_id})
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
@@ -88,7 +88,7 @@ class ClusterController(wsgi.Controller):
     def show(self, req, tenant_id, id):
         """Return a single cluster."""
         LOG.debug(("Showing a Cluster for Tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\nid : '%(id)s'\n\n") %
+                   "req : '%(req)s'\n\nid : '%(id)s'\n\n"),
                   {"req": req, "id": id, "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -102,7 +102,7 @@ class ClusterController(wsgi.Controller):
                    "'%(tenant_id)s'\n"
                    "req : '%(req)s'\n\n"
                    "cluster_id : '%(cluster_id)s'\n\n"
-                   "instance_id : '%(instance_id)s;\n\n") %
+                   "instance_id : '%(instance_id)s;\n\n"),
                   {"req": req, "tenant_id": tenant_id,
                    "cluster_id": cluster_id,
                    "instance_id": instance_id})
@@ -118,7 +118,7 @@ class ClusterController(wsgi.Controller):
     def delete(self, req, tenant_id, id):
         """Delete a cluster."""
         LOG.debug(("Deleting a Cluster for Tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\nid : '%(id)s'\n\n") %
+                   "req : '%(req)s'\n\nid : '%(id)s'\n\n"),
                   {"req": req, "id": id, "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -133,8 +133,8 @@ class ClusterController(wsgi.Controller):
     def index(self, req, tenant_id):
         """Return a list of clusters."""
         LOG.debug(("Showing a list of clusters for Tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {"req": req,
-                                             "tenant_id": tenant_id})
+                   "req : '%(req)s'\n\n"), {"req": req,
+                                            "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
 
@@ -159,7 +159,7 @@ class ClusterController(wsgi.Controller):
 
     def create(self, req, body, tenant_id):
         LOG.debug(("Creating a Cluster for Tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\nbody : '%(body)s'\n\n") %
+                   "req : '%(req)s'\n\nbody : '%(body)s'\n\n"),
                   {"tenant_id": tenant_id, "req": req, "body": body})
 
         context = req.environ[wsgi.CONTEXT_KEY]

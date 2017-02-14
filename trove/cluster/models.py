@@ -147,11 +147,11 @@ class Cluster(object):
         self.db_info.save()
 
     def reset_task(self):
-        LOG.info(_("Setting task to NONE on cluster %s") % self.id)
+        LOG.info(_("Setting task to NONE on cluster %s"), self.id)
         self.update_db(task_status=ClusterTasks.NONE)
 
     def reset_status(self):
-        LOG.info(_("Resetting status to NONE on cluster %s") % self.id)
+        LOG.info(_("Resetting status to NONE on cluster %s"), self.id)
         self.reset_task()
         instances = inst_models.DBInstance.find_all(cluster_id=self.id,
                                                     deleted=False).all()
@@ -389,7 +389,7 @@ class Cluster(object):
 
     def rolling_upgrade(self, datastore_version):
         """Upgrades a cluster to a new datastore version."""
-        LOG.debug("Upgrading cluster %s." % self.id)
+        LOG.debug("Upgrading cluster %s.", self.id)
 
         self.validate_cluster_available()
         self.db_info.update(task_status=ClusterTasks.UPGRADING_CLUSTER)
@@ -443,8 +443,9 @@ class Cluster(object):
                             instance.save_configuration(configuration)
                 else:
                     LOG.debug(
-                        "Node '%s' already has the configuration '%s' "
-                        "attached." % (instance.id, configuration_id))
+                        "Node '%(inst_id)s' already has the configuration "
+                        "'%(conf_id)s' attached.",
+                        {'inst_id': instance.id, 'conf_id': configuration_id})
 
             # Configuration has been persisted to all instances.
             # The cluster is in a consistent state with all nodes
@@ -501,8 +502,8 @@ class Cluster(object):
                             instance.delete_configuration()
                 else:
                     LOG.debug(
-                        "Node '%s' has no configuration attached."
-                        % instance.id)
+                        "Node '%s' has no configuration attached.",
+                        instance.id)
 
             # The cluster is in a consistent state with all nodes
             # requiring restart.
