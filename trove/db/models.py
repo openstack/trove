@@ -59,14 +59,14 @@ class DatabaseModelBase(models.ModelBase):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
         self['updated'] = utils.utcnow()
-        LOG.debug("Saving %(name)s: %(dict)s" %
+        LOG.debug("Saving %(name)s: %(dict)s",
                   {'name': self.__class__.__name__,
                    'dict': strutils.mask_dict_password(self.__dict__)})
         return self.db_api.save(self)
 
     def delete(self):
         self['updated'] = utils.utcnow()
-        LOG.debug("Deleting %(name)s: %(dict)s" %
+        LOG.debug("Deleting %(name)s: %(dict)s",
                   {'name': self.__class__.__name__,
                    'dict': strutils.mask_dict_password(self.__dict__)})
 
@@ -105,13 +105,12 @@ class DatabaseModelBase(models.ModelBase):
         if ((context and not context.is_admin and hasattr(model, 'tenant_id')
              and model.tenant_id != context.tenant)):
             msg = _("Tenant %(s_tenant)s tried to access "
-                    "%(s_name)s, owned by %(s_owner)s.")
-            LOG.error(msg % (
-                {"s_tenant": context.tenant, "s_name": cls.__name__,
-                 "s_owner": model.tenant_id}))
-            raise exception.ModelNotFoundError(
-                _("Tenant %(s_tenant)s cannot access %(s_name)s") % (
-                    {"s_tenant": context.tenant, "s_name": cls.__name__}))
+                    "%(s_name)s, owned by %(s_owner)s.") % {
+                "s_tenant": context.tenant, "s_name": cls.__name__,
+                "s_owner": model.tenant_id}
+
+            LOG.error(msg)
+            raise exception.ModelNotFoundError(msg)
 
         return model
 

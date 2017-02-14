@@ -87,7 +87,7 @@ class DesignateDriver(driver.DnsDriver):
             raise TypeError(_("The entry's dns_zone must have an ID "
                               "specified."))
         name = entry.name
-        LOG.debug("Creating DNS entry %s." % name)
+        LOG.debug("Creating DNS entry %s.", name)
         client = self.dns_client
         # Record name has to end with a '.' by dns standard
         record = Record(name=entry.name + '.',
@@ -105,7 +105,7 @@ class DesignateDriver(driver.DnsDriver):
                            if rec.name == name + '.' and rec.type == type]
         if not matching_record:
             raise exception.DnsRecordNotFound(name)
-        LOG.debug("Deleting DNS entry %s." % name)
+        LOG.debug("Deleting DNS entry %s.", name)
         self.dns_client.records.delete(dns_zone.id, matching_record[0].id)
 
     def get_entries_by_content(self, content, dns_zone=None):

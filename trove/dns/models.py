@@ -53,12 +53,12 @@ class DnsRecord(ModelBase):
     def save(self):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
-        LOG.debug("Saving %(name)s: %(dict)s" %
+        LOG.debug("Saving %(name)s: %(dict)s",
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
 
     def delete(self):
-        LOG.debug("Deleting %(name)s: %(dict)s" %
+        LOG.debug("Deleting %(name)s: %(dict)s",
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().delete(self)
 

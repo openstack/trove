@@ -193,7 +193,7 @@ class InstanceController(wsgi.Controller):
         with StartNotification(context, instance_id=instance.id):
             instance.reset_status()
 
-            LOG.debug("Failing backups for instance %s." % instance.id)
+            LOG.debug("Failing backups for instance %s.", instance.id)
             backup_model.fail_for_instance(instance.id)
 
         return wsgi.Result(None, 202)
@@ -470,7 +470,7 @@ class InstanceController(wsgi.Controller):
 
     def guest_log_list(self, req, tenant_id, id):
         """Return all information about all logs for an instance."""
-        LOG.debug("Listing logs for tenant %s" % tenant_id)
+        LOG.debug("Listing logs for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
         if not instance:
@@ -559,6 +559,8 @@ class InstanceController(wsgi.Controller):
             context, instance_id=id, module_id=module_id)
         for instance_module in instance_modules:
             module_models.InstanceModule.delete(context, instance_module)
-            LOG.debug("Deleted IM record %s (instance %s, module %s)." %
-                      (instance_module.id, id, module_id))
+            LOG.debug("Deleted IM record %(instance_module_id)s "
+                      "(instance %(id)s, module %(module_id)s).",
+                      {'instance_module_id': instance_module.id, 'id': id,
+                       'module_id': module_id})
         return wsgi.Result(None, 200)

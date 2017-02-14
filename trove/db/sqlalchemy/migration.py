@@ -59,7 +59,7 @@ def upgrade(options, version=None, repo_path=None):
     repo_path = get_migrate_repo_path(repo_path)
     sql_connection = options['database']['connection']
     version_str = version or 'latest'
-    logger.info("Upgrading %(sql_connection)s to version %(version_str)s" %
+    logger.info("Upgrading %(sql_connection)s to version %(version_str)s",
                 {'sql_connection': sql_connection, 'version_str': version_str})
     return versioning_api.upgrade(sql_connection, repo_path, version)
 

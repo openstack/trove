@@ -134,7 +134,7 @@ class Capabilities(object):
 
         self.capabilities = [override(obj) for obj in capability_defaults]
 
-        LOG.debug('Capabilities for datastore %(ds_id)s: %(capabilities)s' %
+        LOG.debug('Capabilities for datastore %(ds_id)s: %(capabilities)s',
                   {'ds_id': self.datastore_version_id,
                    'capabilities': self.capabilities})
 
