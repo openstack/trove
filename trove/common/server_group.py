@@ -36,7 +36,7 @@ class ServerGroup(object):
                 if compute_id in sg.members:
                     server_group = sg
         except Exception:
-            LOG.exception(_("Could not load server group for compute %s") %
+            LOG.exception(_("Could not load server group for compute %s"),
                           compute_id)
         return server_group
 
@@ -46,8 +46,10 @@ class ServerGroup(object):
         server_group_name = "%s_%s" % ('locality', name_suffix)
         server_group = client.server_groups.create(
             name=server_group_name, policies=[locality])
-        LOG.debug("Created '%s' server group called %s (id: %s)." %
-                  (locality, server_group_name, server_group.id))
+        LOG.debug("Created '%(locality)s' server group called %(group_name)s "
+                  "(id: %(group_id)s).",
+                  {'locality': locality, 'group_name': server_group_name,
+                   'group_id': server_group.id})
 
         return server_group
 
@@ -59,10 +61,12 @@ class ServerGroup(object):
             if force or len(server_group.members) <= 1:
                 client = create_nova_client(context)
                 client.server_groups.delete(server_group.id)
-                LOG.debug("Deleted server group %s." % server_group.id)
+                LOG.debug("Deleted server group %s.", server_group.id)
             else:
-                LOG.debug("Skipping delete of server group %s (members: %s)." %
-                          (server_group.id, server_group.members))
+                LOG.debug("Skipping delete of server group %(id)s "
+                          "(members: %(members)s).",
+                          {'id': server_group.id,
+                           'members': server_group.members})
 
     @classmethod
     def convert_to_hint(cls, server_group, hints=None):

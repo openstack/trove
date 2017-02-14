@@ -374,14 +374,13 @@ class Controller(object):
 
     @classmethod
     def get_schema(cls, action, body):
-        LOG.debug("Getting schema for %s:%s" %
-                  (cls.__class__.__name__, action))
+        LOG.debug("Getting schema for %(name)s:%(action)s",
+                  {'name': cls.__class__.__name__, 'action': action})
         if cls.schemas:
             matching_schema = cls.schemas.get(action, {})
             if matching_schema:
-                LOG.debug(
-                    "Found Schema: %s" % matching_schema.get("name",
-                                                             matching_schema))
+                LOG.debug("Found Schema: %s",
+                          matching_schema.get("name", matching_schema))
             return matching_schema
 
     @staticmethod
@@ -557,7 +556,7 @@ class ContextMiddleware(base_wsgi.Middleware):
     @classmethod
     def factory(cls, global_config, **local_config):
         def _factory(app):
-            LOG.debug("Created context middleware with config: %s" %
+            LOG.debug("Created context middleware with config: %s",
                       local_config)
             return cls(app)
 

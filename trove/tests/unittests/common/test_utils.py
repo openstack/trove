@@ -63,8 +63,10 @@ class TestUtils(trove_testtools.TestCase):
                 '/usr/bin/foo', log_output_on_error=True)
 
         utils.LOG.error.assert_called_with(
-            u"Command 'test' failed. test-desc Exit code: 42\n"
-            "stderr: err\nstdout: out")
+            u"Command '%(cmd)s' failed. %(description)s Exit code: "
+            u"%(exit_code)s\nstderr: %(stderr)s\nstdout: %(stdout)s",
+            {'description': 'test-desc', 'stderr': 'err', 'exit_code': 42,
+             'stdout': 'out', 'cmd': 'test'})
 
     def test_unpack_singleton(self):
         self.assertEqual([1, 2, 3], utils.unpack_singleton([1, 2, 3]))

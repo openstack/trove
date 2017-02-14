@@ -30,22 +30,22 @@ class AuthorizationMiddleware(wsgi.Middleware):
 
     def __init__(self, application, auth_providers, **local_config):
         self.auth_providers = auth_providers
-        LOG.debug("Auth middleware providers: %s" % auth_providers)
+        LOG.debug("Auth middleware providers: %s", auth_providers)
         super(AuthorizationMiddleware, self).__init__(application,
                                                       **local_config)
 
     def process_request(self, request):
         roles = request.headers.get('X_ROLE', '').split(',')
-        LOG.debug("Processing auth request with roles: %s" % roles)
+        LOG.debug("Processing auth request with roles: %s", roles)
         tenant_id = request.headers.get('X-Tenant-Id', None)
-        LOG.debug("Processing auth request with tenant_id: %s" % tenant_id)
+        LOG.debug("Processing auth request with tenant_id: %s", tenant_id)
         for provider in self.auth_providers:
             provider.authorize(request, tenant_id, roles)
 
     @classmethod
     def factory(cls, global_config, **local_config):
         def _factory(app):
-            LOG.debug("Created auth middleware with config: %s" %
+            LOG.debug("Created auth middleware with config: %s",
                       local_config)
             return cls(app, [TenantBasedAuth()], **local_config)
         return _factory
