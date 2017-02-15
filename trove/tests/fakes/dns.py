@@ -35,11 +35,11 @@ class FakeDnsDriver(driver.DnsDriver):
         """
         entry.content = content
         assert_true(entry.name not in ENTRIES)
-        LOG.debug("Adding fake DNS entry for hostname %s." % entry.name)
+        LOG.debug("Adding fake DNS entry for hostname %s.", entry.name)
         ENTRIES[entry.name] = entry
 
     def delete_entry(self, name, type, dns_zone=None):
-        LOG.debug("Deleting fake DNS entry for hostname %s" % name)
+        LOG.debug("Deleting fake DNS entry for hostname %s", name)
         ENTRIES.pop(name, None)
 
 
@@ -48,8 +48,8 @@ class FakeDnsInstanceEntryFactory(driver.DnsInstanceEntryFactory):
     def create_entry(self, instance_id):
         # Construct hostname using pig-latin.
         hostname = "%s-lay" % instance_id
-        LOG.debug("Mapping instance_id %s to hostname %s"
-                  % (instance_id, hostname))
+        LOG.debug("Mapping instance_id %(id)s to hostname %(host)s",
+                  {'id': instance_id, 'host': hostname})
         return driver.DnsEntry(name=hostname, content=None,
                                type="A", ttl=42, dns_zone=None)
 

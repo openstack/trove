@@ -62,7 +62,7 @@ class FakeGuest(object):
         }
 
     def update_guest(self):
-        LOG.debug("Updating guest %s" % self.id)
+        LOG.debug("Updating guest %s", self.id)
         self.version += 1
 
     def _check_username(self, username):
@@ -226,8 +226,8 @@ class FakeGuest(object):
         from trove.guestagent.models import AgentHeartBeat
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
-        LOG.debug("users... %s" % users)
-        LOG.debug("databases... %s" % databases)
+        LOG.debug("users... %s", users)
+        LOG.debug("databases... %s", databases)
         instance_name = DBInstance.find_by(id=self.id).name
         self.create_user(users)
         self.create_database(databases)

@@ -176,7 +176,7 @@ class TestTroveMigrations(object):
         assert_equal(self.INIT_VERSION,
                      migration_api.db_version(engine, self.REPOSITORY))
 
-        LOG.debug('Latest version is %s' % self.REPOSITORY.latest)
+        LOG.debug('Latest version is %s', self.REPOSITORY.latest)
         versions = range(self.INIT_VERSION + 1, self.REPOSITORY.latest + 1)
 
         # Walk from version 1 to the latest, testing the upgrade paths.

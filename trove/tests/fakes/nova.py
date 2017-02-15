@@ -146,7 +146,7 @@ class FakeServer(object):
         self._current_status = "ACTIVE"
 
     def reboot(self):
-        LOG.debug("Rebooting server %s" % (self.id))
+        LOG.debug("Rebooting server %s", self.id)
 
         def set_to_active():
             self._current_status = "ACTIVE"
@@ -277,13 +277,13 @@ class FakeServers(object):
             while volume.status == "BUILD":
                 eventlet.sleep(0.1)
             if volume.status != "available":
-                LOG.info(_("volume status = %s") % volume.status)
+                LOG.info(_("volume status = %s"), volume.status)
                 raise nova_exceptions.ClientException("Volume was bad!")
             mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
             block_device_mapping = {'vdb': mapping}
             volumes = [volume]
             LOG.debug("Fake Volume Create %(volumeid)s with "
-                      "status %(volumestatus)s" %
+                      "status %(volumestatus)s",
                       {'volumeid': volume.id, 'volumestatus': volume.status})
         else:
             volumes = self._get_volumes_from_bdm(block_device_mapping)
@@ -306,7 +306,7 @@ class FakeServers(object):
                                                       "available.")
 
         server.schedule_status("ACTIVE", 1)
-        LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))
+        LOG.info("FAKE_SERVERS_DB : %s", str(FAKE_SERVERS_DB))
         return server
 
     def _get_volumes_from_bdm(self, block_device_mapping):
@@ -329,7 +329,7 @@ class FakeServers(object):
 
     def get(self, id):
         if id not in self.db:
-            LOG.error(_("Couldn't find server id %(id)s, collection=%(db)s") %
+            LOG.error(_("Couldn't find server id %(id)s, collection=%(db)s"),
                       {'id': id, 'db': self.db})
             raise nova_exceptions.NotFound(404, "Not found")
         else:
@@ -349,7 +349,7 @@ class FakeServers(object):
 
     def schedule_delete(self, id, time_from_now):
         def delete_server():
-            LOG.info(_("Simulated event ended, deleting server %s.") % id)
+            LOG.info(_("Simulated event ended, deleting server %s."), id)
             del self.db[id]
         eventlet.spawn_after(time_from_now, delete_server)
 
@@ -359,7 +359,7 @@ class FakeServers(object):
 
         def set_server_running():
             instance = DBInstance.find_by(compute_instance_id=id)
-            LOG.debug("Setting server %s to running" % instance.id)
+            LOG.debug("Setting server %s to running", instance.id)
             status = InstanceServiceStatus.find_by(instance_id=instance.id)
             status.status = rd_instance.ServiceStatuses.RUNNING
             status.save()
@@ -399,8 +399,7 @@ class FakeServerVolumes(object):
     def get_server_volumes(self, server_id):
         class ServerVolumes(object):
             def __init__(self, block_device_mapping):
-                LOG.debug("block_device_mapping = %s" %
-                          block_device_mapping)
+                LOG.debug("block_device_mapping = %s", block_device_mapping)
                 device = block_device_mapping['vdb']
                 (self.volumeId,
                     self.type,
@@ -492,7 +491,7 @@ class FakeVolumes(object):
 
     def get(self, id):
         if id not in self.db:
-            LOG.error(_("Couldn't find volume id %(id)s, collection=%(db)s") %
+            LOG.error(_("Couldn't find volume id %(id)s, collection=%(db)s"),
                       {'id': id, 'db': self.db})
             raise nova_exceptions.NotFound(404, "Not found")
         else:
@@ -513,16 +512,16 @@ class FakeVolumes(object):
         else:
             volume.schedule_status("available", 2)
         LOG.debug("Fake volume created %(volumeid)s with "
-                  "status %(volumestatus)s" %
+                  "status %(volumestatus)s",
                   {'volumeid': volume.id, 'volumestatus': volume.status})
-        LOG.info("FAKE_VOLUMES_DB : %s" % FAKE_VOLUMES_DB)
+        LOG.info("FAKE_VOLUMES_DB : %s", FAKE_VOLUMES_DB)
         return volume
 
     def list(self, detailed=True):
         return [self.db[key] for key in self.db]
 
     def extend(self, volume_id, new_size):
-        LOG.debug("Resize volume id (%(volumeid)s) to size (%(size)s)" %
+        LOG.debug("Resize volume id (%(volumeid)s) to size (%(size)s)",
                   {'volumeid': volume_id, 'size': new_size})
         volume = self.get(volume_id)
 
