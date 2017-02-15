@@ -66,7 +66,7 @@ class GaleraApp(service.BaseMySqlApp):
         self.stop_db()
         self.write_cluster_configuration_overrides(cluster_configuration)
         self.wipe_ib_logfiles()
-        LOG.debug("bootstrap the instance? : %s" % bootstrap)
+        LOG.debug("bootstrap the instance? : %s", bootstrap)
         # Have to wait to sync up the joiner instances with the donor instance.
         if bootstrap:
             self._bootstrap_cluster(timeout=CONF.restore_usage_timeout)

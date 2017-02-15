@@ -89,12 +89,12 @@ class Manager(manager.Manager):
         self.app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def create_database(self, context, databases):
-        LOG.debug("Creating database(s)." % databases)
+        LOG.debug("Creating database(s) %s.", databases)
         with EndNotification(context):
             self.admin.create_database(databases)
 
     def delete_database(self, context, database):
-        LOG.debug("Deleting database %s." % database)
+        LOG.debug("Deleting database %s.", database)
         with EndNotification(context):
             return self.admin.delete_database(database)
 
@@ -109,12 +109,12 @@ class Manager(manager.Manager):
             self.admin.create_user(users)
 
     def delete_user(self, context, user):
-        LOG.debug("Delete a user %s." % user)
+        LOG.debug("Delete a user %s.", user)
         with EndNotification(context):
             self.admin.delete_user(user)
 
     def get_user(self, context, username, hostname):
-        LOG.debug("Show details of user %s." % username)
+        LOG.debug("Show details of user %s.", username)
         return self.admin.get_user(username, hostname)
 
     def list_users(self, context, limit=None, marker=None,
@@ -131,11 +131,11 @@ class Manager(manager.Manager):
         self.app.start_db_with_conf_changes(config_contents)
 
     def _perform_restore(self, backup_info, context, restore_location):
-        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s.") %
+            LOG.exception(_("Error performing restore from backup %s."),
                           backup_info['id'])
             self.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
@@ -154,5 +154,5 @@ class Manager(manager.Manager):
 
     def apply_overrides(self, context, overrides):
         if overrides:
-            LOG.debug("Applying overrides: " + str(overrides))
+            LOG.debug("Applying overrides: %s", str(overrides))
             self.app.apply_overrides(overrides)

@@ -69,7 +69,7 @@ class MongoDBApp(object):
         """Prepare the guest machine with a MongoDB installation."""
         LOG.info(_("Preparing Guest as MongoDB."))
         if not system.PACKAGER.pkg_is_installed(packages):
-            LOG.debug("Installing packages: %s." % str(packages))
+            LOG.debug("Installing packages: %s.", str(packages))
             system.PACKAGER.pkg_install(packages, {}, system.TIME_OUT)
         LOG.info(_("Finished installing MongoDB server."))
 
@@ -144,7 +144,7 @@ class MongoDBApp(object):
         (e.g. PID-file).
         """
         mongodb_run_dir = os.path.dirname(system.MONGO_PID_FILE)
-        LOG.debug("Initializing a runtime directory: %s" % mongodb_run_dir)
+        LOG.debug("Initializing a runtime directory: %s", mongodb_run_dir)
         operating_system.create_directory(
             mongodb_run_dir, user=system.MONGO_USER, group=system.MONGO_USER,
             force=True, as_root=True)
@@ -162,7 +162,7 @@ class MongoDBApp(object):
                 cluster_config['replica_set_name'])
         else:
             LOG.error(_("Bad cluster configuration; instance type "
-                        "given as %s.") % cluster_config['instance_type'])
+                        "given as %s."), cluster_config['instance_type'])
             return ds_instance.ServiceStatuses.FAILED
 
         if 'key' in cluster_config:
@@ -236,7 +236,7 @@ class MongoDBApp(object):
 
     def clear_storage(self):
         mount_point = "/var/lib/mongodb/*"
-        LOG.debug("Clearing storage at %s." % mount_point)
+        LOG.debug("Clearing storage at %s.", mount_point)
         try:
             operating_system.remove(mount_point, force=True, as_root=True)
         except exception.ProcessExecutionError:
@@ -256,7 +256,7 @@ class MongoDBApp(object):
         """
         config_servers_string = ','.join(['%s:%s' % (host, CONFIGSVR_PORT)
                                           for host in config_server_hosts])
-        LOG.info(_("Setting config servers: %s") % config_servers_string)
+        LOG.info(_("Setting config servers: %s"), config_servers_string)
         self.configuration_manager.apply_system_override(
             {'sharding.configDB': config_servers_string}, CNF_CLUSTER)
         self.start_db(True)
@@ -426,10 +426,10 @@ class MongoDBApp(object):
     def is_shard_active(self, replica_set_name):
         shards = MongoDBAdmin().list_active_shards()
         if replica_set_name in [shard['_id'] for shard in shards]:
-            LOG.debug('Replica set %s is active.' % replica_set_name)
+            LOG.debug('Replica set %s is active.', replica_set_name)
             return True
         else:
-            LOG.debug('Replica set %s is not active.' % replica_set_name)
+            LOG.debug('Replica set %s is not active.', replica_set_name)
             return False
 
 
@@ -501,8 +501,10 @@ class MongoDBAdmin(object):
         this action is valid.
         :param user:   a MongoDBUser object
         """
-        LOG.debug('Creating user %s on database %s with roles %s.'
-                  % (user.username, user.database.name, str(user.roles)))
+        LOG.debug('Creating user %(user)s on database %(db)s with roles '
+                  '%(role)s.',
+                  {'user': user.username, 'db': user.database.name,
+                   'role': str(user.roles)})
         if client:
             self._create_user_with_client(user, client)
         else:
@@ -527,15 +529,15 @@ class MongoDBAdmin(object):
                 except (ValueError, pymongo.errors.PyMongoError) as e:
                     LOG.error(e)
                     LOG.warning(_('Skipping creation of user with name '
-                                  '%(user)s') % {'user': user.name})
+                                  '%(user)s'), {'user': user.name})
 
     def delete_validated_user(self, user):
         """Deletes a user from their database. The caller should ensure that
         this action is valid.
         :param user:   a MongoDBUser object
         """
-        LOG.debug('Deleting user %s from database %s.'
-                  % (user.username, user.database.name))
+        LOG.debug('Deleting user %(user)s from database %(db)s.',
+                  {'user': user.username, 'db': user.database.name})
         with MongoDBClient(self._admin_user()) as admin_client:
             admin_client[user.database.name].remove_user(user.username)
 
@@ -552,7 +554,7 @@ class MongoDBAdmin(object):
         user = models.MongoDBUser(name)
         if user.is_ignored:
             LOG.warning(_('Skipping retrieval of user with reserved '
-                          'name %(user)s') % {'user': user.name})
+                          'name %(user)s'), {'user': user.name})
             return None
         if client:
             user_info = client.admin.system.users.find_one(
@@ -576,7 +578,7 @@ class MongoDBAdmin(object):
 
     def get_user(self, name):
         """Get information for the given user."""
-        LOG.debug('Getting user %s.' % name)
+        LOG.debug('Getting user %s.', name)
         user = self._get_user_record(name)
         if not user:
             return None
@@ -606,13 +608,13 @@ class MongoDBAdmin(object):
                     user.check_create()
                     self.get_existing_user(user.name)
                     self.create_validated_user(user, admin_client)
-                    LOG.debug('Changing password for user %(user)s'
-                              % {'user': user.name})
+                    LOG.debug('Changing password for user %(user)s',
+                              {'user': user.name})
                     self._create_user_with_client(user, admin_client)
                 except (ValueError, pymongo.errors.PyMongoError) as e:
                     LOG.error(e)
                     LOG.warning(_('Skipping password change for user with '
-                                  'name %(user)s') % {'user': user.name})
+                                  'name %(user)s'), {'user': user.name})
 
     def update_attributes(self, name, user_attrs):
         """Update user attributes."""
@@ -658,13 +660,13 @@ class MongoDBAdmin(object):
             models.MongoDBSchema(db_name)
             role = {'db': db_name, 'role': 'readWrite'}
             if role not in user.roles:
-                LOG.debug('Adding role %s to user %s.'
-                          % (str(role), username))
+                LOG.debug('Adding role %(role)s to user %(user)s.',
+                          {'role': str(role), 'user': username})
                 user.roles = role
             else:
-                LOG.debug('User %s already has role %s.'
-                          % (username, str(role)))
-        LOG.debug('Updating user %s.' % username)
+                LOG.debug('User %(user)s already has role %(role)s.',
+                          {'user': username, 'role': str(role)})
+        LOG.debug('Updating user %s.', username)
         self._update_user_roles(user)
 
     def revoke_access(self, username, database):
@@ -673,10 +675,10 @@ class MongoDBAdmin(object):
         # verify the database name
         models.MongoDBSchema(database)
         role = {'db': database, 'role': 'readWrite'}
-        LOG.debug('Removing role %s from user %s.'
-                  % (str(role), username))
+        LOG.debug('Removing role %(role)s from user %(user)s.',
+                  {'role': str(role), 'user': username})
         user.revoke_role(role)
-        LOG.debug('Updating user %s.' % username)
+        LOG.debug('Updating user %s.', username)
         self._update_user_roles(user)
 
     def list_access(self, username):
@@ -695,7 +697,7 @@ class MongoDBAdmin(object):
             for item in databases:
                 schema = models.MongoDBSchema.deserialize(item)
                 schema.check_create()
-                LOG.debug('Creating MongoDB database %s' % schema.name)
+                LOG.debug('Creating MongoDB database %s', schema.name)
                 db = admin_client[schema.name]
                 db[tmp].insert({'dummy': True})
                 db.drop_collection(tmp)
@@ -733,7 +735,7 @@ class MongoDBAdmin(object):
         """Runs the replSetGetStatus command."""
         with MongoDBClient(self._admin_user()) as admin_client:
             status = admin_client.admin.command('replSetGetStatus')
-            LOG.debug('Replica set status: %s' % status)
+            LOG.debug('Replica set status: %s', status)
             return status
 
     def rs_initiate(self):
@@ -795,15 +797,15 @@ class MongoDBClient(object):
         if new_client:
             host = type(self).engine['host']
             port = type(self).engine['port']
-            LOG.debug("Creating MongoDB client to %(host)s:%(port)s."
-                      % {'host': host, 'port': port})
+            LOG.debug("Creating MongoDB client to %(host)s:%(port)s.",
+                      {'host': host, 'port': port})
             type(self).engine['client'] = pymongo.MongoClient(host=host,
                                                               port=port,
                                                               connect=False)
         self.session = type(self).engine['client']
         if user:
             db_name = user.database.name
-            LOG.debug("Authenticating MongoDB client on %s." % db_name)
+            LOG.debug("Authenticating MongoDB client on %s.", db_name)
             self._db = self.session[db_name]
             self._db.authenticate(user.username, password=user.password)
             self._logged_in = True

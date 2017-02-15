@@ -59,7 +59,7 @@ class Manager(manager.Manager):
             device.unmount_device(device_path)
             device.format()
             device.mount(mount_point)
-            LOG.debug('Mounted the volume (%s).' % device_path)
+            LOG.debug('Mounted the volume (%s).', device_path)
         self.app.start_db_with_conf_changes(config_contents)
         LOG.debug('Securing couchbase now.')
         self.app.initial_setup()
@@ -104,12 +104,11 @@ class Manager(manager.Manager):
         Restores all couchbase buckets and their documents from the
         backup.
         """
-        LOG.info(_("Restoring database from backup %s") %
-                 backup_info['id'])
+        LOG.info(_("Restoring database from backup %s"), backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception as e:
-            LOG.error(_("Error performing restore from backup %s") %
+            LOG.error(_("Error performing restore from backup %s"),
                       backup_info['id'])
             LOG.error(e)
             self.status.set_status(rd_instance.ServiceStatuses.FAILED)

@@ -185,11 +185,11 @@ class MySqlManager(manager.Manager):
         return self.mysql_admin().disable_root()
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s.") %
+            LOG.exception(_("Error performing restore from backup %s."),
                           backup_info['id'])
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
@@ -220,7 +220,7 @@ class MySqlManager(manager.Manager):
                                    service.MYSQL_OWNER,
                                    recursive=False, as_root=True)
 
-            LOG.debug("Mounted the volume at %s." % mount_point)
+            LOG.debug("Mounted the volume at %s.", mount_point)
             # We need to temporarily update the default my.cnf so that
             # mysql will start after the volume is mounted. Later on it
             # will be changed based on the config template
@@ -325,7 +325,7 @@ class MySqlManager(manager.Manager):
         app.update_overrides(overrides)
 
     def apply_overrides(self, context, overrides):
-        LOG.debug("Applying overrides (%s)." % overrides)
+        LOG.debug("Applying overrides (%s).", overrides)
         app = self.mysql_app(self.mysql_app_status.get())
         app.apply_overrides(overrides)
 
@@ -420,7 +420,7 @@ class MySqlManager(manager.Manager):
             raise
 
     def make_read_only(self, context, read_only):
-        LOG.debug("Executing make_read_only(%s)" % read_only)
+        LOG.debug("Executing make_read_only(%s)", read_only)
         app = self.mysql_app(self.mysql_app_status.get())
         app.make_read_only(read_only)
 

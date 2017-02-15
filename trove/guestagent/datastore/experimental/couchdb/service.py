@@ -56,7 +56,7 @@ class CouchDBApp(object):
             state_change_wait_time if state_change_wait_time else
             CONF.state_change_wait_time
         )
-        LOG.debug("state_change_wait_time = %s." % self.state_change_wait_time)
+        LOG.debug("state_change_wait_time = %s.", self.state_change_wait_time)
         self.status = status
 
     def install_if_needed(self, packages):
@@ -65,7 +65,7 @@ class CouchDBApp(object):
         """
         LOG.info(_('Preparing guest as a CouchDB server.'))
         if not packager.pkg_is_installed(packages):
-            LOG.debug("Installing packages: %s." % str(packages))
+            LOG.debug("Installing packages: %s.", str(packages))
             packager.pkg_install(packages, {}, system.TIME_OUT)
         LOG.info(_("Finished installing CouchDB server."))
 
@@ -175,7 +175,7 @@ class CouchDBAppStatus(service.BaseDbStatus):
             out, err = utils.execute_with_timeout(
                 system.COUCHDB_SERVER_STATUS, shell=True
             )
-            LOG.debug("CouchDB status = %r" % out)
+            LOG.debug("CouchDB status = %r", out)
             server_status = json.loads(out)
             status = server_status["couchdb"]
             if status == 'Welcome':
@@ -220,7 +220,7 @@ class CouchDBAdmin(object):
             for item in users:
                 user = models.CouchDBUser.deserialize(item)
                 try:
-                    LOG.debug("Creating user: %s." % user.name)
+                    LOG.debug("Creating user: %s.", user.name)
                     utils.execute_with_timeout(
                         system.CREATE_USER_COMMAND %
                         {'admin_name': self._admin_user().name,
@@ -230,14 +230,15 @@ class CouchDBAdmin(object):
                          'password': user.password},
                         shell=True)
                 except exception.ProcessExecutionError as pe:
-                    LOG.exception(_("Error creating user: %s.") % user.name)
+                    LOG.exception(_("Error creating user: %s."), user.name)
                     pass
 
                 for database in user.databases:
                     mydb = models.CouchDBSchema.deserialize(database)
                     try:
-                        LOG.debug("Granting user: %s access to database: %s."
-                                  % (user.name, mydb.name))
+                        LOG.debug("Granting user: %(user)s access to "
+                                  "database: %(db)s.",
+                                  {'user': user.name, 'db': mydb.name})
                         out, err = utils.execute_with_timeout(
                             system.GRANT_ACCESS_COMMAND %
                             {'admin_name': self._admin_user().name,
@@ -246,12 +247,13 @@ class CouchDBAdmin(object):
                              'username': user.name},
                             shell=True)
                     except exception.ProcessExecutionError as pe:
-                        LOG.debug("Error granting user: %s access to"
-                                  "database: %s." % (user.name, mydb.name))
+                        LOG.debug("Error granting user: %(user)s access to"
+                                  "database: %(db)s.",
+                                  {'user': user.name, 'db': mydb.name})
                         LOG.debug(pe)
                         pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_("An error occurred creating users: %s.") %
+            LOG.exception(_("An error occurred creating users: %s."),
                           pe.message)
             pass
 
@@ -271,7 +273,7 @@ class CouchDBAdmin(object):
                     shell=True)
             except exception.ProcessExecutionError:
                 LOG.debug(
-                    "Error while trying to get the users for database: %s." %
+                    "Error while trying to get the users for database: %s.",
                     db)
                 continue
 
@@ -317,7 +319,7 @@ class CouchDBAdmin(object):
                 shell=True)
         except exception.ProcessExecutionError as pe:
             LOG.exception(_(
-                "There was an error while deleting user: %s.") % pe)
+                "There was an error while deleting user: %s."), pe)
             raise exception.GuestError(original_message=_(
                 "Unable to delete user: %s.") % couchdb_user.name)
 
@@ -355,8 +357,8 @@ class CouchDBAdmin(object):
                         shell=True)
                 except exception.ProcessExecutionError:
                     LOG.debug(
-                        "Error while trying to get users for database: %s."
-                        % db)
+                        "Error while trying to get users for database: %s.",
+                        db)
                     continue
                 evalout2 = ast.literal_eval(out2)
                 if evalout2:
@@ -371,7 +373,7 @@ class CouchDBAdmin(object):
 
     def get_user(self, username, hostname):
         '''Get Information about the given user.'''
-        LOG.debug('Getting user %s.' % username)
+        LOG.debug('Getting user %s.', username)
         user = self._get_user(username, hostname)
         if not user:
             return None
@@ -390,7 +392,7 @@ class CouchDBAdmin(object):
                     shell=True)
             except exception.ProcessExecutionError:
                 LOG.debug(
-                    "Error while trying to get the users for database: %s." %
+                    "Error while trying to get the users for database: %s.",
                     db)
                 continue
 
@@ -412,7 +414,7 @@ class CouchDBAdmin(object):
             user = models.CouchDBUser(username)
             if not self._is_modifiable_user(user.name):
                 LOG.warning(_('Cannot grant access for reserved user '
-                              '%(user)s') % {'user': username})
+                              '%(user)s'), {'user': username})
             if not user:
                 raise exception.BadRequest(_(
                     'Cannot grant access for reserved or non-existant user '
@@ -488,7 +490,7 @@ class CouchDBAdmin(object):
         for database in databases:
             dbName = models.CouchDBSchema.deserialize(database).name
             if self._is_modifiable_database(dbName):
-                LOG.debug('Creating CouchDB database %s' % dbName)
+                LOG.debug('Creating CouchDB database %s', dbName)
                 try:
                     utils.execute_with_timeout(
                         system.CREATE_DB_COMMAND %
@@ -498,15 +500,15 @@ class CouchDBAdmin(object):
                         shell=True)
                 except exception.ProcessExecutionError:
                     LOG.exception(_(
-                        "There was an error creating database: %s.") % dbName)
+                        "There was an error creating database: %s."), dbName)
                     db_create_failed.append(dbName)
                     pass
             else:
                 LOG.warning(_('Cannot create database with a reserved name '
-                              '%(db)s') % {'db': dbName})
+                              '%(db)s'), {'db': dbName})
                 db_create_failed.append(dbName)
         if len(db_create_failed) > 0:
-            LOG.exception(_("Creating the following databases failed: %s.") %
+            LOG.exception(_("Creating the following databases failed: %s."),
                           db_create_failed)
 
     def list_database_names(self):
@@ -538,7 +540,7 @@ class CouchDBAdmin(object):
         dbName = models.CouchDBSchema.deserialize(database).name
         if self._is_modifiable_database(dbName):
             try:
-                LOG.debug("Deleting CouchDB database: %s." % dbName)
+                LOG.debug("Deleting CouchDB database: %s.", dbName)
                 utils.execute_with_timeout(
                     system.DELETE_DB_COMMAND %
                     {'admin_name': self._admin_user().name,
@@ -547,12 +549,12 @@ class CouchDBAdmin(object):
                     shell=True)
             except exception.ProcessExecutionError:
                 LOG.exception(_(
-                    "There was an error while deleting database:%s.") % dbName)
+                    "There was an error while deleting database:%s."), dbName)
                 raise exception.GuestError(original_message=_(
                     "Unable to delete database: %s.") % dbName)
         else:
             LOG.warning(_('Cannot delete a reserved database '
-                          '%(db)s') % {'db': dbName})
+                          '%(db)s'), {'db': dbName})
 
 
 class CouchDBCredentials(object):
@@ -576,7 +578,7 @@ class CouchDBCredentials(object):
 
     @staticmethod
     def clear_file(filename):
-        LOG.debug("Creating clean file %s" % filename)
+        LOG.debug("Creating clean file %s", filename)
         if operating_system.file_discovery([filename]):
             operating_system.remove(filename)
         # force file creation by just opening it

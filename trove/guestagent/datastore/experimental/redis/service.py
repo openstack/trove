@@ -125,8 +125,7 @@ class RedisApp(object):
         Install the redis server.
         """
         LOG.debug('Installing redis server.')
-        msg = "Creating %s." % system.REDIS_CONF_DIR
-        LOG.debug(msg)
+        LOG.debug("Creating %s.", system.REDIS_CONF_DIR)
         operating_system.create_directory(system.REDIS_CONF_DIR, as_root=True)
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, TIME_OUT)
@@ -443,7 +442,7 @@ class RedisAdmin(object):
         elif not self.__client.save():
             raise exception.BackupCreationError(_("Could not persist "
                                                 "Redis data (%s)") % save_cmd)
-        LOG.debug("Redis data persist (%s) completed" % save_cmd)
+        LOG.debug("Redis data persist (%s) completed", save_cmd)
 
     def set_master(self, host=None, port=None):
         self.__client.slaveof(host, port)
@@ -476,15 +475,17 @@ class RedisAdmin(object):
     def wait_until(self, key, wait_value, section=None, timeout=None):
         """Polls redis until the specified 'key' changes to 'wait_value'."""
         timeout = timeout or CONF.usage_timeout
-        LOG.debug("Waiting for Redis '%s' to be: %s." % (key, wait_value))
+        LOG.debug("Waiting for Redis '%(key)s' to be: %(value)s.",
+                  {'key': key, 'value': wait_value})
 
         def _check_info():
             redis_info = self.get_info(section)
             if key in redis_info:
                 current_value = redis_info[key]
-                LOG.debug("Found '%s' for field %s." % (current_value, key))
+                LOG.debug("Found '%(value)s' for field %(key)s.",
+                          {'value': current_value, 'key': key})
             else:
-                LOG.error(_('Output from Redis command: %s') % redis_info)
+                LOG.error(_('Output from Redis command: %s'), redis_info)
                 raise RuntimeError(_("Field %(field)s not found "
                                      "(Section: '%(sec)s').") %
                                    ({'field': key, 'sec': section}))

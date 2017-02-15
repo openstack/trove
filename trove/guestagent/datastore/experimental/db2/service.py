@@ -50,7 +50,7 @@ class DB2App(object):
             state_change_wait_time if state_change_wait_time else
             CONF.state_change_wait_time
         )
-        LOG.debug("state_change_wait_time = %s." % self.state_change_wait_time)
+        LOG.debug("state_change_wait_time = %s.", self.state_change_wait_time)
         self.status = status
         self.dbm_default_config = {}
         self.init_config()
@@ -275,7 +275,7 @@ class DB2App(object):
                     "parameter": param,
                     "value": value})
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to update config %s") % param)
+            LOG.exception(_("Failed to update config %s"), param)
             raise
 
     def _reset_config(self, config):
@@ -349,12 +349,12 @@ class DB2Admin(object):
             mydb = models.DatastoreSchema.deserialize(item)
             mydb.check_create()
             dbName = mydb.name
-            LOG.debug("Creating DB2 database: %s." % dbName)
+            LOG.debug("Creating DB2 database: %s.", dbName)
             try:
                 run_command(system.CREATE_DB_COMMAND % {'dbname': dbName})
             except exception.ProcessExecutionError:
                 LOG.exception(_(
-                    "There was an error creating database: %s.") % dbName)
+                    "There was an error creating database: %s."), dbName)
                 db_create_failed.append(dbName)
                 pass
 
@@ -375,10 +375,10 @@ class DB2Admin(object):
             except exception.ProcessExecutionError:
                 LOG.exception(_(
                     "There was an error while configuring the database for "
-                    "online backup: %s.") % dbName)
+                    "online backup: %s."), dbName)
 
         if len(db_create_failed) > 0:
-            LOG.exception(_("Creating the following databases failed: %s.") %
+            LOG.exception(_("Creating the following databases failed: %s."),
                           db_create_failed)
 
     def delete_database(self, database):
@@ -388,11 +388,11 @@ class DB2Admin(object):
             mydb = models.DatastoreSchema.deserialize(database)
             mydb.check_delete()
             dbName = mydb.name
-            LOG.debug("Deleting DB2 database: %s." % dbName)
+            LOG.debug("Deleting DB2 database: %s.", dbName)
             run_command(system.DELETE_DB_COMMAND % {'dbname': dbName})
         except exception.ProcessExecutionError:
             LOG.exception(_(
-                "There was an error while deleting database:%s.") % dbName)
+                "There was an error while deleting database:%s."), dbName)
             raise exception.GuestError(original_message=_(
                 "Unable to delete database: %s.") % dbName)
 
@@ -424,7 +424,7 @@ class DB2Admin(object):
                     count = count + 1
                     if (limit and count <= limit) or limit is None:
                         db2_db = models.DatastoreSchema(name=item)
-                        LOG.debug("database = %s ." % item)
+                        LOG.debug("database = %s .", item)
                         next_marker = db2_db.name
                         databases.append(db2_db.serialize())
                         item = next(result)
@@ -433,10 +433,10 @@ class DB2Admin(object):
                         break
             except StopIteration:
                 next_marker = None
-            LOG.debug("databases = %s." % str(databases))
+            LOG.debug("databases = %s.", str(databases))
         except exception.ProcessExecutionError as pe:
             err_msg = encodeutils.exception_to_unicode(pe)
-            LOG.exception(_("An error occurred listing databases: %s.") %
+            LOG.exception(_("An error occurred listing databases: %s."),
                           err_msg)
             pass
         return databases, next_marker
@@ -448,30 +448,31 @@ class DB2Admin(object):
                 user = models.DatastoreUser.deserialize(item)
                 user.check_create()
                 try:
-                    LOG.debug("Creating OS user: %s." % user.name)
+                    LOG.debug("Creating OS user: %s.", user.name)
                     utils.execute_with_timeout(
                         system.CREATE_USER_COMMAND % {
                             'login': user.name, 'login': user.name,
                             'passwd': user.password}, shell=True)
                 except exception.ProcessExecutionError as pe:
-                    LOG.exception(_("Error creating user: %s.") % user.name)
+                    LOG.exception(_("Error creating user: %s."), user.name)
                     continue
 
                 for database in user.databases:
                     mydb = models.DatastoreSchema.deserialize(database)
                     try:
-                        LOG.debug("Granting user: %s access to database: %s."
-                                  % (user.name, mydb.name))
+                        LOG.debug("Granting user: %(user)s access to "
+                                  "database: %(db)s.",
+                                  {'user': user.name, 'db': mydb.name})
                         run_command(system.GRANT_USER_ACCESS % {
                             'dbname': mydb.name, 'login': user.name})
                     except exception.ProcessExecutionError as pe:
-                        LOG.debug(
-                            "Error granting user: %s access to database: %s."
-                            % (user.name, mydb.name))
+                        LOG.debug("Error granting user: %(user)s access to "
+                                  "database: %(db)s.",
+                                  {'user': user.name, 'db': mydb.name})
                         LOG.debug(pe)
                         pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_("An error occurred creating users: %s.") %
+            LOG.exception(_("An error occurred creating users: %s."),
                           pe.message)
             pass
 
@@ -481,25 +482,26 @@ class DB2Admin(object):
         db2_user.check_delete()
         userName = db2_user.name
         user_dbs = db2_user.databases
-        LOG.debug("For user %s, databases to be deleted = %r." % (
-            userName, user_dbs))
+        LOG.debug("For user %(user)s, databases to be deleted = %(dbs)r.",
+                  {'user': userName, 'dbs': user_dbs})
 
         if len(user_dbs) == 0:
             databases = self.list_access(db2_user.name, None)
         else:
             databases = user_dbs
 
-        LOG.debug("databases for user = %r." % databases)
+        LOG.debug("databases for user = %r.", databases)
         for database in databases:
             mydb = models.DatastoreSchema.deserialize(database)
             try:
                 run_command(system.REVOKE_USER_ACCESS % {
                     'dbname': mydb.name,
                     'login': userName})
-                LOG.debug("Revoked access for user:%s on database:%s." % (
-                    userName, mydb.name))
+                LOG.debug("Revoked access for user:%(user)s on "
+                          "database:%(db)s.",
+                          {'user': userName, 'db': mydb.name})
             except exception.ProcessExecutionError as pe:
-                LOG.debug("Error occurred while revoking access to %s." %
+                LOG.debug("Error occurred while revoking access to %s.",
                           mydb.name)
                 pass
             try:
@@ -507,7 +509,7 @@ class DB2Admin(object):
                     'login': db2_user.name.lower()}, shell=True)
             except exception.ProcessExecutionError as pe:
                 LOG.exception(_(
-                    "There was an error while deleting user: %s.") % pe)
+                    "There was an error while deleting user: %s."), pe)
                 raise exception.GuestError(original_message=_(
                     "Unable to delete user: %s.") % userName)
 
@@ -528,15 +530,15 @@ class DB2Admin(object):
                     system.LIST_DB_USERS % {'dbname': db2_db.name})
             except exception.ProcessExecutionError:
                 LOG.debug(
-                    "There was an error while listing users for database: %s."
-                    % db2_db.name)
+                    "There was an error while listing users for database: %s.",
+                    db2_db.name)
                 continue
 
             userlist = []
             for item in out.split('\n'):
-                LOG.debug("item = %r" % item)
+                LOG.debug("item = %r", item)
                 user = item.split() if item != "" else None
-                LOG.debug("user = %r" % (user))
+                LOG.debug("user = %r", user)
                 if (user is not None
                     and (user[0] not in cfg.get_ignored_users()
                          and user[1] == 'Y')):
@@ -596,7 +598,7 @@ class DB2Admin(object):
         return user.serialize()
 
     def _get_user(self, username, hostname):
-        LOG.debug("Get details of a given database user %s." % username)
+        LOG.debug("Get details of a given database user %s.", username)
         user = models.DatastoreUser(name=username)
         databases, marker = self.list_databases()
         out = None
@@ -607,7 +609,7 @@ class DB2Admin(object):
                     system.LIST_DB_USERS % {'dbname': db2_db.name})
             except exception.ProcessExecutionError:
                 LOG.debug(
-                    "Error while trying to get the users for database: %s." %
+                    "Error while trying to get the users for database: %s.",
                     db2_db.name)
                 continue
 
@@ -625,6 +627,6 @@ class DB2Admin(object):
            Show all the databases to which the user has more than
            USAGE granted.
         """
-        LOG.debug("Listing databases that user: %s has access to." % username)
+        LOG.debug("Listing databases that user: %s has access to.", username)
         user = self._get_user(username, hostname)
         return user.databases

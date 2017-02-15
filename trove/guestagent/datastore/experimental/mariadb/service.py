@@ -88,7 +88,7 @@ class MariaDBApp(galera_service.GaleraApp):
         return self._get_gtid_executed()
 
     def wait_for_txn(self, txn):
-        LOG.info(_("Waiting on txn '%s'.") % txn)
+        LOG.info(_("Waiting on txn '%s'."), txn)
         with self.local_sql_client(self.get_engine()) as client:
             client.execute("SELECT MASTER_GTID_WAIT('%s')" % txn)
 

@@ -83,7 +83,7 @@ class Manager(manager.Manager):
             self.app.set_logging_level('OFF')
         else:
             log_level = CONF.get(self.manager_name).get('system_log_level')
-            LOG.debug("Enabling system log with logging level: %s" % log_level)
+            LOG.debug("Enabling system log with logging level: %s", log_level)
             self.app.set_logging_level(log_level)
 
         return False
@@ -239,13 +239,13 @@ class Manager(manager.Manager):
         return self.app.is_root_enabled()
 
     def _perform_restore(self, backup_info, context, restore_location):
-        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
             self.app._apply_post_restore_updates(backup_info)
         except Exception as e:
             LOG.error(e)
-            LOG.error(_("Error performing restore from backup %s.") %
+            LOG.error(_("Error performing restore from backup %s."),
                       backup_info['id'])
             self.app.status.set_status(trove_instance.ServiceStatuses.FAILED)
             raise

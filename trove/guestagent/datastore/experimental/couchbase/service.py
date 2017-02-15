@@ -98,7 +98,7 @@ class CouchbaseApp(object):
         """
         Install the Couchbase Server.
         """
-        LOG.debug('Installing Couchbase Server. Creating %s' %
+        LOG.debug('Installing Couchbase Server. Creating %s',
                   system.COUCHBASE_CONF_DIR)
         operating_system.create_directory(system.COUCHBASE_CONF_DIR,
                                           as_root=True)
@@ -126,10 +126,10 @@ class CouchbaseApp(object):
 
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_("Starting Couchbase with configuration changes.\n"
-                   "Configuration contents:\n %s.") % config_contents)
+                   "Configuration contents:\n %s."), config_contents)
         if self.status.is_running:
             LOG.error(_("Cannot start Couchbase with configuration changes. "
-                        "Couchbase state == %s.") % self.status)
+                        "Couchbase state == %s."), self.status)
             raise RuntimeError(_("Couchbase is not stopped."))
         self._write_config(config_contents)
         self.start_db(True)
