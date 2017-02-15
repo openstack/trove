@@ -187,9 +187,11 @@ class PgBaseBackup(base.BackupRunner, PgBaseBackupUtil):
                 return False
             metadata = self.base_backup_metadata(
                 os.path.join(WAL_ARCHIVE_DIR, self.mrb))
-            LOG.debug("Label to pg_basebackup: %s label found: %s" %
-                      (self.base_filename, metadata['label']))
-            LOG.info(_("Metadata for backup: %s.") % str(metadata))
+            LOG.debug("Label to pg_basebackup: %(base_filename)s "
+                      "label found: %(label)s",
+                      {'base_filename': self.base_filename,
+                       'label': metadata['label']})
+            LOG.info(_("Metadata for backup: %s."), str(metadata))
             return metadata['label'] == self.base_filename
 
         try:

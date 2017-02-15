@@ -59,7 +59,7 @@ class DB2Backup(base.BackupRunner):
         except exception.ProcessExecutionError:
             LOG.exception(_("An error occurred while trying to "
                             "estimate backup size"))
-        LOG.debug("Estimated size for databases: " + str(size))
+        LOG.debug("Estimated size for databases: %d", size)
         return size
 
     def estimate_log_size(self):
@@ -132,7 +132,7 @@ class DB2OnlineBackup(DB2Backup):
         except exception.ProcessExecutionError:
             LOG.exception(_("An error occurred while trying to estimate log "
                             "size"))
-        LOG.debug("Estimated log size for all databases: " + str(log_size))
+        LOG.debug("Estimated log size for all databases: %d", log_size)
         return log_size
 
     def run_backup(self):

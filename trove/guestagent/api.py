@@ -83,33 +83,34 @@ class API(object):
                               serializer=serializer)
 
     def _call(self, method_name, timeout_sec, version, **kwargs):
-        LOG.debug("Calling %s with timeout %s" % (method_name, timeout_sec))
+        LOG.debug("Calling %(name)s with timeout %(timeout)s",
+                  {'name': method_name, 'timeout': timeout_sec})
         try:
             cctxt = self.client.prepare(version=version, timeout=timeout_sec)
             result = cctxt.call(self.context, method_name, **kwargs)
 
-            LOG.debug("Result is %s." % result)
+            LOG.debug("Result is %s.", result)
             return result
         except RemoteError as r:
-            LOG.exception(_("Error calling %s") % method_name)
+            LOG.exception(_("Error calling %s"), method_name)
             raise exception.GuestError(original_message=r.value)
         except Exception as e:
-            LOG.exception(_("Error calling %s") % method_name)
+            LOG.exception(_("Error calling %s"), method_name)
             raise exception.GuestError(original_message=str(e))
         except Timeout:
             raise exception.GuestTimeout()
 
     def _cast(self, method_name, version, **kwargs):
-        LOG.debug("Casting %s" % method_name)
+        LOG.debug("Casting %s", method_name)
         try:
             with NotificationCastWrapper(self.context, 'guest'):
                 cctxt = self.client.prepare(version=version)
                 cctxt.cast(self.context, method_name, **kwargs)
         except RemoteError as r:
-            LOG.exception(_("Error calling %s") % method_name)
+            LOG.exception(_("Error calling %s"), method_name)
             raise exception.GuestError(original_message=r.value)
         except Exception as e:
-            LOG.exception(_("Error calling %s") % method_name)
+            LOG.exception(_("Error calling %s"), method_name)
             raise exception.GuestError(original_message=str(e))
 
     def _get_routing_key(self):
@@ -199,7 +200,7 @@ class API(object):
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user."""
-        LOG.debug("Deleting user %(user)s for instance %(instance_id)s." %
+        LOG.debug("Deleting user %(user)s for instance %(instance_id)s.",
                   {'user': user, 'instance_id': self.id})
         version = self.API_BASE_VERSION
 
@@ -229,8 +230,8 @@ class API(object):
            within the specified container
         """
         LOG.debug("Deleting database %(database)s for "
-                  "instance %(instance_id)s." % {'database': database,
-                                                 'instance_id': self.id})
+                  "instance %(instance_id)s.", {'database': database,
+                                                'instance_id': self.id})
         version = self.API_BASE_VERSION
 
         self._cast("delete_database", version=version, database=database)
@@ -377,7 +378,7 @@ class API(object):
     def start_db_with_conf_changes(self, config_contents):
         """Start the database server."""
         LOG.debug("Sending the call to start the database process on "
-                  "the Guest with a timeout of %s." % AGENT_HIGH_TIMEOUT)
+                  "the Guest with a timeout of %s.", AGENT_HIGH_TIMEOUT)
         version = self.API_BASE_VERSION
 
         self._call("start_db_with_conf_changes", AGENT_HIGH_TIMEOUT,
@@ -388,7 +389,7 @@ class API(object):
            the config file to a new flavor.
         """
         LOG.debug("Sending the call to change the database conf file on the "
-                  "Guest with a timeout of %s." % AGENT_HIGH_TIMEOUT)
+                  "Guest with a timeout of %s.", AGENT_HIGH_TIMEOUT)
         version = self.API_BASE_VERSION
 
         self._call("reset_configuration", AGENT_HIGH_TIMEOUT,
@@ -431,7 +432,7 @@ class API(object):
     def create_backup(self, backup_info):
         """Make async call to create a full backup of this instance."""
         LOG.debug("Create Backup %(backup_id)s "
-                  "for instance %(instance_id)s." %
+                  "for instance %(instance_id)s.",
                   {'backup_id': backup_info['id'], 'instance_id': self.id})
         version = self.API_BASE_VERSION
 
@@ -440,7 +441,7 @@ class API(object):
 
     def mount_volume(self, device_path=None, mount_point=None):
         """Mount the volume."""
-        LOG.debug("Mount volume %(mount)s on instance %(id)s." % {
+        LOG.debug("Mount volume %(mount)s on instance %(id)s.", {
             'mount': mount_point, 'id': self.id})
         version = self.API_BASE_VERSION
 
@@ -449,7 +450,7 @@ class API(object):
 
     def unmount_volume(self, device_path=None, mount_point=None):
         """Unmount the volume."""
-        LOG.debug("Unmount volume %(device)s on instance %(id)s." % {
+        LOG.debug("Unmount volume %(device)s on instance %(id)s.", {
             'device': device_path, 'id': self.id})
         version = self.API_BASE_VERSION
 
@@ -458,7 +459,7 @@ class API(object):
 
     def resize_fs(self, device_path=None, mount_point=None):
         """Resize the filesystem."""
-        LOG.debug("Resize device %(device)s on instance %(id)s." % {
+        LOG.debug("Resize device %(device)s on instance %(id)s.", {
             'device': device_path, 'id': self.id})
         version = self.API_BASE_VERSION
 
@@ -522,14 +523,14 @@ class API(object):
                           AGENT_HIGH_TIMEOUT, version=version)
 
     def attach_replica(self, replica_info, slave_config):
-        LOG.debug("Attaching replica %s." % replica_info)
+        LOG.debug("Attaching replica %s.", replica_info)
         version = self.API_BASE_VERSION
 
         self._call("attach_replica", AGENT_HIGH_TIMEOUT, version=version,
                    replica_info=replica_info, slave_config=slave_config)
 
     def make_read_only(self, read_only):
-        LOG.debug("Executing make_read_only(%s)" % read_only)
+        LOG.debug("Executing make_read_only(%s)", read_only)
         version = self.API_BASE_VERSION
 
         self._call("make_read_only", AGENT_HIGH_TIMEOUT, version=version,

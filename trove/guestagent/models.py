@@ -57,7 +57,7 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
         self['updated_at'] = utils.utcnow()
-        LOG.debug("Saving %(name)s: %(dict)s" %
+        LOG.debug("Saving %(name)s: %(dict)s",
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
 
@@ -84,7 +84,7 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
             return cls.find_by(instance_id=instance_id)
 
         except exception.NotFound:
-            LOG.exception(_("Error finding instance %s") % instance_id)
+            LOG.exception(_("Error finding instance %s"), instance_id)
             raise exception.ModelNotFoundError(instance_id=instance_id)
 
     @staticmethod

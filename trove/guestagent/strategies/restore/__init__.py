@@ -20,5 +20,5 @@ LOG = logging.getLogger(__name__)
 
 
 def get_restore_strategy(restore_driver, ns=__name__):
-    LOG.debug("Getting restore strategy: %s." % restore_driver)
+    LOG.debug("Getting restore strategy: %s.", restore_driver)
     return Strategy.get_strategy(restore_driver, ns)

@@ -66,7 +66,7 @@ class ModuleManager(object):
             applied, message = driver.apply(
                 name, datastore, ds_version, data_file, admin_module)
         except Exception as ex:
-            LOG.exception(_("Could not apply module '%s'") % name)
+            LOG.exception(_("Could not apply module '%s'"), name)
             applied = False
             message = ex.message
         finally:
@@ -149,7 +149,7 @@ class ModuleManager(object):
                 result_file, codec=stream_codecs.JsonCodec())
         except Exception:
             if not result:
-                LOG.exception(_("Could not find module result in %s") %
+                LOG.exception(_("Could not find module result in %s"),
                               result_file)
                 raise
         return result
@@ -217,7 +217,7 @@ class ModuleManager(object):
                 name, datastore, ds_version, contents_file)
             cls.remove_module_result(module_dir)
         except Exception:
-            LOG.exception(_("Could not remove module '%s'") % name)
+            LOG.exception(_("Could not remove module '%s'"), name)
             raise
         return removed, message
 

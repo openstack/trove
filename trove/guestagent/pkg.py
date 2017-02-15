@@ -134,7 +134,7 @@ class RPMPackagerMixin(BasePackagerMixin):
             utils.execute("rpm", "-e", "--nodeps", package_name,
                           run_as_root=True, root_helper="sudo")
         except ProcessExecutionError:
-            LOG.exception(_("Error removing conflict %(package)s") %
+            LOG.exception(_("Error removing conflict %(package)s"),
                           package_name)
 
     def _install(self, packages, time_out):
@@ -179,7 +179,7 @@ class RPMPackagerMixin(BasePackagerMixin):
                 line = matches.group()
                 return line
 
-        LOG.error(_("Unexpected output from rpm command. (%(output)s)") %
+        LOG.error(_("Unexpected output from rpm command. (%(output)s)"),
                   {'output': std_out})
 
     def pkg_remove(self, package_name, time_out):
@@ -215,7 +215,7 @@ class RedhatPackagerMixin(RPMPackagerMixin):
                           '.*already installed and latest version',
                           'Updated:',
                           'Installed:']
-        LOG.debug("Running package install command: %s" % cmd)
+        LOG.debug("Running package install command: %s", cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError(_("Invalid permissions."))
@@ -242,7 +242,7 @@ class RedhatPackagerMixin(RPMPackagerMixin):
 
         """
         cmd = "sudo yum --color=never -y remove %s" % package_name
-        LOG.debug("Running package remove command: %s" % cmd)
+        LOG.debug("Running package remove command: %s", cmd)
         output_expects = ['\[sudo\] password for .*:',
                           'No Packages marked for removal',
                           'Removed:']
@@ -323,7 +323,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                            "broken packages."),
                           "Setting up (.*)",
                           "is already the newest version"]
-        LOG.debug("Running package install command: %s" % cmd)
+        LOG.debug("Running package install command: %s", cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError(_("Invalid permissions."))
@@ -356,7 +356,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                            "'sudo dpkg --configure -a'"),
                           "Unable to lock the administration directory",
                           "Removing %s*" % package_name]
-        LOG.debug("Running remove package command %s" % cmd)
+        LOG.debug("Running remove package command %s", cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError(_("Invalid permissions."))
@@ -415,7 +415,7 @@ class DebianPackagerMixin(BasePackagerMixin):
             installed_version = self.pkg_version(package_name)
             if ((package_version and installed_version == package_version) or
                (installed_version and not package_version)):
-                LOG.debug("Package %s already installed." % package_name)
+                LOG.debug("Package %s already installed.", package_name)
             else:
                 return False
         return True

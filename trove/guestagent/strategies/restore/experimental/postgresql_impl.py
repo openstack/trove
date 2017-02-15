@@ -68,7 +68,7 @@ class PgDump(base.RestoreRunner):
             content_length += len(chunk)
         process.stdin.close()
         self._handle_errors(process)
-        LOG.info(_("Restored %s bytes from stream.") % content_length)
+        LOG.info(_("Restored %s bytes from stream."), content_length)
 
         return content_length
 

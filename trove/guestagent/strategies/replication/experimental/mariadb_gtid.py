@@ -49,7 +49,7 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
 
     def connect_to_master(self, service, snapshot):
         logging_config = snapshot['log_position']
-        LOG.debug("connect_to_master %s" % logging_config['replication_user'])
+        LOG.debug("connect_to_master %s", logging_config['replication_user'])
         change_master_cmd = (
             "CHANGE MASTER TO MASTER_HOST='%(host)s', "
             "MASTER_PORT=%(port)s, "

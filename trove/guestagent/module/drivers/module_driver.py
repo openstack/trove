@@ -168,7 +168,7 @@ def output(log_message=None, success_message=None,
                         fail_msg = fail_msg % message_args
                     except Exception:
                         # if there's a problem, just log it and drive on
-                        LOG.warning(_("Could not apply message args: %s") %
+                        LOG.warning(_("Could not apply message args: %s"),
                                     message_args)
                         pass
 

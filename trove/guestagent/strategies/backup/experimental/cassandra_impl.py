@@ -66,12 +66,12 @@ class NodetoolSnapshot(base.BackupRunner):
 
     def _remove_snapshot(self, snapshot_name):
         LOG.debug('Clearing snapshot(s) for all keyspaces with snapshot name '
-                  '"%s".' % snapshot_name)
+                  '"%s".', snapshot_name)
         utils.execute('nodetool', 'clearsnapshot', '-t %s' % snapshot_name)
 
     def _snapshot_all_keyspaces(self, snapshot_name):
         LOG.debug('Creating snapshot(s) for all keyspaces with snapshot name '
-                  '"%s".' % snapshot_name)
+                  '"%s".', snapshot_name)
         utils.execute('nodetool', 'snapshot', '-t %s' % snapshot_name)
 
     @property
@@ -98,16 +98,16 @@ class NodetoolSnapshot(base.BackupRunner):
         at least the system keyspace. Fail if there is nothing to backup.
         """
 
-        LOG.debug('Searching for all snapshot(s) with name "%s".'
-                  % snapshot_name)
+        LOG.debug('Searching for all snapshot(s) with name "%s".',
+                  snapshot_name)
         snapshot_files = operating_system.list_files_in_directory(
             data_dir, recursive=True, include_dirs=False,
             pattern='.*/snapshots/%s/.*\.%s' % (snapshot_name,
                                                 self._SNAPSHOT_EXTENSION),
             as_root=True)
         num_snapshot_files = len(snapshot_files)
-        LOG.debug('Found %d snapshot (*.%s) files.'
-                  % (num_snapshot_files, self._SNAPSHOT_EXTENSION))
+        LOG.debug('Found %(num)d snapshot (*.%(ext)s) files.',
+                  {'num': num_snapshot_files, 'ext': self._SNAPSHOT_EXTENSION})
         if num_snapshot_files > 0:
             return ('sudo tar '
                     '--transform="s#snapshots/%s/##" -cpPf - -C "%s" "%s"'

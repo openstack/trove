@@ -158,10 +158,13 @@ class GuestLog(object):
                 (self.status == LogStatus.Restart_Required and
                  status == LogStatus.Restart_Completed)):
             self._status = status
-            LOG.debug("Log status for '%s' set to %s" % (self._name, status))
+            LOG.debug("Log status for '%(name)s' set to %(status)s",
+                      {'name': self._name, 'status': status})
         else:
-            LOG.debug("Log status for '%s' *not* set to %s (currently %s)" %
-                      (self._name, status, self.status))
+            LOG.debug("Log status for '%(name)s' *not* set to %(status)s "
+                      "(currently %(current_status)s)",
+                      {'name': self._name, 'status': status,
+                       'current_status': self.status})
 
     def get_container_name(self, force=False):
         if not self._container_name or force:
@@ -170,12 +173,12 @@ class GuestLog(object):
                 self.swift_client.get_container(container_name, prefix='dummy')
             except ClientException as ex:
                 if ex.http_status == 404:
-                    LOG.debug("Container '%s' not found; creating now" %
+                    LOG.debug("Container '%s' not found; creating now",
                               container_name)
                     self.swift_client.put_container(
                         container_name, headers=self._get_headers())
                 else:
-                    LOG.exception(_("Could not retrieve container '%s'") %
+                    LOG.exception(_("Could not retrieve container '%s'"),
                                   container_name)
                     raise
             self._container_name = container_name
@@ -223,12 +226,12 @@ class GuestLog(object):
                     meta_details[self.MF_LABEL_LOG_HEADER])
             except ClientException as ex:
                 if ex.http_status == 404:
-                    LOG.debug("No published metadata found for log '%s'" %
+                    LOG.debug("No published metadata found for log '%s'",
                               self._name)
                     self._published_size = 0
                 else:
-                    LOG.exception(_("Could not get meta details for log '%s'")
-                                  % self._name)
+                    LOG.exception(_("Could not get meta details for log '%s'"),
+                                  self._name)
                     raise
             except ConnectionError as e:
                 # A bad endpoint will cause a ConnectionError
@@ -237,8 +240,10 @@ class GuestLog(object):
                 raise exc
 
         self._update_details()
-        LOG.debug("Log size for '%s' set to %d (published %d)" % (
-            self._name, self._size, self._published_size))
+        LOG.debug("Log size for '%(name)s' set to %(size)d "
+                  "(published %(published)d)",
+                  {'name': self._name, 'size': self._size,
+                   'published': self._published_size})
 
     def _update_details(self):
         # Make sure we can read the file
@@ -299,7 +304,7 @@ class GuestLog(object):
         if self.exposed:
             if self._log_rotated():
                 LOG.debug("Log file rotation detected for '%s' - "
-                          "discarding old log" % self._name)
+                          "discarding old log", self._name)
                 self._delete_log_components()
             if os.path.isfile(self._file):
                 self._publish_to_container(self._file)
@@ -402,10 +407,10 @@ class GuestLog(object):
         return 'log-%s' % str(datetime.utcnow()).replace(' ', 'T')
 
     def _get_meta_details(self):
-        LOG.debug("Getting meta details for '%s'" % self._name)
+        LOG.debug("Getting meta details for '%s'", self._name)
         metafile_name = self._metafile_name()
         container_name = self.get_container_name()
         headers, metafile_details = self.swift_client.get_object(
             container_name, metafile_name)
-        LOG.debug("Found meta details for '%s'" % self._name)
+        LOG.debug("Found meta details for '%s'", self._name)
         return self._codec.deserialize(metafile_details)
