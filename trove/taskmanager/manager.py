@@ -297,14 +297,14 @@ class Manager(periodic_task.PeriodicTasks):
         master_instance_tasks = BuiltInstanceTasks.load(context, slave_of_id)
         server_group = master_instance_tasks.server_group
         scheduler_hints = srv_grp.ServerGroup.convert_to_hint(server_group)
-        LOG.debug("Using scheduler hints for locality: %s" % scheduler_hints)
+        LOG.debug("Using scheduler hints for locality: %s", scheduler_hints)
 
         try:
             for replica_index in range(0, len(ids)):
                 try:
                     replica_number += 1
-                    LOG.debug("Creating replica %d of %d."
-                              % (replica_number, len(ids)))
+                    LOG.debug("Creating replica %(num)d of %(count)d.",
+                              {'num': replica_number, 'count': len(ids)})
                     instance_tasks = FreshInstanceTasks.load(
                         context, ids[replica_index])
                     snapshot = instance_tasks.get_replication_master_snapshot(
@@ -322,8 +322,8 @@ class Manager(periodic_task.PeriodicTasks):
                 except Exception:
                     # if it's the first replica, then we shouldn't continue
                     LOG.exception(_(
-                        "Could not create replica %(num)d of %(count)d.")
-                        % {'num': replica_number, 'count': len(ids)})
+                        "Could not create replica %(num)d of %(count)d."),
+                        {'num': replica_number, 'count': len(ids)})
                     if replica_number == 1:
                         raise
 
