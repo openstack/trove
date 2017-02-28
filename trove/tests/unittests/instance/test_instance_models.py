@@ -17,7 +17,6 @@ from mock import Mock, patch
 
 from trove.backup import models as backup_models
 from trove.common import cfg
-from trove.common import crypto_utils
 from trove.common import exception
 from trove.common.instance import ServiceStatuses
 from trove.datastore import models as datastore_models
@@ -405,71 +404,6 @@ class TestReplication(trove_testtools.TestCase):
                           None, 'name', 2, "UUID", [], [], None,
                           self.datastore_version, 1,
                           None, slave_of_id=self.replica_info.id)
-
-
-class TestModules(trove_testtools.TestCase):
-
-    def setUp(self):
-        super(TestModules, self).setUp()
-
-    def tearDown(self):
-        super(TestModules, self).tearDown()
-
-    def _build_module(self, ds_id, ds_ver_id):
-        module = Mock()
-        module.datastore_id = ds_id
-        module.datastore_version_id = ds_ver_id
-        module.contents = crypto_utils.encode_data(
-            crypto_utils.encrypt_data(
-                'VGhpc2lzbXlkYXRhc3RyaW5n',
-                'thisismylongkeytouse'))
-        return module
-
-    def test_validate_modules_for_apply(self):
-        data = [
-            [[self._build_module('ds', 'ds_ver')], 'ds', 'ds_ver', True],
-            [[self._build_module('ds', None)], 'ds', 'ds_ver', True],
-            [[self._build_module(None, None)], 'ds', 'ds_ver', True],
-
-            [[self._build_module('ds', 'ds_ver')], 'ds', 'ds2_ver', False,
-             exception.TroveError],
-            [[self._build_module('ds', 'ds_ver')], 'ds2', 'ds_ver', False,
-             exception.TroveError],
-            [[self._build_module('ds', 'ds_ver')], 'ds2', 'ds2_ver', False,
-             exception.TroveError],
-            [[self._build_module('ds', None)], 'ds2', 'ds2_ver', False,
-             exception.TroveError],
-            [[self._build_module(None, None)], 'ds2', 'ds2_ver', True],
-
-            [[self._build_module(None, 'ds_ver')], 'ds2', 'ds_ver', True],
-        ]
-        for datum in data:
-            modules = datum[0]
-            ds_id = datum[1]
-            ds_ver_id = datum[2]
-            match = datum[3]
-            expected_exception = None
-            if not match:
-                expected_exception = datum[4]
-            ds = Mock()
-            ds.id = ds_id
-            ds.name = ds_id
-            ds_ver = Mock()
-            ds_ver.id = ds_ver_id
-            ds_ver.name = ds_ver_id
-            ds_ver.datastore_id = ds_id
-            with patch.object(datastore_models.Datastore, 'load',
-                              return_value=ds):
-                with patch.object(datastore_models.DatastoreVersion, 'load',
-                                  return_value=ds_ver):
-                    if match:
-                        models.validate_modules_for_apply(
-                            modules, ds_id, ds_ver_id)
-                    else:
-                        self.assertRaises(
-                            expected_exception,
-                            models.validate_modules_for_apply,
-                            modules, ds_id, ds_ver_id)
 
 
 def trivial_key_function(id):

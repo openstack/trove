@@ -41,6 +41,8 @@ class InstanceView(object):
                           "version": self.instance.datastore_version.name},
             "region": self.instance.region_name
         }
+        if self.context.is_admin:
+            instance_dict['tenant_id'] = self.instance.tenant_id
         if self.instance.volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}
 
@@ -212,3 +214,19 @@ class GuestLogsView(object):
 
     def data(self):
         return [GuestLogView(l).data() for l in self.guest_logs]
+
+
+def convert_instance_count_to_list(instance_count):
+    instance_list = []
+    for row in instance_count:
+        (_, name, id, md5, count, current, min_date, max_date) = row
+        instance_list.append(
+            {'module_name': name,
+             'module_id': id,
+             'module_md5': md5,
+             'instance_count': count,
+             'current': current,
+             'min_updated_date': min_date,
+             'max_updated_date': max_date
+             })
+    return instance_list

@@ -1,0 +1,8 @@
+---
+fixes:
+  - The module-instances command now returns a paginated
+    list of instances.  A --count_only flag was added to the
+    command to return a summary of the applied instances
+    based on the MD5 of the module (this is most useful
+    for live_update modules, to see which ones haven't been
+    updated). Bug 1554900

@@ -108,10 +108,9 @@ class DetailedModuleView(ModuleView):
         return {"module": module_dict}
 
 
-def get_module_list(modules):
+def convert_modules_to_list(modules):
     module_list = []
     for module in modules:
-        module_info = DetailedModuleView(module).data(
-            include_contents=True)
+        module_info = DetailedModuleView(module).data(include_contents=True)
         module_list.append(module_info)
     return module_list

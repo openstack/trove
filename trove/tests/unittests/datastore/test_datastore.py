@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import Mock
 from mock import patch
 
 from trove.common import exception
@@ -42,3 +43,41 @@ class TestDatastore(TestDatastoreBase):
                                 "Datastore 'my_ds' cannot be found",
                                 datastore_models.get_datastore_version,
                                 'my_ds')
+
+    def test_get_datastore_or_version(self):
+        # datastore, datastore_version, valid, exception
+        data = [
+            [None, None, True],
+            ['ds', None, True],
+            ['ds', 'ds_ver', True],
+            [None, 'ds_ver', False, exception.DatastoreNoVersion],
+        ]
+        for datum in data:
+            ds_id = datum[0]
+            ds_ver_id = datum[1]
+            valid = datum[2]
+            expected_exception = None
+            if not valid:
+                expected_exception = datum[3]
+            ds = Mock()
+            ds.id = ds_id
+            ds.name = ds_id
+            ds_ver = Mock()
+            ds_ver.id = ds_ver_id
+            ds_ver.name = ds_ver_id
+            ds_ver.datastore_id = ds_id
+            with patch.object(datastore_models.Datastore, 'load',
+                              return_value=ds):
+                with patch.object(datastore_models.DatastoreVersion, 'load',
+                                  return_value=ds_ver):
+                    if valid:
+                        (get_ds_id, get_ds_ver_id) = (
+                            datastore_models.get_datastore_or_version(
+                                ds_id, ds_ver_id))
+                        self.assertEqual(ds_id, get_ds_id)
+                        self.assertEqual(ds_ver_id, get_ds_ver_id)
+                    else:
+                        self.assertRaises(
+                            expected_exception,
+                            datastore_models.get_datastore_or_version,
+                            ds_id, ds_ver_id)
