@@ -28,9 +28,7 @@ REDIS_CONF_DIR = '/etc/redis'
 REDIS_DATA_DIR = '/var/lib/redis'
 REDIS_PORT = '6379'
 REDIS_INIT = '/etc/init/redis-server.conf'
-REDIS_CLI = '/usr/bin/redis-cli'
-REDIS_BIN = '/usr/bin/redis-server'
-REDIS_PACKAGE = 'redis-server'
+REDIS_PACKAGE = ''
 SERVICE_CANDIDATES = ['redis-server', 'redis']
 
 OS = get_os()

@@ -566,8 +566,8 @@ function cmd_set_datastore() {
         PACKAGES=${PACKAGES:-"mongodb-org"}
         VERSION="3.2"
     elif [ "$DATASTORE_TYPE" == "redis" ]; then
-        PACKAGES=${PACKAGES:-"redis-server"}
-        VERSION="3.0"
+        PACKAGES=${PACKAGES:-""}
+        VERSION="3.2.6"
     elif [ "$DATASTORE_TYPE" == "cassandra" ]; then
         PACKAGES=${PACKAGES:-"cassandra"}
         VERSION="2.1.0"
