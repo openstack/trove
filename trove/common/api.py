@@ -227,6 +227,10 @@ class API(wsgi.Router):
                        controller=modules_resource,
                        action="instances",
                        conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/modules/{id}/instances",
+                       controller=modules_resource,
+                       action="reapply",
+                       conditions={'method': ['PUT']})
 
     def _configurations_router(self, mapper):
         parameters_resource = ParametersController().create_resource()

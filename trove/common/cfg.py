@@ -437,6 +437,12 @@ common_opts = [
     cfg.ListOpt('module_types', default=['ping', 'new_relic_license'],
                 help='A list of module types supported. A module type '
                      'corresponds to the name of a ModuleDriver.'),
+    cfg.IntOpt('module_reapply_max_batch_size', default=50,
+               help='The maximum number of instances to reapply a module to '
+                    'at the same time.'),
+    cfg.IntOpt('module_reapply_min_batch_delay', default=2,
+               help='The minimum delay (in seconds) between subsequent '
+                    'module batch reapply executions.'),
     cfg.StrOpt('guest_log_container_name',
                default='database_logs',
                help='Name of container that stores guest log components.'),

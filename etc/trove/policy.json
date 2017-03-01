@@ -92,5 +92,6 @@
     "module:index": "rule:admin_or_owner",
     "module:show": "rule:admin_or_owner",
     "module:instances": "rule:admin_or_owner",
-    "module:update": "rule:admin_or_owner"
+    "module:update": "rule:admin_or_owner",
+    "module:reapply": "rule:admin_or_owner"
 }

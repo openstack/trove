@@ -416,6 +416,12 @@ class Manager(periodic_task.PeriodicTasks):
             cluster_tasks = models.load_cluster_tasks(context, cluster_id)
             cluster_tasks.delete_cluster(context, cluster_id)
 
+    def reapply_module(self, context, module_id, md5, include_clustered,
+                       batch_size, batch_delay, force):
+        models.ModuleTasks.reapply_module(
+            context, module_id, md5, include_clustered,
+            batch_size, batch_delay, force)
+
     if CONF.exists_notification_transformer:
         @periodic_task.periodic_task
         def publish_exists_event(self, context):

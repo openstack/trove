@@ -206,6 +206,8 @@ instance_rules = [
         'module:instances', 'rule:admin_or_owner'),
     policy.RuleDefault(
         'module:update', 'rule:admin_or_owner'),
+    policy.RuleDefault(
+        'module:reapply', 'rule:admin_or_owner'),
 ]
 
 

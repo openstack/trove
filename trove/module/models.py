@@ -30,6 +30,7 @@ from trove.common.i18n import _
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db import models
+from trove.taskmanager import api as task_api
 
 
 CONF = cfg.CONF
@@ -343,6 +344,12 @@ class Module(object):
 
         module.updated = datetime.utcnow()
         DBModule.save(module)
+
+    @staticmethod
+    def reapply(context, id, md5, include_clustered,
+                batch_size, batch_delay, force):
+        task_api.API(context).reapply_module(
+            id, md5, include_clustered, batch_size, batch_delay, force)
 
 
 class InstanceModules(object):
