@@ -70,7 +70,7 @@ datastore and version. These images are loaded into Glance and
 registered with Trove.
 
 For those wishing to develop guest images, please refer to the
-:doc:`dev/building_guest_images.rst` page.
+:ref:`build_guest_images` page.
 
 
 Search Trove Documentation
