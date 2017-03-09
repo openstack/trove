@@ -51,7 +51,7 @@ Installing trove
 It is important to understand that this process is different now with
 the elements and scripts being part of the trove repository. In the
 past, one could clone trove-integration into the home directory and
-run redstack from there, and it would clone trove in the right
+run trovestack from there, and it would clone trove in the right
 place. And if you were making changes in trove-integration, it didn't
 really matter where trove-integration was; it could be in home
 directory or /opt/stack, or for that matter, anywhere. This is no
