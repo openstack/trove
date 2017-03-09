@@ -51,7 +51,7 @@ PATH_OPENSTACKCLIENT=$DEST/python-openstackclient
 PATH_PYTHON_SWIFTCLIENT=$DEST/python-swiftclient
 PATH_PYTHON_TROVECLIENT=$DEST/python-troveclient
 PATH_TROVE_DASHBOARD=$DEST/trove-dashboard
-PATH_DISKIMAGEBUILDER=$DEST/diskimage-builder
+PATH_DISKIMAGEBUILDER_ELEMENTS=$(python -c 'import os, diskimage_builder, pkg_resources;print(os.path.abspath(pkg_resources.resource_filename(diskimage_builder.__name__, "elements")))')
 PATH_TRIPLEO_ELEMENTS=$DEST/tripleo-image-elements
 
 # Save the state of TROVE_BRANCH first, since it's used in trovestack
