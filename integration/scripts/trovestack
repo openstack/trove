@@ -408,8 +408,8 @@ function run_devstack() {
     CONF_MATCH="*.rc"
     MARKER_TOKEN="#####"
     USER_LOCAL_CONF=$(readlink -f "${USER_LOCAL_CONF:-$USERHOME/$USER_LOCAL_CONF_NAME}")
-    LOCALRC_OPTS_TAG="$MARKER_TOKEN Redstack Localrc Options $MARKER_TOKEN"
-    LOCALRC_OPTS_TAG_END="$MARKER_TOKEN End Of Redstack Localrc Options $MARKER_TOKEN"
+    LOCALRC_OPTS_TAG="$MARKER_TOKEN Trovestack Localrc Options $MARKER_TOKEN"
+    LOCALRC_OPTS_TAG_END="$MARKER_TOKEN End Of Trovestack Localrc Options $MARKER_TOKEN"
     USER_OPTS_TAG="$MARKER_TOKEN User Specified Options $MARKER_TOKEN"
     USER_OPTS_TAG_END="$MARKER_TOKEN End Of User Specified Options $MARKER_TOKEN"
     ADD_OPTS_TAG="$MARKER_TOKEN Additional Options $MARKER_TOKEN"
