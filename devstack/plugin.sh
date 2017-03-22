@@ -99,6 +99,14 @@ function iniset_conditional {
     fi
 }
 
+# configure_keystone_token_life() - update the keystone token life to 3h
+function configure_keystone_token_life() {
+    KEYSTONE_CONF_DIR=${KEYSTONE_CONF_DIR:-/etc/nova}
+    KEYSTONE_CONF=${KEYSTONE_CONF:-${KEYSTONE_CONF_DIR}/keystone.conf}
+    KEYSTONE_TOKEN_LIFE=${KEYSTONE_TOKEN_LIFE:-10800}
+    iniset $KEYSTONE_CONF token expiration ${KEYSTONE_TOKEN_LIFE}
+    echo "configure_keystone_token_life: setting keystone token life to ${KEYSTONE_TOKEN_LIFE}"
+}
 
 # configure_nova_kvm() - update the nova hypervisor configuration if possible
 function configure_nova_kvm {
@@ -136,6 +144,7 @@ function configure_trove {
     setup_develop $TROVE_DIR
 
     configure_nova_kvm
+    configure_keystone_token_life
 
     # Create the trove conf dir and cache dirs if they don't exist
     sudo install -d -o $STACK_USER ${TROVE_CONF_DIR} ${TROVE_AUTH_CACHE_DIR}

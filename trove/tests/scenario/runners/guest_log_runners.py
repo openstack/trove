@@ -694,7 +694,8 @@ class GuestLogRunner(TestRunner):
             self.admin_client,
             log_name,
             expected_type=guest_log.LogType.SYS.name,
-            expected_status=guest_log.LogStatus.Ready.name,
+            expected_status=[guest_log.LogStatus.Ready.name,
+                             guest_log.LogStatus.Partial.name],
             expected_published=0, expected_pending=1)
 
     def run_test_log_publish_sys(self):
