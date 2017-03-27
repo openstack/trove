@@ -41,44 +41,14 @@ fi
 
 # Use Git repositories for client components
 LIBS_FROM_GIT=python-troveclient
-if [[ $LIBS_FROM_GIT_ALL_CLIENTS = true ]]; then
-    LIBS_FROM_GIT+=,python-ceilometerclient
-    LIBS_FROM_GIT+=,python-cinderclient
-    LIBS_FROM_GIT+=,python-glanceclient
-    LIBS_FROM_GIT+=,python-heatclient
-    LIBS_FROM_GIT+=,python-keystoneclient
-    LIBS_FROM_GIT+=,python-mistralclient
+if [[ $ENABLE_NEUTRON = true ]]; then
     LIBS_FROM_GIT+=,python-neutronclient
-    LIBS_FROM_GIT+=,python-novaclient
-    LIBS_FROM_GIT+=,python-openstackclient
-    LIBS_FROM_GIT+=,python-swiftclient
-else
-    if [[ $ENABLE_NEUTRON = true ]]; then
-        LIBS_FROM_GIT+=,python-neutronclient
-    fi
-    if [[ $ENABLE_MISTRAL = true ]]; then
-        LIBS_FROM_GIT+=,python-mistralclient
-    fi
-    if [[ $ENABLE_CEILOMETER = true ]]; then
-        LIBS_FROM_GIT+=,python-ceilometerclient
-    fi
 fi
-# Add Git repositories for libraries
-if [[ $LIBS_FROM_GIT_ALL_OSLO = true ]]; then
-    LIBS_FROM_GIT+=,cliff,futurist
-    LIBS_FROM_GIT+=,debtcollector,automaton
-    LIBS_FROM_GIT+=,oslo.cache,oslo.concurrency
-    LIBS_FROM_GIT+=,oslo.config,oslo.context
-    LIBS_FROM_GIT+=,oslo.db,oslo.i18n
-    LIBS_FROM_GIT+=,oslo.log,oslo.messaging
-    LIBS_FROM_GIT+=,oslo.middleware,oslo.policy
-    LIBS_FROM_GIT+=,oslo.reports,oslo.rootwrap
-    LIBS_FROM_GIT+=,oslo.serialization,oslo.service
-    LIBS_FROM_GIT+=,oslo.utils,oslo.versionedobjects
-    LIBS_FROM_GIT+=,oslo.vmware
-    LIBS_FROM_GIT+=,pycadf,stevedore
-    LIBS_FROM_GIT+=,taskflow,tooz
-    LIBS_FROM_GIT+=,pbr
+if [[ $ENABLE_MISTRAL = true ]]; then
+    LIBS_FROM_GIT+=,python-mistralclient
+fi
+if [[ $ENABLE_CEILOMETER = true ]]; then
+    LIBS_FROM_GIT+=,python-ceilometerclient
 fi
 
 NOVNC_FROM_PACKAGE=false

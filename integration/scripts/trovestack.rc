@@ -24,10 +24,6 @@ ENABLE_CEILOMETER=$(get_bool ENABLE_CEILOMETER $ENABLE_PROFILER)
 # Enable Mistral
 ENABLE_MISTRAL=$(get_bool ENABLE_MISTRAL false)
 
-# Enable LIBS_FROM_GIT
-LIBS_FROM_GIT_ALL_CLIENTS=$(get_bool LIBS_FROM_GIT_ALL_CLIENTS false)
-LIBS_FROM_GIT_ALL_OSLO=$(get_bool LIBS_FROM_GIT_ALL_OSLO false)
-
 # Don't include certain .rc files in local.conf.d by default
 USING_VAGRANT=$(get_bool USING_VAGRANT false)
 USE_KVM=$(get_bool USE_KVM false)
