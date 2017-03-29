@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: configure trove-guest service to use system store of trusted certificates
+
+GUEST_UNIT_DROPINS="/etc/systemd/system/trove-guest.service.d"
+
+mkdir -v -p ${GUEST_UNIT_DROPINS}
+echo -e '[Service]\nEnvironment=REQUESTS_CA_BUNDLE=/etc/ssl/certs' > ${GUEST_UNIT_DROPINS}/30-use-system-certificates.conf
+
+
