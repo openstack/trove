@@ -30,7 +30,7 @@ from oslo_service import loopingcall
 from oslo_utils import importutils
 from oslo_utils import strutils
 from oslo_utils import timeutils
-from passlib import utils as passlib_utils
+from passlib import pwd
 import six
 import six.moves.urllib.parse as urlparse
 
@@ -287,7 +287,7 @@ def generate_random_password(password_length=None):
         password_length or
         cfg.get_configuration_property('default_password_length')
     )
-    return passlib_utils.generate_password(size=password_length)
+    return pwd.genword(length=password_length)
 
 
 def try_recover(func):
