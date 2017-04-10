@@ -74,6 +74,7 @@ export RELEASE=${RELEASE:-$DISTRO_RELEASE}
 # allow overrides from devstack if already set
 [[ -f $PATH_DEVSTACK_SRC/functions-common ]] && source $PATH_DEVSTACK_SRC/functions-common
 [[ -f $PATH_DEVSTACK_SRC/functions ]] && source $PATH_DEVSTACK_SRC/functions
+[[ -f $PATH_DEVSTACK_SRC/lib/apache ]] && source $PATH_DEVSTACK_SRC/lib/apache
 
 # Set up variables for the CONF files - this has to happen after loading trovestack.rc, since
 # TROVE_CONF_DIR is defined there - these will be used by devstack too
