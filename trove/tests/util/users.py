@@ -118,7 +118,7 @@ class Users(object):
         try:
             user = min(users, key=lambda user: user.test_count)
         except ValueError:
-            raise RuntimeError('Did not find a user with name "%s".' % name)
+            raise RuntimeError('Did not find a user with specified condition')
         user.test_count += 1
         return user
 
@@ -128,5 +128,6 @@ class Users(object):
         return self._find_user_by_condition(condition)
 
     def find_user_by_tenant_id(self, tenant_id):
+        """Finds a user who meets the requirements and has been used least."""
         condition = lambda user: user.tenant_id == tenant_id
         return self._find_user_by_condition(condition)
