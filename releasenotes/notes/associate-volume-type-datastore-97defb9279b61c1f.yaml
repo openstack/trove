@@ -1,0 +1,9 @@
+---
+features:
+  - Added the ability to associate datastore versions with volume types. This
+    enables operators to limit the volume types available when launching
+    datastores. The associations are set via the trove-manage tool commands
+    datastore_version_volume_type_add, datastore_version_volume_type_delete,
+    and datastore_version_volume_type_list. If a user attempts to create an
+    instance with a volume type that is not on the approved list for the
+    specified datastore version they will receive an error.

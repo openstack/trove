@@ -43,6 +43,7 @@ from trove.common.trove_remote import create_trove_client
 from trove.common import utils
 from trove.configuration.models import Configuration
 from trove.datastore import models as datastore_models
+from trove.datastore.models import DatastoreVersionMetadata as dvm
 from trove.datastore.models import DBDatastoreVersionMetadata
 from trove.db import get_db_api
 from trove.db import models as dbmodels
@@ -893,6 +894,9 @@ class Instance(BuiltInstance):
         deltas = {'instances': 1}
         volume_support = datastore_cfg.volume_support
         if volume_support:
+            call_args['volume_type'] = volume_type
+            dvm.validate_volume_type(context, volume_type,
+                                     datastore.name, datastore_version.name)
             call_args['volume_size'] = volume_size
             validate_volume_size(volume_size)
             deltas['volumes'] = volume_size

@@ -37,6 +37,7 @@ class TestDatastoreBase(trove_testtools.TestCase):
         self.capability_enabled = True
         self.datastore_version_id = str(uuid.uuid4())
         self.flavor_id = 1
+        self.volume_type = 'some-valid-volume-type'
 
         datastore_models.update_datastore(self.ds_name, False)
         self.datastore = Datastore.load(self.ds_name)
@@ -45,6 +46,8 @@ class TestDatastoreBase(trove_testtools.TestCase):
             self.ds_name, self.ds_version, "mysql", "", "", True)
         DatastoreVersionMetadata.add_datastore_version_flavor_association(
             self.ds_name, self.ds_version, [self.flavor_id])
+        DatastoreVersionMetadata.add_datastore_version_volume_type_association(
+            self.ds_name, self.ds_version, [self.volume_type])
 
         self.datastore_version = DatastoreVersion.load(self.datastore,
                                                        self.ds_version)
