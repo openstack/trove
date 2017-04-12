@@ -222,7 +222,7 @@ ignore_dbs = mysql, information_schema, performance_schema
 
 
 [redis]
-tcp_ports = 6379
+tcp_ports = 6379, 16379
 #redis uses local storage
 volume_support = False
 # default device_path = None
