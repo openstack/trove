@@ -233,7 +233,7 @@ This command will create a guest image usable by Trove:
 
     # run disk-image-create that actually causes the image to be built
     ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
-        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm heat-cfntools \
+        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
 
 -----------------------------
@@ -340,7 +340,7 @@ example) Ubuntu guest image for Percona Server with the command line:
 
 .. code-block:: bash
 
-  ${DIB} -a amd64 -o ${output-file} Ubuntu vm heat-cfntools \
+  ${DIB} -a amd64 -o ${output-file} Ubuntu vm \
       cloud-init-datasources ubuntu-guest ubuntu-percona
 
 Where ${DIB} is the fully qualified path to the disk-image-create
@@ -563,7 +563,7 @@ build_vm().  We look at this section of code in detail below.
 
     # run disk-image-create that actually causes the image to be built
     ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
-        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm heat-cfntools \
+        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
 
 Several of the environment variables referenced above are referenced
@@ -612,7 +612,6 @@ That list of elements is:
          ${DISTRO}
          ${EXTRA_ELEMENTS}
          vm
-         heat-cfntools
          cloud-init-datasources
          ${DISTRO}-guest
          ${DISTRO}-${SERVICE_TYPE}
@@ -625,7 +624,6 @@ MySQL. And therefore these would end up being the elements:
 
   ubuntu                        From diskimage-builder/elements/ubuntu
   vm                            From diskimage-builder/elements/vm
-  heat-cfntools                 From tripleo-image-elements/elements/heat-cfntools
   cloud-init-datasources        From diskimage-builder/elements/cloud-init-datasources
   ubuntu-guest                  From trove/integration/scripts/files/elements/ubuntu-guest
   ubuntu-mysql                  From trove/integration/scripts/files/elements/ubuntu-mysql
