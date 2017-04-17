@@ -20,6 +20,7 @@ from mock import patch
 from proboscis.asserts import assert_equal
 from testtools.matchers import Is, Equals, Not
 
+from trove.common.db.mysql import models
 from trove.common.exception import InsufficientSpaceForReplica
 from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
@@ -102,6 +103,15 @@ class GuestAgentManagerTest(DatastoreManagerTest):
         self.manager.update_status(self.context)
         dbaas.MySqlAppStatus.get.assert_any_call()
         mock_status.update.assert_any_call()
+
+    def _empty_user(self):
+        return models.MySQLUser(deserializing=True)
+
+    def test_valid_host_name(self):
+        test_host = "192.58.197.0/255.255.255.0"
+        user = self._empty_user()
+        user.host = test_host
+        self.assertEqual(test_host, user.host)
 
     @patch.object(dbaas.MySqlAdmin, 'create_database')
     def test_create_database(self, create_db_mock):
