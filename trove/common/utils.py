@@ -50,10 +50,12 @@ isotime = timeutils.isotime
 
 
 def build_jinja_environment():
-    env = jinja2.Environment(loader=jinja2.ChoiceLoader([
-        jinja2.FileSystemLoader(CONF.template_path),
-        jinja2.PackageLoader("trove", "templates")
-    ]))
+    env = jinja2.Environment(
+        autoescape=True,
+        loader=jinja2.ChoiceLoader([
+            jinja2.FileSystemLoader(CONF.template_path),
+            jinja2.PackageLoader("trove", "templates")
+        ]))
     # Add some basic operation not built-in.
     env.globals['max'] = max
     env.globals['min'] = min
