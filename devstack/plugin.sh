@@ -160,6 +160,8 @@ function configure_trove {
     rm -f $TROVE_TASKMANAGER_CONF
     rm -f $TROVE_CONDUCTOR_CONF
 
+    TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
+
     # (Re)create trove api conf file if needed
     if is_service_enabled tr-api; then
         # Set common configuration values (but only if they're defined)
@@ -180,12 +182,11 @@ function configure_trove {
         iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
 
         configure_auth_token_middleware $TROVE_CONF trove $TROVE_AUTH_CACHE_DIR
+        iniset $TROVE_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     fi
 
     # (Re)create trove taskmanager conf file if needed
     if is_service_enabled tr-tmgr; then
-        TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
-
         # Use these values only if they're set
         iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT agent_call_low_timeout $TROVE_AGENT_CALL_LOW_TIMEOUT
         iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT agent_call_high_timeout $TROVE_AGENT_CALL_HIGH_TIMEOUT

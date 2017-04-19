@@ -66,8 +66,8 @@ class TestConfig(object):
         self._values = {
             'clean_slate': os.environ.get("CLEAN_SLATE", "False") == "True",
             'fake_mode': os.environ.get("FAKE_MODE", "False") == "True",
-            'nova_auth_url': "http://localhost:5000/v2.0",
-            'trove_auth_url': "http://localhost:5000/v2.0/tokens",
+            'nova_auth_url': "http://localhost/identity/v2.0",
+            'trove_auth_url': "http://localhost/identity/v2.0/tokens",
             'dbaas_url': "http://localhost:8775/v1.0/dbaas",
             'version_url': "http://localhost:8775/",
             'nova_url': "http://localhost:8774/v2",

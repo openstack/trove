@@ -21,7 +21,7 @@ service_port = 5000
 auth_host = 127.0.0.1
 auth_port = 35357
 auth_protocol = http
-auth_uri = http://127.0.0.1:5000/
+auth_uri = http://127.0.0.1/identity/
 signing_dir = /tmp/keystone-signing-trove
 
 [filter:authorization]

@@ -1,6 +1,6 @@
 [DEFAULT]
 debug = True
-trove_auth_url = http://0.0.0.0:5000/v2.0
+trove_auth_url = http://0.0.0.0/identity/v2.0
 
 # The manager class to use for conductor. (string value)
 conductor_manager = trove.conductor.manager.Manager

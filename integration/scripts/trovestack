@@ -1061,7 +1061,7 @@ function cmd_example_tests() {
     echo "
 {
     \"directory\": \"$TROVESTACK_TESTS/../apidocs/src/resources/samples/\",
-    \"auth_url\":\"http://$KEYSTONE_AUTH_HOST:35357/v2.0/tokens\",
+    \"auth_url\":\"http://$KEYSTONE_AUTH_HOST/identity_admin/v2.0/tokens\",
     \"api_url\":\"http://$SERVICE_HOST:8779\",
     \"replace_host\":\"https://ord.databases.api.rackspacecloud.com\",
     \"replace_dns_hostname\": \"e09ad9a3f73309469cf1f43d11e79549caf9acf2.rackspaceclouddb.com\",

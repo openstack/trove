@@ -48,7 +48,7 @@ db_api_implementation = trove.db.sqlalchemy.api
 nova_proxy_admin_user = admin
 nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 nova_proxy_admin_tenant_id =
-trove_auth_url = http://0.0.0.0:5000/v2.0
+trove_auth_url = http://0.0.0.0/identity/v2.0
 
 os_region_name = RegionOne
 nova_compute_service_type = compute
@@ -182,7 +182,7 @@ service_port = 5000
 auth_host = 127.0.0.1
 auth_port = 35357
 auth_protocol = http
-auth_uri = http://127.0.0.1:5000/
+auth_uri = http://127.0.0.1/identity/
 
 [filter:authorization]
 paste.filter_factory = trove.common.auth:AuthorizationMiddleware.factory

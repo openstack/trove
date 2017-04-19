@@ -8,7 +8,7 @@
 
         [DEFAULT]
         log_dir = /var/log/trove
-        trove_auth_url = http://controller:5000/v2.0
+        trove_auth_url = http://controller/identity/v2.0
         nova_compute_url = http://controller:8774/v2
         cinder_url = http://controller:8776/v1
         swift_url = http://controller:8080/v1/AUTH_
@@ -53,8 +53,8 @@
       ...
       [keystone_authtoken]
       ...
-      auth_uri = http://controller:5000
-      auth_url = http://controller:35357
+      auth_uri = http://controller/identity
+      auth_url = http://controller/identity_admin
       auth_type = password
       project_domain_name = default
       user_domain_name = default
@@ -100,7 +100,7 @@
       nova_proxy_admin_user = admin
       nova_proxy_admin_pass = ADMIN_PASS
       nova_proxy_admin_tenant_name = service
-      trove_auth_url = http://controller:35357/v2.0
+      trove_auth_url = http://controller/identity_admin/v2.0
 
 7. Populate the trove database you created earlier in this procedure:
 
