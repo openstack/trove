@@ -52,6 +52,7 @@ functionality, the following resources are provided.
   dev/notifier.rst
   dev/trove_api_extensions.rst
   dev/secure_oslo_messaging.rst
+  deploy/apache-mod-wsgi
 
 * Source Code Repositories
 

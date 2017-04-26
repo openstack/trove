@@ -64,6 +64,14 @@ function create_trove_accounts {
     fi
 }
 
+# _cleanup_trove_apache_wsgi - Removes all the WSGI related files and
+# restart apache.
+function _cleanup_trove_apache_wsgi {
+    sudo rm -rf $TROVE_WSGI_DIR
+    sudo rm -f ${apache_site_config_for trove-api}
+    restart_apache_server
+}
+
 # stack.sh entry points
 # ---------------------
 
@@ -76,6 +84,11 @@ function cleanup_trove {
 
     if is_service_enabled horizon; then
         cleanup_trove_dashboard
+    fi
+
+    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
+        echo "Cleaning up Trove's WSGI setup"
+        _cleanup_trove_apache_wsgi
     fi
 }
 
@@ -139,6 +152,27 @@ function configure_nova_kvm {
     echo "configure_nova_kvm: using virt_type: ${virt_type} for cpu: ${cpu}."
 }
 
+# _config_trove_apache_wsgi() - Setup WSGI config files for Trove and
+# enable the site
+function _config_trove_apache_wsgi {
+    local trove_apache_conf
+
+    sudo mkdir -p ${TROVE_WSGI_DIR}
+    sudo cp $TROVE_DIR/trove/cmd/app.wsgi $TROVE_WSGI_DIR/app.wsgi
+    trove_apache_conf=$(apache_site_config_for trove-api)
+    sudo cp $TROVE_DEVSTACK_FILES/apache-trove-api.template ${trove_apache_conf}
+    sudo sed -e "
+        s|%TROVE_SERVICE_PORT%|${TROVE_SERVICE_PORT}|g;
+        s|%TROVE_WSGI_DIR%|${TROVE_WSGI_DIR}|g;
+        s|%USER%|${STACK_USER}|g;
+        s|%APACHE_NAME%|${APACHE_NAME}|g;
+        s|%APIWORKERS%|${API_WORKERS}|g;
+    " -i ${trove_apache_conf}
+    enable_apache_site trove-api
+    tail_log trove-access /var/log/${APACHE_NAME}/trove-api-access.log
+    tail_log trove-api /var/log/${APACHE_NAME}/trove-api.log
+}
+
 # configure_trove() - Set config files, create data dirs, etc
 function configure_trove {
     setup_develop $TROVE_DIR
@@ -183,6 +217,12 @@ function configure_trove {
 
         configure_auth_token_middleware $TROVE_CONF trove $TROVE_AUTH_CACHE_DIR
         iniset $TROVE_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
+    fi
+
+    # configure apache related files
+    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
+        echo "Configuring Trove to use mod-wsgi and Apache"
+        _config_trove_apache_wsgi
     fi
 
     # (Re)create trove taskmanager conf file if needed
@@ -264,6 +304,11 @@ function configure_trove {
 # install_trove() - Collect source and prepare
 function install_trove {
     setup_develop $TROVE_DIR
+
+    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
+        echo "Installing apache wsgi"
+        install_apache_wsgi
+    fi
 
     if is_service_enabled horizon; then
         install_trove_dashboard
@@ -491,7 +536,13 @@ function finalize_trove_network {
 
 # start_trove() - Start running processes, including screen
 function start_trove {
-    run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF --debug"
+    if [[ ${TROVE_USE_MOD_WSGI}" == TRUE" ]]; then
+        echo "Restarting Apache server ..."
+        enable_apache_site trove-api
+        restart_apache_server
+    else
+        run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF --debug"
+    fi
     run_process tr-tmgr "$TROVE_BIN_DIR/trove-taskmanager --config-file=$TROVE_TASKMANAGER_CONF --debug"
     run_process tr-cond "$TROVE_BIN_DIR/trove-conductor --config-file=$TROVE_CONDUCTOR_CONF --debug"
 }
@@ -500,7 +551,13 @@ function start_trove {
 function stop_trove {
     # Kill the trove screen windows
     local serv
-    for serv in tr-api tr-tmgr tr-cond; do
+    if [[ ${TROVE_USE_MOD_WSGI} == "TRUE" ]]; then
+        echo "Disabling Trove API in Apache"
+        disable_apache_site trove-api
+    else
+        stop_process tr-api
+    fi
+    for serv in tr-tmgr tr-cond; do
         stop_process $serv
     done
 }

@@ -61,4 +61,13 @@ TROVE_MANAGE=$TROVE_BIN_DIR/trove-manage
 # Tell Tempest this project is present
 TEMPEST_SERVICES+=,trove
 
+# By default enable Trove API behind mod-wsgi. Change this to FALSE
+# if you don't want Apache/mod-wsgi
+TROVE_USE_MOD_WSGI=$(trueorfalse TRUE TROVE_USE_MOD_WSGI)
+
+TROVE_SERVICE_PORT=${TROVE_SERVICE_PORT:-8779}
+TROVE_DEVSTACK_DIR=${TROVE_DIR}/devstack
+TROVE_DEVSTACK_FILES=${TROVE_DEVSTACK_DIR}/files
+TROVE_WSGI_DIR=${TROVE_WSGI_DIR:-/var/www/trove}
+
 enable_service trove tr-api tr-tmgr tr-cond
