@@ -846,8 +846,12 @@ class TestRunner(object):
                 username = creds.get('name')
                 if username:
                     password = creds.get('password', '')
+                    databases = []
+                    if database_def:
+                        databases.append(database_def)
+
                     return {'name': username, 'password': password,
-                            'databases': [{'name': database}]}
+                            'databases': databases}
             return None
 
         credentials = self.test_helper.get_helper_credentials()
