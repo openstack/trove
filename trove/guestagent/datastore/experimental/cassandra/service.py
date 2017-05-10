@@ -766,8 +766,8 @@ class CassandraAppStatus(service.BaseDbStatus):
 
     def _get_actual_db_status(self):
         try:
-            self.client.execute('SELECT now() FROM system.local;')
-            return rd_instance.ServiceStatuses.RUNNING
+            if self.client.local_node_is_up():
+                return rd_instance.ServiceStatuses.RUNNING
         except NoHostAvailable:
             return rd_instance.ServiceStatuses.SHUTDOWN
         except Exception:
@@ -1237,6 +1237,20 @@ class CassandraConnection(object):
         if identifiers:
             return query.format(*identifiers)
         return query
+
+    def node_is_up(self, host_ip):
+        """Test whether the Cassandra node located at the given IP is up.
+        """
+        for host in self._cluster.metadata.all_hosts():
+            if host.address == host_ip:
+                return host.is_up
+        return False
+
+    def local_node_is_up(self):
+        """Test whether Cassandra is up on the localhost.
+        """
+        return (self.node_is_up('127.0.0.1') or
+                self.node_is_up(netutils.get_my_ipv4()))
 
     def _connect(self):
         if not self._cluster.is_shutdown:
