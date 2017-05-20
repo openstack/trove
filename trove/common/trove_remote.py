@@ -23,8 +23,6 @@ from troveclient.v1 import client as TroveClient
 
 CONF = cfg.CONF
 
-PROXY_AUTH_URL = CONF.trove_auth_url
-
 
 """
 NOTE(mwj, Apr 2016):
@@ -47,7 +45,7 @@ def trove_client(context, region_name=None):
 
     client = TroveClient.Client(context.user, context.auth_token,
                                 project_id=context.tenant,
-                                auth_url=PROXY_AUTH_URL)
+                                auth_url=CONF.trove_auth_url)
     client.client.auth_token = context.auth_token
     client.client.management_url = url
     return client

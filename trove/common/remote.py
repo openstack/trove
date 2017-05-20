@@ -27,9 +27,6 @@ from swiftclient.client import Connection
 
 CONF = cfg.CONF
 
-PROXY_AUTH_URL = CONF.trove_auth_url
-USE_SNET = CONF.backup_use_snet
-
 
 def normalize_url(url):
     """Adds trailing slash if necessary."""
@@ -103,7 +100,7 @@ def nova_client(context, region_name=None):
                     bypass_url=url,
                     tenant_id=context.tenant,
                     project_domain_name=context.project_domain_name,
-                    auth_url=PROXY_AUTH_URL,
+                    auth_url=CONF.trove_auth_url,
                     auth_token=context.auth_token)
     client.client.auth_token = context.auth_token
     client.client.management_url = url
@@ -132,7 +129,7 @@ def cinder_client(context, region_name=None):
 
     client = CinderClient.Client(context.user, context.auth_token,
                                  project_id=context.tenant,
-                                 auth_url=PROXY_AUTH_URL)
+                                 auth_url=CONF.trove_auth_url)
     client.client.auth_token = context.auth_token
     client.client.management_url = url
     return client
@@ -169,7 +166,7 @@ def swift_client(context, region_name=None):
     client = Connection(preauthurl=url,
                         preauthtoken=context.auth_token,
                         tenant_name=context.tenant,
-                        snet=USE_SNET)
+                        snet=CONF.backup_use_snet)
     return client
 
 

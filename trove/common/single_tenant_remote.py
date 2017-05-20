@@ -49,8 +49,6 @@ remote_neutron_client = \
 
 """
 
-PROXY_AUTH_URL = CONF.trove_auth_url
-
 
 def nova_client_trove_admin(context, region_name=None, compute_url=None):
     """
@@ -66,7 +64,7 @@ def nova_client_trove_admin(context, region_name=None, compute_url=None):
     client = NovaClient(CONF.nova_proxy_admin_user,
                         CONF.nova_proxy_admin_pass,
                         CONF.nova_proxy_admin_tenant_name,
-                        auth_url=PROXY_AUTH_URL,
+                        auth_url=CONF.trove_auth_url,
                         service_type=CONF.nova_compute_service_type,
                         region_name=region_name or CONF.os_region_name)
 
@@ -88,7 +86,7 @@ def cinder_client_trove_admin(context=None):
     client = CinderClient.Client(CONF.nova_proxy_admin_user,
                                  CONF.nova_proxy_admin_pass,
                                  project_id=CONF.nova_proxy_admin_tenant_name,
-                                 auth_url=PROXY_AUTH_URL,
+                                 auth_url=CONF.trove_auth_url,
                                  service_type=CONF.cinder_service_type,
                                  region_name=CONF.os_region_name)
 
@@ -110,7 +108,7 @@ def neutron_client_trove_admin(context=None):
         username=CONF.nova_proxy_admin_user,
         password=CONF.nova_proxy_admin_pass,
         tenant_name=CONF.nova_proxy_admin_tenant_name,
-        auth_url=PROXY_AUTH_URL,
+        auth_url=CONF.trove_auth_url,
         service_type=CONF.neutron_service_type,
         region_name=CONF.os_region_name)
 
