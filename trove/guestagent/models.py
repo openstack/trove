@@ -29,8 +29,6 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 
-AGENT_HEARTBEAT = CONF.agent_heartbeat_time
-
 
 def persisted_models():
     return {'agent_heartbeats': AgentHeartBeat}
@@ -91,4 +89,4 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
     @staticmethod
     def is_active(agent):
         return (datetime.now() - agent.updated_at <
-                timedelta(seconds=AGENT_HEARTBEAT))
+                timedelta(seconds=CONF.agent_heartbeat_time))

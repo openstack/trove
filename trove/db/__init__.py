@@ -20,11 +20,9 @@ from trove.common import utils
 
 CONF = cfg.CONF
 
-db_api_opt = CONF.db_api_implementation
-
 
 def get_db_api():
-    return utils.import_module(db_api_opt)
+    return utils.import_module(CONF.db_api_implementation)
 
 
 class Query(object):

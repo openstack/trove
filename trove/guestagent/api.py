@@ -30,9 +30,6 @@ from trove import rpc
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-AGENT_LOW_TIMEOUT = CONF.agent_call_low_timeout
-AGENT_HIGH_TIMEOUT = CONF.agent_call_high_timeout
-AGENT_SNAPSHOT_TIMEOUT = CONF.agent_replication_snapshot_timeout
 
 
 class API(object):
@@ -66,6 +63,10 @@ class API(object):
         self.context = context
         self.id = id
         super(API, self).__init__()
+
+        self.agent_low_timeout = CONF.agent_call_low_timeout
+        self.agent_high_timeout = CONF.agent_call_high_timeout
+        self.agent_snapshot_timeout = CONF.agent_replication_snapshot_timeout
 
         version_cap = self.VERSION_ALIASES.get(
             CONF.upgrade_levels.guestagent, CONF.upgrade_levels.guestagent)
@@ -149,7 +150,7 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("get_user",
-                          AGENT_LOW_TIMEOUT, version=version,
+                          self.agent_low_timeout, version=version,
                           username=username, hostname=hostname)
 
     def list_access(self, username, hostname):
@@ -159,7 +160,7 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("list_access",
-                          AGENT_LOW_TIMEOUT, version=version,
+                          self.agent_low_timeout, version=version,
                           username=username, hostname=hostname)
 
     def grant_access(self, username, hostname, databases):
@@ -171,7 +172,7 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("grant_access",
-                          AGENT_LOW_TIMEOUT, version=version,
+                          self.agent_low_timeout, version=version,
                           username=username, hostname=hostname,
                           databases=databases)
 
@@ -184,7 +185,7 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("revoke_access",
-                          AGENT_LOW_TIMEOUT, version=version,
+                          self.agent_low_timeout, version=version,
                           username=username, hostname=hostname,
                           database=database)
 
@@ -193,8 +194,8 @@ class API(object):
         LOG.debug("Listing Users for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("list_users", AGENT_HIGH_TIMEOUT,
-                          version=version,
+        return self._call("list_users",
+                          self.agent_high_timeout, version=version,
                           limit=limit, marker=marker,
                           include_marker=include_marker)
 
@@ -221,7 +222,7 @@ class API(object):
         LOG.debug("Listing databases for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("list_databases", AGENT_LOW_TIMEOUT,
+        return self._call("list_databases", self.agent_low_timeout,
                           version=version, limit=limit, marker=marker,
                           include_marker=include_marker)
 
@@ -243,7 +244,7 @@ class API(object):
         LOG.debug("Enable root user for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("enable_root", AGENT_HIGH_TIMEOUT,
+        return self._call("enable_root", self.agent_high_timeout,
                           version=version)
 
     def enable_root_with_password(self, root_password=None):
@@ -253,7 +254,8 @@ class API(object):
         LOG.debug("Enable root user for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("enable_root_with_password", AGENT_HIGH_TIMEOUT,
+        return self._call("enable_root_with_password",
+                          self.agent_high_timeout,
                           version=version, root_password=root_password)
 
     def disable_root(self):
@@ -263,7 +265,7 @@ class API(object):
         LOG.debug("Disable root user for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("disable_root", AGENT_LOW_TIMEOUT,
+        return self._call("disable_root", self.agent_low_timeout,
                           version=version)
 
     def is_root_enabled(self):
@@ -273,7 +275,7 @@ class API(object):
         LOG.debug("Check root access for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("is_root_enabled", AGENT_LOW_TIMEOUT,
+        return self._call("is_root_enabled", self.agent_low_timeout,
                           version=version)
 
     def get_hwinfo(self):
@@ -281,7 +283,7 @@ class API(object):
         LOG.debug("Check hwinfo on instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("get_hwinfo", AGENT_LOW_TIMEOUT,
+        return self._call("get_hwinfo", self.agent_low_timeout,
                           version=version)
 
     def get_diagnostics(self):
@@ -289,15 +291,16 @@ class API(object):
         LOG.debug("Check diagnostics on instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("get_diagnostics", AGENT_LOW_TIMEOUT,
-                          version=version)
+        return self._call("get_diagnostics",
+                          self.agent_low_timeout, version=version)
 
     def rpc_ping(self):
         """Make a synchronous RPC call to check if we can ping the instance."""
         LOG.debug("Check RPC ping on instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("rpc_ping", AGENT_LOW_TIMEOUT, version=version)
+        return self._call("rpc_ping",
+                          self.agent_low_timeout, version=version)
 
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
@@ -352,8 +355,8 @@ class API(object):
         LOG.debug("Sending the call to prepare the guest for upgrade.")
         version = self.API_BASE_VERSION
 
-        return self._call("pre_upgrade", AGENT_HIGH_TIMEOUT,
-                          version=version)
+        return self._call("pre_upgrade",
+                          self.agent_high_timeout, version=version)
 
     def post_upgrade(self, upgrade_info):
         """Recover the guest after upgrading the guest's image."""
@@ -364,7 +367,8 @@ class API(object):
             CONF.upgrade_levels.guestagent, CONF.upgrade_levels.guestagent)
         self.client = self.get_client(self.target, version_cap)
 
-        self._call("post_upgrade", AGENT_HIGH_TIMEOUT, version=version,
+        self._call("post_upgrade",
+                   self.agent_high_timeout, version=version,
                    upgrade_info=upgrade_info)
 
     def restart(self):
@@ -373,15 +377,16 @@ class API(object):
                   "on the Guest.")
         version = self.API_BASE_VERSION
 
-        self._call("restart", AGENT_HIGH_TIMEOUT, version=version)
+        self._call("restart", self.agent_high_timeout, version=version)
 
     def start_db_with_conf_changes(self, config_contents):
         """Start the database server."""
         LOG.debug("Sending the call to start the database process on "
-                  "the Guest with a timeout of %s.", AGENT_HIGH_TIMEOUT)
+                  "the Guest with a timeout of %s.",
+                  self.agent_high_timeout)
         version = self.API_BASE_VERSION
 
-        self._call("start_db_with_conf_changes", AGENT_HIGH_TIMEOUT,
+        self._call("start_db_with_conf_changes", self.agent_high_timeout,
                    version=version, config_contents=config_contents)
 
     def reset_configuration(self, configuration):
@@ -389,10 +394,11 @@ class API(object):
            the config file to a new flavor.
         """
         LOG.debug("Sending the call to change the database conf file on the "
-                  "Guest with a timeout of %s.", AGENT_HIGH_TIMEOUT)
+                  "Guest with a timeout of %s.",
+                  self.agent_high_timeout)
         version = self.API_BASE_VERSION
 
-        self._call("reset_configuration", AGENT_HIGH_TIMEOUT,
+        self._call("reset_configuration", self.agent_high_timeout,
                    version=version, configuration=configuration)
 
     def stop_db(self, do_not_start_on_reboot=False):
@@ -401,7 +407,8 @@ class API(object):
                   "on the Guest.")
         version = self.API_BASE_VERSION
 
-        self._call("stop_db", AGENT_HIGH_TIMEOUT, version=version,
+        self._call("stop_db", self.agent_high_timeout,
+                   version=version,
                    do_not_start_on_reboot=do_not_start_on_reboot)
 
     def upgrade(self, instance_version, location, metadata=None):
@@ -419,7 +426,7 @@ class API(object):
         LOG.debug("Check Volume Info on instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
+        return self._call("get_filesystem_stats", self.agent_low_timeout,
                           version=version, fs_path=None)
 
     def update_guest(self):
@@ -427,7 +434,8 @@ class API(object):
         LOG.debug("Updating guest agent on instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        self._call("update_guest", AGENT_HIGH_TIMEOUT, version=version)
+        self._call("update_guest",
+                   self.agent_high_timeout, version=version)
 
     def create_backup(self, backup_info):
         """Make async call to create a full backup of this instance."""
@@ -445,7 +453,8 @@ class API(object):
             'mount': mount_point, 'id': self.id})
         version = self.API_BASE_VERSION
 
-        self._call("mount_volume", AGENT_LOW_TIMEOUT, version=version,
+        self._call("mount_volume",
+                   self.agent_low_timeout, version=version,
                    device_path=device_path, mount_point=mount_point)
 
     def unmount_volume(self, device_path=None, mount_point=None):
@@ -454,7 +463,8 @@ class API(object):
             'device': device_path, 'id': self.id})
         version = self.API_BASE_VERSION
 
-        self._call("unmount_volume", AGENT_LOW_TIMEOUT, version=version,
+        self._call("unmount_volume",
+                   self.agent_low_timeout, version=version,
                    device_path=device_path, mount_point=mount_point)
 
     def resize_fs(self, device_path=None, mount_point=None):
@@ -463,7 +473,8 @@ class API(object):
             'device': device_path, 'id': self.id})
         version = self.API_BASE_VERSION
 
-        self._call("resize_fs", AGENT_HIGH_TIMEOUT, version=version,
+        self._call("resize_fs",
+                   self.agent_high_timeout, version=version,
                    device_path=device_path, mount_point=mount_point)
 
     def update_overrides(self, overrides, remove=False):
@@ -472,7 +483,7 @@ class API(object):
                   "%(id)s.", {'overrides': overrides, 'id': self.id})
         version = self.API_BASE_VERSION
 
-        self._call("update_overrides", AGENT_HIGH_TIMEOUT,
+        self._call("update_overrides", self.agent_high_timeout,
                    version=version, overrides=overrides, remove=remove)
 
     def apply_overrides(self, overrides):
@@ -480,7 +491,7 @@ class API(object):
                   "%(id)s.", {'overrides': overrides, 'id': self.id})
         version = self.API_BASE_VERSION
 
-        self._call("apply_overrides", AGENT_HIGH_TIMEOUT,
+        self._call("apply_overrides", self.agent_high_timeout,
                    version=version, overrides=overrides)
 
     def backup_required_for_replication(self):
@@ -488,7 +499,7 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("backup_required_for_replication",
-                          AGENT_LOW_TIMEOUT,
+                          self.agent_low_timeout,
                           version=version)
 
     def get_replication_snapshot(self, snapshot_info=None,
@@ -496,7 +507,8 @@ class API(object):
         LOG.debug("Retrieving replication snapshot from instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("get_replication_snapshot", AGENT_SNAPSHOT_TIMEOUT,
+        return self._call("get_replication_snapshot",
+                          self.agent_snapshot_timeout,
                           version=version, snapshot_info=snapshot_info,
                           replica_source_config=replica_source_config)
 
@@ -512,7 +524,7 @@ class API(object):
         LOG.debug("Detaching replica %s from its replication source.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("detach_replica", AGENT_HIGH_TIMEOUT,
+        return self._call("detach_replica", self.agent_high_timeout,
                           version=version, for_failover=for_failover)
 
     def get_replica_context(self):
@@ -520,27 +532,29 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("get_replica_context",
-                          AGENT_HIGH_TIMEOUT, version=version)
+                          self.agent_high_timeout, version=version)
 
     def attach_replica(self, replica_info, slave_config):
         LOG.debug("Attaching replica %s.", replica_info)
         version = self.API_BASE_VERSION
 
-        self._call("attach_replica", AGENT_HIGH_TIMEOUT, version=version,
+        self._call("attach_replica",
+                   self.agent_high_timeout, version=version,
                    replica_info=replica_info, slave_config=slave_config)
 
     def make_read_only(self, read_only):
         LOG.debug("Executing make_read_only(%s)", read_only)
         version = self.API_BASE_VERSION
 
-        self._call("make_read_only", AGENT_HIGH_TIMEOUT, version=version,
+        self._call("make_read_only",
+                   self.agent_high_timeout, version=version,
                    read_only=read_only)
 
     def enable_as_master(self, replica_source_config):
         LOG.debug("Executing enable_as_master")
         version = self.API_BASE_VERSION
 
-        self._call("enable_as_master", AGENT_HIGH_TIMEOUT,
+        self._call("enable_as_master", self.agent_high_timeout,
                    version=version,
                    replica_source_config=replica_source_config)
 
@@ -550,48 +564,49 @@ class API(object):
         version = self.API_BASE_VERSION
 
         return self._call("get_txn_count",
-                          AGENT_HIGH_TIMEOUT, version=version)
+                          self.agent_high_timeout, version=version)
 
     def get_last_txn(self):
         LOG.debug("Executing get_last_txn.")
         version = self.API_BASE_VERSION
 
         return self._call("get_last_txn",
-                          AGENT_HIGH_TIMEOUT, version=version)
+                          self.agent_high_timeout, version=version)
 
     def get_latest_txn_id(self):
         LOG.debug("Executing get_latest_txn_id.")
         version = self.API_BASE_VERSION
 
         return self._call("get_latest_txn_id",
-                          AGENT_HIGH_TIMEOUT, version=version)
+                          self.agent_high_timeout, version=version)
 
     def wait_for_txn(self, txn):
         LOG.debug("Executing wait_for_txn.")
         version = self.API_BASE_VERSION
 
-        self._call("wait_for_txn", AGENT_HIGH_TIMEOUT, version=version,
-                   txn=txn)
+        self._call("wait_for_txn",
+                   self.agent_high_timeout, version=version, txn=txn)
 
     def cleanup_source_on_replica_detach(self, replica_info):
         LOG.debug("Cleaning up master %s on detach of replica.", self.id)
         version = self.API_BASE_VERSION
 
-        self._call("cleanup_source_on_replica_detach", AGENT_HIGH_TIMEOUT,
+        self._call("cleanup_source_on_replica_detach",
+                   self.agent_high_timeout,
                    version=version, replica_info=replica_info)
 
     def demote_replication_master(self):
         LOG.debug("Demoting instance %s to non-master.", self.id)
         version = self.API_BASE_VERSION
 
-        self._call("demote_replication_master", AGENT_HIGH_TIMEOUT,
+        self._call("demote_replication_master", self.agent_high_timeout,
                    version=version)
 
     def guest_log_list(self):
         LOG.debug("Retrieving guest log list for %s.", self.id)
         version = self.API_BASE_VERSION
 
-        result = self._call("guest_log_list", AGENT_HIGH_TIMEOUT,
+        result = self._call("guest_log_list", self.agent_high_timeout,
                             version=version)
         LOG.debug("guest_log_list returns %s", result)
         return result
@@ -600,7 +615,7 @@ class API(object):
         LOG.debug("Processing guest log '%s' for %s.", log_name, self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("guest_log_action", AGENT_HIGH_TIMEOUT,
+        return self._call("guest_log_action", self.agent_high_timeout,
                           version=version, log_name=log_name,
                           enable=enable, disable=disable,
                           publish=publish, discard=discard)
@@ -610,7 +625,7 @@ class API(object):
                   self.id, include_contents)
         version = self.API_BASE_VERSION
 
-        result = self._call("module_list", AGENT_HIGH_TIMEOUT,
+        result = self._call("module_list", self.agent_high_timeout,
                             version=version,
                             include_contents=include_contents)
         return result
@@ -619,12 +634,12 @@ class API(object):
         LOG.debug("Applying modules to %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("module_apply", AGENT_HIGH_TIMEOUT,
+        return self._call("module_apply", self.agent_high_timeout,
                           version=version, modules=modules)
 
     def module_remove(self, module):
         LOG.debug("Removing modules from %s.", self.id)
         version = self.API_BASE_VERSION
 
-        return self._call("module_remove", AGENT_HIGH_TIMEOUT,
+        return self._call("module_remove", self.agent_high_timeout,
                           version=version, module=module)

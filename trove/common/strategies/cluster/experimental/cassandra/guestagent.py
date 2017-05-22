@@ -45,28 +45,28 @@ class CassandraGuestAgentAPI(guest_api.API):
         LOG.debug("Retrieving the data center for node: %s", self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_data_center", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("get_data_center", self.agent_low_timeout,
                           version=version)
 
     def get_rack(self):
         LOG.debug("Retrieving the rack for node: %s", self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_rack", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("get_rack", self.agent_low_timeout,
                           version=version)
 
     def set_seeds(self, seeds):
         LOG.debug("Configuring the gossip seeds for node: %s", self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("set_seeds", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("set_seeds", self.agent_low_timeout,
                           version=version, seeds=seeds)
 
     def get_seeds(self):
         LOG.debug("Retrieving the gossip seeds for node: %s", self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_seeds", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("get_seeds", self.agent_low_timeout,
                           version=version)
 
     def set_auto_bootstrap(self, enabled):
@@ -74,7 +74,7 @@ class CassandraGuestAgentAPI(guest_api.API):
                   "for node: %(id)s", {'enabled': enabled, 'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("set_auto_bootstrap", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("set_auto_bootstrap", self.agent_low_timeout,
                           version=version, enabled=enabled)
 
     def cluster_complete(self):
@@ -82,14 +82,14 @@ class CassandraGuestAgentAPI(guest_api.API):
                   self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("cluster_complete", self.agent_high_timeout,
                           version=version)
 
     def node_cleanup_begin(self):
         LOG.debug("Signaling the node to prepare for cleanup: %s", self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("node_cleanup_begin", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("node_cleanup_begin", self.agent_low_timeout,
                           version=version)
 
     def node_cleanup(self):
@@ -109,14 +109,14 @@ class CassandraGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call(
-            "cluster_secure", guest_api.AGENT_HIGH_TIMEOUT,
+            "cluster_secure", self.agent_high_timeout,
             version=version, password=password)
 
     def get_admin_credentials(self):
         LOG.debug("Retrieving the admin credentials from node: %s", self.id)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_admin_credentials", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("get_admin_credentials", self.agent_low_timeout,
                           version=version)
 
     def store_admin_credentials(self, admin_credentials):
@@ -124,6 +124,6 @@ class CassandraGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("store_admin_credentials",
-                          guest_api.AGENT_LOW_TIMEOUT,
+                          self.agent_low_timeout,
                           version=version,
                           admin_credentials=admin_credentials)

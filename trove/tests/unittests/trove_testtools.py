@@ -97,6 +97,9 @@ class TestCase(testtools.TestCase):
                           "references from a previous test case.")
 
         super(TestCase, self).setUp()
+
+        self.addCleanup(cfg.CONF.reset)
+
         root_logger.DefaultRootHandler.set_info(self.id())
 
         # Default manager used by all unittsest unless explicitly overridden.
