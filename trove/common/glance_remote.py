@@ -47,7 +47,8 @@ def glance_client(context, region_name=None):
     auth = v3.Token(CONF.trove_auth_url, context.auth_token)
     session = ka_session.Session(auth=auth)
 
-    return Client('2', endpoint=endpoint_url, session=session)
+    return Client(CONF.glance_client_version, endpoint=endpoint_url,
+                  session=session)
 
 
 create_glance_client = import_class(CONF.remote_glance_client)

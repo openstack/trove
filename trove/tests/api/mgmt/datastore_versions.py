@@ -25,7 +25,7 @@ from troveclient.compat import exceptions
 from trove.tests.config import CONFIG
 from trove.tests.util import create_client
 from trove.tests.util import create_dbaas_client
-from trove.tests.util import create_nova_client
+from trove.tests.util import create_glance_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 
@@ -49,11 +49,14 @@ class MgmtDataStoreVersion(object):
         reqs = Requirements(is_admin=True)
         self.user = CONFIG.users.find_user(reqs)
         self.client = create_dbaas_client(self.user)
-        if test_config.nova_client is not None:
-            nova_user = test_config.users.find_user(
-                Requirements(services=["nova"]))
-            self.nova_client = create_nova_client(nova_user)
-            self.images = self.nova_client.images.list()
+        self.images = []
+        if test_config.glance_client is not None:
+            glance_user = test_config.users.find_user(
+                Requirements(services=["glance"]))
+            self.glance_client = create_glance_client(glance_user)
+            images = self.glance_client.images.list()
+            for image in images:
+                self.images.append(image.id)
 
     def _find_ds_version_by_name(self, ds_version_name):
         ds_versions = self.client.mgmt_datastore_versions.list()
@@ -112,7 +115,7 @@ class MgmtDataStoreVersion(object):
         """Tests the mgmt datastore version create method."""
         response = self.client.mgmt_datastore_versions.create(
             'test_version1', 'test_ds', 'test_mgr',
-            self.images[0].id, ['vertica-7.1'])
+            self.images[0], ['vertica-7.1'])
         assert_equal(None, response)
         assert_equal(202, self.client.last_http_code)
 
@@ -127,7 +130,7 @@ class MgmtDataStoreVersion(object):
         assert_equal('test_version1', self.created_version.name)
         assert_equal('test_ds', self.created_version.datastore_name)
         assert_equal('test_mgr', self.created_version.datastore_manager)
-        assert_equal(self.images[0].id, self.created_version.image)
+        assert_equal(self.images[0], self.created_version.image)
         assert_equal(['vertica-7.1'], self.created_version.packages)
         assert_true(self.created_version.active)
         assert_false(self.created_version.default)
@@ -136,13 +139,13 @@ class MgmtDataStoreVersion(object):
     def test_mgmt_ds_version_patch(self):
         """Tests the mgmt datastore version edit method."""
         self.client.mgmt_datastore_versions.edit(
-            self.created_version.id, image=self.images[1].id,
+            self.created_version.id, image=self.images[1],
             packages=['pkg1'])
         assert_equal(202, self.client.last_http_code)
 
         # Lets match the content of patched datastore
         patched_ds_version = self._find_ds_version_by_name('test_version1')
-        assert_equal(self.images[1].id, patched_ds_version.image)
+        assert_equal(self.images[1], patched_ds_version.image)
         assert_equal(['pkg1'], patched_ds_version.packages)
 
     @test(depends_on=[test_mgmt_ds_version_patch])

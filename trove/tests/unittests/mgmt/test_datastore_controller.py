@@ -18,7 +18,7 @@ from mock import Mock, patch, MagicMock, PropertyMock
 from testtools.matchers import Is, Equals
 
 from trove.common import exception
-from trove.common import remote
+from trove.common import glance_remote
 from trove.datastore import models as datastore_models
 from trove.extensions.mgmt.datastores.service import DatastoreVersionController
 from trove.tests.unittests import trove_testtools
@@ -81,14 +81,14 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         self.assertIn("'' is too short", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(glance_remote, 'create_glance_client')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load',
                   side_effect=exception.DatastoreVersionNotFound)
     @patch.object(datastore_models, 'update_datastore_version')
     def test_create_datastore_versions(self, mock_ds_version_create,
                                        mock_ds_version_load,
-                                       mock_ds_load, mock_nova_client):
+                                       mock_ds_load, mock_glance_client):
         body = self.version
         mock_ds_load.return_value.name = 'test_dsx'
 
@@ -127,12 +127,12 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         mock_ds_version_load_all.assert_called_with(only_active=False)
         mock_ds_version_load_by_uuid.assert_called_with(mock_id)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(glance_remote, 'create_glance_client')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     @patch.object(datastore_models, 'update_datastore_version')
     def test_edit_datastore_versions(self, mock_ds_version_update,
                                      mock_ds_version_load,
-                                     mock_nova_client):
+                                     mock_glance_client):
         body = {'image': '21c8805a-a800-4bca-a192-3a5a2519044d'}
 
         mock_ds_version = MagicMock()

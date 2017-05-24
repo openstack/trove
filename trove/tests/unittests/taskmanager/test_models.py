@@ -59,6 +59,11 @@ INST_ID = 'dbinst-id-1'
 VOLUME_ID = 'volume-id-1'
 
 
+class _fake_neutron_client(object):
+    def list_floatingips(self):
+        return {'floatingips': [{'floating_ip_address': '192.168.10.1'}]}
+
+
 class FakeOptGroup(object):
     def __init__(self, tcp_ports=['3306', '3301-3307'],
                  udp_ports=[], icmp=False):
@@ -740,14 +745,6 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         if 'volume' in self._testMethodName:
             self._stub_volume_client()
 
-        stub_floating_ips_manager = MagicMock(
-            spec=novaclient.v2.floating_ips.FloatingIPManager)
-        self.instance_task._nova_client.floating_ips = (
-            stub_floating_ips_manager)
-        floatingip = novaclient.v2.floating_ips.FloatingIP(
-            stub_floating_ips_manager, {'ip': '192.168.10.1'}, True)
-        stub_floating_ips_manager.list = MagicMock(return_value=[floatingip])
-
     def tearDown(self):
         super(BuiltInstanceTasksTest, self).tearDown()
 
@@ -878,14 +875,20 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                               Mock())
 
     def test_get_floating_ips(self):
-        floating_ips = self.instance_task._get_floating_ips()
-        self.assertEqual('192.168.10.1', floating_ips['192.168.10.1'].ip)
+        with patch.object(remote, 'create_neutron_client',
+                          return_value=_fake_neutron_client()):
+            floating_ips = self.instance_task._get_floating_ips()
+            self.assertEqual('192.168.10.1',
+                             floating_ips['192.168.10.1'].get(
+                                 'floating_ip_address'))
 
     @patch.object(BaseInstance, 'get_visible_ip_addresses',
                   return_value=['192.168.10.1'])
     def test_detach_public_ips(self, mock_address):
-        removed_ips = self.instance_task.detach_public_ips()
-        self.assertEqual(['192.168.10.1'], removed_ips)
+        with patch.object(remote, 'create_neutron_client',
+                          return_value=_fake_neutron_client()):
+            removed_ips = self.instance_task.detach_public_ips()
+            self.assertEqual(['192.168.10.1'], removed_ips)
 
     def test_attach_public_ips(self):
         self.instance_task.attach_public_ips(['192.168.10.1'])

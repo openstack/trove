@@ -177,6 +177,24 @@ def create_nova_client(user, service_type=None):
     return TestClient(openstack)
 
 
+def create_glance_client(user):
+    """Creates a rich client for the Glance API using the test config."""
+    if test_config.glance_client is None:
+        raise SkipTest("No glance_client info specified in the Test Config "
+                       "so this test will be skipped.")
+    from glanceclient import Client
+    from keystoneauth1.identity import v2
+    from keystoneauth1 import session
+
+    auth = v2.Password(username=user.auth_user,
+                       password=user.auth_key,
+                       tenant_name=user.tenant,
+                       auth_url=test_config.glance_client['auth_url'])
+    session = session.Session(auth=auth)
+    glance = Client(CONF.glance_client_version, session=session)
+    return TestClient(glance)
+
+
 def dns_checker(mgmt_instance):
     """Given a MGMT instance, ensures DNS provisioning worked.
 

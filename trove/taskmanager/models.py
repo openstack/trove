@@ -1345,8 +1345,11 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     def _get_floating_ips(self):
         """Returns floating ips as a dict indexed by the ip."""
         floating_ips = {}
-        for ip in self.nova_client.floating_ips.list():
-            floating_ips.update({ip.ip: ip})
+        neutron_client = remote.create_neutron_client(self.context)
+        network_floating_ips = neutron_client.list_floatingips()
+        for ip in network_floating_ips.get('floatingips'):
+            floating_ips.update({ip.get('floating_ip_address'): ip})
+        LOG.debug("In _get_floating_ips(), returning %s" % floating_ips)
         return floating_ips
 
     def detach_public_ips(self):

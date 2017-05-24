@@ -13,14 +13,14 @@
 # limitations under the License.
 
 
-from novaclient import exceptions as nova_exceptions
+from glanceclient import exc as glance_exceptions
 from oslo_log import log as logging
 
 from trove.common import apischema as apischema
 from trove.common.auth import admin_context
 from trove.common import exception
+from trove.common import glance_remote
 from trove.common.i18n import _
-from trove.common import remote
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models
@@ -53,10 +53,10 @@ class DatastoreVersionController(wsgi.Controller):
                  {'tenant': tenant_id, 'version': version_name,
                   'datastore': datastore_name})
 
-        client = remote.create_nova_client(context)
+        client = glance_remote.create_glance_client(context)
         try:
             client.images.get(image_id)
-        except nova_exceptions.NotFound:
+        except glance_exceptions.HTTPNotFound:
             raise exception.ImageNotFound(uuid=image_id)
 
         try:
@@ -119,10 +119,10 @@ class DatastoreVersionController(wsgi.Controller):
         if type(packages) is list:
             packages = ','.join(packages)
 
-        client = remote.create_nova_client(context)
+        client = glance_remote.create_glance_client(context)
         try:
             client.images.get(image_id)
-        except nova_exceptions.NotFound:
+        except glance_exceptions.HTTPNotFound:
             raise exception.ImageNotFound(uuid=image_id)
 
         models.update_datastore_version(datastore_version.datastore_name,
