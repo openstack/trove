@@ -938,9 +938,11 @@ function init_fake_mode() {
 }
 
 function cmd_start() {
+    TOP_DIR=$PATH_DEVSTACK_SRC
+    source ${TOP_DIR}/stackrc
+
     if screen -ls | grep -q stack; then
         USE_SCREEN=True
-        TOP_DIR=$PATH_DEVSTACK_SRC
         LOGDIR=$TROVE_LOGDIR
         RUNNING=$(screen -S stack -Q windows)
         if [[ "$RUNNING" =~ " tr-" ]]; then
@@ -951,7 +953,9 @@ function cmd_start() {
             start_trove
         fi
     else
-        echo "WARNING: Could not start Trove services because there is no stack screen session running"
+        source "$TROVE_DEVSTACK_SETTINGS"
+        source /dev/stdin < <(sed -n '/^function start_trove\(\)/,/^}/p' "$TROVE_DEVSTACK_PLUGIN")
+        start_trove
     fi
 }
 
@@ -977,6 +981,9 @@ function cmd_run_fake() {
 ###############################################################################
 
 function cmd_stop() {
+    TOP_DIR=$PATH_DEVSTACK_SRC
+    source ${TOP_DIR}/stackrc
+
     if screen -ls | grep -q stack; then
         rm -f $DEST/status/stack/tr-*
         USE_SCREEN=True
@@ -998,7 +1005,9 @@ function cmd_stop() {
             fi
         done
     else
-        echo "WARNING: Could not stop Trove services because there is no stack screen session running"
+        source "$TROVE_DEVSTACK_SETTINGS"
+        source /dev/stdin < <(sed -n '/^function stop_trove\(\)/,/^}/p' "$TROVE_DEVSTACK_PLUGIN")
+        stop_trove
     fi
 }
 
