@@ -19,7 +19,6 @@ import traceback
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from eventlet.timeout import Timeout
-from heatclient import exc as heat_exceptions
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 from oslo_utils import timeutils
@@ -59,15 +58,12 @@ import trove.common.remote as remote
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
-from trove.common.remote import create_heat_client
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.common import template
 from trove.common import utils
 from trove.common.utils import try_recover
 from trove.extensions.mysql import models as mysql_models
-from trove.extensions.security_group.models import (
-    SecurityGroupInstanceAssociation)
 from trove.extensions.security_group.models import SecurityGroup
 from trove.extensions.security_group.models import SecurityGroupRule
 from trove.instance import models as inst_models
@@ -89,13 +85,9 @@ VOLUME_TIME_OUT = CONF.volume_time_out  # seconds.
 DNS_TIME_OUT = CONF.dns_time_out  # seconds.
 RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
 REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
-HEAT_TIME_OUT = CONF.heat_time_out  # seconds.
 USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
-HEAT_STACK_SUCCESSFUL_STATUSES = [('CREATE', 'CREATE_COMPLETE')]
-HEAT_RESOURCE_SUCCESSFUL_STATE = 'CREATE_COMPLETE'
 
 use_nova_server_volume = CONF.use_nova_server_volume
-use_heat = CONF.use_heat
 
 
 class NotifyMixin(object):
@@ -472,12 +464,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.info(_("Creating instance %s.") % self.id)
         security_groups = None
 
-        # If security group support is enabled and heat based instance
-        # orchestration is disabled, create a security group.
-        #
-        # Heat based orchestration handles security group(resource)
-        # in the template definition.
-        if CONF.trove_security_groups_support and not use_heat:
+        if CONF.trove_security_groups_support:
             try:
                 security_groups = self._create_secgroup(datastore_manager)
             except Exception as e:
@@ -491,21 +478,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
-        if use_heat:
-            msg = _("Support for heat templates in Trove is scheduled for "
-                    "removal. You will no longer be able to provide a heat "
-                    "template to Trove for the provisioning of resources.")
-            LOG.warning(msg)
-            volume_info = self._create_server_volume_heat(
-                flavor,
-                image_id,
-                datastore_manager,
-                volume_size,
-                availability_zone,
-                nics,
-                files,
-                cinder_volume_type)
-        elif use_nova_server_volume:
+        if use_nova_server_volume:
             volume_info = self._create_server_volume(
                 flavor['id'],
                 image_id,
@@ -794,104 +767,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                           'to_': str(to_)})
         return final
 
-    def _create_server_volume_heat(self, flavor, image_id,
-                                   datastore_manager, volume_size,
-                                   availability_zone, nics, files,
-                                   volume_type):
-        LOG.debug("Begin _create_server_volume_heat for id: %s" % self.id)
-        try:
-            client = create_heat_client(self.context)
-            tcp_rules_mapping_list = self._build_sg_rules_mapping(CONF.get(
-                datastore_manager).tcp_ports)
-            udp_ports_mapping_list = self._build_sg_rules_mapping(CONF.get(
-                datastore_manager).udp_ports)
-
-            ifaces, ports = self._build_heat_nics(nics)
-            template_obj = template.load_heat_template(datastore_manager)
-            heat_template_unicode = template_obj.render(
-                volume_support=self.volume_support,
-                ifaces=ifaces, ports=ports,
-                tcp_rules=tcp_rules_mapping_list,
-                udp_rules=udp_ports_mapping_list,
-                datastore_manager=datastore_manager,
-                files=files)
-            try:
-                heat_template = heat_template_unicode.encode('utf-8')
-            except UnicodeEncodeError:
-                raise TroveError(_("Failed to utf-8 encode Heat template."))
-
-            parameters = {"Flavor": flavor["name"],
-                          "VolumeSize": volume_size,
-                          "VolumeType": volume_type,
-                          "InstanceId": self.id,
-                          "ImageId": image_id,
-                          "DatastoreManager": datastore_manager,
-                          "AvailabilityZone": availability_zone,
-                          "TenantId": self.tenant_id}
-            stack_name = 'trove-%s' % self.id
-            client.stacks.create(stack_name=stack_name,
-                                 template=heat_template,
-                                 parameters=parameters)
-            try:
-                utils.poll_until(
-                    lambda: client.stacks.get(stack_name),
-                    lambda stack: stack.stack_status in ['CREATE_COMPLETE',
-                                                         'CREATE_FAILED'],
-                    sleep_time=USAGE_SLEEP_TIME,
-                    time_out=HEAT_TIME_OUT)
-            except PollTimeOut:
-                raise TroveError(_("Failed to obtain Heat stack status. "
-                                   "Timeout occurred."))
-
-            stack = client.stacks.get(stack_name)
-            if ((stack.action, stack.stack_status)
-                    not in HEAT_STACK_SUCCESSFUL_STATUSES):
-                raise TroveError(_("Failed to create Heat stack."))
-
-            resource = client.resources.get(stack.id, 'BaseInstance')
-            if resource.resource_status != HEAT_RESOURCE_SUCCESSFUL_STATE:
-                raise TroveError(_("Failed to provision Heat base instance."))
-            instance_id = resource.physical_resource_id
-
-            if self.volume_support:
-                resource = client.resources.get(stack.id, 'DataVolume')
-                if resource.resource_status != HEAT_RESOURCE_SUCCESSFUL_STATE:
-                    raise TroveError(_("Failed to provision Heat data "
-                                       "volume."))
-                volume_id = resource.physical_resource_id
-                self.update_db(compute_instance_id=instance_id,
-                               volume_id=volume_id)
-            else:
-                self.update_db(compute_instance_id=instance_id)
-
-            if CONF.trove_security_groups_support:
-                resource = client.resources.get(stack.id, 'DatastoreSG')
-                name = "%s_%s" % (
-                    CONF.trove_security_group_name_prefix, self.id)
-                description = _("Security Group for %s") % self.id
-                SecurityGroup.create(
-                    id=resource.physical_resource_id,
-                    name=name, description=description,
-                    user=self.context.user,
-                    tenant_id=self.context.tenant)
-                SecurityGroupInstanceAssociation.create(
-                    security_group_id=resource.physical_resource_id,
-                    instance_id=self.id)
-
-        except (TroveError, heat_exceptions.HTTPNotFound,
-                heat_exceptions.HTTPException) as e:
-            msg = _("Error occurred during Heat stack creation for "
-                    "instance %s.") % self.id
-            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
-            self._log_and_raise(e, msg, err)
-
-        device_path = self.device_path
-        mount_point = CONF.get(datastore_manager).mount_point
-        volume_info = {'device_path': device_path, 'mount_point': mount_point}
-
-        LOG.debug("End _create_server_volume_heat for id: %s" % self.id)
-        return volume_info
-
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, datastore_manager,
                                            volume_size, availability_zone,
@@ -1146,27 +1021,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 except (ValueError, TroveError):
                     set_error_and_raise([from_, to_])
 
-    def _build_heat_nics(self, nics):
-        ifaces = []
-        ports = []
-        if nics:
-            for idx, nic in enumerate(nics):
-                iface_id = nic.get('port-id')
-                if iface_id:
-                    ifaces.append(iface_id)
-                    continue
-                net_id = nic.get('net-id')
-                if net_id:
-                    port = {}
-                    port['name'] = "Port%s" % idx
-                    port['net_id'] = net_id
-                    fixed_ip = nic.get('v4-fixed-ip')
-                    if fixed_ip:
-                        port['fixed_ip'] = fixed_ip
-                    ports.append(port)
-                    ifaces.append("{Ref: Port%s}" % idx)
-        return ifaces, ports
-
 
 class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     """
@@ -1191,13 +1045,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             LOG.exception(_("Error stopping the datastore before attempting "
                             "to delete instance id %s.") % self.id)
         try:
-            if use_heat:
-                # Delete the server via heat
-                heatclient = create_heat_client(self.context)
-                name = 'trove-%s' % self.id
-                heatclient.stacks.delete(name)
-            else:
-                self.server.delete()
+            self.server.delete()
         except Exception as ex:
             LOG.exception(_("Error during delete compute server %s")
                           % self.server.id)
