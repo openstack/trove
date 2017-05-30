@@ -53,6 +53,7 @@ functionality, the following resources are provided.
   dev/trove_api_extensions.rst
   dev/secure_oslo_messaging.rst
   deploy/apache-mod-wsgi
+  dev/how_to_create_a_trove_instance.rst
 
 * Source Code Repositories
 
