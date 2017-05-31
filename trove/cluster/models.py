@@ -445,7 +445,8 @@ class Cluster(object):
                     LOG.debug(
                         "Node '%(inst_id)s' already has the configuration "
                         "'%(conf_id)s' attached.",
-                        {'inst_id': instance.id, 'conf_id': configuration_id})
+                        {'inst_id': instance.id,
+                         'conf_id': instance.configuration.id})
 
             # Configuration has been persisted to all instances.
             # The cluster is in a consistent state with all nodes
