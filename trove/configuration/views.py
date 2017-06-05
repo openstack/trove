@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_utils import strutils
+
 
 class ConfigurationView(object):
 
@@ -93,7 +95,7 @@ class DetailedConfigurationView(object):
             "id": self.configuration.id,
             "name": self.configuration.name,
             "description": self.configuration.description,
-            "values": values,
+            "values": strutils.mask_dict_password(values),
             "created": self.configuration.created,
             "updated": self.configuration.updated,
             "instance_count":
