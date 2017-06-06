@@ -151,7 +151,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
         return cls(context, db_info, datastore, datastore_version)
 
     def grow(self, instances):
-        LOG.debug("Growing cluster %s." % self.id)
+        LOG.debug("Growing cluster %s.", self.id)
 
         self.validate_cluster_available()
 
@@ -179,7 +179,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
     def shrink(self, instances):
         """Removes instances from a cluster."""
-        LOG.debug("Shrinking cluster %s." % self.id)
+        LOG.debug("Shrinking cluster %s.", self.id)
 
         self.validate_cluster_available()
         removal_instances = [Instance.load(self.context, inst_id)

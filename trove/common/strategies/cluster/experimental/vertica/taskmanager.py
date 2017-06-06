@@ -44,7 +44,7 @@ class VerticaTaskManagerStrategy(base.BaseTaskManagerStrategy):
 class VerticaClusterTasks(task_models.ClusterTasks):
 
     def create_cluster(self, context, cluster_id):
-        LOG.debug("Begin create_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin create_cluster for id: %s.", cluster_id)
 
         def _create_cluster():
 
@@ -79,7 +79,7 @@ class VerticaClusterTasks(task_models.ClusterTasks):
                     for guest in guests:
                         guest.authorize_public_keys(user, pub_key)
 
-                LOG.debug("Installing cluster with members: %s." % member_ips)
+                LOG.debug("Installing cluster with members: %s.", member_ips)
                 for db_instance in db_instances:
                     if db_instance['type'] == 'master':
                         master_instance = Instance.load(context,
@@ -107,12 +107,12 @@ class VerticaClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("End create_cluster for id: %s." % cluster_id)
+        LOG.debug("End create_cluster for id: %s.", cluster_id)
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):
 
         def _grow_cluster():
-            LOG.debug("begin grow_cluster for Vertica cluster %s" % cluster_id)
+            LOG.debug("begin grow_cluster for Vertica cluster %s", cluster_id)
 
             db_instances = DBInstance.find_all(cluster_id=cluster_id,
                                                deleted=False).all()
@@ -165,7 +165,7 @@ class VerticaClusterTasks(task_models.ClusterTasks):
             LOG.exception(_("Timeout for growing cluster."))
             self.update_statuses_on_failure(cluster_id)
         except Exception:
-            LOG.exception(_("Error growing cluster %s.") % cluster_id)
+            LOG.exception(_("Error growing cluster %s."), cluster_id)
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
@@ -196,7 +196,7 @@ class VerticaClusterTasks(task_models.ClusterTasks):
                                                     db_instance.id)
                     if self.get_ip(master_instance) in remove_member_ips:
                         raise RuntimeError(_("Cannot remove master instance!"))
-                    LOG.debug("Marking cluster k-safety: %s" % k)
+                    LOG.debug("Marking cluster k-safety: %s", k)
                     self.get_guest(master_instance).mark_design_ksafe(k)
                     self.get_guest(master_instance).shrink_cluster(
                         remove_member_ips)
@@ -217,12 +217,12 @@ class VerticaClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("end shrink_cluster for Vertica cluster id %s" % self.id)
+        LOG.debug("end shrink_cluster for Vertica cluster id %s", self.id)
 
 
 class VerticaTaskManagerAPI(task_api.API):
 
     def _cast(self, method_name, version, **kwargs):
-        LOG.debug("Casting %s" % method_name)
+        LOG.debug("Casting %s", method_name)
         cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context, method_name, **kwargs)

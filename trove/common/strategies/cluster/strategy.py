@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 def load_api_strategy(manager):
     clazz = CONF.get(manager).get('api_strategy')
-    LOG.debug("Loading class %s" % clazz)
+    LOG.debug("Loading class %s", clazz)
     api_strategy = import_class(clazz)
     return api_strategy()
 
@@ -34,7 +34,7 @@ def load_api_strategy(manager):
 def load_taskmanager_strategy(manager):
     try:
         clazz = CONF.get(manager).get('taskmanager_strategy')
-        LOG.debug("Loading class %s" % clazz)
+        LOG.debug("Loading class %s", clazz)
         taskmanager_strategy = import_class(clazz)
         return taskmanager_strategy()
     except NoSuchOptError:
@@ -44,7 +44,7 @@ def load_taskmanager_strategy(manager):
 def load_guestagent_strategy(manager):
     try:
         clazz = CONF.get(manager).get('guestagent_strategy')
-        LOG.debug("Loading class %s" % clazz)
+        LOG.debug("Loading class %s", clazz)
         guestagent_strategy = import_class(clazz)
         return guestagent_strategy()
     except NoSuchOptError:

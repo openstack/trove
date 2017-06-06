@@ -22,5 +22,5 @@ LOG = logging.getLogger(__name__)
 
 
 def get_storage_strategy(storage_driver, ns=__name__):
-    LOG.debug("Getting storage strategy: %s." % storage_driver)
+    LOG.debug("Getting storage strategy: %s.", storage_driver)
     return Strategy.get_strategy(storage_driver, ns)

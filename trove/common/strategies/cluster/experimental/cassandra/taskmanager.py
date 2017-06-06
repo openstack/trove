@@ -45,7 +45,7 @@ class CassandraTaskManagerStrategy(base.BaseTaskManagerStrategy):
 class CassandraClusterTasks(task_models.ClusterTasks):
 
     def create_cluster(self, context, cluster_id):
-        LOG.debug("Begin create_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin create_cluster for id: %s.", cluster_id)
 
         def _create_cluster():
             cluster_node_ids = self.find_cluster_node_ids(cluster_id)
@@ -64,10 +64,10 @@ class CassandraClusterTasks(task_models.ClusterTasks):
             # Once all nodes are configured, start the seed nodes one at a time
             # followed by the rest of the nodes.
             try:
-                LOG.debug("Selected seed nodes: %s" % seeds)
+                LOG.debug("Selected seed nodes: %s", seeds)
 
                 for node in cluster_nodes:
-                    LOG.debug("Configuring node: %s." % node['id'])
+                    LOG.debug("Configuring node: %s.", node['id'])
                     node['guest'].set_seeds(seeds)
                     node['guest'].set_auto_bootstrap(False)
 
@@ -113,7 +113,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("End create_cluster for id: %s." % cluster_id)
+        LOG.debug("End create_cluster for id: %s.", cluster_id)
 
     @classmethod
     def find_cluster_node_ids(cls, cluster_id):
@@ -175,7 +175,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         return ips_by_affinity
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):
-        LOG.debug("Begin grow_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin grow_cluster for id: %s.", cluster_id)
 
         def _grow_cluster():
             # Wait for new nodes to get to cluster-ready status.
@@ -223,7 +223,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                 seeds = self.choose_seed_nodes(cluster_nodes)
 
                 # Configure each cluster node with the updated list of seeds.
-                LOG.debug("Updating all nodes with new seeds: %s" % seeds)
+                LOG.debug("Updating all nodes with new seeds: %s", seeds)
                 for node in cluster_nodes:
                     node['guest'].set_seeds(seeds)
 
@@ -237,10 +237,10 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                     node['guest'].node_cleanup_begin()
                     node['guest'].node_cleanup()
                     LOG.debug("Waiting for node to finish its "
-                              "cleanup: %s" % nid)
+                              "cleanup: %s", nid)
                     if not self._all_instances_running([nid], cluster_id):
                         LOG.warning(_("Node did not complete cleanup "
-                                      "successfully: %s") % nid)
+                                      "successfully: %s"), nid)
 
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
@@ -259,10 +259,10 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("End grow_cluster for id: %s." % cluster_id)
+        LOG.debug("End grow_cluster for id: %s.", cluster_id)
 
     def shrink_cluster(self, context, cluster_id, removal_ids):
-        LOG.debug("Begin shrink_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin shrink_cluster for id: %s.", cluster_id)
 
         def _shrink_cluster():
             cluster_node_ids = self.find_cluster_node_ids(cluster_id)
@@ -304,9 +304,9 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                     remaining_nodes = [node for node in cluster_nodes
                                        if node['id'] not in removal_ids]
                     seeds = self.choose_seed_nodes(remaining_nodes)
-                    LOG.debug("Selected seed nodes: %s" % seeds)
+                    LOG.debug("Selected seed nodes: %s", seeds)
                     for node in remaining_nodes:
-                        LOG.debug("Configuring node: %s." % node['id'])
+                        LOG.debug("Configuring node: %s.", node['id'])
                         node['guest'].set_seeds(seeds)
 
                 # Wait for the removed nodes to go SHUTDOWN.
@@ -339,7 +339,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("End shrink_cluster for id: %s." % cluster_id)
+        LOG.debug("End shrink_cluster for id: %s.", cluster_id)
 
     def restart_cluster(self, context, cluster_id):
         self.rolling_restart_cluster(

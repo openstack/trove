@@ -68,7 +68,7 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
         return config_rendered
 
     def create_cluster(self, context, cluster_id):
-        LOG.debug("Begin create_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin create_cluster for id: %s.", cluster_id)
 
         def _create_cluster():
             # Fetch instances by cluster_id against instances table.
@@ -146,12 +146,12 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
             LOG.exception(_("Timeout for building cluster."))
             self.update_statuses_on_failure(cluster_id)
         except TroveError:
-            LOG.exception(_("Error creating cluster %s.") % cluster_id)
+            LOG.exception(_("Error creating cluster %s."), cluster_id)
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
 
-        LOG.debug("End create_cluster for id: %s." % cluster_id)
+        LOG.debug("End create_cluster for id: %s.", cluster_id)
 
     def _check_cluster_for_root(self, context, existing_instances,
                                 new_instances):
@@ -164,7 +164,7 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                 return
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):
-        LOG.debug("Begin Galera grow_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin Galera grow_cluster for id: %s.", cluster_id)
 
         def _grow_cluster():
 
@@ -249,16 +249,16 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         except Exception:
-            LOG.exception(_("Error growing cluster %s.") % cluster_id)
+            LOG.exception(_("Error growing cluster %s."), cluster_id)
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
             timeout.cancel()
 
-        LOG.debug("End grow_cluster for id: %s." % cluster_id)
+        LOG.debug("End grow_cluster for id: %s.", cluster_id)
 
     def shrink_cluster(self, context, cluster_id, removal_instance_ids):
-        LOG.debug("Begin Galera shrink_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin Galera shrink_cluster for id: %s.", cluster_id)
 
         def _shrink_cluster():
             removal_instances = [Instance.load(context, instance_id)
@@ -277,7 +277,7 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                         set(non_deleted_ids))
                 )
             try:
-                LOG.info(_("Deleting instances (%s)") % removal_instance_ids)
+                LOG.info(_("Deleting instances (%s)"), removal_instance_ids)
                 utils.poll_until(all_instances_marked_deleted,
                                  sleep_time=2,
                                  time_out=CONF.cluster_delete_time_out)
@@ -320,13 +320,13 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         except Exception:
-            LOG.exception(_("Error shrinking cluster %s.") % cluster_id)
+            LOG.exception(_("Error shrinking cluster %s."), cluster_id)
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         finally:
             timeout.cancel()
 
-        LOG.debug("End shrink_cluster for id: %s." % cluster_id)
+        LOG.debug("End shrink_cluster for id: %s.", cluster_id)
 
     def restart_cluster(self, context, cluster_id):
         self.rolling_restart_cluster(context, cluster_id)

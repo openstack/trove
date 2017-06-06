@@ -112,11 +112,11 @@ class SwiftStorage(base.Storage):
         which is typically in the format '<backup_id>.<ext>.gz'
         """
 
-        LOG.info(_('Saving %(filename)s to %(container)s in swift.')
-                 % {'filename': filename, 'container': BACKUP_CONTAINER})
+        LOG.info(_('Saving %(filename)s to %(container)s in swift.'),
+                 {'filename': filename, 'container': BACKUP_CONTAINER})
 
         # Create the container if it doesn't already exist
-        LOG.debug('Creating container %s.' % BACKUP_CONTAINER)
+        LOG.debug('Creating container %s.', BACKUP_CONTAINER)
         self.connection.put_container(BACKUP_CONTAINER)
 
         # Swift Checksum is the checksum of the concatenated segment checksums
@@ -124,7 +124,7 @@ class SwiftStorage(base.Storage):
 
         # Wrap the output of the backup process to segment it for swift
         stream_reader = StreamReader(stream, filename, MAX_FILE_SIZE)
-        LOG.debug('Using segment size %s' % stream_reader.max_file_size)
+        LOG.debug('Using segment size %s', stream_reader.max_file_size)
 
         url = self.connection.url
         # Full location where the backup manifest is stored
@@ -135,7 +135,7 @@ class SwiftStorage(base.Storage):
 
         # Read from the stream and write to the container in swift
         while not stream_reader.end_of_file:
-            LOG.debug('Saving segment %s.' % stream_reader.segment)
+            LOG.debug('Saving segment %s.', stream_reader.segment)
             path = stream_reader.segment_path
             etag = self.connection.put_object(BACKUP_CONTAINER,
                                               stream_reader.segment,
@@ -164,7 +164,7 @@ class SwiftStorage(base.Storage):
 
         # All segments uploaded.
         num_segments = len(segment_results)
-        LOG.debug('File uploaded in %s segments.' % num_segments)
+        LOG.debug('File uploaded in %s segments.', num_segments)
 
         # An SLO will be generated if the backup was more than one segment in
         # length.
@@ -178,11 +178,11 @@ class SwiftStorage(base.Storage):
         for key, value in metadata.items():
             headers[self._set_attr(key)] = value
 
-        LOG.debug('Metadata headers: %s' % str(headers))
+        LOG.debug('Metadata headers: %s', str(headers))
         if large_object:
             LOG.info(_('Creating the manifest file.'))
             manifest_data = json.dumps(segment_results)
-            LOG.debug('Manifest contents: %s' % manifest_data)
+            LOG.debug('Manifest contents: %s', manifest_data)
             # The etag returned from the manifest PUT is the checksum of the
             # manifest object (which is empty); this is not the checksum we
             # want.
@@ -195,9 +195,9 @@ class SwiftStorage(base.Storage):
             final_swift_checksum = swift_checksum.hexdigest()
         else:
             LOG.info(_('Backup fits in a single segment. Moving segment '
-                       '%(segment)s to %(filename)s.')
-                     % {'segment': stream_reader.first_segment,
-                        'filename': filename})
+                       '%(segment)s to %(filename)s.'),
+                     {'segment': stream_reader.first_segment,
+                      'filename': filename})
             segment_result = segment_results[0]
             # Just rename it via a special put copy.
             headers['X-Copy-From'] = segment_result['path']
@@ -205,8 +205,8 @@ class SwiftStorage(base.Storage):
                                        filename, '',
                                        headers=headers)
             # Delete the old segment file that was copied
-            LOG.debug('Deleting the old segment file %s.'
-                      % stream_reader.first_segment)
+            LOG.debug('Deleting the old segment file %s.',
+                      stream_reader.first_segment)
             self.connection.delete_object(BACKUP_CONTAINER,
                                           stream_reader.first_segment)
             final_swift_checksum = segment_result['etag']

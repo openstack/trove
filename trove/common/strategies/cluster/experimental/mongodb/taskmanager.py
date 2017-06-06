@@ -61,20 +61,20 @@ class MongoDbTaskManagerStrategy(base.BaseTaskManagerStrategy):
 class MongoDbClusterTasks(task_models.ClusterTasks):
 
     def create_cluster(self, context, cluster_id):
-        LOG.debug("begin create_cluster for id: %s" % cluster_id)
+        LOG.debug("begin create_cluster for id: %s", cluster_id)
 
         def _create_cluster():
 
             # fetch instances by cluster_id against instances table
             db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
             instance_ids = [db_instance.id for db_instance in db_instances]
-            LOG.debug("instances in cluster %s: %s" % (cluster_id,
-                                                       instance_ids))
+            LOG.debug("instances in cluster %(cluster_id)s: %(instance_ids)s",
+                      {'cluster_id': cluster_id, 'instance_ids': instance_ids})
 
             if not self._all_instances_ready(instance_ids, cluster_id):
                 return
 
-            LOG.debug("all instances in cluster %s ready." % cluster_id)
+            LOG.debug("all instances in cluster %s ready.", cluster_id)
 
             instances = [Instance.load(context, instance_id) for instance_id
                          in instance_ids]
@@ -82,17 +82,17 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             # filter query routers in instances into a new list: query_routers
             query_routers = [instance for instance in instances if
                              instance.type == 'query_router']
-            LOG.debug("query routers: %s" %
+            LOG.debug("query routers: %s",
                       [instance.id for instance in query_routers])
             # filter config servers in instances into new list: config_servers
             config_servers = [instance for instance in instances if
                               instance.type == 'config_server']
-            LOG.debug("config servers: %s" %
+            LOG.debug("config servers: %s",
                       [instance.id for instance in config_servers])
             # filter members (non router/configsvr) into a new list: members
             members = [instance for instance in instances if
                        instance.type == 'member']
-            LOG.debug("members: %s" %
+            LOG.debug("members: %s",
                       [instance.id for instance in members])
 
             # for config_server in config_servers, append ip/hostname to
@@ -100,7 +100,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             # peel off the replica-set name and ip/hostname from 'x'
             config_server_ips = [self.get_ip(instance)
                                  for instance in config_servers]
-            LOG.debug("config server ips: %s" % config_server_ips)
+            LOG.debug("config server ips: %s", config_server_ips)
 
             if not self._add_query_routers(query_routers,
                                            config_server_ips):
@@ -126,21 +126,22 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("end create_cluster for id: %s" % cluster_id)
+        LOG.debug("end create_cluster for id: %s", cluster_id)
 
     def add_shard_cluster(self, context, cluster_id, shard_id,
                           replica_set_name):
 
-        LOG.debug("begin add_shard_cluster for cluster %s shard %s"
-                  % (cluster_id, shard_id))
+        LOG.debug("begin add_shard_cluster for cluster %(cluster_id)s "
+                  "shard %(shard_id)s", {'cluster_id': cluster_id,
+                                         'shard_id': shard_id})
 
         def _add_shard_cluster():
 
             db_instances = DBInstance.find_all(cluster_id=cluster_id,
                                                shard_id=shard_id).all()
             instance_ids = [db_instance.id for db_instance in db_instances]
-            LOG.debug("instances in shard %s: %s" % (shard_id,
-                                                     instance_ids))
+            LOG.debug("instances in shard %(shard_id)s: %(instance_ids)s",
+                      {'shard_id': shard_id, 'instance_ids': instance_ids})
             if not self._all_instances_ready(instance_ids, cluster_id,
                                              shard_id):
                 return
@@ -173,11 +174,12 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("end add_shard_cluster for cluster %s shard %s"
-                  % (cluster_id, shard_id))
+        LOG.debug("end add_shard_cluster for cluster %(cluster_id)s "
+                  "shard %(shard_id)s", {'cluster_id': cluster_id,
+                                         'shard_id': shard_id})
 
     def grow_cluster(self, context, cluster_id, instance_ids):
-        LOG.debug("begin grow_cluster for MongoDB cluster %s" % cluster_id)
+        LOG.debug("begin grow_cluster for MongoDB cluster %s", cluster_id)
 
         def _grow_cluster():
             new_instances = [db_instance for db_instance in self.db_instances
@@ -194,8 +196,10 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                 if not query_router_id:
                     return
                 for shard_id in shard_ids:
-                    LOG.debug('growing cluster by adding shard %s on query '
-                              'router %s' % (shard_id, query_router_id))
+                    LOG.debug('growing cluster by adding shard %(shard_id)s '
+                              'on query router %(router_id)s',
+                              {'shard_id': shard_id,
+                               'router_id': query_router_id})
                     member_ids = [db_instance.id for db_instance in new_members
                                   if db_instance.shard_id == shard_id]
                     if not self._all_instances_ready(
@@ -214,9 +218,10 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                 config_servers_ids = [db_instance.id for db_instance
                                       in self.db_instances
                                       if db_instance.type == 'config_server']
-                LOG.debug('growing cluster by adding query routers %s, '
-                          'with config servers %s'
-                          % (query_router_ids, config_servers_ids))
+                LOG.debug('growing cluster by adding query routers '
+                          '%(router)s, with config servers %(server)s',
+                          {'router': query_router_ids,
+                           'server': config_servers_ids})
                 if not self._all_instances_ready(
                     query_router_ids, cluster_id
                 ):
@@ -249,10 +254,10 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("end grow_cluster for MongoDB cluster %s" % self.id)
+        LOG.debug("end grow_cluster for MongoDB cluster %s", self.id)
 
     def shrink_cluster(self, context, cluster_id, instance_ids):
-        LOG.debug("begin shrink_cluster for MongoDB cluster %s" % cluster_id)
+        LOG.debug("begin shrink_cluster for MongoDB cluster %s", cluster_id)
 
         def _shrink_cluster():
             def all_instances_marked_deleted():
@@ -284,7 +289,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         finally:
             timeout.cancel()
 
-        LOG.debug("end shrink_cluster for MongoDB cluster %s" % self.id)
+        LOG.debug("end shrink_cluster for MongoDB cluster %s", self.id)
 
     def get_cluster_admin_password(self, context):
         """The cluster admin's user credentials are stored on all query
@@ -297,7 +302,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         """Initialize the replica set by calling the primary member guest's
         add_members.
         """
-        LOG.debug('initializing replica set on %s' % primary_member.id)
+        LOG.debug('initializing replica set on %s', primary_member.id)
         other_members_ips = []
         try:
             for member in other_members:
@@ -321,8 +326,10 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         if not self._init_replica_set(primary_member, other_members):
             return False
         replica_set = self.get_guest(primary_member).get_replica_set_name()
-        LOG.debug('adding replica set %s as shard %s to cluster %s'
-                  % (replica_set, primary_member.shard_id, self.id))
+        LOG.debug('adding replica set %(replica_set)s as shard %(shard_id)s '
+                  'to cluster %(cluster_id)s',
+                  {'replica_set': replica_set,
+                   'shard_id': primary_member.shard_id, 'cluster_id': self.id})
         try:
             self.get_guest(query_router).add_shard(
                 replica_set, self.get_ip(primary_member))
@@ -352,13 +359,13 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         generated password, else the password needs to be retrieved from
         and existing query router.
         """
-        LOG.debug('adding new query router(s) %s with config server '
-                  'ips %s' % ([i.id for i in query_routers],
-                              config_server_ips))
+        LOG.debug('adding new query router(s) %(routers)s with config server '
+                  'ips %(ips)s', {'routers': [i.id for i in query_routers],
+                                  'ips': config_server_ips})
         for query_router in query_routers:
             try:
-                LOG.debug("calling add_config_servers on query router %s"
-                          % query_router.id)
+                LOG.debug("calling add_config_servers on query router %s",
+                          query_router.id)
                 guest = self.get_guest(query_router)
                 guest.add_config_servers(config_server_ips)
                 if not admin_password:
@@ -378,7 +385,7 @@ class MongoDbTaskManagerAPI(task_api.API):
 
     def mongodb_add_shard_cluster(self, cluster_id, shard_id,
                                   replica_set_name):
-        LOG.debug("Making async call to add shard cluster %s " % cluster_id)
+        LOG.debug("Making async call to add shard cluster %s ", cluster_id)
         version = task_api.API.API_BASE_VERSION
         cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context,
