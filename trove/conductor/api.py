@@ -69,8 +69,8 @@ class API(object):
                               secure_serializer=sz.ConductorGuestSerializer)
 
     def heartbeat(self, instance_id, payload, sent=None):
-        LOG.debug("Making async call to cast heartbeat for instance: %s"
-                  % instance_id)
+        LOG.debug("Making async call to cast heartbeat for instance: %s",
+                  instance_id)
         version = self.API_BASE_VERSION
 
         cctxt = self.client.prepare(version=version)
@@ -81,8 +81,8 @@ class API(object):
 
     def update_backup(self, instance_id, backup_id, sent=None,
                       **backup_fields):
-        LOG.debug("Making async call to cast update_backup for instance: %s"
-                  % instance_id)
+        LOG.debug("Making async call to cast update_backup for instance: %s",
+                  instance_id)
         version = self.API_BASE_VERSION
 
         cctxt = self.client.prepare(version=version)
@@ -93,8 +93,8 @@ class API(object):
                    **backup_fields)
 
     def report_root(self, instance_id, user):
-        LOG.debug("Making async call to cast report_root for instance: %s"
-                  % instance_id)
+        LOG.debug("Making async call to cast report_root for instance: %s",
+                  instance_id)
         version = self.API_BASE_VERSION
         cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context, "report_root",

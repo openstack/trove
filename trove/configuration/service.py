@@ -59,8 +59,8 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def show(self, req, tenant_id, id):
-        LOG.debug("Showing configuration group %(id)s on tenant %(tenant)s"
-                  % {"tenant": tenant_id, "id": id})
+        LOG.debug("Showing configuration group %(id)s on tenant %(tenant)s",
+                  {"tenant": tenant_id, "id": id})
         context = req.environ[wsgi.CONTEXT_KEY]
         configuration = models.Configuration.load(context, id)
         self.authorize_config_action(context, 'show', configuration)
@@ -96,8 +96,8 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id):
-        LOG.debug("req : '%s'\n\n" % req)
-        LOG.debug("body : '%s'\n\n" % req)
+        LOG.debug("req : '%s'\n\n", req)
+        LOG.debug("body : '%s'\n\n", req)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'configuration:create')
@@ -109,7 +109,7 @@ class ConfigurationsController(wsgi.Controller):
 
         msg = _("Creating configuration group on tenant "
                 "%(tenant_id)s with name: %(cfg_name)s")
-        LOG.info(msg % {"tenant_id": tenant_id, "cfg_name": name})
+        LOG.info(msg, {"tenant_id": tenant_id, "cfg_name": name})
 
         datastore_args = body['configuration'].get('datastore', {})
         datastore, datastore_version = (
@@ -146,7 +146,7 @@ class ConfigurationsController(wsgi.Controller):
     def delete(self, req, tenant_id, id):
         msg = _("Deleting configuration group %(cfg_id)s on tenant: "
                 "%(tenant_id)s")
-        LOG.info(msg % {"tenant_id": tenant_id, "cfg_id": id})
+        LOG.info(msg, {"tenant_id": tenant_id, "cfg_id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
@@ -166,7 +166,7 @@ class ConfigurationsController(wsgi.Controller):
     def update(self, req, body, tenant_id, id):
         msg = _("Updating configuration group %(cfg_id)s for tenant "
                 "id %(tenant_id)s")
-        LOG.info(msg % {"tenant_id": tenant_id, "cfg_id": id})
+        LOG.info(msg, {"tenant_id": tenant_id, "cfg_id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
@@ -219,8 +219,8 @@ class ConfigurationsController(wsgi.Controller):
     def _refresh_on_all_instances(self, context, configuration_id):
         """Refresh a configuration group on all single instances.
         """
-        LOG.debug("Re-applying configuration group '%s' to all instances."
-                  % configuration_id)
+        LOG.debug("Re-applying configuration group '%s' to all instances.",
+                  configuration_id)
         single_instances = instances_models.DBInstance.find_all(
             tenant_id=context.tenant,
             configuration_id=configuration_id,
@@ -229,24 +229,23 @@ class ConfigurationsController(wsgi.Controller):
 
         config = models.Configuration(context, configuration_id)
         for dbinstance in single_instances:
-            LOG.debug("Re-applying configuration to instance: %s"
-                      % dbinstance.id)
+            LOG.debug("Re-applying configuration to instance: %s",
+                      dbinstance.id)
             instance = instances_models.Instance.load(context, dbinstance.id)
             instance.update_configuration(config)
 
     def _refresh_on_all_clusters(self, context, configuration_id):
         """Refresh a configuration group on all clusters.
         """
-        LOG.debug("Re-applying configuration group '%s' to all clusters."
-                  % configuration_id)
+        LOG.debug("Re-applying configuration group '%s' to all clusters.",
+                  configuration_id)
         clusters = cluster_models.DBCluster.find_all(
             tenant_id=context.tenant,
             configuration_id=configuration_id,
             deleted=False).all()
 
         for dbcluster in clusters:
-            LOG.debug("Re-applying configuration to cluster: %s"
-                      % dbcluster.id)
+            LOG.debug("Re-applying configuration to cluster: %s", dbcluster.id)
             cluster = cluster_models.Cluster.load(context, dbcluster.id)
             cluster.configuration_attach(configuration_id)
 
