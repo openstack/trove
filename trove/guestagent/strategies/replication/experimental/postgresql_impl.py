@@ -78,7 +78,7 @@ class PostgresqlReplicationStreaming(base.Replication):
         snapshot_id = snapshot_info['id']
         replica_number = snapshot_info.get('replica_number', 1)
 
-        LOG.debug("Acquiring backup for replica number %d." % replica_number)
+        LOG.debug("Acquiring backup for replica number %d.", replica_number)
         # Only create a backup if it's the first replica
         if replica_number == 1:
             AGENT.execute_backup(
@@ -153,7 +153,7 @@ class PostgresqlReplicationStreaming(base.Replication):
         the replication user in pg_hba and ensure that WAL logging is
         at the appropriate level (use the same settings as backups)
         """
-        LOG.debug("Enabling as master, with cfg: %s " % master_config)
+        LOG.debug("Enabling as master, with cfg: %s ", master_config)
         self._get_or_create_replication_user(service)
         hba_entry = "host   replication   replicator    0.0.0.0/0   md5 \n"
 
@@ -177,7 +177,7 @@ class PostgresqlReplicationStreaming(base.Replication):
         """Adds appropriate config options to postgresql.conf, and writes out
         the recovery.conf file used to set up replication
         """
-        LOG.debug("Got slave_config: %s" % str(slave_config))
+        LOG.debug("Got slave_config: %s", str(slave_config))
         self._write_standby_recovery_file(service, snapshot, sslmode='prefer')
         self.enable_hot_standby(service)
         # Ensure the WAL arch is empty before restoring
@@ -225,9 +225,8 @@ class PostgresqlReplicationStreaming(base.Replication):
                              '--source-server=' + conninfo])
         out, err = utils.execute("sudo", "su", "-", service.pgsql_owner,
                                  "-c", "%s" % cmd_full, check_exit_code=0)
-        LOG.debug("Got stdout %s and stderr %s from pg_rewind" %
-                  (str(out), str(err)))
-
+        LOG.debug("Got stdout %(out)s and stderr %(err)s from pg_rewind",
+                  {'out': str(out), 'err': str(err)})
         operating_system.move(tmprec, rec, as_root=True)
 
     def demote_master(self, service):
@@ -253,7 +252,7 @@ class PostgresqlReplicationStreaming(base.Replication):
 
     def _write_standby_recovery_file(self, service, snapshot,
                                      sslmode='prefer'):
-        LOG.info(_("Snapshot data received: %s") % str(snapshot))
+        LOG.info(_("Snapshot data received: %s"), str(snapshot))
 
         logging_config = snapshot['log_position']
         conninfo_params = \

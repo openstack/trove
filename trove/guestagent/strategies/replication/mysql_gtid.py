@@ -47,7 +47,7 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
                 service.execute_on_client(set_gtid_cmd)
 
         logging_config = snapshot['log_position']
-        LOG.debug("connect_to_master %s" % logging_config['replication_user'])
+        LOG.debug("connect_to_master %s", logging_config['replication_user'])
         change_master_cmd = (
             "CHANGE MASTER TO MASTER_HOST='%(host)s', "
             "MASTER_PORT=%(port)s, "
@@ -66,9 +66,9 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
 
     def _read_last_master_gtid(self):
         INFO_FILE = ('%s/xtrabackup_binlog_info' % MySqlApp.get_data_dir())
-        LOG.info(_("Setting read permissions on %s") % INFO_FILE)
+        LOG.info(_("Setting read permissions on %s"), INFO_FILE)
         operating_system.chmod(INFO_FILE, FileMode.ADD_READ_ALL, as_root=True)
-        LOG.info(_("Reading last master GTID from %s") % INFO_FILE)
+        LOG.info(_("Reading last master GTID from %s"), INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
                 row = f.read().split('\t')

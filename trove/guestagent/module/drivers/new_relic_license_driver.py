@@ -68,7 +68,7 @@ class NewRelicLicenseDriver(module_driver.ModuleDriver):
             cmd[-1] = cmd[-1] % license_key
             utils.execute_with_timeout(*cmd, **exec_args)
         except Exception:
-            LOG.exception(_("Could not install license key '%s'") %
+            LOG.exception(_("Could not install license key '%s'"),
                           license_key)
             raise
 
@@ -81,7 +81,7 @@ class NewRelicLicenseDriver(module_driver.ModuleDriver):
             cmd.append(command)
             utils.execute_with_timeout(*cmd, **exec_args)
         except Exception:
-            LOG.exception(_("Could not %s New Relic server") % command)
+            LOG.exception(_("Could not %s New Relic server"), command)
             raise
 
     @module_driver.output(

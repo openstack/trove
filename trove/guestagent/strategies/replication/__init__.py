@@ -41,8 +41,9 @@ def get_instance(manager):
             replication_strategy, __replication_namespace)
         __replication_instance = replication_strategy_cls()
         __replication_manager = manager
-    LOG.debug('Got replication instance from: %s.%s' % (
-        __replication_namespace, __replication_strategy))
+    LOG.debug('Got replication instance from: %(namespace)s.%(strategy)s',
+              {'namespace': __replication_namespace,
+               'strategy': __replication_strategy})
     return __replication_instance
 
 

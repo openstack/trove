@@ -91,7 +91,7 @@ class InnoBackupEx(base.BackupRunner):
             match = lsn.search(output)
             if match:
                 meta = {'lsn': match.group(1)}
-        LOG.info(_("Metadata for backup: %s.") % str(meta))
+        LOG.info(_("Metadata for backup: %s."), str(meta))
         return meta
 
     @property

@@ -99,7 +99,7 @@ class MysqlReplicationBase(base.Replication):
         snapshot_id = snapshot_info['id']
         replica_number = snapshot_info.get('replica_number', 1)
 
-        LOG.debug("Acquiring backup for replica number %d." % replica_number)
+        LOG.debug("Acquiring backup for replica number %d.", replica_number)
         # Only create a backup if it's the first replica
         if replica_number == 1:
             AGENT.execute_backup(
@@ -108,8 +108,10 @@ class MysqlReplicationBase(base.Replication):
                 incremental_runner=self.repl_incr_backup_runner)
         else:
             LOG.debug("Using existing backup created for previous replica.")
-        LOG.debug("Replication snapshot %s used for replica number %d."
-                  % (snapshot_id, replica_number))
+        LOG.debug("Replication snapshot %(snapshot_id)s used for replica "
+                  "number %(replica_number)d.",
+                  {'snapshot_id': snapshot_id,
+                   'replica_number': replica_number})
 
         replication_user = self._create_replication_user()
         service.grant_replication_privilege(replication_user)

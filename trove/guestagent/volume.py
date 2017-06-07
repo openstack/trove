@@ -72,7 +72,7 @@ class VolumeDevice(object):
         """
         try:
             num_tries = CONF.num_tries
-            LOG.debug("Checking if %s exists." % self.device_path)
+            LOG.debug("Checking if %s exists.", self.device_path)
 
             utils.execute("blockdev", "--getsize64", self.device_path,
                           run_as_root=True, root_helper="sudo",
@@ -83,7 +83,7 @@ class VolumeDevice(object):
 
     def _check_format(self):
         """Checks that a volume is formatted."""
-        LOG.debug("Checking whether '%s' is formatted." % self.device_path)
+        LOG.debug("Checking whether '%s' is formatted.", self.device_path)
         try:
             stdout, stderr = utils.execute(
                 "dumpe2fs", self.device_path,
@@ -107,7 +107,7 @@ class VolumeDevice(object):
         format_options = shlex.split(CONF.format_options)
         format_options.append(self.device_path)
         volume_format_timeout = CONF.volume_format_timeout
-        LOG.debug("Formatting '%s'." % self.device_path)
+        LOG.debug("Formatting '%s'.", self.device_path)
         try:
             utils.execute_with_timeout(
                 "mkfs", "--type", volume_fstype, *format_options,
@@ -125,7 +125,8 @@ class VolumeDevice(object):
 
     def mount(self, mount_point, write_to_fstab=True):
         """Mounts, and writes to fstab."""
-        LOG.debug("Will mount %s at %s." % (self.device_path, mount_point))
+        LOG.debug("Will mount %(path)s at %(mount_point)s.",
+                  {'path': self.device_path, 'mount_point': mount_point})
 
         mount_point = VolumeMountPoint(self.device_path, mount_point)
         mount_point.mount()
@@ -152,7 +153,7 @@ class VolumeDevice(object):
         # Thus it may be necessary to wait for the mount and then unmount
         # the fs again (since the volume was just attached).
         if self._wait_for_mount(mount_point, timeout=2):
-            LOG.debug("Unmounting '%s' before resizing." % mount_point)
+            LOG.debug("Unmounting '%s' before resizing.", mount_point)
             self.unmount(mount_point)
         try:
             utils.execute("e2fsck", "-f", "-p", self.device_path,
@@ -180,7 +181,7 @@ class VolumeDevice(object):
         mount_points = self.mount_points(device_path)
         for mnt in mount_points:
             LOG.info(_("Device '%(device)s' is mounted on "
-                       "'%(mount_point)s'. Unmounting now.") %
+                       "'%(mount_point)s'. Unmounting now."),
                      {'device': device_path, 'mount_point': mnt})
             self.unmount(mnt)
 
@@ -234,7 +235,7 @@ class VolumeMountPoint(object):
         fstab_line = ("%s\t%s\t%s\t%s\t0\t0" %
                       (self.device_path, self.mount_point, self.volume_fstype,
                        self.mount_options))
-        LOG.debug("Writing new line to fstab:%s" % fstab_line)
+        LOG.debug("Writing new line to fstab:%s", fstab_line)
         with open('/etc/fstab', "r") as fstab:
             fstab_content = fstab.read()
         with NamedTemporaryFile(mode='w', delete=False) as tempfstab:

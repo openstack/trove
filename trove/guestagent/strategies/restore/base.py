@@ -89,7 +89,7 @@ class RestoreRunner(Strategy):
             content_length += len(chunk)
         process.stdin.close()
         utils.raise_if_process_errored(process, RestoreError)
-        LOG.debug("Restored %s bytes from stream." % content_length)
+        LOG.debug("Restored %s bytes from stream.", content_length)
 
         return content_length
 

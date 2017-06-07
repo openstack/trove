@@ -22,5 +22,5 @@ LOG = logging.getLogger(__name__)
 
 
 def get_backup_strategy(backup_driver, ns=__name__):
-    LOG.debug("Getting backup strategy: %s." % backup_driver)
+    LOG.debug("Getting backup strategy: %s.", backup_driver)
     return Strategy.get_strategy(backup_driver, ns)

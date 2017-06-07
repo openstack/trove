@@ -274,7 +274,7 @@ class InnoBackupExIncremental(InnoBackupEx):
         incremental_dir = None
         if 'parent_location' in metadata:
             LOG.info(_("Restoring parent: %(parent_location)s"
-                       " checksum: %(parent_checksum)s.") % metadata)
+                       " checksum: %(parent_checksum)s."), metadata)
             parent_location = metadata['parent_location']
             parent_checksum = metadata['parent_checksum']
             # Restore parents recursively so backup are applied sequentially
