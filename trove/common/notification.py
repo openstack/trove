@@ -142,7 +142,7 @@ class TroveBaseTraits(object):
         publisher_id = publisher_id or CONF.host
         event_type = self.event_type_format % event_type
         event_payload = self.serialize(self.context)
-        LOG.debug('Sending event: %(event_type)s, %(payload)s' %
+        LOG.debug('Sending event: %(event_type)s, %(payload)s',
                   {'event_type': event_type, 'payload': event_payload})
 
         notifier = rpc.get_notifier(
@@ -275,7 +275,7 @@ class DBaaSQuotas(object):
         }
 
     def notify(self):
-        LOG.debug('Sending event: %(event_type)s, %(payload)s' %
+        LOG.debug('Sending event: %(event_type)s, %(payload)s',
                   {'event_type': DBaaSQuotas.event_type,
                    'payload': self.payload})
 
@@ -401,7 +401,7 @@ class DBaaSAPINotification(object):
 
         qualified_event_type = (DBaaSAPINotification.event_type_format
                                 % (self.event_type(), event_qualifier))
-        LOG.debug('Sending event: %(event_type)s, %(payload)s' %
+        LOG.debug('Sending event: %(event_type)s, %(payload)s',
                   {'event_type': qualified_event_type, 'payload': payload})
 
         context = copy.copy(self.context)

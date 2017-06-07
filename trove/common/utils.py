@@ -246,7 +246,7 @@ def execute_with_timeout(*args, **kwargs):
             LOG.error(
                 _("Command '%(cmd)s' failed. %(description)s "
                   "Exit code: %(exit_code)s\nstderr: %(stderr)s\n"
-                  "stdout: %(stdout)s") %
+                  "stdout: %(stdout)s"),
                 {'cmd': e.cmd, 'description': e.description or '',
                  'exit_code': e.exit_code, 'stderr': e.stderr,
                  'stdout': e.stdout})
@@ -301,7 +301,7 @@ def try_recover(func):
             if recover_func is not None:
                 recover_func(func)
             else:
-                LOG.debug("No recovery method defined for %(func)s" % {
+                LOG.debug("No recovery method defined for %(func)s", {
                           'func': func.__name__})
             raise
     return _decorator
