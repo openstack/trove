@@ -967,8 +967,8 @@ class Instance(BuiltInstance):
             except exception.ModelNotFoundError:
                 LOG.exception(
                     _("Cannot create a replica of %(id)s "
-                      "as that instance could not be found.")
-                    % {'id': slave_of_id})
+                      "as that instance could not be found."),
+                    {'id': slave_of_id})
                 raise exception.NotFound(uuid=slave_of_id)
         elif replica_count and replica_count != 1:
             raise exception.Forbidden(_(
@@ -1503,7 +1503,7 @@ class Instances(object):
             except exception.NotFound:
                 # The instance may be gone if we're in the middle of a
                 # shrink operation, so just log and continue
-                LOG.debug("Instance %s is no longer available, skipping." %
+                LOG.debug("Instance %s is no longer available, skipping.",
                           db_instance.id)
         return db_insts
 
@@ -1578,7 +1578,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
             kwargs["encrypted_key"] = cu.encode_data(cu.encrypt_data(
                 key, CONF.inst_rpc_key_encr_key))
             LOG.debug("Generated unique RPC encryption key for "
-                      "instance. key = %s" % key)
+                      "instance. key = %s", key)
         else:
             kwargs["encrypted_key"] = None
 

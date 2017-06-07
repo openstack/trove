@@ -51,10 +51,10 @@ class DnsManager(object):
         """
         entry = self.entry_factory.create_entry(instance_id)
         if entry:
-            LOG.debug("Creating entry address %s." % str(entry))
+            LOG.debug("Creating entry address %s.", str(entry))
             self.driver.create_entry(entry, content)
         else:
-            LOG.debug("Entry address not found for instance %s" % instance_id)
+            LOG.debug("Entry address not found for instance %s", instance_id)
 
     def delete_instance_entry(self, instance_id, content=None):
         """Removes a DNS entry associated to an instance.
@@ -64,7 +64,7 @@ class DnsManager(object):
 
         """
         entry = self.entry_factory.create_entry(instance_id)
-        LOG.debug("Deleting instance entry with %s" % str(entry))
+        LOG.debug("Deleting instance entry with %s", str(entry))
         if entry:
             self.driver.delete_entry(entry.name, entry.type)
 
