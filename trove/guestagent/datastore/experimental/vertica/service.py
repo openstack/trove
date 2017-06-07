@@ -304,7 +304,7 @@ class VerticaApp(object):
         LOG.info(_("install_vertica completed."))
 
     def update_vertica(self, command, members=netutils.get_my_ipv4()):
-        LOG.info(_("Calling update_vertica with command %s") % command)
+        LOG.info(_("Calling update_vertica with command %s"), command)
         try:
             update_vertica_cmd = (system.UPDATE_VERTICA % (command, members,
                                                            MOUNT_POINT))
@@ -327,8 +327,8 @@ class VerticaApp(object):
             factory = lib['factory']
             path = lib['path']
             if os.path.isfile(path):
-                LOG.debug("Adding the %s library as %s." %
-                          (func_name, lib_name))
+                LOG.debug("Adding the %(func)s library as %(lib)s.",
+                          {'func': func_name, 'lib': lib_name})
                 out, err = system.exec_vsql_command(
                     password,
                     system.CREATE_LIBRARY % (lib_name, path)
@@ -355,9 +355,9 @@ class VerticaApp(object):
                 loaded_udls.append(func_name)
             else:
                 LOG.warning(_("Skipping %(func)s as path %(path)s not "
-                              "found.") % {"func": func_name, "path": path})
-        LOG.info(_("The following UDL functions are available for use: %s")
-                 % loaded_udls)
+                              "found."), {"func": func_name, "path": path})
+        LOG.info(_("The following UDL functions are available for use: %s"),
+                 loaded_udls)
 
     def _generate_database_password(self):
         """Generate and write the password to vertica.cnf file."""
@@ -371,7 +371,7 @@ class VerticaApp(object):
                      unlink_function=os.unlink,
                      temp_function=tempfile.NamedTemporaryFile):
         """Write the configuration contents to vertica.cnf file."""
-        LOG.debug('Defining config holder at %s.' % system.VERTICA_CONF)
+        LOG.debug('Defining config holder at %s.', system.VERTICA_CONF)
         tempfile = temp_function('w', delete=False)
         try:
             config.write(tempfile)
@@ -392,7 +392,7 @@ class VerticaApp(object):
             config.read(system.VERTICA_CONF)
             return config
         except Exception:
-            LOG.exception(_("Failed to read config %s.") % system.VERTICA_CONF)
+            LOG.exception(_("Failed to read config %s."), system.VERTICA_CONF)
             raise RuntimeError
 
     def _get_database_password(self):
@@ -429,7 +429,7 @@ class VerticaApp(object):
 
     def mark_design_ksafe(self, k):
         """Wrapper for mark_design_ksafe function for setting k-safety """
-        LOG.info(_("Setting Vertica k-safety to %s") % str(k))
+        LOG.info(_("Setting Vertica k-safety to %s"), str(k))
         out, err = system.exec_vsql_command(self._get_database_password(),
                                             system.MARK_DESIGN_KSAFE % k)
         # Only fail if we get an ERROR as opposed to a warning complaining
@@ -479,7 +479,7 @@ class VerticaApp(object):
         if not self.is_root_enabled():
             self._create_user(user.name, user.password, 'pseudosuperuser')
         else:
-            LOG.debug("Updating %s password." % user.name)
+            LOG.debug("Updating %s password.", user.name)
             try:
                 out, err = system.exec_vsql_command(
                     self._get_database_password(),
@@ -492,7 +492,7 @@ class VerticaApp(object):
                         raise RuntimeError(_("Failed to update %s "
                                              "password.") % user.name)
             except exception.ProcessExecutionError:
-                LOG.error(_("Failed to update %s password.") % user.name)
+                LOG.error(_("Failed to update %s password."), user.name)
                 raise RuntimeError(_("Failed to update %s password.")
                                    % user.name)
         return user.serialize()
@@ -513,7 +513,7 @@ class VerticaApp(object):
 
     def get_public_keys(self, user):
         """Generates key (if not found), and sends public key for user."""
-        LOG.debug("Public keys requested for user: %s." % user)
+        LOG.debug("Public keys requested for user: %s.", user)
         user_home_directory = os.path.expanduser('~' + user)
         public_key_file_name = user_home_directory + '/.ssh/id_rsa.pub'
 
@@ -533,7 +533,7 @@ class VerticaApp(object):
 
     def authorize_public_keys(self, user, public_keys):
         """Adds public key to authorized_keys for user."""
-        LOG.debug("public keys to be added for user: %s." % (user))
+        LOG.debug("public keys to be added for user: %s.", user)
         user_home_directory = os.path.expanduser('~' + user)
         authorized_file_name = user_home_directory + '/.ssh/authorized_keys'
 
@@ -573,27 +573,27 @@ class VerticaApp(object):
     def install_cluster(self, members):
         """Installs & configures cluster."""
         cluster_members = ','.join(members)
-        LOG.debug("Installing cluster with members: %s." % cluster_members)
+        LOG.debug("Installing cluster with members: %s.", cluster_members)
         self.install_vertica(cluster_members)
         self._export_conf_to_members(members)
-        LOG.debug("Creating database with members: %s." % cluster_members)
+        LOG.debug("Creating database with members: %s.", cluster_members)
         self.create_db(cluster_members)
-        LOG.debug("Cluster configured on members: %s." % cluster_members)
+        LOG.debug("Cluster configured on members: %s.", cluster_members)
 
     def grow_cluster(self, members):
         """Adds nodes to cluster."""
         cluster_members = ','.join(members)
-        LOG.debug("Growing cluster with members: %s." % cluster_members)
+        LOG.debug("Growing cluster with members: %s.", cluster_members)
         self.update_vertica("--add-hosts", cluster_members)
         self._export_conf_to_members(members)
-        LOG.debug("Creating database with members: %s." % cluster_members)
+        LOG.debug("Creating database with members: %s.", cluster_members)
         self.add_db_to_node(cluster_members)
-        LOG.debug("Cluster configured on members: %s." % cluster_members)
+        LOG.debug("Cluster configured on members: %s.", cluster_members)
 
     def shrink_cluster(self, members):
         """Removes nodes from cluster."""
         cluster_members = ','.join(members)
-        LOG.debug("Shrinking cluster with members: %s." % cluster_members)
+        LOG.debug("Shrinking cluster with members: %s.", cluster_members)
         self.remove_db_from_node(cluster_members)
         self.update_vertica("--remove-hosts", cluster_members)
 
@@ -603,7 +603,7 @@ class VerticaApp(object):
         def _wait_for_node_status():
             out, err = system.exec_vsql_command(self._get_database_password(),
                                                 system.NODE_STATUS % status)
-            LOG.debug("Polled vertica node states: %s" % out)
+            LOG.debug("Polled vertica node states: %s", out)
 
             if err:
                 LOG.error(err)

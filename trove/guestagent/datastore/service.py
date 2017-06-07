@@ -118,7 +118,7 @@ class BaseDbStatus(object):
             final_status = instance.ServiceStatuses.INSTANCE_READY
 
         if final_status:
-            LOG.info(_("Set final status to %s.") % final_status)
+            LOG.info(_("Set final status to %s."), final_status)
             self.set_status(final_status, force=True)
         else:
             self._end_install_or_restart(True)
@@ -133,7 +133,7 @@ class BaseDbStatus(object):
         Updates the database with the actual DB server status.
         """
         real_status = self._get_actual_db_status()
-        LOG.info(_("Current database status is '%s'.") % real_status)
+        LOG.info(_("Current database status is '%s'."), real_status)
         self.set_status(real_status, force=force)
 
     def _get_actual_db_status(self):
@@ -162,7 +162,7 @@ class BaseDbStatus(object):
 
         if force or self.is_installed:
             LOG.debug("Casting set_status message to conductor "
-                      "(status is '%s')." % status.description)
+                      "(status is '%s').", status.description)
             context = trove_context.TroveContext()
 
             heartbeat = {'service_status': status.description}
@@ -317,8 +317,8 @@ class BaseDbStatus(object):
         if not self.wait_for_real_status_to_change_to(
                 status, timeout, update_db):
             LOG.info(_("Service status did not change to %(status)s "
-                       "within the given timeout: %(timeout)ds")
-                     % {'status': status, 'timeout': timeout})
+                       "within the given timeout: %(timeout)ds"),
+                     {'status': status, 'timeout': timeout})
             LOG.debug("Attempting to cleanup stalled services.")
             try:
                 self.cleanup_stalled_db_services()
@@ -360,14 +360,14 @@ class BaseDbStatus(object):
             # just going to error out anyway.
             if loop:
                 LOG.debug("Waiting for DB status to change from "
-                          "%(actual_status)s to %(status)s." %
+                          "%(actual_status)s to %(status)s.",
                           {"actual_status": self.status, "status": status})
 
                 time.sleep(CONF.state_change_poll_time)
 
         LOG.error(_("Timeout while waiting for database status to change."
                     "Expected state %(status)s, "
-                    "current state is %(actual_status)s") %
+                    "current state is %(actual_status)s"),
                   {"status": status, "actual_status": self.status})
         return False
 

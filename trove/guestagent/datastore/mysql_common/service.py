@@ -159,7 +159,7 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
-                LOG.info(_('MySQL Service Status %(pid)s is BLOCKED.') %
+                LOG.info(_('MySQL Service Status %(pid)s is BLOCKED.'),
                          {'pid': pid})
                 return rd_instance.ServiceStatuses.BLOCKED
             except exception.ProcessExecutionError:
@@ -230,8 +230,8 @@ class BaseMySqlAdmin(object):
 
     def _associate_dbs(self, user):
         """Internal. Given a MySQLUser, populate its databases attribute."""
-        LOG.debug("Associating dbs to user %s at %s." %
-                  (user.name, user.host))
+        LOG.debug("Associating dbs to user %(name)s at %(host)s.",
+                  {'name': user.name, 'host': user.host})
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             q = sql_query.Query()
             q.columns = ["grantee", "table_schema"]
@@ -241,7 +241,7 @@ class BaseMySqlAdmin(object):
             t = text(str(q))
             db_result = client.execute(t)
             for db in db_result:
-                LOG.debug("\t db: %s." % db)
+                LOG.debug("\t db: %s.", db)
                 if db['grantee'] == "'%s'@'%s'" % (user.name, user.host):
                     user.databases = db['table_schema']
 
@@ -250,12 +250,12 @@ class BaseMySqlAdmin(object):
         LOG.debug("Changing the password of some users.")
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             for item in users:
-                LOG.debug("Changing password for user %s." % item)
+                LOG.debug("Changing password for user %s.", item)
                 user_dict = {'_name': item['name'],
                              '_host': item['host'],
                              '_password': item['password']}
                 user = models.MySQLUser.deserialize(user_dict)
-                LOG.debug("\tDeserialized: %s." % user.__dict__)
+                LOG.debug("\tDeserialized: %s.", user.__dict__)
                 uu = sql_query.SetPassword(user.name, host=user.host,
                                            new_password=user.password)
                 t = text(str(uu))
@@ -263,7 +263,7 @@ class BaseMySqlAdmin(object):
 
     def update_attributes(self, username, hostname, user_attrs):
         """Change the attributes of an existing user."""
-        LOG.debug("Changing user attributes for user %s." % username)
+        LOG.debug("Changing user attributes for user %s.", username)
         user = self._get_user(username, hostname)
 
         new_name = user_attrs.get('name')
@@ -374,7 +374,7 @@ class BaseMySqlAdmin(object):
             q.order = ['User', 'Host']
             t = text(str(q))
             result = client.execute(t).fetchall()
-            LOG.debug("Getting user information %s." % result)
+            LOG.debug("Getting user information %s.", result)
             if len(result) != 1:
                 return None
             found_user = result[0]
@@ -407,7 +407,7 @@ class BaseMySqlAdmin(object):
 
     def is_root_enabled(self):
         """Return True if root access is enabled; False otherwise."""
-        LOG.debug("Class type of mysql_root_access is %s " %
+        LOG.debug("Class type of mysql_root_access is %s ",
                   self.mysql_root_access)
         return self.mysql_root_access.is_root_enabled()
 
@@ -427,7 +427,7 @@ class BaseMySqlAdmin(object):
         LOG.debug("---Listing Databases---")
         ignored_database_names = "'%s'" % "', '".join(cfg.get_ignored_dbs())
         LOG.debug("The following database names are on ignore list and will "
-                  "be omitted from the listing: %s" % ignored_database_names)
+                  "be omitted from the listing: %s", ignored_database_names)
         databases = []
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             # If you have an external volume mounted at /var/lib/mysql
@@ -452,17 +452,17 @@ class BaseMySqlAdmin(object):
             t = text(str(q))
             database_names = client.execute(t)
             next_marker = None
-            LOG.debug("database_names = %r." % database_names)
+            LOG.debug("database_names = %r.", database_names)
             for count, database in enumerate(database_names):
                 if limit is not None and count >= limit:
                     break
-                LOG.debug("database = %s." % str(database))
+                LOG.debug("database = %s.", str(database))
                 mysql_db = models.MySQLSchema(name=database[0],
                                               character_set=database[1],
                                               collate=database[2])
                 next_marker = mysql_db.name
                 databases.append(mysql_db.serialize())
-        LOG.debug("databases = " + str(databases))
+        LOG.debug("databases = %s", str(databases))
         if limit is not None and database_names.rowcount <= limit:
             next_marker = None
         return databases, next_marker
@@ -490,7 +490,7 @@ class BaseMySqlAdmin(object):
         LOG.debug("---Listing Users---")
         ignored_user_names = "'%s'" % "', '".join(cfg.get_ignored_users())
         LOG.debug("The following user names are on ignore list and will "
-                  "be omitted from the listing: %s" % ignored_user_names)
+                  "be omitted from the listing: %s", ignored_user_names)
         users = []
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             iq = sql_query.Query()  # Inner query.
@@ -515,11 +515,11 @@ class BaseMySqlAdmin(object):
             t = text(str(oq))
             result = client.execute(t)
             next_marker = None
-            LOG.debug("result = " + str(result))
+            LOG.debug("result = %s", str(result))
             for count, row in enumerate(result):
                 if limit is not None and count >= limit:
                     break
-                LOG.debug("user = " + str(row))
+                LOG.debug("user = %s", str(row))
                 mysql_user = models.MySQLUser(name=row['User'],
                                               host=row['Host'])
                 mysql_user.check_reserved()
@@ -528,7 +528,7 @@ class BaseMySqlAdmin(object):
                 users.append(mysql_user.serialize())
         if limit is not None and result.rowcount <= limit:
             next_marker = None
-        LOG.debug("users = " + str(users))
+        LOG.debug("users = %s", str(users))
 
         return users, next_marker
 
@@ -656,13 +656,13 @@ class BaseMySqlApp(object):
         Create a os_admin user with a random password
         with all privileges similar to the root user.
         """
-        LOG.debug("Creating Trove admin user '%s'." % ADMIN_USER_NAME)
+        LOG.debug("Creating Trove admin user '%s'.", ADMIN_USER_NAME)
         localhost = "localhost"
         g = sql_query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
                             host=localhost, grant_option=True, clear=password)
         t = text(str(g))
         client.execute(t)
-        LOG.debug("Trove admin user '%s' created." % ADMIN_USER_NAME)
+        LOG.debug("Trove admin user '%s' created.", ADMIN_USER_NAME)
 
     @staticmethod
     def _generate_root_password(client):
@@ -700,7 +700,7 @@ class BaseMySqlApp(object):
         with self.local_sql_client(engine, use_flush=False) as client:
             self._create_admin_user(client, admin_password)
 
-        LOG.debug("Switching to the '%s' user now." % ADMIN_USER_NAME)
+        LOG.debug("Switching to the '%s' user now.", ADMIN_USER_NAME)
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
                                      urllib.parse.quote(admin_password)),
@@ -746,14 +746,15 @@ class BaseMySqlApp(object):
             try:
                 old_conf_backup = "%s_%s" % (config, random_uuid)
                 operating_system.move(config, old_conf_backup, as_root=True)
-                LOG.debug("%s saved to %s_%s." %
-                          (config, config, random_uuid))
+                LOG.debug("%(cfg)s saved to %(saved_cfg)s_%(uuid)s.",
+                          {'cfg': config, 'saved_cfg': config,
+                           'uuid': random_uuid})
             except exception.ProcessExecutionError:
                 pass
 
     def _create_mysql_confd_dir(self):
         conf_dir = "/etc/mysql/conf.d"
-        LOG.debug("Creating %s." % conf_dir)
+        LOG.debug("Creating %s.", conf_dir)
         operating_system.create_directory(conf_dir, as_root=True)
 
     def _enable_mysql_on_boot(self):
@@ -833,7 +834,7 @@ class BaseMySqlApp(object):
                 except exc.OperationalError:
                     output = {'key': k, 'value': byte_value}
                     LOG.exception(_("Unable to set %(key)s with value "
-                                    "%(value)s.") % output)
+                                    "%(value)s."), output)
 
     def make_read_only(self, read_only):
         with self.local_sql_client(self.get_engine()) as client:
@@ -889,7 +890,7 @@ class BaseMySqlApp(object):
     def grant_replication_privilege(self, replication_user):
         LOG.info(_("Granting Replication Slave privilege."))
 
-        LOG.debug("grant_replication_privilege: %s" % replication_user)
+        LOG.debug("grant_replication_privilege: %s", replication_user)
 
         with self.local_sql_client(self.get_engine()) as client:
             g = sql_query.Grant(permissions=['REPLICATION SLAVE'],
@@ -914,7 +915,7 @@ class BaseMySqlApp(object):
             return binlog_position
 
     def execute_on_client(self, sql_statement):
-        LOG.debug("Executing SQL: %s" % sql_statement)
+        LOG.debug("Executing SQL: %s", sql_statement)
         with self.local_sql_client(self.get_engine()) as client:
             return client.execute(sql_statement)
 
@@ -955,7 +956,7 @@ class BaseMySqlApp(object):
         try:
             utils.poll_until(verify_slave_status, sleep_time=3,
                              time_out=max_time)
-            LOG.info(_("Replication is now %s.") % status.lower())
+            LOG.info(_("Replication is now %s."), status.lower())
         except PollTimeOut:
             raise RuntimeError(
                 _("Replication is not %(status)s after %(max)d seconds.") % {
@@ -1000,11 +1001,11 @@ class BaseMySqlApp(object):
 
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_("Starting MySQL with conf changes."))
-        LOG.debug("Inside the guest - Status is_running = (%s)."
-                  % self.status.is_running)
+        LOG.debug("Inside the guest - Status is_running = (%s).",
+                  self.status.is_running)
         if self.status.is_running:
             LOG.error(_("Cannot execute start_db_with_conf_changes because "
-                        "MySQL state == %s.") % self.status)
+                        "MySQL state == %s."), self.status)
             raise RuntimeError(_("MySQL not stopped."))
         LOG.info(_("Resetting configuration."))
         self._reset_configuration(config_contents)
@@ -1045,7 +1046,7 @@ class BaseMySqlRootAccess(object):
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             t = text(sql_query.ROOT_ENABLED)
             result = client.execute(t)
-            LOG.debug("Found %s with remote root access." % result.rowcount)
+            LOG.debug("Found %s with remote root access.", result.rowcount)
             return result.rowcount != 0
 
     def enable_root(self, root_password=None):
@@ -1068,8 +1069,10 @@ class BaseMySqlRootAccess(object):
             t = text(str(uu))
             client.execute(t)
 
-            LOG.debug("CONF.root_grant: %s CONF.root_grant_option: %s." %
-                      (CONF.root_grant, CONF.root_grant_option))
+            LOG.debug("CONF.root_grant: %(grant)s CONF.root_grant_option: "
+                      "%(grant_option)s.",
+                      {'grant': CONF.root_grant,
+                       'grant_option': CONF.root_grant_option})
 
             g = sql_query.Grant(permissions=CONF.root_grant,
                                 user=user.name,

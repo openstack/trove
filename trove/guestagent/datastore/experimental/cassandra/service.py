@@ -379,8 +379,8 @@ class CassandraApp(object):
         operating_system.enable_service_on_boot(self.service_candidates)
 
     def __reset_user_password_to_default(self, username):
-        LOG.debug("Resetting the password of user '%s' to '%s'."
-                  % (username, self.default_superuser_password))
+        LOG.debug("Resetting the password of user '%(user)s' to '%(pw)s'.",
+                  {'user': username, 'pw': self.default_superuser_password})
 
         user = models.CassandraUser(username, self.default_superuser_password)
         with CassandraLocalhostConnection(user) as client:
@@ -401,7 +401,7 @@ class CassandraApp(object):
             raise RuntimeError(_("Cannot change the cluster name. "
                                  "The service is not running."))
 
-        LOG.debug("Changing the cluster name to '%s'." % cluster_name)
+        LOG.debug("Changing the cluster name to '%s'.", cluster_name)
 
         # Update the in-database value.
         self.__reset_cluster_name(cluster_name)
@@ -444,8 +444,8 @@ class CassandraApp(object):
 
         LOG.warning(
             _("Trove administrative user has not been configured yet. "
-              "Using the built-in default: %s")
-            % models.CassandraUser.root_username)
+              "Using the built-in default: %s"),
+            models.CassandraUser.root_username)
         return models.CassandraUser(models.CassandraUser.root_username,
                                     self.default_superuser_password)
 
@@ -604,7 +604,7 @@ class CassandraApp(object):
         return config['rack']
 
     def set_seeds(self, seeds):
-        LOG.debug("Setting seed nodes: %s" % seeds)
+        LOG.debug("Setting seed nodes: %s", seeds)
         updates = {
             'seed_provider': {'parameters':
                               [{'seeds': ','.join(seeds)}]
@@ -638,7 +638,7 @@ class CassandraApp(object):
         without data.
         It must be turned back ON once the cluster is initialized.
         """
-        LOG.debug("Setting auto-bootstrapping: %s" % enabled)
+        LOG.debug("Setting auto-bootstrapping: %s", enabled)
         updates = {'auto_bootstrap': enabled}
         self.configuration_manager.apply_system_override(updates)
 
@@ -827,7 +827,7 @@ class CassandraAdmin(object):
 
     def _create_user(self, client, user):
         # Create only NOSUPERUSER accounts here.
-        LOG.debug("Creating a new user '%s'." % user.name)
+        LOG.debug("Creating a new user '%s'.", user.name)
         client.execute("CREATE USER '{}' WITH PASSWORD %s NOSUPERUSER;",
                        (user.name,), (user.password,))
 
@@ -835,7 +835,7 @@ class CassandraAdmin(object):
         """Create a new superuser account and grant it full superuser-level
         access to all keyspaces.
         """
-        LOG.debug("Creating a new superuser '%s'." % user.name)
+        LOG.debug("Creating a new superuser '%s'.", user.name)
         self.client.execute("CREATE USER '{}' WITH PASSWORD %s SUPERUSER;",
                             (user.name,), (user.password,))
         self.client.execute(
@@ -848,7 +848,7 @@ class CassandraAdmin(object):
         self._drop_user(self.client, user)
 
     def _drop_user(self, client, user):
-        LOG.debug("Deleting user '%s'." % user.name)
+        LOG.debug("Deleting user '%s'.", user.name)
         client.execute("DROP USER '{}';", (user.name, ))
 
     def get_user(self, context, username, hostname):
@@ -1010,8 +1010,10 @@ class CassandraAdmin(object):
         Grant a non-superuser permission on a keyspace to a given user.
         Raise an exception if the caller attempts to grant a superuser access.
         """
-        LOG.debug("Granting '%s' access on '%s' to user '%s'."
-                  % (modifier, keyspace.name, user.name))
+        LOG.debug("Granting '%(mod)s' access on '%(keyspace_name)s' to "
+                  "user '%(user)s'.",
+                  {'mod': modifier, 'keyspace_name': keyspace.name,
+                   'user': user.name})
         if modifier in self.__NO_SUPERUSER_MODIFIERS:
             client.execute("GRANT {} ON KEYSPACE \"{}\" TO '{}';",
                            (modifier, keyspace.name, user.name))
@@ -1026,8 +1028,9 @@ class CassandraAdmin(object):
             user.check_reserved()
             keyspace.check_reserved()
 
-        LOG.debug("Revoking all permissions on '%s' from user '%s'."
-                  % (keyspace.name, user.name))
+        LOG.debug("Revoking all permissions on '%(keyspace_name)s' "
+                  "from user '%(user)s'.", {'keyspace_name': keyspace.name,
+                                            'user': user.name})
         client.execute("REVOKE ALL PERMISSIONS ON KEYSPACE \"{}\" FROM '{}';",
                        (keyspace.name, user.name))
 
@@ -1065,7 +1068,8 @@ class CassandraAdmin(object):
         Transfer the current permissions to the new username.
         Drop the old username therefore revoking its permissions.
         """
-        LOG.debug("Renaming user '%s' to '%s'" % (user.name, new_username))
+        LOG.debug("Renaming user '%(old)s' to '%(new)s'",
+                  {'old': user.name, 'new': new_username})
         new_user = models.CassandraUser(new_username, new_password)
         new_user.databases.extend(user.databases)
         self._create_user_and_grant(client, new_user)
@@ -1080,7 +1084,7 @@ class CassandraAdmin(object):
                                       self._deserialize_user(user))
 
     def _alter_user_password(self, client, user):
-        LOG.debug("Changing password of user '%s'." % user.name)
+        LOG.debug("Changing password of user '%s'.", user.name)
         client.execute("ALTER USER '{}' "
                        "WITH PASSWORD %s;", (user.name,), (user.password,))
 
@@ -1118,7 +1122,7 @@ class CassandraAdmin(object):
                             self._deserialize_keyspace(database))
 
     def _drop_keyspace(self, client, keyspace):
-        LOG.debug("Dropping keyspace '%s'." % keyspace.name)
+        LOG.debug("Dropping keyspace '%s'.", keyspace.name)
         client.execute("DROP KEYSPACE \"{}\";", (keyspace.name,))
 
     def list_databases(self, context, limit=None, marker=None,
@@ -1254,17 +1258,19 @@ class CassandraConnection(object):
 
     def _connect(self):
         if not self._cluster.is_shutdown:
-            LOG.debug("Connecting to a Cassandra cluster as '%s'."
-                      % self.__user.name)
+            LOG.debug("Connecting to a Cassandra cluster as '%s'.",
+                      self.__user.name)
             if not self.is_active():
                 self.__session = self._cluster.connect()
             else:
                 LOG.debug("Connection already open.")
-            LOG.debug("Connected to cluster: '%s'"
-                      % self._cluster.metadata.cluster_name)
+            LOG.debug("Connected to cluster: '%s'",
+                      self._cluster.metadata.cluster_name)
             for host in self._cluster.metadata.all_hosts():
-                LOG.debug("Connected to node: '%s' in rack '%s' at datacenter "
-                          "'%s'" % (host.address, host.rack, host.datacenter))
+                LOG.debug("Connected to node: '%(address)s' in rack "
+                          "'%(rack)s' at datacenter '%(datacenter)s'",
+                          {'address': host.address, 'rack': host.rack,
+                           'datacenter': host.datacenter})
         else:
             LOG.debug("Cannot perform this operation on a terminated cluster.")
             raise exception.UnprocessableEntity()
@@ -1272,8 +1278,8 @@ class CassandraConnection(object):
     def _disconnect(self):
         if self.is_active():
             try:
-                LOG.debug("Disconnecting from cluster: '%s'"
-                          % self._cluster.metadata.cluster_name)
+                LOG.debug("Disconnecting from cluster: '%s'",
+                          self._cluster.metadata.cluster_name)
                 self._cluster.shutdown()
             except Exception:
                 LOG.debug("Failed to disconnect from a Cassandra cluster.")

@@ -110,8 +110,8 @@ class Manager(periodic_task.PeriodicTasks):
         try:
             return repl_strategy.get_instance(self.manager)
         except Exception as ex:
-            LOG.debug("Cannot get replication instance for '%s': %s" % (
-                      self.manager, ex.message))
+            LOG.debug("Cannot get replication instance for '%(manager)s': "
+                      "%(msg)s", {'manager': self.manager, 'msg': ex.message})
 
         return None
 
@@ -121,8 +121,8 @@ class Manager(periodic_task.PeriodicTasks):
         try:
             return repl_strategy.get_strategy(self.manager)
         except Exception as ex:
-            LOG.debug("Cannot get replication strategy for '%s': %s" % (
-                      self.manager, ex.message))
+            LOG.debug("Cannot get replication strategy for '%(manager)s': "
+                      "%(msg)s", {'manager': self.manager, 'msg': ex.message})
 
         return None
 
@@ -220,16 +220,17 @@ class Manager(periodic_task.PeriodicTasks):
                         'guest_log_exposed_logs')
                 except oslo_cfg.NoSuchOptError:
                     exposed_logs = ''
-                LOG.debug("Available log defs: %s" % ",".join(gl_defs.keys()))
+                LOG.debug("Available log defs: %s", ",".join(gl_defs.keys()))
                 exposed_logs = exposed_logs.lower().replace(',', ' ').split()
-                LOG.debug("Exposing log defs: %s" % ",".join(exposed_logs))
+                LOG.debug("Exposing log defs: %s", ",".join(exposed_logs))
                 expose_all = 'all' in exposed_logs
                 for log_name in gl_defs.keys():
                     gl_def = gl_defs[log_name]
                     exposed = expose_all or log_name in exposed_logs
-                    LOG.debug("Building guest log '%s' from def: %s "
-                              "(exposed: %s)" %
-                              (log_name, gl_def, exposed))
+                    LOG.debug("Building guest log '%(name)s' from def: %(def)s"
+                              " (exposed: %(exposed)s)",
+                              {'name': log_name, 'def': gl_def,
+                               'exposed': exposed})
                     self._guest_log_cache[log_name] = guest_log.GuestLog(
                         self.guest_log_context, log_name,
                         gl_def[self.GUEST_LOG_TYPE_LABEL],
@@ -272,7 +273,7 @@ class Manager(periodic_task.PeriodicTasks):
                  device_path, mount_point, backup_info,
                  config_contents, root_password, overrides,
                  cluster_config, snapshot, modules):
-        LOG.info(_("Starting datastore prepare for '%s'.") % self.manager)
+        LOG.info(_("Starting datastore prepare for '%s'."), self.manager)
         self.status.begin_install()
         post_processing = True if cluster_config else False
         try:
@@ -288,18 +289,18 @@ class Manager(periodic_task.PeriodicTasks):
                 self.apply_overrides_on_prepare(context, overrides)
         except Exception as ex:
             self.prepare_error = True
-            LOG.exception(_("An error occurred preparing datastore: %s") %
+            LOG.exception(_("An error occurred preparing datastore: %s"),
                           encodeutils.exception_to_unicode(ex))
             raise
         finally:
-            LOG.info(_("Ending datastore prepare for '%s'.") % self.manager)
+            LOG.info(_("Ending datastore prepare for '%s'."), self.manager)
             self.status.end_install(error_occurred=self.prepare_error,
                                     post_processing=post_processing)
         # At this point critical 'prepare' work is done and the instance
         # is now in the correct 'ACTIVE' 'INSTANCE_READY' or 'ERROR' state.
         # Of cource if an error has occurred, none of the code that follows
         # will run.
-        LOG.info(_("Completed setup of '%s' datastore successfully.") %
+        LOG.info(_("Completed setup of '%s' datastore successfully."),
                  self.manager)
 
         # The following block performs additional instance initialization.
@@ -312,7 +313,7 @@ class Manager(periodic_task.PeriodicTasks):
                 LOG.info(_('Module apply completed.'))
         except Exception as ex:
             LOG.exception(_("An error occurred applying modules: "
-                            "%s") % ex.message)
+                            "%s"), ex.message)
         # The following block performs single-instance initialization.
         # Failures will be recorded, but won't stop the provisioning
         # or change the instance state.
@@ -324,7 +325,7 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info(_('Databases created successfully.'))
             except Exception as ex:
                 LOG.exception(_("An error occurred creating databases: "
-                                "%s") % ex.message)
+                                "%s"), ex.message)
             try:
                 if users:
                     LOG.info(_("Creating users (called from 'prepare')"))
@@ -332,7 +333,7 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info(_('Users created successfully.'))
             except Exception as ex:
                 LOG.exception(_("An error occurred creating users: "
-                                "%s") % ex.message)
+                                "%s"), ex.message)
 
             # We only enable-root automatically if not restoring a backup
             # that may already have root enabled in which case we keep it
@@ -344,19 +345,19 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info(_('Root enabled successfully.'))
                 except Exception as ex:
                     LOG.exception(_("An error occurred enabling root user: "
-                                    "%s") % ex.message)
+                                    "%s"), ex.message)
 
         try:
-            LOG.info(_("Calling post_prepare for '%s' datastore.") %
+            LOG.info(_("Calling post_prepare for '%s' datastore."),
                      self.manager)
             self.post_prepare(context, packages, databases, memory_mb,
                               users, device_path, mount_point, backup_info,
                               config_contents, root_password, overrides,
                               cluster_config, snapshot)
-            LOG.info(_("Post prepare for '%s' datastore completed.") %
+            LOG.info(_("Post prepare for '%s' datastore completed."),
                      self.manager)
         except Exception as ex:
-            LOG.exception(_("An error occurred in post prepare: %s") %
+            LOG.exception(_("An error occurred in post prepare: %s"),
                           ex.message)
             raise
 
@@ -423,24 +424,26 @@ class Manager(periodic_task.PeriodicTasks):
         """Gets the filesystem stats for the path given."""
         # TODO(peterstac) - note that fs_path is not used in this method.
         mount_point = CONF.get(self.manager).mount_point
-        LOG.debug("Getting file system stats for '%s'" % mount_point)
+        LOG.debug("Getting file system stats for '%s'", mount_point)
         return dbaas.get_filesystem_volume_stats(mount_point)
 
     def mount_volume(self, context, device_path=None, mount_point=None,
                      write_to_fstab=False):
-        LOG.debug("Mounting the device %s at the mount point %s." %
-                  (device_path, mount_point))
+        LOG.debug("Mounting the device %(path)s at the mount point "
+                  "%(mount_point)s.", {'path': device_path,
+                                       'mount_point': mount_point})
         device = volume.VolumeDevice(device_path)
         device.mount(mount_point, write_to_fstab=write_to_fstab)
 
     def unmount_volume(self, context, device_path=None, mount_point=None):
-        LOG.debug("Unmounting the device %s from the mount point %s." %
-                  (device_path, mount_point))
+        LOG.debug("Unmounting the device %(path)s from the mount point "
+                  "%(mount_point)s.", {'path': device_path,
+                                       'mount_point': mount_point})
         device = volume.VolumeDevice(device_path)
         device.unmount(mount_point)
 
     def resize_fs(self, context, device_path=None, mount_point=None):
-        LOG.debug("Resizing the filesystem at %s." % mount_point)
+        LOG.debug("Resizing the filesystem at %s.", mount_point)
         device = volume.VolumeDevice(device_path)
         device.resize_fs(mount_point)
 
@@ -475,7 +478,7 @@ class Manager(periodic_task.PeriodicTasks):
         result = filter(None, [gl_cache[log_name].show()
                                if gl_cache[log_name].exposed else None
                                for log_name in gl_cache.keys()])
-        LOG.info(_("Returning list of logs: %s") % result)
+        LOG.info(_("Returning list of logs: %s"), result)
         return result
 
     def guest_log_action(self, context, log_name, enable, disable,
@@ -488,7 +491,7 @@ class Manager(periodic_task.PeriodicTasks):
             enable = True
         LOG.info(_("Processing guest log '%(log)s' "
                    "(enable=%(en)s, disable=%(dis)s, "
-                   "publish=%(pub)s, discard=%(disc)s).") %
+                   "publish=%(pub)s, discard=%(disc)s)."),
                  {'log': log_name, 'en': enable, 'dis': disable,
                   'pub': publish, 'disc': discard})
         self.guest_log_context = context
@@ -519,7 +522,7 @@ class Manager(periodic_task.PeriodicTasks):
                 log_details = gl_cache[log_name].discard_log()
             if publish:
                 log_details = gl_cache[log_name].publish_log()
-            LOG.info(_("Details for log '%(log)s': %(det)s") %
+            LOG.info(_("Details for log '%(log)s': %(det)s"),
                      {'log': log_name, 'det': log_details})
             return log_details
 
@@ -536,7 +539,8 @@ class Manager(periodic_task.PeriodicTasks):
         restart_required = False
         verb = ("Disabling" if disable else "Enabling")
         if self.configuration_manager:
-            LOG.debug("%s log '%s'" % (verb, log_name))
+            LOG.debug("%(verb)s log '%(log)s'", {'verb': verb,
+                                                 'log': log_name})
             gl_def = self.guest_log_defs[log_name]
             enable_cfg_label = "%s_%s_log" % (self.GUEST_LOG_ENABLE_LABEL,
                                               log_name)
@@ -631,7 +635,7 @@ class Manager(periodic_task.PeriodicTasks):
                                as_root=True)
         operating_system.chmod(log_file, FileMode.ADD_USR_RW_GRP_RW_OTH_R,
                                as_root=True)
-        LOG.debug("Set log file '%s' as readable" % log_file)
+        LOG.debug("Set log file '%s' as readable", log_file)
         return log_file
 
     ################
@@ -641,7 +645,7 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_("Getting list of modules."))
         results = module_manager.ModuleManager.read_module_results(
             is_admin=context.is_admin, include_contents=include_contents)
-        LOG.info(_("Returning list of modules: %s") % results)
+        LOG.info(_("Returning list of modules: %s"), results)
         return results
 
     def module_apply(self, context, modules=None):
@@ -695,7 +699,7 @@ class Manager(periodic_task.PeriodicTasks):
                 driver, module_type, name, tenant, datastore, ds_version,
                 contents, id, md5, auto_apply, visible, is_admin)
             results.append(result)
-        LOG.info(_("Returning list of modules: %s") % results)
+        LOG.info(_("Returning list of modules: %s"), results)
         return results
 
     def module_remove(self, context, module=None):
@@ -715,7 +719,7 @@ class Manager(periodic_task.PeriodicTasks):
                 module_type)
         module_manager.ModuleManager.remove_module(
             driver, module_type, id, name, datastore, ds_version)
-        LOG.info(_("Deleted module: %s") % name)
+        LOG.info(_("Deleted module: %s"), name)
 
     ###############
     # Not Supported

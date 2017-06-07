@@ -50,11 +50,11 @@ class Manager(manager.Manager):
 
     def _perform_restore(self, backup_info, context, restore_location, app):
         """Perform a restore on this instance."""
-        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s.") %
+            LOG.exception(_("Error performing restore from backup %s."),
                           backup_info['id'])
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
@@ -196,7 +196,7 @@ class Manager(manager.Manager):
             raise
 
     def make_read_only(self, context, read_only):
-        LOG.debug("Executing make_read_only(%s)" % read_only)
+        LOG.debug("Executing make_read_only(%s)", read_only)
         self._app.make_read_only(read_only)
 
     def _get_repl_info(self):
@@ -208,10 +208,11 @@ class Manager(manager.Manager):
 
     def _get_repl_offset(self):
         repl_info = self._get_repl_info()
-        LOG.debug("Got repl info: %s" % repl_info)
+        LOG.debug("Got repl info: %s", repl_info)
         offset_key = '%s_repl_offset' % repl_info['role']
         offset = repl_info[offset_key]
-        LOG.debug("Found offset %s for key %s." % (offset, offset_key))
+        LOG.debug("Found offset %(offset)s for key %(key)s.",
+                  {'offset': offset, 'key': offset_key})
         return int(offset)
 
     def get_last_txn(self, context):
@@ -224,11 +225,11 @@ class Manager(manager.Manager):
         return self._get_repl_offset()
 
     def wait_for_txn(self, context, txn):
-        LOG.info(_("Waiting on repl offset '%s'.") % txn)
+        LOG.info(_("Waiting on repl offset '%s'."), txn)
 
         def _wait_for_txn():
             current_offset = self._get_repl_offset()
-            LOG.debug("Current offset: %s." % current_offset)
+            LOG.debug("Current offset: %s.", current_offset)
             return current_offset >= txn
 
         try:

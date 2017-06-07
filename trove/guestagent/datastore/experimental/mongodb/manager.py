@@ -69,7 +69,7 @@ class Manager(manager.Manager):
                                    system.MONGO_USER, system.MONGO_USER,
                                    as_root=True)
 
-            LOG.debug("Mounted the volume %(path)s as %(mount)s." %
+            LOG.debug("Mounted the volume %(path)s as %(mount)s.",
                       {'path': device_path, "mount": mount_point})
 
         if config_contents:
@@ -182,11 +182,11 @@ class Manager(manager.Manager):
         return service.MongoDBAdmin().is_root_enabled()
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s.") %
+            LOG.exception(_("Error performing restore from backup %s."),
                           backup_info['id'])
             self.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
@@ -211,7 +211,7 @@ class Manager(manager.Manager):
     def add_members(self, context, members):
         try:
             LOG.debug("add_members called.")
-            LOG.debug("args: members=%s." % members)
+            LOG.debug("args: members=%s.", members)
             self.app.add_members(members)
             LOG.debug("add_members call has finished.")
         except Exception:
@@ -221,7 +221,7 @@ class Manager(manager.Manager):
     def add_config_servers(self, context, config_servers):
         try:
             LOG.debug("add_config_servers called.")
-            LOG.debug("args: config_servers=%s." % config_servers)
+            LOG.debug("args: config_servers=%s.", config_servers)
             self.app.add_config_servers(config_servers)
             LOG.debug("add_config_servers call has finished.")
         except Exception:
@@ -231,8 +231,9 @@ class Manager(manager.Manager):
     def add_shard(self, context, replica_set_name, replica_set_member):
         try:
             LOG.debug("add_shard called.")
-            LOG.debug("args: replica_set_name=%s, replica_set_member=%s." %
-                      (replica_set_name, replica_set_member))
+            LOG.debug("args: replica_set_name=%(name)s, "
+                      "replica_set_member=%(member)s.",
+                      {'name': replica_set_name, 'member': replica_set_member})
             self.app.add_shard(replica_set_name, replica_set_member)
             LOG.debug("add_shard call has finished.")
         except Exception:

@@ -101,16 +101,16 @@ class Manager(manager.Manager):
         self.app.start_db_with_conf_changes(config_contents)
 
     def get_public_keys(self, context, user):
-        LOG.debug("Retrieving public keys for %s." % user)
+        LOG.debug("Retrieving public keys for %s.", user)
         return self.app.get_public_keys(user)
 
     def authorize_public_keys(self, context, user, public_keys):
-        LOG.debug("Authorizing public keys for %s." % user)
+        LOG.debug("Authorizing public keys for %s.", user)
         return self.app.authorize_public_keys(user, public_keys)
 
     def install_cluster(self, context, members):
         try:
-            LOG.debug("Installing cluster on members: %s." % members)
+            LOG.debug("Installing cluster on members: %s.", members)
             self.app.install_cluster(members)
             self.app.add_udls()
             LOG.debug("install_cluster call has finished.")
@@ -133,7 +133,7 @@ class Manager(manager.Manager):
 
     def grow_cluster(self, context, members):
         try:
-            LOG.debug("Growing cluster to members: %s." % members)
+            LOG.debug("Growing cluster to members: %s.", members)
             self.app.grow_cluster(members)
             LOG.debug("grow_cluster call has finished.")
         except Exception:
@@ -143,7 +143,7 @@ class Manager(manager.Manager):
 
     def shrink_cluster(self, context, members):
         try:
-            LOG.debug("Shrinking cluster members: %s." % members)
+            LOG.debug("Shrinking cluster members: %s.", members)
             self.app.shrink_cluster(members)
             LOG.debug("shrink_cluster call has finished.")
         except Exception:
@@ -153,7 +153,7 @@ class Manager(manager.Manager):
 
     def mark_design_ksafe(self, context, k):
         try:
-            LOG.debug("Setting vertica k-safety to %s." % k)
+            LOG.debug("Setting vertica k-safety to %s.", k)
             self.app.mark_design_ksafe(k)
         except Exception:
             LOG.exception(_('K-safety setting failed.'))
