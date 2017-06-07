@@ -101,8 +101,8 @@ class NotifyMixin(object):
             datastore_manager_id = id_map[datastore_manager]
         else:
             datastore_manager_id = cfg.UNKNOWN_SERVICE_ID
-            LOG.error(_("Datastore ID for Manager (%s) is not configured")
-                      % datastore_manager)
+            LOG.error(_("Datastore ID for Manager (%s) is not configured"),
+                      datastore_manager)
         return datastore_manager_id
 
     def send_usage_event(self, event_type, **kwargs):
@@ -147,7 +147,7 @@ class NotifyMixin(object):
 
         # Update payload with all other kwargs
         payload.update(kwargs)
-        LOG.debug('Sending event: %(event_type)s, %(payload)s' %
+        LOG.debug('Sending event: %(event_type)s, %(payload)s',
                   {'event_type': event_type, 'payload': payload})
 
         notifier = rpc.get_notifier(
@@ -184,7 +184,7 @@ class ConfigurationMixin(object):
         config = template.SingleInstanceConfigTemplate(
             self.datastore_version, flavor, self.id)
         ret = config.render_dict()
-        LOG.debug("the default template dict of mysqld section: %s" % ret)
+        LOG.debug("the default template dict of mysqld section: %s", ret)
         return ret
 
 
@@ -248,19 +248,20 @@ class ClusterTasks(Cluster):
                     instance_id=instance_id).get_status()
                 if _is_fast_fail_status(status):
                     # if one has failed, no need to continue polling
-                    LOG.debug("Instance %s has acquired a fast-fail status %s."
-                              % (instance_id, status))
+                    LOG.debug("Instance %(id)s has acquired a fast-fail "
+                              "status %(status)s.", {'id': instance_id,
+                                                     'status': status})
                     return True
                 if status != expected_status:
                     # if one is not in the expected state, continue polling
-                    LOG.debug("Instance %s was %s." % (instance_id, status))
+                    LOG.debug("Instance %(id)s was %(status)s.",
+                              {'id': instance_id, 'status': status})
                     return False
 
             return True
 
         def _instance_ids_with_failures(ids):
-            LOG.debug("Checking for service failures on instances: %s"
-                      % ids)
+            LOG.debug("Checking for service failures on instances: %s", ids)
             failed_instance_ids = []
             for instance_id in ids:
                 status = InstanceServiceStatus.find_by(
@@ -269,8 +270,9 @@ class ClusterTasks(Cluster):
                     failed_instance_ids.append(instance_id)
             return failed_instance_ids
 
-        LOG.debug("Polling until all instances acquire %s status: %s"
-                  % (expected_status, instance_ids))
+        LOG.debug("Polling until all instances acquire %(expected)s "
+                  "status: %(ids)s",
+                  {'expected': expected_status, 'ids': instance_ids})
         try:
             utils.poll_until(lambda: instance_ids,
                              lambda ids: _all_have_status(ids),
@@ -278,24 +280,24 @@ class ClusterTasks(Cluster):
                              time_out=CONF.usage_timeout)
         except PollTimeOut:
             LOG.exception(_("Timed out while waiting for all instances "
-                            "to become %s.") % expected_status)
+                            "to become %s."), expected_status)
             self.update_statuses_on_failure(cluster_id, shard_id)
             return False
 
         failed_ids = _instance_ids_with_failures(instance_ids)
         if failed_ids:
-            LOG.error(_("Some instances failed: %s") % failed_ids)
+            LOG.error(_("Some instances failed: %s"), failed_ids)
             self.update_statuses_on_failure(cluster_id, shard_id)
             return False
 
-        LOG.debug("All instances have acquired the expected status %s."
-                  % expected_status)
+        LOG.debug("All instances have acquired the expected status %s.",
+                  expected_status)
 
         return True
 
     def delete_cluster(self, context, cluster_id):
 
-        LOG.debug("begin delete_cluster for id: %s" % cluster_id)
+        LOG.debug("begin delete_cluster for id: %s", cluster_id)
 
         def all_instances_marked_deleted():
             db_instances = DBInstance.find_all(cluster_id=cluster_id,
@@ -310,19 +312,19 @@ class ClusterTasks(Cluster):
             LOG.error(_("timeout for instances to be marked as deleted."))
             return
 
-        LOG.debug("setting cluster %s as deleted." % cluster_id)
+        LOG.debug("setting cluster %s as deleted.", cluster_id)
         cluster = DBCluster.find_by(id=cluster_id)
         cluster.deleted = True
         cluster.deleted_at = utils.utcnow()
         cluster.task_status = tasks.ClusterTasks.NONE
         cluster.save()
-        LOG.debug("end delete_cluster for id: %s" % cluster_id)
+        LOG.debug("end delete_cluster for id: %s", cluster_id)
 
     def rolling_restart_cluster(self, context, cluster_id, delay_sec=0):
-        LOG.debug("Begin rolling cluster restart for id: %s" % cluster_id)
+        LOG.debug("Begin rolling cluster restart for id: %s", cluster_id)
 
         def _restart_cluster_instance(instance):
-            LOG.debug("Restarting instance with id: %s" % instance.id)
+            LOG.debug("Restarting instance with id: %s", instance.id)
             context.notification = (
                 DBaaSInstanceRestart(context, **request_info))
             with StartNotification(context, instance_id=instance.id):
@@ -339,7 +341,7 @@ class ClusterTasks(Cluster):
                 if index > 0:
                     LOG.debug(
                         "Waiting (%ds) for restarted nodes to rejoin the "
-                        "cluster before proceeding." % delay_sec)
+                        "cluster before proceeding.", delay_sec)
                     time.sleep(delay_sec)
                 instance = BuiltInstanceTasks.load(context, db_inst.id)
                 _restart_cluster_instance(instance)
@@ -349,20 +351,20 @@ class ClusterTasks(Cluster):
             LOG.exception(_("Timeout for restarting cluster."))
             raise
         except Exception:
-            LOG.exception(_("Error restarting cluster.") % cluster_id)
+            LOG.exception(_("Error restarting cluster."), cluster_id)
             raise
         finally:
             context.notification = cluster_notification
             timeout.cancel()
             self.reset_task()
 
-        LOG.debug("End rolling restart for id: %s." % cluster_id)
+        LOG.debug("End rolling restart for id: %s.", cluster_id)
 
     def rolling_upgrade_cluster(self, context, cluster_id, datastore_version):
-        LOG.debug("Begin rolling cluster upgrade for id: %s." % cluster_id)
+        LOG.debug("Begin rolling cluster upgrade for id: %s.", cluster_id)
 
         def _upgrade_cluster_instance(instance):
-            LOG.debug("Upgrading instance with id: %s." % instance.id)
+            LOG.debug("Upgrading instance with id: %s.", instance.id)
             context.notification = (
                 DBaaSInstanceUpgrade(context, **request_info))
             with StartNotification(
@@ -391,20 +393,20 @@ class ClusterTasks(Cluster):
             self.update_statuses_on_failure(
                 cluster_id, status=InstanceTasks.UPGRADING_ERROR)
         except Exception:
-            LOG.exception(_("Error upgrading cluster %s.") % cluster_id)
+            LOG.exception(_("Error upgrading cluster %s."), cluster_id)
             self.update_statuses_on_failure(
                 cluster_id, status=InstanceTasks.UPGRADING_ERROR)
         finally:
             context.notification = cluster_notification
             timeout.cancel()
 
-        LOG.debug("End upgrade_cluster for id: %s." % cluster_id)
+        LOG.debug("End upgrade_cluster for id: %s.", cluster_id)
 
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _delete_resources(self, deleted_at):
-        LOG.debug("Begin _delete_resources for instance %s" % self.id)
+        LOG.debug("Begin _delete_resources for instance %s", self.id)
 
         # If volume has "available" status, delete it manually.
         try:
@@ -412,14 +414,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 volume_client = create_cinder_client(self.context)
                 volume = volume_client.volumes.get(self.volume_id)
                 if volume.status == "available":
-                    LOG.info(_("Deleting volume %(v)s for instance: %(i)s.")
-                             % {'v': self.volume_id, 'i': self.id})
+                    LOG.info(_("Deleting volume %(v)s for instance: %(i)s."),
+                             {'v': self.volume_id, 'i': self.id})
                     volume.delete()
         except Exception:
-            LOG.exception(_("Error deleting volume of instance %(id)s.") %
+            LOG.exception(_("Error deleting volume of instance %(id)s."),
                           {'id': self.db_info.id})
 
-        LOG.debug("End _delete_resource for instance %s" % self.id)
+        LOG.debug("End _delete_resource for instance %s", self.id)
 
     def wait_for_instance(self, timeout, flavor):
         # Make sure the service becomes active before sending a usage
@@ -431,19 +433,19 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             utils.poll_until(self._service_is_active,
                              sleep_time=USAGE_SLEEP_TIME,
                              time_out=timeout)
-            LOG.info(_("Created instance %s successfully.") % self.id)
+            LOG.info(_("Created instance %s successfully."), self.id)
             TroveInstanceCreate(instance=self,
                                 instance_size=flavor['ram']).notify()
         except PollTimeOut as ex:
             LOG.error(_("Failed to create instance %s. "
                         "Timeout waiting for instance to become active. "
-                        "No usage create-event was sent.") % self.id)
+                        "No usage create-event was sent."), self.id)
             self.update_statuses_on_time_out()
             error_message = "%s" % ex
             error_details = traceback.format_exc()
         except Exception as ex:
             LOG.exception(_("Failed to send usage create-event for "
-                            "instance %s.") % self.id)
+                            "instance %s."), self.id)
             error_message = "%s" % ex
             error_details = traceback.format_exc()
         finally:
@@ -461,7 +463,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # FreshInstanceTasks.wait_for_instance is called after
         # create_instance to ensure that the proper usage event gets sent
 
-        LOG.info(_("Creating instance %s.") % self.id)
+        LOG.info(_("Creating instance %s."), self.id)
         security_groups = None
 
         if CONF.trove_security_groups_support:
@@ -474,7 +476,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 self._log_and_raise(e, msg, err)
             else:
                 LOG.debug("Successfully created security group for "
-                          "instance: %s" % self.id)
+                          "instance: %s", self.id)
 
         files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
@@ -656,7 +658,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                FAILED_TIMEOUT_GUESTAGENT)
             service.save()
             LOG.error(_("Service status: %(status)s\n"
-                        "Service error description: %(desc)s") %
+                        "Service error description: %(desc)s"),
                       {'status': ServiceStatuses.
                        FAILED_TIMEOUT_GUESTAGENT.api_status,
                        'desc': ServiceStatuses.
@@ -667,7 +669,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                     BUILDING_ERROR_TIMEOUT_GA)
             db_info.save()
             LOG.error(_("Trove instance status: %(action)s\n"
-                        "Trove instance status description: %(text)s") %
+                        "Trove instance status description: %(text)s"),
                       {'action': InstanceTasks.
                        BUILDING_ERROR_TIMEOUT_GA.action,
                        'text': InstanceTasks.
@@ -716,7 +718,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               datastore_manager, volume_size,
                               availability_zone, nics, files,
                               scheduler_hints):
-        LOG.debug("Begin _create_server_volume for id: %s" % self.id)
+        LOG.debug("Begin _create_server_volume for id: %s", self.id)
         try:
             userdata = self._prepare_userdata(datastore_manager)
             name = self.hostname or self.name
@@ -734,7 +736,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 userdata=userdata, scheduler_hints=scheduler_hints)
             server_dict = server._info
             LOG.debug("Created new compute instance %(server_id)s "
-                      "for id: %(id)s\nServer response: %(response)s" %
+                      "for id: %(id)s\nServer response: %(response)s",
                       {'server_id': server.id, 'id': self.id,
                        'response': server_dict})
 
@@ -747,14 +749,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         except Exception as e:
             msg = _("Error creating server and volume for "
                     "instance %s") % self.id
-            LOG.debug("End _create_server_volume for id: %s" % self.id)
+            LOG.debug("End _create_server_volume for id: %s", self.id)
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
             self._log_and_raise(e, msg, err)
 
         device_path = self.device_path
         mount_point = CONF.get(datastore_manager).mount_point
         volume_info = {'device_path': device_path, 'mount_point': mount_point}
-        LOG.debug("End _create_server_volume for id: %s" % self.id)
+        LOG.debug("End _create_server_volume for id: %s", self.id)
         return volume_info
 
     def _build_sg_rules_mapping(self, rule_ports):
@@ -772,7 +774,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                            volume_size, availability_zone,
                                            nics, files, volume_type,
                                            scheduler_hints):
-        LOG.debug("Begin _create_server_volume_individually for id: %s" %
+        LOG.debug("Begin _create_server_volume_individually for id: %s",
                   self.id)
         server = None
         volume_info = self._build_volume_info(datastore_manager,
@@ -792,7 +794,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             msg = _("Failed to create server for instance %s") % self.id
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
             self._log_and_raise(e, msg, err)
-        LOG.debug("End _create_server_volume_individually for id: %s" %
+        LOG.debug("End _create_server_volume_individually for id: %s",
                   self.id)
         return volume_info
 
@@ -802,7 +804,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         volume_support = self.volume_support
         device_path = self.device_path
         mount_point = CONF.get(datastore_manager).mount_point
-        LOG.debug("trove volume support = %s" % volume_support)
+        LOG.debug("trove volume support = %s", volume_support)
         if volume_support:
             try:
                 volume_info = self._create_volume(
@@ -813,7 +815,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 self._log_and_raise(e, msg, err)
         else:
             LOG.debug("device_path = %(path)s\n"
-                      "mount_point = %(point)s" %
+                      "mount_point = %(point)s",
                       {
                           "path": device_path,
                           "point": mount_point
@@ -827,7 +829,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return volume_info
 
     def _log_and_raise(self, exc, message, task_status):
-        LOG.error(_("%(message)s\n%(exc)s\n%(trace)s") %
+        LOG.error(_("%(message)s\n%(exc)s\n%(trace)s"),
                   {"message": message,
                    "exc": exc,
                    "trace": traceback.format_exc()})
@@ -837,7 +839,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         raise TroveError(message=full_message)
 
     def _create_volume(self, volume_size, volume_type, datastore_manager):
-        LOG.debug("Begin _create_volume for id: %s" % self.id)
+        LOG.debug("Begin _create_volume for id: %s", self.id)
         volume_client = create_cinder_client(self.context, self.region_name)
         volume_desc = ("datastore volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
@@ -857,11 +859,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         v_ref = volume_client.volumes.get(volume_ref.id)
         if v_ref.status in ['error']:
             raise VolumeCreationFailure()
-        LOG.debug("End _create_volume for id: %s" % self.id)
+        LOG.debug("End _create_volume for id: %s", self.id)
         return self._build_volume(v_ref, datastore_manager)
 
     def _build_volume(self, v_ref, datastore_manager):
-        LOG.debug("Created volume %s" % v_ref)
+        LOG.debug("Created volume %s", v_ref)
         # The mapping is in the format:
         # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
         # setting the delete_on_terminate instance to true=1
@@ -877,7 +879,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("block_device = %(device)s\n"
                   "volume = %(volume)s\n"
                   "device_path = %(path)s\n"
-                  "mount_point = %(point)s" %
+                  "mount_point = %(point)s",
                   {"device": block_device,
                    "volume": created_volumes,
                    "path": device_path,
@@ -913,7 +915,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             availability_zone=availability_zone, nics=nics,
             config_drive=config_drive, scheduler_hints=scheduler_hints)
         LOG.debug("Created new compute instance %(server_id)s "
-                  "for instance %(id)s" %
+                  "for instance %(id)s",
                   {'server_id': server.id, 'id': self.id})
         return server
 
@@ -936,10 +938,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_dns_entry(self):
         dns_support = CONF.trove_dns_support
-        LOG.debug("trove dns support = %s" % dns_support)
+        LOG.debug("trove dns support = %s", dns_support)
 
         if dns_support:
-            LOG.debug("%(gt)s: Creating dns entry for instance: %(id)s" %
+            LOG.debug("%(gt)s: Creating dns entry for instance: %(id)s",
                       {'gt': greenthread.getcurrent(), 'id': self.id})
             dns_client = create_dns_client(self.context)
 
@@ -948,7 +950,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 return self.nova_client.servers.get(c_id)
 
             def ip_is_available(server):
-                LOG.debug("Polling for ip addresses: $%s " % server.addresses)
+                LOG.debug("Polling for ip addresses: $%s ", server.addresses)
                 if server.addresses != {}:
                     return True
                 elif (server.addresses == {} and
@@ -958,7 +960,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                       server.status == InstanceStatus.ERROR):
                     LOG.error(_("Failed to create DNS entry for instance "
                                 "%(instance)s. Server status was "
-                                "%(status)s).") %
+                                "%(status)s)."),
                               {'instance': self.id, 'status': server.status})
                     raise TroveError(status=server.status)
 
@@ -973,10 +975,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 raise TroveError(_("Failed to create DNS entry for instance "
                                    "%s. No IP available.") % self.id)
             dns_client.create_instance_entry(self.id, ip)
-            LOG.debug("Successfully created DNS entry for instance: %s" %
+            LOG.debug("Successfully created DNS entry for instance: %s",
                       self.id)
         else:
-            LOG.debug("%(gt)s: DNS not enabled for instance: %(id)s" %
+            LOG.debug("%(gt)s: DNS not enabled for instance: %(id)s",
                       {'gt': greenthread.getcurrent(), 'id': self.id})
 
     def _create_secgroup(self, datastore_manager):
@@ -1028,7 +1030,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     """
 
     def _delete_resources(self, deleted_at):
-        LOG.debug("Begin _delete_resources for instance %s" % self.id)
+        LOG.debug("Begin _delete_resources for instance %s", self.id)
         server_id = self.db_info.compute_instance_id
         old_server = self.nova_client.servers.get(server_id)
         try:
@@ -1039,30 +1041,30 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             # result in a long timeout
             if self.server_status_matches(['ACTIVE', 'SHUTDOWN'], server=self):
                 LOG.debug("Stopping datastore on instance %s before deleting "
-                          "any resources." % self.id)
+                          "any resources.", self.id)
                 self.guest.stop_db()
         except Exception:
             LOG.exception(_("Error stopping the datastore before attempting "
-                            "to delete instance id %s.") % self.id)
+                            "to delete instance id %s."), self.id)
         try:
             self.server.delete()
         except Exception as ex:
-            LOG.exception(_("Error during delete compute server %s")
-                          % self.server.id)
+            LOG.exception(_("Error during delete compute server %s"),
+                          self.server.id)
         try:
             dns_support = CONF.trove_dns_support
-            LOG.debug("trove dns support = %s" % dns_support)
+            LOG.debug("trove dns support = %s", dns_support)
             if dns_support:
                 dns_api = create_dns_client(self.context)
                 dns_api.delete_instance_entry(instance_id=self.db_info.id)
         except Exception as ex:
             LOG.exception(_("Error during dns entry of instance %(id)s: "
-                            "%(ex)s") % {'id': self.db_info.id, 'ex': ex})
+                            "%(ex)s"), {'id': self.db_info.id, 'ex': ex})
         try:
             srv_grp.ServerGroup.delete(self.context, self.server_group)
         except Exception:
-            LOG.exception(_("Error during delete server group for %s")
-                          % self.id)
+            LOG.exception(_("Error during delete server group for %s"),
+                          self.id)
 
         # Poll until the server is gone.
         def server_is_finished():
@@ -1071,7 +1073,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 if not self.server_status_matches(['SHUTDOWN', 'ACTIVE'],
                                                   server=server):
                     LOG.error(_("Server %(server_id)s entered ERROR status "
-                                "when deleting instance %(instance_id)s!") %
+                                "when deleting instance %(instance_id)s!"),
                               {'server_id': server.id, 'instance_id': self.id})
                 return False
             except nova_exceptions.NotFound:
@@ -1082,7 +1084,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                              time_out=CONF.server_delete_time_out)
         except PollTimeOut:
             LOG.exception(_("Failed to delete instance %(instance_id)s: "
-                            "Timeout deleting compute server %(server_id)s") %
+                            "Timeout deleting compute server %(server_id)s"),
                           {'instance_id': self.id, 'server_id': server_id})
 
         # If volume has been resized it must be manually removed in cinder
@@ -1092,17 +1094,17 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                                                      self.region_name)
                 volume = volume_client.volumes.get(self.volume_id)
                 if volume.status == "available":
-                    LOG.info(_("Deleting volume %(v)s for instance: %(i)s.")
-                             % {'v': self.volume_id, 'i': self.id})
+                    LOG.info(_("Deleting volume %(v)s for instance: %(i)s."),
+                             {'v': self.volume_id, 'i': self.id})
                     volume.delete()
         except Exception:
-            LOG.exception(_("Error deleting volume of instance %(id)s.") %
+            LOG.exception(_("Error deleting volume of instance %(id)s."),
                           {'id': self.db_info.id})
 
         TroveInstanceDelete(instance=self,
                             deleted_at=timeutils.isotime(deleted_at),
                             server=old_server).notify()
-        LOG.debug("End _delete_resources for instance %s" % self.id)
+        LOG.debug("End _delete_resources for instance %s", self.id)
 
     def server_status_matches(self, expected_status, server=None):
         if not server:
@@ -1112,33 +1114,33 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
     def resize_volume(self, new_size):
         LOG.info(_("Resizing volume for instance %(instance_id)s from "
-                 "%(old_size)s GB to %(new_size)s GB.") %
+                 "%(old_size)s GB to %(new_size)s GB."),
                  {'instance_id': self.id, 'old_size': self.volume_size,
                   'new_size': new_size})
         action = ResizeVolumeAction(self, self.volume_size, new_size)
         action.execute()
-        LOG.info(_("Resized volume for instance %s successfully.") % self.id)
+        LOG.info(_("Resized volume for instance %s successfully."), self.id)
 
     def resize_flavor(self, old_flavor, new_flavor):
         LOG.info(_("Resizing instance %(instance_id)s from flavor "
-                   "%(old_flavor)s to %(new_flavor)s.") %
+                   "%(old_flavor)s to %(new_flavor)s."),
                  {'instance_id': self.id, 'old_flavor': old_flavor['id'],
                   'new_flavor': new_flavor['id']})
         action = ResizeAction(self, old_flavor, new_flavor)
         action.execute()
-        LOG.info(_("Resized instance %s successfully.") % self.id)
+        LOG.info(_("Resized instance %s successfully."), self.id)
 
     def migrate(self, host):
-        LOG.info(_("Initiating migration to host %s.") % host)
+        LOG.info(_("Initiating migration to host %s."), host)
         action = MigrateAction(self, host)
         action.execute()
 
     def create_backup(self, backup_info):
-        LOG.info(_("Initiating backup for instance %s.") % self.id)
+        LOG.info(_("Initiating backup for instance %s."), self.id)
         self.guest.create_backup(backup_info)
 
     def backup_required_for_replication(self):
-        LOG.debug("Seeing if replication backup is required for instance %s." %
+        LOG.debug("Seeing if replication backup is required for instance %s.",
                   self.id)
         return self.guest.backup_required_for_replication()
 
@@ -1153,28 +1155,28 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 LOG.debug("Got replication snapshot from guest successfully.")
                 return result
             except Exception:
-                LOG.exception(_("Failed to get replication snapshot from %s.")
-                              % self.id)
+                LOG.exception(_("Failed to get replication snapshot from %s."),
+                              self.id)
                 raise
 
         return run_with_quotas(self.context.tenant, {'backups': 1},
                                _get_replication_snapshot)
 
     def detach_replica(self, master, for_failover=False):
-        LOG.debug("Calling detach_replica on %s" % self.id)
+        LOG.debug("Calling detach_replica on %s", self.id)
         try:
             self.guest.detach_replica(for_failover)
             self.update_db(slave_of_id=None)
             self.slave_list = None
         except (GuestError, GuestTimeout):
-            LOG.exception(_("Failed to detach replica %s.") % self.id)
+            LOG.exception(_("Failed to detach replica %s."), self.id)
             raise
         finally:
             if not for_failover:
                 self.reset_task_status()
 
     def attach_replica(self, master):
-        LOG.debug("Calling attach_replica on %s" % self.id)
+        LOG.debug("Calling attach_replica on %s", self.id)
         try:
             replica_info = master.guest.get_replica_context()
             flavor = self.nova_client.flavors.get(self.flavor_id)
@@ -1183,11 +1185,11 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             self.update_db(slave_of_id=master.id)
             self.slave_list = None
         except (GuestError, GuestTimeout):
-            LOG.exception(_("Failed to attach replica %s.") % self.id)
+            LOG.exception(_("Failed to attach replica %s."), self.id)
             raise
 
     def make_read_only(self, read_only):
-        LOG.debug("Calling make_read_only on %s" % self.id)
+        LOG.debug("Calling make_read_only on %s", self.id)
         self.guest.make_read_only(read_only)
 
     def _get_floating_ips(self):
@@ -1197,11 +1199,11 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         network_floating_ips = neutron_client.list_floatingips()
         for ip in network_floating_ips.get('floatingips'):
             floating_ips.update({ip.get('floating_ip_address'): ip})
-        LOG.debug("In _get_floating_ips(), returning %s" % floating_ips)
+        LOG.debug("In _get_floating_ips(), returning %s", floating_ips)
         return floating_ips
 
     def detach_public_ips(self):
-        LOG.debug("Begin detach_public_ips for instance %s" % self.id)
+        LOG.debug("Begin detach_public_ips for instance %s", self.id)
         removed_ips = []
         server_id = self.db_info.compute_instance_id
         nova_instance = self.nova_client.servers.get(server_id)
@@ -1213,14 +1215,14 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         return removed_ips
 
     def attach_public_ips(self, ips):
-        LOG.debug("Begin attach_public_ips for instance %s" % self.id)
+        LOG.debug("Begin attach_public_ips for instance %s", self.id)
         server_id = self.db_info.compute_instance_id
         nova_instance = self.nova_client.servers.get(server_id)
         for ip in ips:
             nova_instance.add_floating_ip(ip)
 
     def enable_as_master(self):
-        LOG.debug("Calling enable_as_master on %s" % self.id)
+        LOG.debug("Calling enable_as_master on %s", self.id)
         flavor = self.nova_client.flavors.get(self.flavor_id)
         replica_source_config = self._render_replica_source_config(flavor)
         self.update_db(slave_of_id=None)
@@ -1228,30 +1230,30 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         self.guest.enable_as_master(replica_source_config.config_contents)
 
     def get_last_txn(self):
-        LOG.debug("Calling get_last_txn on %s" % self.id)
+        LOG.debug("Calling get_last_txn on %s", self.id)
         return self.guest.get_last_txn()
 
     def get_latest_txn_id(self):
-        LOG.debug("Calling get_latest_txn_id on %s" % self.id)
+        LOG.debug("Calling get_latest_txn_id on %s", self.id)
         return self.guest.get_latest_txn_id()
 
     def wait_for_txn(self, txn):
-        LOG.debug("Calling wait_for_txn on %s" % self.id)
+        LOG.debug("Calling wait_for_txn on %s", self.id)
         if txn:
             self.guest.wait_for_txn(txn)
 
     def cleanup_source_on_replica_detach(self, replica_info):
-        LOG.debug("Calling cleanup_source_on_replica_detach on %s" % self.id)
+        LOG.debug("Calling cleanup_source_on_replica_detach on %s", self.id)
         self.guest.cleanup_source_on_replica_detach(replica_info)
 
     def demote_replication_master(self):
-        LOG.debug("Calling demote_replication_master on %s" % self.id)
+        LOG.debug("Calling demote_replication_master on %s", self.id)
         self.guest.demote_replication_master()
 
     def reboot(self):
         try:
             # Issue a guest stop db call to shutdown the db if running
-            LOG.debug("Stopping datastore on instance %s." % self.id)
+            LOG.debug("Stopping datastore on instance %s.", self.id)
             try:
                 self.guest.stop_db()
             except (exception.GuestError, exception.GuestTimeout) as e:
@@ -1265,13 +1267,13 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                     self.datastore_status_matches(
                     rd_instance.ServiceStatuses.CRASHED)):
                 # We will bail if db did not get stopped or is blocked
-                LOG.error(_("Cannot reboot instance. DB status is %s.")
-                          % self.datastore_status.status)
+                LOG.error(_("Cannot reboot instance. DB status is %s."),
+                          self.datastore_status.status)
                 return
-            LOG.debug("The guest service status is %s."
-                      % self.datastore_status.status)
+            LOG.debug("The guest service status is %s.",
+                      self.datastore_status.status)
 
-            LOG.info(_("Rebooting instance %s.") % self.id)
+            LOG.info(_("Rebooting instance %s."), self.id)
             self.server.reboot()
             # Poll nova until instance is active
             reboot_time_out = CONF.reboot_time_out
@@ -1288,42 +1290,42 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             # Set the status to PAUSED. The guest agent will reset the status
             # when the reboot completes and MySQL is running.
             self.set_datastore_status_to_paused()
-            LOG.info(_("Rebooted instance %s successfully.") % self.id)
+            LOG.info(_("Rebooted instance %s successfully."), self.id)
         except Exception as e:
-            LOG.error(_("Failed to reboot instance %(id)s: %(e)s") %
+            LOG.error(_("Failed to reboot instance %(id)s: %(e)s"),
                       {'id': self.id, 'e': str(e)})
         finally:
-            LOG.debug("Rebooting FINALLY %s" % self.id)
+            LOG.debug("Rebooting FINALLY %s", self.id)
             self.reset_task_status()
 
     def restart(self):
-        LOG.info(_("Initiating datastore restart on instance %s.") % self.id)
+        LOG.info(_("Initiating datastore restart on instance %s."), self.id)
         try:
             self.guest.restart()
         except GuestError:
             LOG.error(_("Failed to initiate datastore restart on instance "
-                        "%s.") % self.id)
+                        "%s."), self.id)
         finally:
             self.reset_task_status()
 
     def guest_log_list(self):
-        LOG.info(_("Retrieving guest log list for instance %s.") % self.id)
+        LOG.info(_("Retrieving guest log list for instance %s."), self.id)
         try:
             return self.guest.guest_log_list()
         except GuestError:
             LOG.error(_("Failed to retrieve guest log list for instance "
-                        "%s.") % self.id)
+                        "%s."), self.id)
         finally:
             self.reset_task_status()
 
     def guest_log_action(self, log_name, enable, disable, publish, discard):
-        LOG.info(_("Processing guest log for instance %s.") % self.id)
+        LOG.info(_("Processing guest log for instance %s."), self.id)
         try:
             return self.guest.guest_log_action(log_name, enable, disable,
                                                publish, discard)
         except GuestError:
-            LOG.error(_("Failed to process guest log for instance %s.")
-                      % self.id)
+            LOG.error(_("Failed to process guest log for instance %s."),
+                      self.id)
         finally:
             self.reset_task_status()
 
@@ -1381,7 +1383,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                     CONF.inst_rpc_key_encr_key))
                 self.update_db(encrypted_key=encrypted_key)
                 LOG.debug("Generated unique RPC encryption key for "
-                          "instance = %s, key = %s" % (self.id, encrypted_key))
+                          "instance = %(id)s, key = %(key)s",
+                          {'id': self.id, 'key': encrypted_key})
 
             injected_files = self.get_injected_files(
                 datastore_version.manager)
@@ -1394,9 +1397,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 sleep_time=2, time_out=600)
             if not self.server_status_matches(['ACTIVE']):
                 raise TroveError(_("Instance %(instance)s failed to "
-                                   "upgrade to %(datastore_version)s")
-                                 % {'instance': self,
-                                    'datastore_version': datastore_version})
+                                   "upgrade to %(datastore_version)s"),
+                                 {'instance': self,
+                                  'datastore_version': datastore_version})
 
             if volume:
                 upgrade_info['device'] = volume_device
@@ -1441,20 +1444,20 @@ class BackupTasks(object):
         obj = client.head_object(container, filename)
         if 'x-static-large-object' in obj:
             # Static large object
-            LOG.debug("Deleting large object file: %(cont)s/%(filename)s" %
+            LOG.debug("Deleting large object file: %(cont)s/%(filename)s",
                       {'cont': container, 'filename': filename})
             client.delete_object(container, filename,
                                  query_string='multipart-manifest=delete')
         else:
             # Single object
-            LOG.debug("Deleting object file: %(cont)s/%(filename)s" %
+            LOG.debug("Deleting object file: %(cont)s/%(filename)s",
                       {'cont': container, 'filename': filename})
             client.delete_object(container, filename)
 
     @classmethod
     def delete_backup(cls, context, backup_id):
         """Delete backup from swift."""
-        LOG.info(_("Deleting backup %s.") % backup_id)
+        LOG.info(_("Deleting backup %s."), backup_id)
         backup = bkup_models.Backup.get_by_id(context, backup_id)
         try:
             filename = backup.filename
@@ -1468,14 +1471,14 @@ class BackupTasks(object):
                 backup.delete()
             else:
                 LOG.exception(_("Error occurred when deleting from swift. "
-                                "Details: %s") % e)
+                                "Details: %s"), e)
                 backup.state = bkup_models.BackupState.DELETE_FAILED
                 backup.save()
                 raise TroveError(_("Failed to delete swift object for backup "
                                    "%s.") % backup_id)
         else:
             backup.delete()
-        LOG.info(_("Deleted backup %s successfully.") % backup_id)
+        LOG.info(_("Deleted backup %s successfully."), backup_id)
 
 
 class ModuleTasks(object):
@@ -1484,7 +1487,7 @@ class ModuleTasks(object):
     def reapply_module(cls, context, module_id, md5, include_clustered,
                        batch_size, batch_delay, force):
         """Reapply module."""
-        LOG.info(_("Reapplying module %s.") % module_id)
+        LOG.info(_("Reapplying module %s."), module_id)
 
         batch_size = batch_size or CONF.module_reapply_max_batch_size
         batch_delay = batch_delay or CONF.module_reapply_min_batch_delay
@@ -1494,7 +1497,7 @@ class ModuleTasks(object):
             batch_delay = max(batch_delay, CONF.module_reapply_min_batch_delay)
         modules = module_models.Modules.load_by_ids(context, [module_id])
         current_md5 = modules[0].md5
-        LOG.debug("MD5: %s  Force: %s." % (md5, force))
+        LOG.debug("MD5: %(md5)s  Force: %(f)s.", {'md5': md5, 'f': force})
 
         # Process all the instances
         instance_modules = module_models.InstanceModules.load_all(
@@ -1522,28 +1525,30 @@ class ModuleTasks(object):
                                 context, instance_id, modules)
                             reapply_count += 1
                         except exception.ModuleInvalid as ex:
-                            LOG.info(_("Skipping: %s") % ex)
+                            LOG.info(_("Skipping: %s"), ex)
                             skipped_count += 1
 
                         # Sleep if we've fired off too many in a row.
                         if (batch_size and
                                 not reapply_count % batch_size and
                                 (reapply_count + skipped_count) < total_count):
-                            LOG.debug("Applied module to %d of %d instances - "
-                                      "sleeping for %ds" % (reapply_count,
-                                                            total_count,
-                                                            batch_delay))
+                            LOG.debug("Applied module to %(cnt)d of %(total)d "
+                                      "instances - sleeping for %(batch)ds",
+                                      {'cnt': reapply_count,
+                                       'total': total_count,
+                                       'batch': batch_delay})
                             time.sleep(batch_delay)
                     else:
                         LOG.debug("Instance '%s' not found or doesn't match "
-                                  "criteria, skipping reapply." % instance_id)
+                                  "criteria, skipping reapply.", instance_id)
                         skipped_count += 1
                 else:
                     LOG.debug("Instance '%s' does not match "
-                              "criteria, skipping reapply." % instance_id)
+                              "criteria, skipping reapply.", instance_id)
                     skipped_count += 1
-        LOG.info(_("Reapplied module to %(num)d instances (skipped %(skip)d).")
-                 % {'num': reapply_count, 'skip': skipped_count})
+        LOG.info(_("Reapplied module to %(num)d instances "
+                   "(skipped %(skip)d)."),
+                 {'num': reapply_count, 'skip': skipped_count})
 
 
 class ResizeVolumeAction(object):
@@ -1566,8 +1571,8 @@ class ResizeVolumeAction(object):
         LOG.exception(_("%(func)s encountered an error when "
                         "attempting to resize the volume for "
                         "instance %(id)s. Setting service "
-                        "status to failed.") % {'func': orig_func.__name__,
-                                                'id': self.instance.id})
+                        "status to failed."), {'func': orig_func.__name__,
+                                               'id': self.instance.id})
         service = InstanceServiceStatus.find_by(instance_id=self.instance.id)
         service.set_status(ServiceStatuses.FAILED)
         service.save()
@@ -1576,16 +1581,16 @@ class ResizeVolumeAction(object):
         LOG.exception(_("%(func)s encountered an error when attempting to "
                         "resize the volume for instance %(id)s. Trying to "
                         "recover by restarting the "
-                        "guest.") % {'func': orig_func.__name__,
-                                     'id': self.instance.id})
+                        "guest."), {'func': orig_func.__name__,
+                                    'id': self.instance.id})
         self.instance.restart()
 
     def _recover_mount_restart(self, orig_func):
         LOG.exception(_("%(func)s encountered an error when attempting to "
                         "resize the volume for instance %(id)s. Trying to "
                         "recover by mounting the volume and then restarting "
-                        "the guest.") % {'func': orig_func.__name__,
-                                         'id': self.instance.id})
+                        "the guest."), {'func': orig_func.__name__,
+                                        'id': self.instance.id})
         self._mount_volume()
         self.instance.restart()
 
@@ -1594,31 +1599,31 @@ class ResizeVolumeAction(object):
                         "resize the volume for instance %(id)s. Trying to "
                         "recover by attaching and"
                         " mounting the volume and then restarting the "
-                        "guest.") % {'func': orig_func.__name__,
-                                     'id': self.instance.id})
+                        "guest."), {'func': orig_func.__name__,
+                                    'id': self.instance.id})
         self._attach_volume()
         self._mount_volume()
         self.instance.restart()
 
     def _stop_db(self):
-        LOG.debug("Instance %s calling stop_db." % self.instance.id)
+        LOG.debug("Instance %s calling stop_db.", self.instance.id)
         self.instance.guest.stop_db()
 
     @try_recover
     def _unmount_volume(self):
-        LOG.debug("Unmounting the volume on instance %(id)s" % {
+        LOG.debug("Unmounting the volume on instance %(id)s", {
                   'id': self.instance.id})
         mount_point = self.get_mount_point()
         device_path = self.get_device_path()
         self.instance.guest.unmount_volume(device_path=device_path,
                                            mount_point=mount_point)
         LOG.debug("Successfully unmounted the volume %(vol_id)s for "
-                  "instance %(id)s" % {'vol_id': self.instance.volume_id,
-                                       'id': self.instance.id})
+                  "instance %(id)s", {'vol_id': self.instance.volume_id,
+                                      'id': self.instance.id})
 
     @try_recover
     def _detach_volume(self):
-        LOG.debug("Detach volume %(vol_id)s from instance %(id)s" % {
+        LOG.debug("Detach volume %(vol_id)s from instance %(id)s", {
                   'vol_id': self.instance.volume_id,
                   'id': self.instance.id})
         self.instance.nova_client.volumes.delete_server_volume(
@@ -1633,15 +1638,15 @@ class ResizeVolumeAction(object):
                          time_out=CONF.volume_time_out)
 
         LOG.debug("Successfully detached volume %(vol_id)s from instance "
-                  "%(id)s" % {'vol_id': self.instance.volume_id,
-                              'id': self.instance.id})
+                  "%(id)s", {'vol_id': self.instance.volume_id,
+                             'id': self.instance.id})
 
     @try_recover
     def _attach_volume(self):
         device_path = self.get_device_path()
         LOG.debug("Attach volume %(vol_id)s to instance %(id)s at "
-                  "%(dev)s" % {'vol_id': self.instance.volume_id,
-                               'id': self.instance.id, 'dev': device_path})
+                  "%(dev)s", {'vol_id': self.instance.volume_id,
+                              'id': self.instance.id, 'dev': device_path})
         self.instance.nova_client.volumes.create_server_volume(
             self.instance.server.id, self.instance.volume_id, device_path)
 
@@ -1654,44 +1659,44 @@ class ResizeVolumeAction(object):
                          time_out=CONF.volume_time_out)
 
         LOG.debug("Successfully attached volume %(vol_id)s to instance "
-                  "%(id)s" % {'vol_id': self.instance.volume_id,
-                              'id': self.instance.id})
+                  "%(id)s", {'vol_id': self.instance.volume_id,
+                             'id': self.instance.id})
 
     @try_recover
     def _resize_fs(self):
-        LOG.debug("Resizing the filesystem for instance %(id)s" % {
+        LOG.debug("Resizing the filesystem for instance %(id)s", {
                   'id': self.instance.id})
         mount_point = self.get_mount_point()
         device_path = self.get_device_path()
         self.instance.guest.resize_fs(device_path=device_path,
                                       mount_point=mount_point)
         LOG.debug("Successfully resized volume %(vol_id)s filesystem for "
-                  "instance %(id)s" % {'vol_id': self.instance.volume_id,
-                                       'id': self.instance.id})
+                  "instance %(id)s", {'vol_id': self.instance.volume_id,
+                                      'id': self.instance.id})
 
     @try_recover
     def _mount_volume(self):
-        LOG.debug("Mount the volume on instance %(id)s" % {
+        LOG.debug("Mount the volume on instance %(id)s", {
                   'id': self.instance.id})
         mount_point = self.get_mount_point()
         device_path = self.get_device_path()
         self.instance.guest.mount_volume(device_path=device_path,
                                          mount_point=mount_point)
         LOG.debug("Successfully mounted the volume %(vol_id)s on instance "
-                  "%(id)s" % {'vol_id': self.instance.volume_id,
-                              'id': self.instance.id})
+                  "%(id)s", {'vol_id': self.instance.volume_id,
+                             'id': self.instance.id})
 
     @try_recover
     def _extend(self):
         LOG.debug("Extending volume %(vol_id)s for instance %(id)s to "
-                  "size %(size)s" % {'vol_id': self.instance.volume_id,
-                                     'id': self.instance.id,
-                                     'size': self.new_size})
+                  "size %(size)s", {'vol_id': self.instance.volume_id,
+                                    'id': self.instance.id,
+                                    'size': self.new_size})
         self.instance.volume_client.volumes.extend(self.instance.volume_id,
                                                    self.new_size)
         LOG.debug("Successfully extended the volume %(vol_id)s for instance "
-                  "%(id)s" % {'vol_id': self.instance.volume_id,
-                              'id': self.instance.id})
+                  "%(id)s", {'vol_id': self.instance.volume_id,
+                             'id': self.instance.id})
 
     def _verify_extend(self):
         try:
@@ -1713,7 +1718,7 @@ class ResizeVolumeAction(object):
             self.instance.update_db(volume_size=self.new_size)
         except PollTimeOut:
             LOG.exception(_("Timeout trying to extend the volume %(vol_id)s "
-                          "for instance %(id)s") % {
+                          "for instance %(id)s"), {
                           'vol_id': self.instance.volume_id,
                           'id': self.instance.id})
             volume = self.instance.volume_client.volumes.get(
@@ -1726,14 +1731,14 @@ class ResizeVolumeAction(object):
             raise
         except Exception:
             LOG.exception(_("Error encountered trying to verify extend for "
-                          "the volume %(vol_id)s for instance %(id)s") % {
+                          "the volume %(vol_id)s for instance %(id)s"), {
                           'vol_id': self.instance.volume_id,
                           'id': self.instance.id})
             self._recover_full(self._verify_extend)
             raise
 
     def _resize_active_volume(self):
-        LOG.debug("Begin _resize_active_volume for id: %(id)s" % {
+        LOG.debug("Begin _resize_active_volume for id: %(id)s", {
                   'id': self.instance.id})
         self._stop_db()
         self._unmount_volume(recover_func=self._recover_restart)
@@ -1745,17 +1750,17 @@ class ResizeVolumeAction(object):
         self._resize_fs(recover_func=self._fail)
         self._mount_volume(recover_func=self._fail)
         self.instance.restart()
-        LOG.debug("End _resize_active_volume for id: %(id)s" % {
+        LOG.debug("End _resize_active_volume for id: %(id)s", {
                   'id': self.instance.id})
 
     def execute(self):
         LOG.debug("%(gt)s: Resizing instance %(id)s volume for server "
                   "%(server_id)s from %(old_volume_size)s to "
-                  "%(new_size)r GB" % {'gt': greenthread.getcurrent(),
-                                       'id': self.instance.id,
-                                       'server_id': self.instance.server.id,
-                                       'old_volume_size': self.old_size,
-                                       'new_size': self.new_size})
+                  "%(new_size)r GB", {'gt': greenthread.getcurrent(),
+                                      'id': self.instance.id,
+                                      'server_id': self.instance.server.id,
+                                      'old_volume_size': self.old_size,
+                                      'new_size': self.new_size})
 
         if self.instance.server.status == InstanceStatus.ACTIVE:
             self._resize_active_volume()
@@ -1840,8 +1845,8 @@ class ResizeActionBase(object):
         LOG.debug("Datastore is ok.")
 
     def _confirm_nova_action(self):
-        LOG.debug("Instance %s calling Compute confirm resize..."
-                  % self.instance.id)
+        LOG.debug("Instance %s calling Compute confirm resize...",
+                  self.instance.id)
         self.instance.server.confirm_resize()
 
     def _datastore_is_online(self):
@@ -1854,15 +1859,14 @@ class ResizeActionBase(object):
                 rd_instance.ServiceStatuses.SHUTDOWN))
 
     def _revert_nova_action(self):
-        LOG.debug("Instance %s calling Compute revert resize..."
-                  % self.instance.id)
+        LOG.debug("Instance %s calling Compute revert resize...",
+                  self.instance.id)
         self.instance.server.revert_resize()
 
     def execute(self):
         """Initiates the action."""
         try:
-            LOG.debug("Instance %s calling stop_db..."
-                      % self.instance.id)
+            LOG.debug("Instance %s calling stop_db...", self.instance.id)
             self._assert_datastore_is_offline()
             self._perform_nova_action()
         finally:
@@ -1877,7 +1881,7 @@ class ResizeActionBase(object):
 
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""
-        LOG.debug("Begin resize method _perform_nova_action instance: %s" %
+        LOG.debug("Begin resize method _perform_nova_action instance: %s",
                   self.instance.id)
         need_to_revert = False
         try:
@@ -1898,7 +1902,7 @@ class ResizeActionBase(object):
         except Exception:
             LOG.exception(_("Exception during nova action."))
             if need_to_revert:
-                LOG.error(_("Reverting action for instance %s") %
+                LOG.error(_("Reverting action for instance %s"),
                           self.instance.id)
                 self._revert_nova_action()
                 self._wait_for_revert_nova_action()
@@ -1910,12 +1914,12 @@ class ResizeActionBase(object):
                 LOG.error(_("Cannot restart datastore because "
                             "Nova server status is not ACTIVE"))
 
-            LOG.error(_("Error resizing instance %s.") % self.instance.id)
+            LOG.error(_("Error resizing instance %s."), self.instance.id)
             raise
 
         LOG.debug("Recording success")
         self._record_action_success()
-        LOG.debug("End resize method _perform_nova_action instance: %s" %
+        LOG.debug("End resize method _perform_nova_action instance: %s",
                   self.instance.id)
 
     def _wait_for_nova_action(self):
@@ -1965,8 +1969,7 @@ class ResizeAction(ResizeActionBase):
 
     def _revert_nova_action(self):
         LOG.debug("Instance %s calling Compute revert resize... "
-                  "Repairing config."
-                  % self.instance.id)
+                  "Repairing config.", self.instance.id)
         try:
             config = self.instance._render_config(self.old_flavor)
             config = {'config_contents': config.config_contents}
@@ -1977,8 +1980,8 @@ class ResizeAction(ResizeActionBase):
         super(ResizeAction, self)._revert_nova_action()
 
     def _record_action_success(self):
-        LOG.debug("Updating instance %(id)s to flavor_id %(flavor_id)s."
-                  % {'id': self.instance.id, 'flavor_id': self.new_flavor_id})
+        LOG.debug("Updating instance %(id)s to flavor_id %(flavor_id)s.",
+                  {'id': self.instance.id, 'flavor_id': self.new_flavor_id})
         self.instance.update_db(flavor_id=self.new_flavor_id,
                                 task_status=inst_models.InstanceTasks.NONE)
         update_time = timeutils.isotime(self.instance.updated)
@@ -2005,7 +2008,7 @@ class MigrateAction(ResizeActionBase):
 
     def _initiate_nova_action(self):
         LOG.debug("Migrating instance %(instance)s without flavor change ...\n"
-                  "Forcing migration to host(%(host)s)" %
+                  "Forcing migration to host(%(host)s)",
                   {"instance": self.instance.id,
                    "host": self.host})
 
@@ -2013,7 +2016,7 @@ class MigrateAction(ResizeActionBase):
 
     def _record_action_success(self):
         LOG.debug("Successfully finished Migration to "
-                  "%(hostname)s: %(id)s" %
+                  "%(hostname)s: %(id)s",
                   {'hostname': self.instance.hostname,
                    'id': self.instance.id})
 

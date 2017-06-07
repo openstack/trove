@@ -68,7 +68,7 @@ class Modules(object):
             db_info = db_info.filter(or_(DBModule.tenant_id == context.tenant,
                                          DBModule.tenant_id.is_(None)))
             if db_info.count() == 0:
-                LOG.debug("No modules found for tenant %s" % context.tenant)
+                LOG.debug("No modules found for tenant %s", context.tenant)
         modules = db_info.all()
         return modules
 
@@ -87,7 +87,7 @@ class Modules(object):
         db_info = Modules.add_datastore_filter(db_info, datastore_id)
         db_info = Modules.add_ds_version_filter(db_info, datastore_version_id)
         if db_info.count() == 0:
-            LOG.debug("No auto-apply modules found for tenant %s" %
+            LOG.debug("No auto-apply modules found for tenant %s",
                       context.tenant)
         modules = db_info.all()
         return modules
@@ -161,7 +161,7 @@ class Module(object):
                datastore_version, auto_apply, visible, live_update,
                priority_apply, apply_order, full_access):
         if module_type.lower() not in Modules.VALID_MODULE_TYPES:
-            LOG.error(_("Valid module types: %s") % Modules.VALID_MODULE_TYPES)
+            LOG.error(_("Valid module types: %s"), Modules.VALID_MODULE_TYPES)
             raise exception.ModuleTypeNotFound(module_type=module_type)
         Module.validate_action(
             context, 'create', tenant_id, auto_apply, visible, priority_apply,
@@ -400,13 +400,16 @@ class InstanceModule(object):
                 InstanceModule.update(context, instance_module)
             else:
                 if old_im.md5 == md5 and instance_module:
-                    LOG.debug("Found dupe IM record %s; marking as deleted "
-                              "(instance %s, module %s)." %
-                              (old_im.id, instance_id, module_id))
+                    LOG.debug("Found dupe IM record %(old_im)s; marking as "
+                              "deleted (instance %(instance_id)s, "
+                              "module %(module_id)s).",
+                              {'old_im': old_im.id, 'instance_id': instance_id,
+                               'module_id': module_id})
                 else:
-                    LOG.debug("Deleting IM record %s (instance %s, "
-                              "module %s)." %
-                              (old_im.id, instance_id, module_id))
+                    LOG.debug("Deleting IM record %(old_im)s (instance "
+                              "%(instance_id)s, module %(module_id)s).",
+                              {'old_im': old_im.id, 'instance_id': instance_id,
+                               'module_id': module_id})
                 InstanceModule.delete(context, old_im)
 
         # If we don't have an instance module, it means we need to create
