@@ -35,7 +35,7 @@ class SecurityGroupController(wsgi.Controller):
 
     def index(self, req, tenant_id):
         """Return all security groups tied to a particular tenant_id."""
-        LOG.debug("Index() called with %s" % (tenant_id))
+        LOG.debug("Index() called with %s", tenant_id)
 
         sec_groups = models.SecurityGroup().find_all(tenant_id=tenant_id,
                                                      deleted=False)
@@ -50,7 +50,8 @@ class SecurityGroupController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         """Return a single security group."""
-        LOG.debug("Show() called with %s, %s" % (tenant_id, id))
+        LOG.debug("Show() called with %(tenant_id)s, %(id)s",
+                  {'tenant_id': tenant_id, 'id': id})
 
         sec_group = \
             models.SecurityGroup.get_security_group_by_id_or_instance_id(
@@ -66,7 +67,8 @@ class SecurityGroupRuleController(wsgi.Controller):
     """Controller for security group rule functionality."""
 
     def delete(self, req, tenant_id, id):
-        LOG.debug("Delete Security Group Rule called %s, %s" % (tenant_id, id))
+        LOG.debug("Delete Security Group Rule called %(tenant_id)s, %(id)s",
+                  {'tenant_id': tenant_id, 'id': id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         sec_group_rule = models.SecurityGroupRule.find_by(id=id, deleted=False)
@@ -74,7 +76,7 @@ class SecurityGroupRuleController(wsgi.Controller):
 
         if sec_group is None:
             LOG.error(_("Attempting to delete Group Rule that does not "
-                        "exist or does not belong to tenant %s") % tenant_id)
+                        "exist or does not belong to tenant %s"), tenant_id)
             raise exception.Forbidden("Unauthorized")
 
         sec_group_rule.delete(context, CONF.os_region_name)
@@ -82,7 +84,7 @@ class SecurityGroupRuleController(wsgi.Controller):
         return wsgi.Result(None, 204)
 
     def create(self, req, body, tenant_id):
-        LOG.debug("Creating a Security Group Rule for tenant '%s'" % tenant_id)
+        LOG.debug("Creating a Security Group Rule for tenant '%s'", tenant_id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         self._validate_create_body(body)
@@ -130,7 +132,7 @@ class SecurityGroupRuleController(wsgi.Controller):
             body['security_group_rule']['cidr']
         except KeyError as e:
             LOG.error(_("Create Security Group Rules Required field(s) "
-                        "- %s") % e)
+                        "- %s"), e)
             raise exception.SecurityGroupRuleCreationError(
                 "Required element/key - %s was not specified" % e)
 

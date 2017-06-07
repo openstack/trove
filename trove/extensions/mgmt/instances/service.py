@@ -50,7 +50,7 @@ class MgmtInstanceController(InstanceController):
     def index(self, req, tenant_id, detailed=False):
         """Return all instances."""
         LOG.info(_("Indexing a database instance for tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         deleted = None
@@ -76,7 +76,7 @@ class MgmtInstanceController(InstanceController):
         """Return a single instance."""
         LOG.info(_("Showing a database instance %(id)s for tenant "
                    "'%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req, "id": id})
         context = req.environ[wsgi.CONTEXT_KEY]
         deleted_q = req.GET.get('deleted', '').lower()
@@ -96,7 +96,7 @@ class MgmtInstanceController(InstanceController):
     def action(self, req, body, tenant_id, id):
         LOG.info(_("Committing an ACTION against a database "
                    "instance %(id)s for tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req, "id": id})
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
@@ -125,18 +125,18 @@ class MgmtInstanceController(InstanceController):
             raise exception.BadRequest(_("Invalid request body."))
 
     def _action_stop(self, context, instance, req, body):
-        LOG.debug("Stopping MySQL on instance %s." % instance.id)
+        LOG.debug("Stopping MySQL on instance %s.", instance.id)
         instance.stop_db()
         return wsgi.Result(None, 202)
 
     def _action_reboot(self, context, instance, req, body):
-        LOG.debug("Rebooting instance %s." % instance.id)
+        LOG.debug("Rebooting instance %s.", instance.id)
         instance.reboot()
         return wsgi.Result(None, 202)
 
     def _action_migrate(self, context, instance, req, body):
-        LOG.debug("Migrating instance %s." % instance.id)
-        LOG.debug("body['migrate']= %s" % body['migrate'])
+        LOG.debug("Migrating instance %s.", instance.id)
+        LOG.debug("body['migrate']= %s", body['migrate'])
         host = body['migrate'].get('host', None)
 
         context.notification = notification.DBaaSInstanceMigrate(context,
@@ -146,11 +146,10 @@ class MgmtInstanceController(InstanceController):
         return wsgi.Result(None, 202)
 
     def _action_reset_task_status(self, context, instance, req, body):
-        LOG.debug("Setting Task-Status to NONE on instance %s." %
-                  instance.id)
+        LOG.debug("Setting Task-Status to NONE on instance %s.", instance.id)
         instance.reset_task_status()
 
-        LOG.debug("Failing backups for instance %s." % instance.id)
+        LOG.debug("Failing backups for instance %s.", instance.id)
         Backup.fail_for_instance(instance.id)
 
         return wsgi.Result(None, 202)
@@ -162,7 +161,7 @@ class MgmtInstanceController(InstanceController):
         """
         LOG.info(_("Showing root history for a database "
                    "instance %(id)s for tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -183,7 +182,7 @@ class MgmtInstanceController(InstanceController):
         """Return a single instance hardware info."""
         LOG.info(_("Showing hardware info for a database "
                    "instance %(id)s for tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -197,7 +196,7 @@ class MgmtInstanceController(InstanceController):
         """Return instance diagnostics for a single instance."""
         LOG.info(_("Showing diagnostic info for a database "
                    "instance %(id)s for tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -211,7 +210,7 @@ class MgmtInstanceController(InstanceController):
         """Checks if instance is reachable via rpc."""
         LOG.info(_("Sending RPC PING for a database "
                    "instance %(id)s for tenant '%(tenant_id)s'\n"
-                   "req : '%(req)s'\n\n") % {
+                   "req : '%(req)s'\n\n"), {
                        "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]

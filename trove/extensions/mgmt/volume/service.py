@@ -33,8 +33,8 @@ class StorageController(wsgi.Controller):
     @admin_context
     def index(self, req, tenant_id):
         """Return all storage devices."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Indexing storage info for tenant '%s'") % tenant_id)
+        LOG.info(_("req : '%s'\n\n"), req)
+        LOG.info(_("Indexing storage info for tenant '%s'"), tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         storages = models.StorageDevices.load(context, CONF.os_region_name)
         return wsgi.Result(views.StoragesView(storages).data(), 200)

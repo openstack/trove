@@ -49,7 +49,7 @@ class DatastoreVersionController(wsgi.Controller):
         default = body['version']['default']
 
         LOG.info(_("Tenant: '%(tenant)s' is adding the datastore "
-                   "version: '%(version)s' to datastore: '%(datastore)s'") %
+                   "version: '%(version)s' to datastore: '%(datastore)s'"),
                  {'tenant': tenant_id, 'version': version_name,
                   'datastore': datastore_name})
 
@@ -63,7 +63,7 @@ class DatastoreVersionController(wsgi.Controller):
             datastore = models.Datastore.load(datastore_name)
         except exception.DatastoreNotFound:
             # Create the datastore if datastore_name does not exists.
-            LOG.info(_("Creating datastore %s") % datastore_name)
+            LOG.info(_("Creating datastore %s"), datastore_name)
             datastore = models.DBDatastore()
             datastore.id = utils.generate_uuid()
             datastore.name = datastore_name
@@ -107,7 +107,7 @@ class DatastoreVersionController(wsgi.Controller):
         datastore_version = models.DatastoreVersion.load_by_uuid(id)
 
         LOG.info(_("Tenant: '%(tenant)s' is updating the datastore "
-                   "version: '%(version)s' for datastore: '%(datastore)s'") %
+                   "version: '%(version)s' for datastore: '%(datastore)s'"),
                  {'tenant': tenant_id, 'version': datastore_version.name,
                   'datastore': datastore_version.datastore_name})
 
@@ -145,7 +145,7 @@ class DatastoreVersionController(wsgi.Controller):
         datastore = models.Datastore.load(datastore_version.datastore_id)
 
         LOG.info(_("Tenant: '%(tenant)s' is removing the datastore "
-                   "version: '%(version)s' for datastore: '%(datastore)s'") %
+                   "version: '%(version)s' for datastore: '%(datastore)s'"),
                  {'tenant': tenant_id, 'version': datastore_version.name,
                   'datastore': datastore.name})
 

@@ -129,8 +129,8 @@ class SecurityGroup(DatabaseModelBase):
         except (exception.ModelNotFoundError,
                 exception.TroveError):
             LOG.info(_('Security Group with id: %(id)s '
-                       'already had been deleted')
-                     % {'id': instance_id})
+                       'already had been deleted'),
+                     {'id': instance_id})
 
 
 class SecurityGroupRule(DatabaseModelBase):

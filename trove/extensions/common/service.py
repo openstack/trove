@@ -93,8 +93,8 @@ class DefaultRootController(BaseDatastoreRootController):
         if is_cluster:
             raise exception.ClusterOperationNotSupported(
                 operation='show_root')
-        LOG.info(_LI("Getting root enabled for instance '%s'.") % instance_id)
-        LOG.info(_LI("req : '%s'\n\n") % req)
+        LOG.info(_LI("Getting root enabled for instance '%s'."), instance_id)
+        LOG.info(_LI("req : '%s'\n\n"), req)
         context = req.environ[wsgi.CONTEXT_KEY]
         is_root_enabled = models.Root.load(context, instance_id)
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
@@ -103,8 +103,8 @@ class DefaultRootController(BaseDatastoreRootController):
         if is_cluster:
             raise exception.ClusterOperationNotSupported(
                 operation='enable_root')
-        LOG.info(_LI("Enabling root for instance '%s'.") % instance_id)
-        LOG.info(_LI("req : '%s'\n\n") % req)
+        LOG.info(_LI("Enabling root for instance '%s'."), instance_id)
+        LOG.info(_LI("req : '%s'\n\n"), req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user_name = context.user
         password = DefaultRootController._get_password_from_body(body)
@@ -116,8 +116,8 @@ class DefaultRootController(BaseDatastoreRootController):
         if is_cluster:
             raise exception.ClusterOperationNotSupported(
                 operation='disable_root')
-        LOG.info(_LI("Disabling root for instance '%s'.") % instance_id)
-        LOG.info(_LI("req : '%s'\n\n") % req)
+        LOG.info(_LI("Disabling root for instance '%s'."), instance_id)
+        LOG.info(_LI("req : '%s'\n\n"), req)
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
             found_user = self._find_root_user(context, instance_id)
@@ -139,8 +139,8 @@ class ClusterRootController(DefaultRootController):
             return self.instance_root_index(req, tenant_id, instance_id)
 
     def instance_root_index(self, req, tenant_id, instance_id):
-        LOG.info(_LI("Getting root enabled for instance '%s'.") % instance_id)
-        LOG.info(_LI("req : '%s'\n\n") % req)
+        LOG.info(_LI("Getting root enabled for instance '%s'."), instance_id)
+        LOG.info(_LI("req : '%s'\n\n"), req)
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
             is_root_enabled = models.ClusterRoot.load(context, instance_id)
@@ -150,7 +150,7 @@ class ClusterRootController(DefaultRootController):
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
     def cluster_root_index(self, req, tenant_id, cluster_id):
-        LOG.info(_LI("Getting root enabled for cluster '%s'.") % cluster_id)
+        LOG.info(_LI("Getting root enabled for cluster '%s'."), cluster_id)
         single_instance_id, cluster_instances = self._get_cluster_instance_id(
             tenant_id, cluster_id)
         return self.instance_root_index(req, tenant_id, single_instance_id)
@@ -173,8 +173,8 @@ class ClusterRootController(DefaultRootController):
 
     def instance_root_create(self, req, body, instance_id,
                              cluster_instances=None):
-        LOG.info(_LI("Enabling root for instance '%s'.") % instance_id)
-        LOG.info(_LI("req : '%s'\n\n") % req)
+        LOG.info(_LI("Enabling root for instance '%s'."), instance_id)
+        LOG.info(_LI("req : '%s'\n\n"), req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user_name = context.user
         password = ClusterRootController._get_password_from_body(body)
@@ -183,7 +183,7 @@ class ClusterRootController(DefaultRootController):
         return wsgi.Result(views.RootCreatedView(root).data(), 200)
 
     def cluster_root_create(self, req, body, tenant_id, cluster_id):
-        LOG.info(_LI("Enabling root for cluster '%s'.") % cluster_id)
+        LOG.info(_LI("Enabling root for cluster '%s'."), cluster_id)
         single_instance_id, cluster_instances = self._get_cluster_instance_id(
             tenant_id, cluster_id)
         return self.instance_root_create(req, body, single_instance_id,
@@ -263,7 +263,7 @@ class RootController(ExtensionController):
     def load_root_controller(self, manager):
         try:
             clazz = CONF.get(manager).get('root_controller')
-            LOG.debug("Loading Root Controller class %s." % clazz)
+            LOG.debug("Loading Root Controller class %s.", clazz)
             root_controller = import_class(clazz)
             return root_controller()
         except NoSuchOptError:
