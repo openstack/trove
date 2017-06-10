@@ -39,6 +39,7 @@ from trove.common.remote import create_guest_client
 from trove.common.remote import create_nova_client
 from trove.common import server_group as srv_grp
 from trove.common import template
+from trove.common import timeutils
 from trove.common.trove_remote import create_trove_client
 from trove.common import utils
 from trove.configuration.models import Configuration
@@ -651,7 +652,7 @@ class BaseInstance(SimpleInstance):
         pass
 
     def delete_async(self):
-        deleted_at = datetime.utcnow()
+        deleted_at = timeutils.utcnow()
         self._delete_resources(deleted_at)
         LOG.debug("Setting instance %s to be deleted.", self.id)
         self.update_db(deleted=True, deleted_at=deleted_at,
@@ -1217,7 +1218,7 @@ class Instance(BuiltInstance):
             raise exception.BadRequest(_("Instance %s is not a replica"
                                        " source.") % self.id)
         service = InstanceServiceStatus.find_by(instance_id=self.id)
-        last_heartbeat_delta = datetime.utcnow() - service.updated_at
+        last_heartbeat_delta = timeutils.utcnow() - service.updated_at
         agent_expiry_interval = timedelta(seconds=CONF.agent_heartbeat_expiry)
         if last_heartbeat_delta < agent_expiry_interval:
             raise exception.BadRequest(_("Replica Source %s cannot be ejected"
@@ -1788,7 +1789,7 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
         self.status_description = value.description
 
     def save(self):
-        self['updated_at'] = utils.utcnow()
+        self['updated_at'] = timeutils.utcnow()
         return get_db_api().save(self)
 
     status = property(get_status, set_status)

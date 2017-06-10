@@ -21,6 +21,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.remote import create_nova_client
+from trove.common import timeutils
 from trove.common import utils
 from trove.db import get_db_api
 from trove.db import models as dbmodels
@@ -631,7 +632,7 @@ class DatastoreVersionMetadata(object):
                 key=key, value=value)
             if db_record.deleted == 1:
                 db_record.deleted = 0
-                db_record.updated_at = utils.utcnow()
+                db_record.updated_at = timeutils.utcnow()
                 db_record.save()
                 return
             else:

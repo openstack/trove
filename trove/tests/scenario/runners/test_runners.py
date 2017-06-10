@@ -31,6 +31,7 @@ from troveclient.compat import exceptions
 from trove.common import cfg
 from trove.common import exception
 from trove.common.strategies.strategy import Strategy
+from trove.common import timeutils
 from trove.common import utils
 from trove.common.utils import poll_until, build_polling_task
 from trove.tests.config import CONFIG
@@ -323,7 +324,7 @@ class TestRunner(object):
         self.def_timeout = timeout
 
         self.instance_info.name = "TEST_" + datetime.datetime.strftime(
-            datetime.datetime.now(), '%Y_%m_%d__%H_%M_%S')
+            timeutils.utcnow(), '%Y_%m_%d__%H_%M_%S')
         self.instance_info.dbaas_datastore = CONFIG.dbaas_datastore
         self.instance_info.dbaas_datastore_version = (
             CONFIG.dbaas_datastore_version)

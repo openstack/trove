@@ -23,6 +23,7 @@ from trove.backup import state
 from trove.common import context
 from trove.common import exception
 from trove.common import remote
+from trove.common import timeutils
 from trove.common import utils
 from trove.db.models import DatabaseModelBase
 from trove.instance import models as instance_models
@@ -54,7 +55,7 @@ class BackupCreateTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupCreateTest, self).setUp()
         util.init_db()
-        self.context, self.instance_id = _prep_conf(utils.utcnow())
+        self.context, self.instance_id = _prep_conf(timeutils.utcnow())
         self.created = False
 
     def tearDown(self):
@@ -241,7 +242,7 @@ class BackupDeleteTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupDeleteTest, self).setUp()
         util.init_db()
-        self.context, self.instance_id = _prep_conf(utils.utcnow())
+        self.context, self.instance_id = _prep_conf(timeutils.utcnow())
 
     def tearDown(self):
         super(BackupDeleteTest, self).tearDown()
@@ -272,7 +273,7 @@ class BackupORMTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupORMTest, self).setUp()
         util.init_db()
-        self.context, self.instance_id = _prep_conf(utils.utcnow())
+        self.context, self.instance_id = _prep_conf(timeutils.utcnow())
         self.backup = models.DBBackup.create(tenant_id=self.context.tenant,
                                              name=BACKUP_NAME,
                                              state=BACKUP_STATE,
@@ -449,7 +450,7 @@ class PaginationTests(trove_testtools.TestCase):
     def setUp(self):
         super(PaginationTests, self).setUp()
         util.init_db()
-        self.context, self.instance_id = _prep_conf(utils.utcnow())
+        self.context, self.instance_id = _prep_conf(timeutils.utcnow())
         # Create a bunch of backups
         bkup_info = {
             'tenant_id': self.context.tenant,
@@ -507,7 +508,7 @@ class OrderingTests(trove_testtools.TestCase):
     def setUp(self):
         super(OrderingTests, self).setUp()
         util.init_db()
-        now = utils.utcnow()
+        now = timeutils.utcnow()
         self.context, self.instance_id = _prep_conf(now)
         info = {
             'tenant_id': self.context.tenant,

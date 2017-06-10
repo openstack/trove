@@ -71,8 +71,9 @@ def set_fake_stuff(uuid=None, minute=None, unique_id=None):
 def monkey_patch_uuid_and_date():
     import uuid
     uuid.uuid4 = get_uuid
+    from trove.common import timeutils
     from trove.common import utils
-    utils.utcnow = get_now
+    timeutils.utcnow = get_now
     utils.generate_uuid = get_uuid
 
 

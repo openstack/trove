@@ -18,6 +18,7 @@ import os
 import time
 
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from trove.common import cfg
 from trove.common import context as trove_context
@@ -26,7 +27,7 @@ from trove.common import instance
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
-from trove.guestagent.common import timeutils
+
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -167,7 +168,8 @@ class BaseDbStatus(object):
 
             heartbeat = {'service_status': status.description}
             conductor_api.API(context).heartbeat(
-                CONF.guest_id, heartbeat, sent=timeutils.float_utcnow())
+                CONF.guest_id, heartbeat,
+                sent=timeutils.utcnow_ts(microsecond=True))
             LOG.debug("Successfully cast set_status.")
             self.status = status
         else:

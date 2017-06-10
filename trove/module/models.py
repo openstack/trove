@@ -16,7 +16,6 @@
 
 """Model classes that form the core of Module functionality."""
 
-from datetime import datetime
 import hashlib
 import six
 from sqlalchemy.sql.expression import or_
@@ -27,6 +26,7 @@ from trove.common import cfg
 from trove.common import crypto_utils
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import timeutils
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db import models
@@ -266,7 +266,7 @@ class Module(object):
             module.priority_apply, None)
         Module.enforce_live_update(module.id, module.live_update, module.md5)
         module.deleted = True
-        module.deleted_at = datetime.utcnow()
+        module.deleted_at = timeutils.utcnow()
         module.save()
 
     @staticmethod
@@ -342,7 +342,7 @@ class Module(object):
         if module.datastore_version_id:
             module.datastore_version_id = ds_ver_id
 
-        module.updated = datetime.utcnow()
+        module.updated = timeutils.utcnow()
         DBModule.save(module)
 
     @staticmethod
@@ -424,7 +424,7 @@ class InstanceModule(object):
     @staticmethod
     def delete(context, instance_module):
         instance_module.deleted = True
-        instance_module.deleted_at = datetime.utcnow()
+        instance_module.deleted_at = timeutils.utcnow()
         instance_module.save()
 
     @staticmethod
@@ -440,7 +440,7 @@ class InstanceModule(object):
 
     @staticmethod
     def update(context, instance_module):
-        instance_module.updated = datetime.utcnow()
+        instance_module.updated = timeutils.utcnow()
         DBInstanceModule.save(instance_module)
 
 

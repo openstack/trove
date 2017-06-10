@@ -21,7 +21,6 @@ from eventlet import greenthread
 from eventlet.timeout import Timeout
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
-from oslo_utils import timeutils
 from swiftclient.client import ClientException
 
 from trove.backup import models as bkup_models
@@ -61,6 +60,7 @@ from trove.common.remote import create_guest_client
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.common import template
+from trove.common import timeutils
 from trove.common import utils
 from trove.common.utils import try_recover
 from trove.extensions.mysql import models as mysql_models
@@ -315,7 +315,7 @@ class ClusterTasks(Cluster):
         LOG.debug("setting cluster %s as deleted.", cluster_id)
         cluster = DBCluster.find_by(id=cluster_id)
         cluster.deleted = True
-        cluster.deleted_at = utils.utcnow()
+        cluster.deleted_at = timeutils.utcnow()
         cluster.task_status = tasks.ClusterTasks.NONE
         cluster.save()
         LOG.debug("end delete_cluster for id: %s", cluster_id)
