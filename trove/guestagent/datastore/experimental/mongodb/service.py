@@ -699,8 +699,11 @@ class MongoDBAdmin(object):
                 schema.check_create()
                 LOG.debug('Creating MongoDB database %s', schema.name)
                 db = admin_client[schema.name]
-                db[tmp].insert({'dummy': True})
-                db.drop_collection(tmp)
+                # FIXME(songjian):can not create database with null content,
+                # so create a collection
+                # db[tmp].insert({'dummy': True})
+                # db.drop_collection(tmp)
+                db.create_collection(tmp)
 
     def delete_database(self, database):
         """Deletes the database."""
