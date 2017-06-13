@@ -1,0 +1,6 @@
+---
+fixes:
+  - Fixes an issue with redis configuration,it use a wrong min value
+    for repl-backlog-size in validation rules.
+    Bug 1697596
+

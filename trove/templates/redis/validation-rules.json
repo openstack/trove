@@ -90,7 +90,7 @@
         {
             "name": "repl-backlog-size",
             "restart_required": false,
-            "min": 0,
+            "min": 16384,
             "type": "integer"
         },
         {
