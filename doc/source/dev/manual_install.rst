@@ -213,7 +213,7 @@ As the source image for Trove instances, we will use a Trove-compatible Ubuntu i
 
     $ export DATASTORE_TYPE="mysql"
     $ wget http://tarballs.openstack.org/trove/images/ubuntu/${DATASTORE_TYPE}.qcow2
-    $ glance --os-username admin_trove_user --os-password trove --os-tenant-name trove_for_trove_usage --os-auth-url http://<KeystoneIP>:<KeystoneAdminPort>/v2.0 image-create --name trove-image --is-public True --container-format ovf --disk-format qcow2 --owner ${DATASTORE_TYPE}.qcow2
+    $ glance --os-username admin_trove_user --os-password trove --os-tenant-name trove_for_trove_usage --os-auth-url http://<KeystoneIP>:<KeystoneAdminPort>/v2.0 image-create --name trove-image --is-public True --container-format ovf --disk-format qcow2 --file ${DATASTORE_TYPE}.qcow2
 
 Note: http://tarballs.openstack.org/trove/images includes mysql, percona, mongodb Trove-compatible images.
 
