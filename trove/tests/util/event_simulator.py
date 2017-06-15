@@ -29,12 +29,12 @@ Event Simulator Overview
 ========================
 
 We use this to simulate all the threads of Trove running.
-i.e (api,taskmanager,probocsis tests) All the services end
+i.e. (api,taskmanager,proboscis tests). All the services end
 up sleeping and having to wait for something to happen at times.
 
 Monkey Patching Methods
 -----------------------
-We monkey patch a few method to make this happen.
+We monkey patch a few methods to make this happen.
 
 A few sleep methods with a fake_sleep.
 * time.sleep

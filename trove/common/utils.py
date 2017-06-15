@@ -118,7 +118,7 @@ class cached_property(object):
 
     Taken from : https://github.com/nshah/python-memoize
     The function wrapped is called the first time to retrieve the result
-    and than that calculated result is used the next time you access
+    and then that calculated result is used the next time you access
     the value:
 
         class Foo(object):
