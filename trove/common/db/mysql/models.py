@@ -145,8 +145,8 @@ class MySQLUser(models.DatastoreUser):
         if CONF.hostname_require_valid_ip:
             try:
                 # '%' works as a MySQL wildcard, but it is not a valid
-                # part of an IPAddress
-                netaddr.IPAddress(value.replace('%', '1'))
+                # part of an IPNetwork
+                netaddr.IPNetwork(value.replace('%', '1'))
             except (ValueError, netaddr.AddrFormatError):
                 return False
             else:
