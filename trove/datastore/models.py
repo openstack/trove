@@ -146,7 +146,7 @@ class Capabilities(object):
         defaults and overrides and provides the one structure that should be
         used as the interface to controlling capabilities per datastore.
 
-        :returns Capabilities:
+        :returns: Capabilities
         """
         self = cls(datastore_version_id)
         self._load()
@@ -167,7 +167,7 @@ class BaseCapability(object):
         """
         The capability's id
 
-        :returns str:
+        :returns: str
         """
         return self.db_info.id
 
@@ -176,7 +176,7 @@ class BaseCapability(object):
         """
         Is the capability/feature enabled?
 
-        :returns bool:
+        :returns: bool
         """
         return self.db_info.enabled
 
@@ -226,7 +226,7 @@ class CapabilityOverride(BaseCapability):
         """
         The name of the capability.
 
-        :returns str:
+        :returns: str
         """
         return self.parent_name
 
@@ -235,7 +235,7 @@ class CapabilityOverride(BaseCapability):
         """
         The description of the capability.
 
-        :returns str:
+        :returns: str
         """
         return self.parent_description
 
@@ -245,7 +245,7 @@ class CapabilityOverride(BaseCapability):
         Because capability overrides is an association table there are times
         where having the capability id is necessary.
 
-        :returns str:
+        :returns: str
         """
         return self.db_info.capability_id
 
@@ -254,7 +254,7 @@ class CapabilityOverride(BaseCapability):
         """
         Generates a CapabilityOverride object from the capability_override id.
 
-        :returns CapabilityOverride:
+        :returns: CapabilityOverride
         """
         try:
             return cls(DBCapabilityOverrides.find_by(
@@ -275,7 +275,7 @@ class CapabilityOverride(BaseCapability):
                                         override to.
         :param enabled:                 Set enabled to True or False
 
-        :returns CapabilityOverride:
+        :returns: CapabilityOverride
         """
 
         return CapabilityOverride(
@@ -292,7 +292,7 @@ class Capability(BaseCapability):
         """
         The Capability name
 
-        :returns str:
+        :returns: str
         """
         return self.db_info.name
 
@@ -301,7 +301,7 @@ class Capability(BaseCapability):
         """
         The Capability description
 
-        :returns str:
+        :returns: str
         """
         return self.db_info.description
 
@@ -311,7 +311,7 @@ class Capability(BaseCapability):
         Generates a Capability object by looking up the capability first by
         ID then by name.
 
-        :returns Capability:
+        :returns: Capability
         """
         try:
             return cls(DBCapabilities.find_by(id=capability_id_or_name))
@@ -327,7 +327,7 @@ class Capability(BaseCapability):
         """
         Creates a new capability.
 
-        :returns Capability:
+        :returns: Capability
         """
         return Capability(DBCapabilities.create(
             name=name, description=description, enabled=enabled))

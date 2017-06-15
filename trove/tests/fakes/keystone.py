@@ -30,7 +30,7 @@ class AuthProtocol(object):
         """Convert header to wsgi env variable.
 
         :param key: http header name (ex. 'X-Auth-Token')
-        :return wsgi env variable name (ex. 'HTTP_X_AUTH_TOKEN')
+        :return: wsgi env variable name (ex. 'HTTP_X_AUTH_TOKEN')
 
         """
         return 'HTTP_%s' % key.replace('-', '_').upper()
