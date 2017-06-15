@@ -61,7 +61,7 @@ functionality, the following resources are provided.
   - `Trove Client`_
 
 * `Trove Wiki`_ on OpenStack
-* `Trove API Documentation`_ on docs.openstack.org
+* `Trove API Documentation`_ on developer.openstack.org
 
 
 Guest Images
@@ -84,4 +84,4 @@ Search Trove Documentation
 .. _Trove Wiki: https://wiki.openstack.org/wiki/Trove
 .. _Trove: https://git.openstack.org/cgit/openstack/trove
 .. _Trove Client: https://git.openstack.org/cgit/openstack/python-troveclient
-.. _Trove API Documentation: http://developer.openstack.org/api-ref-databases-v1.html
+.. _Trove API Documentation: http://developer.openstack.org/api-ref/database/
