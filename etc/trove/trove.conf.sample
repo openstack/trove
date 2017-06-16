@@ -66,7 +66,7 @@ trove_auth_url = http://0.0.0.0/identity/v2.0
 # You can also optionally specify regex'es to match the actual IP addresses
 # ip_regex (white-list) is applied before black_list_regex in the filter chain
 network_label_regex = ^private$
-#network_label_regex = .* //with neutron enabled
+#network_label_regex = .* #with neutron enabled
 #ip_regex = ^(15.|123.)
 #black_list_regex = ^10.0.0.
 
