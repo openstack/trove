@@ -351,15 +351,6 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
                           self.freshinstancetasks._create_secgroup,
                           datastore_manager)
 
-    def test_create_sg_rules_greater_than_exception_raised(self):
-        datastore_manager = 'mysql'
-        self.task_models_conf_mock.get = Mock(
-            return_value=FakeOptGroup(tcp_ports=['3306', '33060-3306']))
-        self.freshinstancetasks.update_db = Mock()
-        self.assertRaises(MalformedSecurityGroupRuleError,
-                          self.freshinstancetasks._create_secgroup,
-                          datastore_manager)
-
     def test_create_sg_rules_success_with_duplicated_port_or_range(self):
         datastore_manager = 'mysql'
         self.task_models_conf_mock.get = Mock(

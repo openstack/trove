@@ -300,16 +300,6 @@ def try_recover(func):
     return _decorator
 
 
-def gen_ports(portstr):
-    from_port, sep, to_port = portstr.partition('-')
-    if not (to_port and from_port):
-        if not sep:
-            to_port = from_port
-    if int(from_port) > int(to_port):
-        raise ValueError
-    return from_port, to_port
-
-
 def unpack_singleton(container):
     """Unpack singleton collections.
 
