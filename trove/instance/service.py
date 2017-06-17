@@ -15,7 +15,6 @@
 
 from oslo_log import log as logging
 from oslo_utils import strutils
-import webob.exc
 
 from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
@@ -74,7 +73,7 @@ class InstanceController(wsgi.Controller):
     def action(self, req, body, tenant_id, id):
         """
         Handles requests that modify existing instances in some manner. Actions
-        could include 'resize', 'restart', 'reset_password'
+        could include 'resize', 'restart'
         :param req: http request object
         :param body: deserialized body of the request as a dict
         :param tenant_id: the tenant id for whom owns the instance
@@ -87,7 +86,6 @@ class InstanceController(wsgi.Controller):
         _actions = {
             'restart': self._action_restart,
             'resize': self._action_resize,
-            'reset_password': self._action_reset_password,
             'promote_to_replica_source':
             self._action_promote_to_replica_source,
             'eject_replica_source': self._action_eject_replica_source,
@@ -160,9 +158,6 @@ class InstanceController(wsgi.Controller):
                                new_flavor_id=new_flavor_id):
             instance.resize_flavor(new_flavor_id)
         return wsgi.Result(None, 202)
-
-    def _action_reset_password(self, context, instance, body):
-        raise webob.exc.HTTPNotImplemented()
 
     def _action_promote_to_replica_source(self, context, req, instance, body):
         self.authorize_instance_action(
