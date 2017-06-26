@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue in galera_common shrink that wrong load removed nodes
+    which could missing a ClusterShrinkMustNotLeaveClusterEmpty exception
+    or meet a NotFound error. Bug 1699953

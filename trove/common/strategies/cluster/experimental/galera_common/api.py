@@ -184,7 +184,8 @@ class GaleraCommonCluster(cluster_models.Cluster):
         self.validate_cluster_available()
         removal_instances = [Instance.load(self.context, inst_id)
                              for inst_id in instances]
-        db_instances = DBInstance.find_all(cluster_id=self.db_info.id).all()
+        db_instances = DBInstance.find_all(
+            cluster_id=self.db_info.id, deleted=False).all()
         if len(db_instances) - len(removal_instances) < 1:
             raise exception.ClusterShrinkMustNotLeaveClusterEmpty()
 
