@@ -16,6 +16,8 @@
 import mock
 import uuid
 
+from novaclient import exceptions as nova_exceptions
+
 from trove.cluster import models
 from trove.cluster import tasks
 from trove.common import cfg
@@ -24,10 +26,24 @@ from trove.common import remote
 from trove.common.strategies.cluster.experimental.mongodb import api
 from trove.instance import models as inst_models
 from trove.instance import tasks as inst_tasks
+from trove.quota.quota import QUOTAS
+from trove.taskmanager import api as task_api
 from trove.tests.unittests import trove_testtools
 
 
 CONF = cfg.CONF
+
+
+class FakeOptGroup(object):
+    def __init__(self, num_config_servers_per_cluster=3,
+                 num_query_routers_per_cluster=1,
+                 cluster_secure=True, volume_support=True,
+                 device_path='/dev/vdb'):
+        self.num_config_servers_per_cluster = num_config_servers_per_cluster
+        self.num_query_routers_per_cluster = num_query_routers_per_cluster
+        self.cluster_secure = cluster_secure
+        self.volume_support = volume_support
+        self.device_path = device_path
 
 
 class MongoDBClusterTest(trove_testtools.TestCase):
@@ -46,6 +62,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
         self.context = mock.Mock()
         self.datastore = mock.Mock()
         self.dv = mock.Mock()
+        self.dv.manager = "mongodb"
         self.datastore_version = self.dv
         self.cluster = api.MongoDbCluster(self.context, self.db_info,
                                           self.datastore,
@@ -55,9 +72,211 @@ class MongoDBClusterTest(trove_testtools.TestCase):
         self.cluster.manager = self.manager
         self.volume_support = CONF.get('mongodb').volume_support
         self.remote_nova = remote.create_nova_client
+        self.instances = [
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}],
+             'region_name': "foo-region"},
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}],
+             'region_name': "foo-region"},
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}],
+             'region_name': "foo-region"}]
 
     def tearDown(self):
         super(MongoDBClusterTest, self).tearDown()
+
+    def test_create_configuration_specified(self):
+        configuration = "foo-config"
+        self.assertRaises(exception.ConfigurationNotSupported,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          self.instances, {}, None,
+                          configuration)
+
+    def test_create_invalid_instance_numbers_specified(self):
+        instance = [
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}]}
+        ]
+        self.assertRaises(exception.ClusterNumInstancesNotSupported,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          instance, {}, None, None)
+
+    @mock.patch.object(remote, 'create_nova_client')
+    def test_create_invalid_flavor_specified(self, mock_client):
+        (mock_client.return_value.flavors.get) = mock.Mock(
+            side_effect=nova_exceptions.NotFound(
+                404, "Flavor id not found."))
+        self.assertRaises(exception.FlavorNotFound,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          self.instances, {}, None, None)
+
+    @mock.patch.object(remote, 'create_nova_client')
+    def test_create_flavor_not_equal(self, mock_client):
+        instances = self.instances
+        instances[0]['flavor_id'] = '4321'
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.assertRaises(exception.ClusterFlavorsNotEqual,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          instances, {}, None, None)
+
+    @mock.patch.object(remote, 'create_nova_client')
+    def test_create_volume_not_equal(self, mock_client):
+        instances = self.instances
+        instances[0]['volume_size'] = 2
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.assertRaises(exception.ClusterVolumeSizesNotEqual,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          instances, {}, None, None)
+
+    @mock.patch.object(remote, 'create_nova_client')
+    def test_create_volume_not_specified(self, mock_client):
+        instances = [
+            {'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}],
+             'region_name': "foo-region"},
+            {'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}],
+             'region_name': "foo-region"},
+            {'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}],
+             'region_name': "foo-region"}]
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.assertRaises(exception.ClusterVolumeSizeRequired,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          instances, {}, None, None)
+
+    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(api, 'CONF')
+    def test_create_storage_specified_with_no_volume_support(self,
+                                                             mock_conf,
+                                                             mock_client):
+        mock_conf.get = mock.Mock(
+            return_value=FakeOptGroup(volume_support=False))
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.assertRaises(exception.VolumeNotSupported,
+                          models.Cluster.create,
+                          mock.Mock(),
+                          self.cluster_name,
+                          self.datastore,
+                          self.datastore_version,
+                          self.instances, {}, None, None)
+
+    @mock.patch.object(task_api, 'load')
+    @mock.patch.object(inst_models.Instance, 'create')
+    @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(QUOTAS, 'check_quotas')
+    @mock.patch.object(remote, 'create_nova_client')
+    def test_create(self, mock_client, mock_check_quotas,
+                    mock_db_create, mock_ins_create, mock_task_api):
+        instances = self.instances
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            instances, {}, None, None)
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
+        self.assertEqual(7, mock_ins_create.call_count)
+
+    @mock.patch.object(task_api, 'load')
+    @mock.patch.object(inst_models.Instance, 'create')
+    @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(QUOTAS, 'check_quotas')
+    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(api, 'CONF')
+    def test_create_with_lower_configsvr(self, mock_conf, mock_client,
+                                         mock_check_quotas, mock_db_create,
+                                         mock_ins_create, mock_task_api):
+        mock_conf.get = mock.Mock(
+            return_value=FakeOptGroup(num_config_servers_per_cluster=1))
+        instances = self.instances
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            instances, {}, None, None)
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
+        self.assertEqual(5, mock_ins_create.call_count)
+
+    @mock.patch.object(task_api, 'load')
+    @mock.patch.object(inst_models.Instance, 'create')
+    @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(QUOTAS, 'check_quotas')
+    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(api, 'CONF')
+    def test_create_with_higher_configsvr(self, mock_conf, mock_client,
+                                          mock_check_quotas, mock_db_create,
+                                          mock_ins_create, mock_task_api):
+        mock_conf.get = mock.Mock(
+            return_value=FakeOptGroup(num_config_servers_per_cluster=5))
+        instances = self.instances
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            instances, {}, None, None)
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
+        self.assertEqual(9, mock_ins_create.call_count)
+
+    @mock.patch.object(task_api, 'load')
+    @mock.patch.object(inst_models.Instance, 'create')
+    @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(QUOTAS, 'check_quotas')
+    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(api, 'CONF')
+    def test_create_with_higher_mongos(self, mock_conf, mock_client,
+                                       mock_check_quotas, mock_db_create,
+                                       mock_ins_create, mock_task_api):
+        mock_conf.get = mock.Mock(
+            return_value=FakeOptGroup(num_query_routers_per_cluster=4))
+        instances = self.instances
+        flavors = mock.Mock()
+        mock_client.return_value.flavors = flavors
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            instances, {}, None, None)
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
+        self.assertEqual(10, mock_ins_create.call_count)
 
     @mock.patch.object(api.MongoDbCluster, '_prep_resize')
     @mock.patch.object(api.MongoDbCluster, '_check_quotas')
