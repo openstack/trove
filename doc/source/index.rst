@@ -22,6 +22,7 @@ For an in-depth look at the project's design and structure, see the
 
    install/index
    admin/index
+   cli/index
    contributor/index
    reference/index
 
