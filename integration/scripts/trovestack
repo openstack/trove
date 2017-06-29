@@ -700,6 +700,12 @@ function mod_confs() {
     cat $DATASTORE_CONF | sudo tee -a $TEST_CONF > /dev/null
     cat $TROVESTACK_SCRIPTS/conf/test_end.conf | sudo tee -a $TEST_CONF > /dev/null
 
+    #When running in the gate, don't start services
+    if [ "${DEVSTACK_GATE_TROVE}" == "1" ]; then
+        sed -i "s,%startservices%,false,g" ${TEST_CONF}
+    else
+        sed -i "s,%startservices%,true,g" ${TEST_CONF}
+    fi
     #Add the paths to the test conf
     sed -i "s,%report_directory%,$TROVE_REPORT_DIR,g" $TEST_CONF
     sed -i "s,%keystone_path%,$PATH_KEYSTONE,g" $TEST_CONF
