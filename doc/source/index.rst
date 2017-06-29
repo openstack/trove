@@ -2,9 +2,6 @@
 Welcome to Trove's developer documentation!
 ===========================================
 
-Introduction
-============
-
 Trove is Database as a Service for OpenStack. It's designed to run
 entirely on OpenStack, with the goal of allowing users to quickly and
 easily utilize the features of a relational database without the
@@ -18,42 +15,16 @@ including deployment, configuration, patching, backups, restores, and
 monitoring.
 
 For an in-depth look at the project's design and structure, see the
-:doc:`dev/design` page.
-
-
-Installation And Deployment
-===========================
-
-Trove is constantly under development. The easiest way to install
-Trove is using the Trove integration scripts that can be found in
-git in the `Trove`_ Repository.
-
-For further details on how to install Trove using the integration
-scripts please refer to the :doc:`dev/install` page.
-
-For further details on how to install Trove to work with existing
-OpenStack environment please refer to the :doc:`dev/manual_install` page.
-
-Developer Resources
-===================
-
-For those wishing to develop Trove itself, or to extend Trove's
-functionality, the following resources are provided.
+:doc:`contributor/design` page.
 
 .. toctree::
-  :maxdepth: 1
+   :maxdepth: 2
 
-  dev/design
-  dev/testing
-  dev/install
-  dev/manual_install.rst
-  dev/building_guest_images.rst
-  dev/guest_cloud_init.rst
-  dev/notifier.rst
-  dev/trove_api_extensions.rst
-  dev/secure_oslo_messaging.rst
-  deploy/apache-mod-wsgi
-  dev/how_to_create_a_trove_instance.rst
+   install/index
+   admin/index
+   contributor/index
+   reference/index
+
 
 * Source Code Repositories
 

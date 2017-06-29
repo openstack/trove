@@ -4,8 +4,13 @@ Database service
 
 .. toctree::
 
+   apache-mod-wsgi.rst
    get_started.rst
    install.rst
+   install-obs.rst
+   install-rdo.rst
+   install-ubuntu.rst
+   manual_install.rst
    dashboard.rst
    verify.rst
    next-steps.rst
