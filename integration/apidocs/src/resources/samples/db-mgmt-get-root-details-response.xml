@@ -1,7 +1,0 @@
-HTTP/1.1 200 OK
-Content-Type: application/xml
-Content-Length: 140
-Date: Tue, 24 Jul 2012 19:48:33 GMT
-
-<root_history enabled="Never" id="72eed896-134e-4212-9f25-f81b4e0795e2" user="Nobody" xmlns="http://docs.openstack.org/database/api/v1.0"/>
-

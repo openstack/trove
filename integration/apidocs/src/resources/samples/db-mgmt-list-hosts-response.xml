@@ -1,9 +1,0 @@
-HTTP/1.1 200 OK
-Content-Type: application/xml
-Content-Length: 116
-Date: Tue, 24 Jul 2012 19:48:33 GMT
-
-<hosts xmlns="http://docs.openstack.org/database/api/v1.0">
-    <host instanceCount="2" name="hostname"/>
-</hosts>
-
