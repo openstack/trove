@@ -307,7 +307,7 @@ class MongoDbCluster(models.Cluster):
         """
         if not len(instances) > 0:
             raise exception.TroveError(
-                _('Not instances specified for grow operation.')
+                _('No instances specified for grow operation.')
             )
         self._prep_resize()
         self._check_quotas(self.context, instances)
@@ -339,7 +339,7 @@ class MongoDbCluster(models.Cluster):
         """
         if not len(instance_ids) > 0:
             raise exception.TroveError(
-                _('Not instances specified for grow operation.')
+                _('No instances specified for shrink operation.')
             )
 
         self._prep_resize()
