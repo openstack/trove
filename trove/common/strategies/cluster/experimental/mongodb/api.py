@@ -198,8 +198,8 @@ class MongoDbCluster(models.Cluster):
                                                          required=True))
         volume_size = int(_check_option('volume', required=True)['size'])
         instance_type = _check_option('type', required=True,
-                                      valid_values=['replica',
-                                                    'query_router'])
+                                      valid_values=[u'replica',
+                                                    u'query_router'])
         name = _check_option('name')
         related_to = _check_option('related_to')
         nics = _check_option('nics')
