@@ -12,7 +12,6 @@
         nova_compute_url = http://controller:8774/v2
         cinder_url = http://controller:8776/v1
         swift_url = http://controller:8080/v1/AUTH_
-        notifier_queue_hostname = controller
         ...
         [database]
         connection = mysql+pymysql://trove:TROVE_DBPASS@controller/trove
