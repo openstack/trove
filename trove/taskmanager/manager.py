@@ -45,8 +45,8 @@ class Manager(periodic_task.PeriodicTasks):
         super(Manager, self).__init__(CONF)
         self.admin_context = TroveContext(
             user=CONF.nova_proxy_admin_user,
-            auth_token=CONF.nova_proxy_admin_pass,
-            tenant=CONF.nova_proxy_admin_tenant_id)
+            tenant=CONF.nova_proxy_admin_tenant_id,
+            user_domain_name=CONF.nova_proxy_admin_user_domain_name)
         if CONF.exists_notification_transformer:
             self.exists_transformer = importutils.import_object(
                 CONF.exists_notification_transformer,

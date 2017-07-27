@@ -17,7 +17,7 @@
 #
 import uuid
 
-from mock import patch, MagicMock
+from mock import ANY, patch, MagicMock
 import swiftclient.client
 from testtools import ExpectedException, matchers
 
@@ -363,6 +363,7 @@ class TestCreateNovaClient(trove_testtools.TestCase):
         cfg.CONF.clear_override('nova_compute_url')
         cfg.CONF.clear_override('nova_compute_service_type')
         cfg.CONF.clear_override('os_region_name')
+        cfg.CONF.clear_override('nova_proxy_admin_pass')
 
     def test_create_with_no_conf_no_catalog(self):
         self.assertRaises(exception.EmptyCatalog,
@@ -416,6 +417,30 @@ class TestCreateNovaClient(trove_testtools.TestCase):
         # self.assertEqual(admin_pass, admin_client.client.password)
         self.assertEqual('%s%s' % (nova_url_from_conf, admin_tenant_id),
                          admin_client.client.endpoint_override)
+
+    @patch('trove.common.remote.Client', autospec=True)
+    def test_nova_client_password_passthrough(self, nova_mock):
+        test_domain = 'test_domain_name'
+        ctx = TroveContext(user='admin1',
+                           project_id='project_id',
+                           user_domain_name=test_domain,
+                           service_catalog=self.service_catalog)
+        remote.nova_client(ctx, password='adminpass')
+        nova_mock.assert_called_with(ANY, username='admin1',
+                                     password='adminpass',
+                                     user_domain_name=test_domain,
+                                     project_id='project_id',
+                                     auth_token=None,
+                                     auth_url=ANY,
+                                     endpoint_override=ANY,
+                                     project_domain_name=ANY,
+                                     insecure=False)
+
+    @patch('trove.common.remote.create_nova_client', autospec=True)
+    def test_admin_client_password(self, nc_mock):
+        cfg.CONF.set_override('nova_proxy_admin_pass', 's3cr3t3')
+        remote.create_admin_nova_client('mycontext')
+        nc_mock.assert_called_with('mycontext', password='s3cr3t3')
 
 
 class TestCreateSwiftClient(trove_testtools.TestCase):

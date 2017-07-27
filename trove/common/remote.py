@@ -84,11 +84,11 @@ def guest_client(context, id, manager=None):
     return clazz(context, id)
 
 
-def nova_client(context, region_name=None):
+def nova_client(context, region_name=None, password=None):
     if CONF.nova_compute_url:
         url = '%(nova_url)s%(tenant)s' % {
             'nova_url': normalize_url(CONF.nova_compute_url),
-            'tenant': context.tenant}
+            'tenant': context.project_id}
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.nova_compute_service_type,
@@ -97,9 +97,11 @@ def nova_client(context, region_name=None):
 
     client = Client(CONF.nova_client_version,
                     username=context.user,
+                    password=password,
                     endpoint_override=url,
-                    project_id=context.tenant,
+                    project_id=context.project_id,
                     project_domain_name=context.project_domain_name,
+                    user_domain_name=context.user_domain_name,
                     auth_url=CONF.trove_auth_url,
                     auth_token=context.auth_token,
                     insecure=CONF.nova_api_insecure)
@@ -113,7 +115,7 @@ def create_admin_nova_client(context):
     Creates client that uses trove admin credentials
     :return: a client for nova for the trove admin
     """
-    client = create_nova_client(context)
+    client = create_nova_client(context, password=CONF.nova_proxy_admin_pass)
     return client
 
 
