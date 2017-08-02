@@ -71,3 +71,8 @@ TROVE_DEVSTACK_FILES=${TROVE_DEVSTACK_DIR}/files
 TROVE_WSGI_DIR=${TROVE_WSGI_DIR:-/var/www/trove}
 
 enable_service trove tr-api tr-tmgr tr-cond
+
+# Trove CI tests server group anti-affinity policies and therefore needs
+# Nova to use a single MQ for the computes to talk to the scheduler.
+CELLSV2_SETUP=singleconductor
+

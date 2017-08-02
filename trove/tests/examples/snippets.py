@@ -33,7 +33,11 @@ from trove.tests.config import CONFIG
 from trove.tests.examples.client import JsonClient
 from trove.tests.examples.client import SnippetWriter
 
-trove_client._logger.setLevel(logging.CRITICAL)
+# troveclient.compat.client._logger was changed to LOG in 2.11.0
+if hasattr(trove_client, '_logger'):
+    trove_client._logger.setLevel(logging.CRITICAL)
+elif hasattr(trove_client, 'LOG'):
+    trove_client.LOG.setLevel(logging.CRITICAL)
 
 FAKE_INFO = {'m': 30, 's': 0, 'uuid': 'abcdef00-aaaa-aaaa-aaaa-bbbbbbbbbbbb'}
 EXAMPLE_BACKUP_ID = "a9832168-7541-4536-b8d9-a8a9b79cf1b4"
