@@ -91,7 +91,7 @@ def create_slave():
     result = instance_info.dbaas.instances.create(
         instance_info.name + "_slave",
         instance_info.dbaas_flavor_href,
-        instance_info.volume,
+        {'size': 2},
         datastore=instance_info.dbaas_datastore,
         datastore_version=instance_info.dbaas_datastore_version,
         nics=instance_info.nics,

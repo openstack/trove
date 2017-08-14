@@ -955,6 +955,14 @@ class Instance(BuiltInstance):
                     raise exception.Forbidden(
                         _("Cannot create a replica of a replica %(id)s.")
                         % {'id': slave_of_id})
+                if (CONF.verify_replica_volume_size
+                        and replica_source.volume_size > volume_size):
+                    raise exception.Forbidden(
+                        _("Replica volume size should not be smaller than"
+                          " master's, replica volume size: %(replica_size)s"
+                          " and master volume size: %(master_size)s.")
+                        % {'replica_size': volume_size,
+                           'master_size': replica_source.volume_size})
                 # load the replica source status to check if
                 # source is available
                 load_simple_instance_server_status(

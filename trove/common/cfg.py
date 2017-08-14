@@ -278,6 +278,10 @@ common_opts = [
                 help='Enable verification of Swift checksum before starting '
                 'restore. Makes sure the checksum of original backup matches '
                 'the checksum of the Swift backup file.'),
+    cfg.BoolOpt('verify_replica_volume_size', default=True,
+                help='Require the replica volume size to be greater than '
+                'or equal to the size of the master volume '
+                'during replica creation.'),
     cfg.StrOpt('storage_strategy', default='SwiftStorage',
                help="Default strategy to store backups."),
     cfg.StrOpt('storage_namespace',
