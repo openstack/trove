@@ -343,6 +343,10 @@ class TestReplication(trove_testtools.TestCase):
             manager='mysql',
             active=1)
 
+        self.databases = []
+
+        self.users = []
+
         self.master = DBInstance(
             InstanceTasks.NONE,
             id=str(uuid.uuid4()),
@@ -404,6 +408,21 @@ class TestReplication(trove_testtools.TestCase):
                           None, 'name', 2, "UUID", [], [], self.datastore,
                           self.datastore_version, 1,
                           None, slave_of_id=self.replica_info.id)
+
+    def test_create_replica_with_users(self):
+        self.users.append({"name": "testuser", "password": "123456"})
+        self.assertRaises(exception.ReplicaCreateWithUsersDatabasesError,
+                          Instance.create, None, 'name', 1, "UUID", [],
+                          self.users, self.datastore, self.datastore_version,
+                          1, None, slave_of_id=self.master.id)
+
+    def test_create_replica_with_databases(self):
+        self.databases.append({"name": "testdb"})
+        self.assertRaises(exception.ReplicaCreateWithUsersDatabasesError,
+                          Instance.create, None, 'name', 1, "UUID",
+                          self.databases, [], self.datastore,
+                          self.datastore_version, 1, None,
+                          slave_of_id=self.master.id)
 
 
 def trivial_key_function(id):

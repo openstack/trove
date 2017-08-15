@@ -937,6 +937,8 @@ class Instance(BuiltInstance):
                     datastore2=datastore.name)
 
         if slave_of_id:
+            if databases or users:
+                raise exception.ReplicaCreateWithUsersDatabasesError()
             call_args['replica_of'] = slave_of_id
             call_args['replica_count'] = replica_count
             replication_support = datastore_cfg.replication_strategy
