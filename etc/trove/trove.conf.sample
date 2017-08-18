@@ -202,7 +202,7 @@ idle_timeout = 3600
 
 # The RabbitMQ password. (string value)
 # Deprecated group/name - [DEFAULT]/rabbit_password
-rabbit_password=f7999d1955c5014aa32c
+#rabbit_password=f7999d1955c5014aa32c
 
 # The RabbitMQ virtual host. (string value)
 # Deprecated group/name - [DEFAULT]/rabbit_virtual_host
