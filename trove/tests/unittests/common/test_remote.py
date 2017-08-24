@@ -377,7 +377,7 @@ class TestCreateNovaClient(trove_testtools.TestCase):
         client = remote.create_nova_client(
             TroveContext(tenant=tenant_from_ctx))
         self.assertEqual('%s/%s' % (nova_url_from_conf, tenant_from_ctx),
-                         client.client.management_url)
+                         client.client.endpoint_override)
 
     def test_create_with_conf_override_trailing_slash(self):
         nova_url_from_conf = 'http://example.com/'
@@ -386,13 +386,13 @@ class TestCreateNovaClient(trove_testtools.TestCase):
         client = remote.create_nova_client(
             TroveContext(tenant=tenant_from_ctx))
         self.assertEqual('%s%s' % (nova_url_from_conf, tenant_from_ctx),
-                         client.client.management_url)
+                         client.client.endpoint_override)
 
     def test_create_with_catalog_and_default_service_type(self):
         client = remote.create_nova_client(
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.compute_public_url,
-                         client.client.management_url)
+                         client.client.endpoint_override)
 
     def test_create_with_catalog_all_opts(self):
         cfg.CONF.set_override('nova_compute_service_type', 'computev3')
@@ -400,7 +400,7 @@ class TestCreateNovaClient(trove_testtools.TestCase):
         client = remote.create_nova_client(
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.computev3_public_url_region_two,
-                         client.client.management_url)
+                         client.client.endpoint_override)
 
     def test_create_admin_client(self):
         nova_url_from_conf = 'http://adminexample.com/'
@@ -415,7 +415,7 @@ class TestCreateNovaClient(trove_testtools.TestCase):
         # self.assertEqual(admin_user, admin_client.client.user)
         # self.assertEqual(admin_pass, admin_client.client.password)
         self.assertEqual('%s%s' % (nova_url_from_conf, admin_tenant_id),
-                         admin_client.client.management_url)
+                         admin_client.client.endpoint_override)
 
 
 class TestCreateSwiftClient(trove_testtools.TestCase):

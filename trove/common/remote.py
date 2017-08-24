@@ -96,13 +96,13 @@ def nova_client(context, region_name=None):
 
     client = Client(CONF.nova_client_version,
                     username=context.user,
-                    bypass_url=url,
-                    tenant_id=context.tenant,
+                    endpoint_override=url,
+                    project_id=context.tenant,
                     project_domain_name=context.project_domain_name,
                     auth_url=CONF.trove_auth_url,
                     auth_token=context.auth_token)
     client.client.auth_token = context.auth_token
-    client.client.management_url = url
+    client.client.endpoint_override = url
     return client
 
 

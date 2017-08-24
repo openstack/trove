@@ -69,7 +69,7 @@ def nova_client_trove_admin(context, region_name=None, compute_url=None):
                         region_name=region_name or CONF.os_region_name)
 
     if compute_url and CONF.nova_proxy_admin_tenant_id:
-        client.client.management_url = "%s/%s/" % (
+        client.client.endpoint_override = "%s/%s/" % (
             normalize_url(compute_url),
             CONF.nova_proxy_admin_tenant_id)
 
