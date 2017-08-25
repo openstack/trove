@@ -958,6 +958,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                        block_device_mapping_v2, availability_zone,
                        nics, files={}, scheduler_hints=None):
         userdata = self.prepare_userdata(datastore_manager)
+        metadata = {'trove_project_id': self.tenant_id,
+                    'trove_user_id': self.context.user,
+                    'trove_instance_id': self.id}
         name = self.hostname or self.name
         bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive
@@ -969,6 +972,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             files=files, userdata=userdata,
             availability_zone=availability_zone,
             config_drive=config_drive, scheduler_hints=scheduler_hints,
+            meta=metadata,
         )
         LOG.debug("Created new compute instance %(server_id)s "
                   "for database instance %(id)s",
