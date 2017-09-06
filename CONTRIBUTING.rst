@@ -4,18 +4,18 @@ Contributing
 
 Our community welcomes all people interested in open source cloud
 computing, and encourages you to join the `OpenStack Foundation
-<http://www.openstack.org/join>`_.
+<https://www.openstack.org/join>`_.
 
 If you would like to contribute to the development of OpenStack,
 you must follow the steps documented at:
 
-   http://docs.openstack.org/infra/manual/developers.html#development-workflow
+   https://docs.openstack.org/infra/manual/developers.html#development-workflow
 
 Once those steps have been completed, changes to OpenStack
 should be submitted for review via the Gerrit tool, following
 the workflow documented at:
 
-   http://docs.openstack.org/infra/manual/developers.html#development-workflow
+   https://docs.openstack.org/infra/manual/developers.html#development-workflow
 
 (Pull requests submitted through GitHub will be ignored.)
 
@@ -27,7 +27,7 @@ We welcome all types of contributions, from blueprint designs to
 documentation to testing to deployment scripts. The best way to get
 involved with the community is to talk with others online or at a
 meetup and offer contributions through our processes, the `OpenStack
-wiki <http://wiki.openstack.org>`_, blogs, or on IRC at
+wiki <https://wiki.openstack.org>`_, blogs, or on IRC at
 ``#openstack-trove`` on ``irc.freenode.net``.
 
 
@@ -85,10 +85,10 @@ Some other reviewing guidelines:
 Other references:
 
    - https://wiki.openstack.org/wiki/CodeReviewGuidelines
-   - http://docs.openstack.org/infra/manual/developers.html
+   - https://docs.openstack.org/infra/manual/developers.html
    - https://wiki.openstack.org/wiki/ReviewChecklist
    - https://wiki.openstack.org/wiki/GitCommitMessages
-   - http://docs.openstack.org/developer/hacking/
+   - https://docs.openstack.org/hacking/latest/
    - https://review.openstack.org/#/c/116176/
    - trove-pylint readme file in tools/trove-pylint.README
 
