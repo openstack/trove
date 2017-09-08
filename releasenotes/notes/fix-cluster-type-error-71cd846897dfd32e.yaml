@@ -4,5 +4,5 @@ fixes:
     while setting the nics on a create call. When we called cast to set()
     the object was a list of lists. The set method can not has a list so
     this was causesing a unhashable error. The change is to make the
-    instance_nics a list of strings (what we originaly expected) to
+    instance_nics a list of strings (what we originally expected) to
     resolve this issue. Bug 1570602.
