@@ -484,7 +484,7 @@ common_opts = [
                     'Keystone v3 API with big service catalogs).'),
     cfg.StrOpt('conductor_manager', default='trove.conductor.manager.Manager',
                help='Qualified class name to use for conductor manager.'),
-    cfg.StrOpt('network_driver', default='trove.network.nova.NovaNetwork',
+    cfg.StrOpt('network_driver', default='trove.network.neutron.NeutronDriver',
                help="Describes the actual network manager used for "
                     "the management of network attributes "
                     "(security groups, floating IPs, etc.)."),
