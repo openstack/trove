@@ -1245,10 +1245,12 @@ class Instance(BuiltInstance):
         Raises exception if an instance action cannot currently be performed.
         """
         # cases where action cannot be performed
+        status_type = 'instance'
         if self.db_info.server_status != 'ACTIVE':
             status = self.db_info.server_status
         elif (self.db_info.task_status != InstanceTasks.NONE and
               self.db_info.task_status != InstanceTasks.RESTART_REQUIRED):
+            status_type = 'task'
             status = self.db_info.task_status
         elif not self.datastore_status.status.action_is_allowed:
             status = self.status
@@ -1259,8 +1261,10 @@ class Instance(BuiltInstance):
             return
 
         msg = (_("Instance %(instance_id)s is not currently available for an "
-                 "action to be performed (status was %(action_status)s).") %
-               {'instance_id': self.id, 'action_status': status})
+                 "action to be performed (%(status_type)s status was "
+                 "%(action_status)s).") % {'instance_id': self.id,
+                                           'status_type': status_type,
+                                           'action_status': status})
         LOG.error(msg)
         raise exception.UnprocessableEntity(msg)
 
