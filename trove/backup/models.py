@@ -265,7 +265,10 @@ class Backup(object):
         query = DBBackup.query()
         query = query.filter_by(parent_id=backup_id, deleted=False)
         for child in query.all():
-            cls.delete(context, child.id)
+            try:
+                cls.delete(context, child.id)
+            except exception.NotFound:
+                LOG.exception(_("Backup %s cannot be found."), backup_id)
 
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)
