@@ -22,6 +22,7 @@ ChangeLog
 trove.iml
 .testrepository
 .pid
+.stestr/
 
 # Sphinx
 doc/build/*

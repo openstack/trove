@@ -79,7 +79,6 @@ function _cleanup_trove_apache_wsgi {
 # runs that a clean run would need to clean up
 function cleanup_trove {
     # Clean up dirs
-    rm -fr $TROVE_AUTH_CACHE_DIR/*
     rm -fr $TROVE_CONF_DIR/*
 
     if is_service_enabled horizon; then
@@ -181,7 +180,7 @@ function configure_trove {
     configure_keystone_token_life
 
     # Create the trove conf dir and cache dirs if they don't exist
-    sudo install -d -o $STACK_USER ${TROVE_CONF_DIR} ${TROVE_AUTH_CACHE_DIR}
+    sudo install -d -o $STACK_USER ${TROVE_CONF_DIR}
 
     # Copy api-paste file over to the trove conf dir
     cp $TROVE_LOCAL_API_PASTE_INI $TROVE_API_PASTE_INI
@@ -215,7 +214,7 @@ function configure_trove {
         setup_trove_logging $TROVE_CONF
         iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
 
-        configure_auth_token_middleware $TROVE_CONF trove $TROVE_AUTH_CACHE_DIR
+        configure_auth_token_middleware $TROVE_CONF trove
         iniset $TROVE_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     fi
 

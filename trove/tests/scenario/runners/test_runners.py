@@ -248,7 +248,7 @@ class LogOnFail(type):
                 return fn(*args, **kwargs)
             except proboscis.SkipTest:
                 raise
-            except Exception as test_ex:
+            except Exception:
                 msg_prefix = "*** LogOnFail: "
                 if inst_ids:
                     report.log(msg_prefix + "Exception detected, "
@@ -276,7 +276,7 @@ class LogOnFail(type):
 
                 # Only report on the first error that occurs
                 mcs.reset_inst_ids()
-                raise test_ex
+                raise
 
         return wrapper
 
@@ -476,7 +476,7 @@ class TestRunner(object):
             user=user.auth_user,
             key=user.auth_key,
             tenant_name=user.tenant,
-            auth_version='2.0',
+            auth_version='3.0',
             os_options=os_options)
 
     @property

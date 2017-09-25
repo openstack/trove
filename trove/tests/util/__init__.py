@@ -167,13 +167,13 @@ def create_nova_client(user, service_type=None):
     if not service_type:
         service_type = test_config.nova_client['nova_service_type']
     openstack = Client(CONF.nova_client_version,
-                       user.auth_user,
-                       user.auth_key,
-                       project_name=user.tenant,
+                       username=user.auth_user,
+                       password=user.auth_key,
+                       user_domain_name='Default',
+                       project_id=user.tenant_id,
                        auth_url=test_config.nova_client['auth_url'],
                        service_type=service_type, os_cache=False,
                        cacert=test_config.values.get('cacert', None))
-    openstack.authenticate()
     return TestClient(openstack)
 
 
@@ -183,12 +183,13 @@ def create_glance_client(user):
         raise SkipTest("No glance_client info specified in the Test Config "
                        "so this test will be skipped.")
     from glanceclient import Client
-    from keystoneauth1.identity import v2
+    from keystoneauth1.identity import v3
     from keystoneauth1 import session
 
-    auth = v2.Password(username=user.auth_user,
+    auth = v3.Password(username=user.auth_user,
                        password=user.auth_key,
-                       tenant_name=user.tenant,
+                       user_domain_name='Default',
+                       project_id=user.tenant_id,
                        auth_url=test_config.glance_client['auth_url'])
     session = session.Session(auth=auth)
     glance = Client(CONF.glance_client_version, session=session)

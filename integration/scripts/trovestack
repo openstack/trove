@@ -105,7 +105,6 @@ GLANCE_SERVICE_PROTOCOL=${GLANCE_SERVICE_PROTOCOL:-http}
 # This will escape them
 ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
 ESCAPED_TROVESTACK_SCRIPTS=$(echo $TROVESTACK_SCRIPTS | sed 's/\//\\\//g')
-TROVE_AUTH_CACHE_DIR=${TROVE_AUTH_CACHE_DIR:-/var/cache/trove}
 TROVE_LOGDIR=${TROVE_LOGDIR:-$DEST/logs}
 TROVE_DEVSTACK_SETTINGS="$DEST/trove/devstack/settings"
 TROVE_DEVSTACK_PLUGIN="$DEST/trove/devstack/plugin.sh"
@@ -1291,7 +1290,7 @@ function cmd_dsvm_gate_tests() {
 
     local DATASTORE_TYPE=${1:-'mysql'}
     local TEST_GROUP=${2:-${DATASTORE_TYPE}}
-    local HOST_SCP_USERNAME=${3:-'jenkins'}
+    local HOST_SCP_USERNAME=${3:-$USER}
     local GUEST_USERNAME=${4:-'ubuntu'}
     local CONTROLLER_IP=${5:-$ACTUAL_HOSTNAME}
     local ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
@@ -1330,8 +1329,8 @@ function cmd_dsvm_gate_tests() {
     export TROVE_REPORT_DIR=$HOME/dsvm-report/
     TROVESTACK_DUMP_ENV=true
 
-    # Devstack vm-gate runs as the jenkins user, but needs to connect to the guest image as ubuntu
-    echo "User=ubuntu" >> /home/jenkins/.ssh/config
+    # Devstack vm-gate runs as a non-ubuntu user, but needs to connect to the guest image as ubuntu
+    echo "User=ubuntu" >> /home/$USER/.ssh/config
 
     # Fix iptables rules that prevent amqp connections from the devstack box to the guests
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true

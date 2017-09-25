@@ -23,9 +23,7 @@ context or provide additional information in their specific WSGI pipeline.
 
 from oslo_context import context
 from oslo_log import log as logging
-from oslo_utils import reflection
 
-from trove.common.i18n import _
 from trove.common import local
 from trove.common.serializable_notification import SerializableNotification
 
@@ -58,6 +56,11 @@ class TroveContext(context.RequestContext):
                             'service_catalog': self.service_catalog
                             })
         if hasattr(self, 'notification'):
+            # Disable E1101 to allow us to specify self.notification here.
+            # The ceilometer notification code relies on this being there but
+            # we can't have self.notification as some code does
+            # del context.notification.
+            # pylint: disable=E1101
             serialized = SerializableNotification.serialize(self,
                                                             self.notification)
             parent_dict['trove_notification'] = serialized
@@ -67,28 +70,15 @@ class TroveContext(context.RequestContext):
         local.store.context = self
 
     @classmethod
-    def _remove_incompatible_context_args(cls, values):
-        realvalues = {}
-
-        args = (reflection.get_callable_args(context.RequestContext.__init__) +
-                reflection.get_callable_args(TroveContext.__init__))
-
-        for dict_key in values.keys():
-            if dict_key in args:
-                realvalues[dict_key] = values.get(dict_key)
-            else:
-                LOG.warning(_("Argument being removed before instantiating "
-                              "TroveContext object - %(key)s = %(value)s"),
-                            {'key': dict_key, 'value': values.get(dict_key)})
-
-        return realvalues
-
-    @classmethod
     def from_dict(cls, values):
         n_values = values.pop('trove_notification', None)
-        values = cls._remove_incompatible_context_args(values)
-        context = cls(**values)
+        ctx = super(TroveContext, cls).from_dict(
+            values,
+            limit=values.get('limit'),
+            marker=values.get('marker'),
+            service_catalog=values.get('service_catalog'))
+
         if n_values:
-            context.notification = SerializableNotification.deserialize(
-                context, n_values)
-        return context
+            ctx.notification = SerializableNotification.deserialize(
+                ctx, n_values)
+        return ctx
