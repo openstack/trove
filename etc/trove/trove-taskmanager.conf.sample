@@ -228,9 +228,9 @@ device_path = /dev/vdb
 # Format (single port or port range): A, B-C
 # where C greater than B
 tcp_ports = 6379, 16379
-# redis uses local storage
-volume_support = False
-# default device_path = None
+volume_support = True
+device_path = /dev/vdb
+
 
 [cassandra]
 tcp_ports = 7000, 7001, 9042, 9160
