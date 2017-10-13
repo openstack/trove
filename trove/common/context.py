@@ -56,11 +56,6 @@ class TroveContext(context.RequestContext):
                             'service_catalog': self.service_catalog
                             })
         if hasattr(self, 'notification'):
-            # Disable E1101 to allow us to specify self.notification here.
-            # The ceilometer notification code relies on this being there but
-            # we can't have self.notification as some code does
-            # del context.notification.
-            # pylint: disable=E1101
             serialized = SerializableNotification.serialize(self,
                                                             self.notification)
             parent_dict['trove_notification'] = serialized
