@@ -1,0 +1,83 @@
+# Corinne Verheyde <cverheyd@gmail.com>, 2016. #zanata
+# Gérald LONLAS <g.lonlas@gmail.com>, 2016. #zanata
+msgid ""
+msgstr ""
+"Project-Id-Version: Trove Release Notes 8.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-08-03 04:53+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2016-10-22 06:43+0000\n"
+"Last-Translator: Gérald LONLAS <g.lonlas@gmail.com>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"X-Generator: Zanata 3.9.6\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
+
+msgid "5.0.0"
+msgstr "5.0.0"
+
+msgid "5.0.1"
+msgstr "5.0.1"
+
+msgid "5.1.0"
+msgstr "5.1.0"
+
+msgid "5.1.1"
+msgstr "5.1.1"
+
+msgid "6.0.0"
+msgstr "6.0.0"
+
+msgid ""
+"A locality flag was added to the trove ReST API to allow a user to specify "
+"whether new replicas should be on the same hypervisor (affinity) or on "
+"different hypervisors (anti-affinity)."
+msgstr ""
+"Ajout d'un flag de localisation aux API ReST trove pour permettre à "
+"l'utilisateur de spécifier si les nouveaux replicas doivent être sur le même "
+"hyperviseur (affinité) ou sur des hyperviseurs différents (ante-affinité)."
+
+msgid "An invalid module driver is now logged correctly. Bug 1579900"
+msgstr ""
+"Un driver de module invalide est maintenant logué correctement. Bug 1579900"
+
+msgid "Bug Fixes"
+msgstr "Résolutions de Bugs"
+
+msgid "Current Series Release Notes"
+msgstr "Note de la release actuelle"
+
+msgid "Deprecation Notes"
+msgstr "Notes dépréciées "
+
+msgid "Dropping support for python 2.6"
+msgstr "Suppression du support de python 2.6"
+
+msgid ""
+"Fixes an issue with a failure to establish a new replica for MySQL in some "
+"cases where a replica already exists and some data has been inserted into "
+"the master. Bug 1563574"
+msgstr ""
+"Résout un problème d'échec de mise en place d'un nouveau replica pour MySQL "
+"dans certains cas où un replica existe déjà et des données ont été insérées "
+"sur le master. Bug 1563574"
+
+msgid "Mitaka Series Release Notes"
+msgstr "Note de release pour Mitaka"
+
+msgid "New Features"
+msgstr "Nouvelles fonctionnalités"
+
+msgid "Newton Series Release Notes"
+msgstr "Note de release pour Newton"
+
+msgid "Other Notes"
+msgstr "Autres notes"
+
+msgid "Security Issues"
+msgstr "Problèmes de sécurités"
+
+msgid "Trove Release Notes"
+msgstr "Note de release pour Trove"
