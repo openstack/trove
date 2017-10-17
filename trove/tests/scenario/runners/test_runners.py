@@ -20,6 +20,7 @@ import netaddr
 import os
 import proboscis
 import six
+import sys
 import time as timer
 import types
 
@@ -249,6 +250,7 @@ class LogOnFail(type):
             except proboscis.SkipTest:
                 raise
             except Exception:
+                (extype, exvalue, extb) = sys.exc_info()
                 msg_prefix = "*** LogOnFail: "
                 if inst_ids:
                     report.log(msg_prefix + "Exception detected, "
@@ -276,7 +278,7 @@ class LogOnFail(type):
 
                 # Only report on the first error that occurs
                 mcs.reset_inst_ids()
-                raise
+                six.reraise(extype, exvalue, extb)
 
         return wrapper
 
