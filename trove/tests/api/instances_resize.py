@@ -30,7 +30,7 @@ from trove.guestagent import api as guest
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
-from trove.taskmanager import models as models
+from trove.taskmanager import models
 from trove.tests.fakes import nova
 from trove.tests.unittests import trove_testtools
 from trove.tests.util import test_config

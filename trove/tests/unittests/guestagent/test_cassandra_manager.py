@@ -36,7 +36,7 @@ from trove.guestagent.datastore.experimental.cassandra import (
     manager as cass_manager)
 from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
-from trove.guestagent import pkg as pkg
+from trove.guestagent import pkg
 from trove.guestagent import volume
 from trove.tests.unittests.guestagent.test_datastore_manager import \
     DatastoreManagerTest

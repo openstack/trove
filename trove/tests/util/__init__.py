@@ -41,7 +41,7 @@ from trove.common import cfg
 from trove.common.utils import import_class
 from trove.common.utils import import_object
 from trove.tests.config import CONFIG as test_config
-from trove.tests.util.client import TestClient as TestClient
+from trove.tests.util.client import TestClient
 from trove.tests.util import test_config as CONFIG
 from trove.tests.util.users import Requirements
 

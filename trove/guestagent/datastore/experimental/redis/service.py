@@ -24,7 +24,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common.stream_codecs import PropertiesCodec, StringConverter
-from trove.common import utils as utils
+from trove.common import utils
 from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import OneFileOverrideStrategy
 from trove.guestagent.common import guestagent_utils

@@ -31,7 +31,7 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as base_dbaas
-from trove.guestagent import pkg as pkg
+from trove.guestagent import pkg
 from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
 from trove.tests.unittests.guestagent.test_datastore_manager import \

@@ -29,7 +29,7 @@ from trove.common.db import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
-from trove.common import utils as utils
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.datastore import service

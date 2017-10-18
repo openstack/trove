@@ -25,7 +25,7 @@ from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common import pagination
 from trove.common.stream_codecs import JsonCodec
-from trove.common import utils as utils
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.couchdb import system
