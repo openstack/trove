@@ -156,6 +156,7 @@ class CassandraCluster(models.Cluster):
                 availability_zone=instance_az,
                 configuration_id=configuration_id,
                 cluster_config=member_config,
+                volume_type=instance.get('volume_type', None),
                 modules=instance.get('modules'),
                 locality=locality,
                 region_name=instance.get('region_name'))
