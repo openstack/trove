@@ -101,16 +101,6 @@ revert_time_out = 120
 notification_driver = trove.tests.util.usage
 notification_service_id = mysql:123,percona:abc
 
-# ============ notifer queue kombu connection options ========================
-
-notifier_queue_hostname = localhost
-notifier_queue_userid = guest
-notifier_queue_password = guest
-notifier_queue_ssl = False
-notifier_queue_port = 5672
-notifier_queue_virtual_host = /
-notifier_queue_transport = memory
-
 control_exchange = trove
 
 paste_config_file=api-paste.ini.test
