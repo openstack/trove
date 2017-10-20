@@ -28,3 +28,4 @@ couchdb>=0.8 # Apache-2.0
 os-testr>=0.8.0 # Apache-2.0
 astroid<1.4.0 # LGPLv2.1 # breaks pylint 1.4.4
 pylint==1.4.5 # GPLv2
+tempest>=16.1.0 # Apache-2.0
