@@ -285,7 +285,8 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                 LOG.error(_("timeout for instances to be marked as deleted."))
                 return
 
-            db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
+            db_instances = DBInstance.find_all(
+                cluster_id=cluster_id, deleted=False).all()
             leftover_instances = [Instance.load(context, db_inst.id)
                                   for db_inst in db_instances
                                   if db_inst.id not in removal_instance_ids]
