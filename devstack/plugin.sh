@@ -118,6 +118,9 @@ function configure_keystone_token_life() {
     KEYSTONE_TOKEN_LIFE=${KEYSTONE_TOKEN_LIFE:-10800}
     iniset $KEYSTONE_CONF token expiration ${KEYSTONE_TOKEN_LIFE}
     echo "configure_keystone_token_life: setting keystone token life to ${KEYSTONE_TOKEN_LIFE}"
+    echo "configure_keystone_token_life: restarting Keystone"
+    stop_keystone
+    start_keystone
 }
 
 # configure_nova_kvm() - update the nova hypervisor configuration if possible
