@@ -138,6 +138,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         def _add_shard_cluster():
 
             db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False,
                                                shard_id=shard_id).all()
             instance_ids = [db_instance.id for db_instance in db_instances]
             LOG.debug("instances in shard %(shard_id)s: %(instance_ids)s",

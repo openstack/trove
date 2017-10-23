@@ -74,7 +74,8 @@ class VerticaCluster(models.Cluster):
         vertica_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)
 
-        existing = inst_models.DBInstance.find_all(cluster_id=db_info.id).all()
+        existing = inst_models.DBInstance.find_all(cluster_id=db_info.id,
+                                                   deleted=False).all()
         num_existing = len(existing)
 
         # Matching number of instances with configured cluster_member_count

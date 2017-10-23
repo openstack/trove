@@ -248,6 +248,7 @@ class MongoDbCluster(models.Cluster):
             raise exception.UnprocessableEntity(msg)
 
         db_insts = inst_models.DBInstance.find_all(cluster_id=self.id,
+                                                   deleted=False,
                                                    type='member').all()
         num_unique_shards = len(set([db_inst.shard_id for db_inst
                                      in db_insts]))

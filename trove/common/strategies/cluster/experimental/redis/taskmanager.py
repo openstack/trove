@@ -107,7 +107,8 @@ class RedisClusterTasks(task_models.ClusterTasks):
 
         def _grow_cluster():
 
-            db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
+            db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all()
             cluster_head = next(Instance.load(context, db_inst.id)
                                 for db_inst in db_instances
                                 if db_inst.id not in new_instance_ids)

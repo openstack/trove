@@ -190,7 +190,9 @@ class ClusterRootController(DefaultRootController):
                                          cluster_instances)
 
     def _find_cluster_node_ids(self, tenant_id, cluster_id):
-        args = {'tenant_id': tenant_id, 'cluster_id': cluster_id}
+        args = {'tenant_id': tenant_id,
+                'cluster_id': cluster_id,
+                'deleted': False}
         cluster_instances = DBInstance.find_all(**args).all()
         return [db_instance.id for db_instance in cluster_instances]
 

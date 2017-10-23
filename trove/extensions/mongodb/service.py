@@ -33,7 +33,7 @@ class MongoDBRootController(ClusterRootController):
 
     def _find_query_router_ids(self, tenant_id, cluster_id):
         args = {'tenant_id': tenant_id, 'cluster_id': cluster_id,
-                'type': 'query_router'}
+                'deleted': False, 'type': 'query_router'}
         query_router_instances = DBInstance.find_all(**args).all()
         return [db_instance.id for db_instance in query_router_instances]
 
