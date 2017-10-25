@@ -771,6 +771,9 @@ class TestRunner(object):
     def get_instance_host(self, instance_id=None):
         instance_id = instance_id or self.instance_info.id
         instance = self.get_instance(instance_id)
+        if 'ip' not in instance._info:
+            self.fail('Instance %s with status %s does not have an IP'
+                      ' address.' % (instance_id, instance._info['status']))
         host = self.extract_ipv4s(instance._info['ip'])[0]
         self.report.log("Found host %s for instance %s." % (host, instance_id))
         return host
