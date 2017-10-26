@@ -21,6 +21,7 @@ from trove.common.strategies.cluster import strategy
 
 from cinderclient.v2 import client as CinderClient
 from keystoneclient.service_catalog import ServiceCatalog
+from neutronclient.v2_0 import client as NeutronClient
 from novaclient.client import Client
 from swiftclient.client import Connection
 
@@ -153,7 +154,6 @@ def swift_client(context, region_name=None):
 
 
 def neutron_client(context, region_name=None):
-    from neutronclient.v2_0 import client as NeutronClient
     if CONF.neutron_url:
         # neutron endpoint url / publicURL does not include tenant segment
         url = CONF.neutron_url
