@@ -166,6 +166,9 @@ class RedisApp(object):
             args_string = self._join_lists(
                 self._value_converter.to_strings(prop_args), ' ')
             client.config_set(prop_name, args_string)
+            self.admin = self._build_admin_client()
+            self.status = RedisAppStatus(self.admin)
+            client = self.admin
 
     def _join_lists(self, items, sep):
         """Join list items (including items from sub-lists) into a string.
