@@ -179,7 +179,9 @@ function _config_trove_apache_wsgi {
 function configure_trove {
     setup_develop $TROVE_DIR
 
-    configure_nova_kvm
+    # Temporarily disable re-configuring nova_kvm until
+    # more nodes in the pool can support it without crashing.
+    # configure_nova_kvm
     configure_keystone_token_life
 
     # Create the trove conf dir and cache dirs if they don't exist
