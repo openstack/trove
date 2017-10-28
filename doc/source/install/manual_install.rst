@@ -12,34 +12,34 @@ an existing OpenStack environment for development purposes.
 
 This document will not cover:
 
-    - OpenStack setup
-    - Trove service configuration
+- OpenStack setup
+- Trove service configuration
 
 Requirements
 ============
 
 A running OpenStack environment is required, including the following components:
 
-    - Compute (Nova)
-    - Image Service (Glance)
-    - Identity (Keystone)
-    - A networking component (either Neutron or Nova-Network)
-    - If you want to provision datastores on block-storage volumes, you also will need Block Storage (Cinder)
-    - If you want to do backup/restore and replication, you will also need Object Storage (Swift)
-    - An environment with a freshly installed Ubuntu 14.04 LTS to run Trove services.
-      This will be referred to as "local environment"
-    - AMQP service (RabbitMQ or QPID)
-    - MySQL (SQLite, PostgreSQL) database for Trove's internal needs, accessible from the local environment
-    - Certain OpenStack services must be accessible from VMs:
-        - Swift
+- Compute (Nova)
+- Image Service (Glance)
+- Identity (Keystone)
+- A networking component (either Neutron or Nova-Network)
+- If you want to provision datastores on block-storage volumes, you also will need Block Storage (Cinder)
+- If you want to do backup/restore and replication, you will also need Object Storage (Swift)
+- An environment with a freshly installed Ubuntu 14.04 LTS to run Trove services.
+  This will be referred to as "local environment"
+- AMQP service (RabbitMQ or QPID)
+- MySQL (SQLite, PostgreSQL) database for Trove's internal needs, accessible from the local environment
+- Certain OpenStack services must be accessible from VMs:
+    - Swift
 
-    - VMs must be accessible from local environment for development/debugging purposes
+- VMs must be accessible from local environment for development/debugging purposes
 
-    - OpenStack services must be accessible directly from the local environment, such as:
-        - Nova
-        - Cinder
-        - Swift
-        - Heat
+- OpenStack services must be accessible directly from the local environment, such as:
+    - Nova
+    - Cinder
+    - Swift
+    - Heat
 
 Installation
 ============
@@ -50,14 +50,14 @@ Gather info
 
 The following information about the existing environment is required:
 
-    - Keystone host and port(s)
-    - OpenStack administrator's username, tenant name and password
-    - Nova URL
-    - Cinder URL
-    - Swift URL
-    - Heat URL
-    - AMQP connection credentials (server URL, user, password)
-    - Trove's controller backend connection string (MySQL, SQLite, PostgreSQL)
+- Keystone host and port(s)
+- OpenStack administrator's username, tenant name and password
+- Nova URL
+- Cinder URL
+- Swift URL
+- Heat URL
+- AMQP connection credentials (server URL, user, password)
+- Trove's controller backend connection string (MySQL, SQLite, PostgreSQL)
 
 --------------------
 Install dependencies
@@ -190,11 +190,11 @@ Prepare Trove configuration files
 
 There are several configuration files for Trove:
 
-    - api-paste.ini and trove.conf — For trove-api service
-    - trove-taskmanager.conf — For trove-taskmanager service
-    - trove-guestagent.conf — For trove-guestagent service
-    - trove-conductor.conf — For trove-conductor service
-    - <datastore_manager>.cloudinit — Userdata for VMs during provisioning
+- api-paste.ini and trove.conf — For trove-api service
+- trove-taskmanager.conf — For trove-taskmanager service
+- trove-guestagent.conf — For trove-guestagent service
+- trove-conductor.conf — For trove-conductor service
+- <datastore_manager>.cloudinit — Userdata for VMs during provisioning
 
 Cloud-init scripts are userdata that is being used for different datastore types like mysql/percona, cassandra, mongodb, redis, couchbase while provisioning new compute instances.
 
@@ -242,7 +242,7 @@ Cloud-init content
 
 Each cloud-init script for Trove-compatible images should contain:
 
-       - Trove installation
+- Trove installation
 
 Custom images with Trove code inside
 ====================================
@@ -254,9 +254,9 @@ Prepare the database
 
 Create the Trove database schema:
 
-  - Connect to the storage backend (MySQL, PostgreSQL)
-  - Create a database called `trove` (this database will be used for storing Trove ORM)
-  - Compose connection string. Example: mysql+pymysql://<user>:<password>@<backend_host>:<backend_port>/<database_name>
+- Connect to the storage backend (MySQL, PostgreSQL)
+- Create a database called `trove` (this database will be used for storing Trove ORM)
+- Compose connection string. Example: mysql+pymysql://<user>:<password>@<backend_host>:<backend_port>/<database_name>
 
 Initialize the database
 =======================
