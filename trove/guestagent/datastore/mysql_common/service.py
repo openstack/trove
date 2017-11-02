@@ -657,9 +657,9 @@ class BaseMySqlApp(object):
         with all privileges similar to the root user.
         """
         LOG.debug("Creating Trove admin user '%s'.", ADMIN_USER_NAME)
-        localhost = "localhost"
+        host = "127.0.0.1"
         g = sql_query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
-                            host=localhost, grant_option=True, clear=password)
+                            host=host, grant_option=True, clear=password)
         t = text(str(g))
         client.execute(t)
         LOG.debug("Trove admin user '%s' created.", ADMIN_USER_NAME)
