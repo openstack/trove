@@ -18,7 +18,7 @@ from trove.common.context import TroveContext
 
 
 class TroveSerializer(messaging.Serializer):
-    """The Trove serializer class that handles class inheritence and base
+    """The Trove serializer class that handles class inheritance and base
        serializers.
     """
 
