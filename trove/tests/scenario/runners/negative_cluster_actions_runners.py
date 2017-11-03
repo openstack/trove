@@ -72,7 +72,7 @@ class NegativeClusterActionsRunner(TestRunner):
 class MongodbNegativeClusterActionsRunner(NegativeClusterActionsRunner):
 
     def run_create_constrained_size_cluster(self):
-        super(NegativeClusterActionsRunner,
+        super(MongodbNegativeClusterActionsRunner,
               self).run_create_constrained_size_cluster(min_nodes=3,
                                                         max_nodes=3)
 
