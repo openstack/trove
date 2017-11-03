@@ -1315,7 +1315,7 @@ class Instance(BuiltInstance):
         overrides = configuration.get_configuration_overrides()
 
         # Always put the instance into RESTART_REQUIRED state after
-        # configuration update. The sate may be released only once (and if)
+        # configuration update. The state may be released only once (and if)
         # the configuration is successfully applied.
         # This ensures that the instance will always be in a consistent state
         # even if the apply never executes or fails.
@@ -1323,9 +1323,9 @@ class Instance(BuiltInstance):
         self.guest.update_overrides(overrides)
         LOG.debug("Configuration has been persisted on the guest.")
 
-        # Configuration has now been persisted on the instance an can be safely
-        # detached. Update our records to reflect this change irrespective of
-        # results of any further operations.
+        # Configuration has now been persisted on the instance and can be
+        # safely attached. Update our records to reflect this change
+        # irrespective of results of any further operations.
         self.update_db(task_status=InstanceTasks.RESTART_REQUIRED,
                        configuration_id=configuration.configuration_id)
 
