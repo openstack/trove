@@ -120,7 +120,7 @@ Install virtualenv, create environment and activate it:
 
     $ pip install virtualenv --user
     $ virtualenv --system-site-packages env
-    $ source env/bin/activate
+    $ . env/bin/activate
 
 Get Trove
 ---------
