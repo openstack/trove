@@ -25,7 +25,7 @@ from trove.guestagent.datastore.experimental.couchdb import (
     manager as couchdb_manager)
 from trove.guestagent.datastore.experimental.couchdb import (
     service as couchdb_service)
-from trove.guestagent import pkg as pkg
+from trove.guestagent import pkg
 from trove.guestagent import volume
 from trove.tests.unittests.guestagent.test_datastore_manager import \
     DatastoreManagerTest

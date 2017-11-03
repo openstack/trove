@@ -26,7 +26,7 @@ from trove.common.i18n import _
 from trove.common.i18n import _LI
 from trove.common import instance as rd_instance
 from trove.common.stream_codecs import PropertiesCodec
-from trove.common import utils as utils
+from trove.common import utils
 from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import guestagent_utils

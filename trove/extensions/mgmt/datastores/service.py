@@ -16,7 +16,7 @@
 from glanceclient import exc as glance_exceptions
 from oslo_log import log as logging
 
-from trove.common import apischema as apischema
+from trove.common import apischema
 from trove.common.auth import admin_context
 from trove.common import exception
 from trove.common import glance_remote

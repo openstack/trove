@@ -26,7 +26,7 @@ from trove.guestagent.datastore.experimental.db2 import (
     manager as db2_manager)
 from trove.guestagent.datastore.experimental.db2 import (
     service as db2_service)
-from trove.guestagent import pkg as pkg
+from trove.guestagent import pkg
 from trove.guestagent import volume
 from trove.tests.unittests.guestagent.test_datastore_manager import \
     DatastoreManagerTest
