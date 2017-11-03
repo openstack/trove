@@ -671,3 +671,9 @@ class DatastoreVersionAlreadyExists(BadRequest):
 class LogAccessForbidden(Forbidden):
 
     message = _("You must be admin to %(action)s log '%(log)s'.")
+
+
+class SlaveOperationNotSupported(TroveError):
+
+    message = _("The '%(operation)s' operation is not supported for slaves in "
+                "replication.")

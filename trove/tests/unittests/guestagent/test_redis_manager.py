@@ -14,6 +14,7 @@
 
 from mock import DEFAULT, MagicMock, Mock, patch
 
+from trove.common import utils as utils
 from trove.guestagent import backup
 from trove.guestagent.common import configuration
 from trove.guestagent.common.configuration import ImportOverrideStrategy
@@ -329,3 +330,26 @@ class RedisGuestAgentManagerTest(DatastoreManagerTest):
         self.manager._get_repl_info = MagicMock(return_value=repl_info)
         self.manager.wait_for_txn(self.context, expected_txn_id)
         self.manager._get_repl_info.assert_any_call()
+
+    @patch.object(configuration.ConfigurationManager, 'apply_system_override')
+    @patch.object(redis_service.RedisApp, 'apply_overrides')
+    @patch.object(utils, 'generate_random_password',
+                  return_value='password')
+    def test_enable_root(self, *mock):
+        root_user = {'_name': '-',
+                     '_password': 'password'}
+
+        result = self.manager.enable_root(self.context)
+        self.assertEqual(root_user, result)
+
+    @patch.object(redis_service.RedisApp, 'disable_root')
+    def test_disable_root(self, disable_root_mock):
+        self.manager.disable_root(self.context)
+        disable_root_mock.assert_any_call()
+
+    @patch.object(redis_service.RedisApp, 'get_auth_password',
+                  return_value="password")
+    def test_get_root_password(self, get_auth_password_mock):
+        result = self.manager.get_root_password(self.context)
+        self.assertTrue(get_auth_password_mock.called)
+        self.assertEqual('password', result)

@@ -1,0 +1,4 @@
+---
+features:
+  - OpenStack Trove now supports enable or disable authentication for Redis
+    datastore via the root-enable and root-disable API's.

@@ -20,6 +20,7 @@ from redis.exceptions import BusyLoadingError, ConnectionError
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common.db.redis.models import RedisRootUser
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
@@ -37,6 +38,7 @@ LOG = logging.getLogger(__name__)
 TIME_OUT = 1200
 CONF = cfg.CONF
 CLUSTER_CFG = 'clustering'
+SYS_OVERRIDES_AUTH = 'auth_password'
 packager = pkg.Package()
 
 
@@ -399,6 +401,31 @@ class RedisApp(object):
                                            'forget', node_id)
         except exception.ProcessExecutionError:
             LOG.exception(_('Error removing node from cluster.'))
+            raise
+
+    def enable_root(self, password=None):
+        if not password:
+            password = utils.generate_random_password()
+        redis_password = RedisRootUser(password=password)
+        try:
+            self.configuration_manager.apply_system_override(
+                {'requirepass': password, 'masterauth': password},
+                change_id=SYS_OVERRIDES_AUTH)
+            self.apply_overrides(
+                self.admin, {'requirepass': password, 'masterauth': password})
+        except exception.TroveError:
+            LOG.exception(_('Error enabling authentication for instance.'))
+            raise
+        return redis_password.serialize()
+
+    def disable_root(self):
+        try:
+            self.configuration_manager.remove_system_override(
+                change_id=SYS_OVERRIDES_AUTH)
+            self.apply_overrides(self.admin,
+                                 {'requirepass': '', 'masterauth': ''})
+        except exception.TroveError:
+            LOG.exception(_('Error disabling authentication for instance.'))
             raise
 
 
