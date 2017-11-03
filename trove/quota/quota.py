@@ -147,6 +147,7 @@ class DbQuotaDriver(object):
 
         overs = [resource for resource in deltas
                  if (int(deltas[resource]) > 0 and
+                     quotas[resource].hard_limit >= 0 and
                      (quota_usages[resource].in_use +
                       quota_usages[resource].reserved +
                       int(deltas[resource])) > quotas[resource].hard_limit)]

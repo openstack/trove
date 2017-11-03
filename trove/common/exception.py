@@ -206,6 +206,12 @@ class OverLimit(TroveError):
                          "rate.")
 
 
+class QuotaLimitTooSmall(TroveError):
+
+    message = _("Quota limit '%(limit)s' for '%(resource)s' is too small"
+                " - must be at least '-1'.")
+
+
 class QuotaExceeded(TroveError):
 
     message = _("Quota exceeded for resources: %(overs)s.")
