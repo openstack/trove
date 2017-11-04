@@ -91,10 +91,6 @@ class InstanceTasks(object):
     BUILDING_ERROR_VOLUME = InstanceTask(0x52, 'BUILDING',
                                          'Build error: Volume.',
                                          is_error=True)
-    BUILDING_ERROR_TIMEOUT_GA = InstanceTask(0x54, 'ERROR',
-                                             'Build error: '
-                                             'guestagent timeout.',
-                                             is_error=True)
     BUILDING_ERROR_SEC_GROUP = InstanceTask(0x53, 'BUILDING',
                                             'Build error: Secgroup '
                                             'or rule.',
@@ -114,10 +110,14 @@ class InstanceTasks(object):
     SHRINKING_ERROR = InstanceTask(0x58, 'SHRINKING',
                                          'Shrinking Cluster Error.',
                                          is_error=True)
-    UPGRADING_ERROR = InstanceTask(0x59, 'UPGRADING',
+    UPGRADING = InstanceTask(0x59, 'UPGRADING', 'Upgrading the instance.')
+    UPGRADING_ERROR = InstanceTask(0x5a, 'UPGRADING',
                                          'Upgrading Cluster Error.',
                                          is_error=True)
-    UPGRADING = InstanceTask(0x59, 'UPGRADING', 'Upgrading the instance.')
+    BUILDING_ERROR_TIMEOUT_GA = InstanceTask(0x5b, 'ERROR',
+                                             'Build error: '
+                                             'guestagent timeout.',
+                                             is_error=True)
 
 # Dissuade further additions at run-time.
 InstanceTask.__init__ = None
