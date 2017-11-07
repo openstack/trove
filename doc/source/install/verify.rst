@@ -38,4 +38,4 @@ Verify operation of the Database service.
           --active --default
 
 #. Create a database `instance
-   <http://docs.openstack.org/user-guide/create_db.html>`_.
+   <https://docs.openstack.org/trove/latest/user/create-db.html>`_.
