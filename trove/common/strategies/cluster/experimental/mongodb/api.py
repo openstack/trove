@@ -152,7 +152,7 @@ class MongoDbCluster(models.Cluster):
                                         configuration_id=None,
                                         cluster_config=configsvr_config,
                                         locality=locality,
-                                        region_name=regions[i])
+                                        region_name=regions[i % num_instances])
 
         for i in range(1, num_mongos + 1):
             instance_name = "%s-%s-%s" % (name, "mongos", str(i))
@@ -167,7 +167,7 @@ class MongoDbCluster(models.Cluster):
                                         configuration_id=None,
                                         cluster_config=mongos_config,
                                         locality=locality,
-                                        region_name=regions[i])
+                                        region_name=regions[i % num_instances])
 
         task_api.load(context, datastore_version.manager).create_cluster(
             db_info.id)
