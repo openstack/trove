@@ -15,6 +15,7 @@
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
+import time
 
 from trove.cluster import models as cluster_models
 from trove.cluster.tasks import ClusterTasks
@@ -101,7 +102,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
                           configuration_id):
         member_config = {"id": db_info.id,
                          "instance_type": "member"}
-        name_index = 1
+        name_index = int(time.time())
         for instance in instances:
             if not instance.get("name"):
                 instance['name'] = "%s-member-%s" % (db_info.name,
