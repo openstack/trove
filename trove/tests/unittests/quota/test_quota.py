@@ -144,6 +144,15 @@ class QuotaControllerTest(trove_testtools.TestCase):
             self.assertEqual(200, result.status)
             self.assertEqual(10, result._data['quotas']['volumes'])
 
+    def test_update_resource_with_invalid_negative_number(self):
+        quota = MagicMock(spec=Quota)
+        with patch.object(DatabaseModelBase, 'find_by', return_value=quota):
+            body = {'quotas': {'instances': -2}}
+            self.assertRaises(exception.QuotaLimitTooSmall,
+                              self.controller.update,
+                              self.req, body, FAKE_TENANT1,
+                              FAKE_TENANT2)
+
 
 class DbQuotaDriverTest(trove_testtools.TestCase):
 
@@ -385,6 +394,34 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
         self.assertEqual(Resource.VOLUMES, usages[Resource.VOLUMES].resource)
         self.assertEqual(0, usages[Resource.VOLUMES].in_use)
         self.assertEqual(0, usages[Resource.VOLUMES].reserved)
+
+    def test_check_quota_with_unlimited_quota(self):
+
+        FAKE_QUOTA_USAGE = [QuotaUsage(id=1,
+                                       tenant_id=FAKE_TENANT1,
+                                       resource=Resource.INSTANCES,
+                                       in_use=1,
+                                       reserved=2),
+                            QuotaUsage(id=2,
+                                       tenant_id=FAKE_TENANT1,
+                                       resource=Resource.VOLUMES,
+                                       in_use=1,
+                                       reserved=1)]
+        FAKE_QUOTAS = [Quota(tenant_id=FAKE_TENANT1,
+                             resource=Resource.INSTANCES,
+                             hard_limit=-1),
+                       Quota(tenant_id=FAKE_TENANT1,
+                             resource=Resource.VOLUMES,
+                             hard_limit=-1)]
+
+        self.mock_quota_result.all = Mock(return_value=FAKE_QUOTAS)
+        self.mock_usage_result.all = Mock(return_value=FAKE_QUOTA_USAGE)
+        QuotaUsage.save = Mock()
+        Reservation.create = Mock()
+
+        delta = {'instances': 2, 'volumes': 3}
+        self.assertIsNone(self.driver.check_quotas(FAKE_TENANT1, resources,
+                                                   delta))
 
     def test_reserve(self):
 
