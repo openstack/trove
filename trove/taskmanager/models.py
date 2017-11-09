@@ -246,11 +246,16 @@ class ClusterTasks(Cluster):
             for instance_id in ids:
                 status = InstanceServiceStatus.find_by(
                     instance_id=instance_id).get_status()
-                if _is_fast_fail_status(status):
+                task_status = DBInstance.find_by(
+                    id=instance_id).get_task_status()
+                if (_is_fast_fail_status(status) or
+                        (task_status == InstanceTasks.BUILDING_ERROR_SERVER)):
                     # if one has failed, no need to continue polling
                     LOG.debug("Instance %(id)s has acquired a fast-fail "
-                              "status %(status)s.", {'id': instance_id,
-                                                     'status': status})
+                              "status %(status)s and"
+                              " task_status %(task_status)s.",
+                              {'id': instance_id, 'status': status,
+                               'task_status': task_status})
                     return True
                 if status != expected_status:
                     # if one is not in the expected state, continue polling
@@ -266,7 +271,10 @@ class ClusterTasks(Cluster):
             for instance_id in ids:
                 status = InstanceServiceStatus.find_by(
                     instance_id=instance_id).get_status()
-                if _is_fast_fail_status(status):
+                task_status = DBInstance.find_by(
+                    id=instance_id).get_task_status()
+                if (_is_fast_fail_status(status) or
+                        (task_status == InstanceTasks.BUILDING_ERROR_SERVER)):
                     failed_instance_ids.append(instance_id)
             return failed_instance_ids
 

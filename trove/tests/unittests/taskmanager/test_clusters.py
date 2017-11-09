@@ -95,21 +95,44 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
                                          datastore_version=mock_dv1)
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
+    @patch.object(DBInstance, 'find_by')
     @patch.object(InstanceServiceStatus, 'find_by')
     @patch('trove.taskmanager.models.LOG')
-    def test_all_instances_ready_bad_status(self, mock_logging,
-                                            mock_find, mock_update):
+    def test_all_instances_ready_with_server_error(self,
+                                                   mock_logging, mock_find,
+                                                   mock_db_find, mock_update):
         (mock_find.return_value.
-         get_status.return_value) = ServiceStatuses.FAILED
+         get_status.return_value) = ServiceStatuses.NEW
+        (mock_db_find.return_value.
+         get_task_status.return_value) = InstanceTasks.BUILDING_ERROR_SERVER
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
         mock_update.assert_called_with(self.cluster_id, None)
         self.assertFalse(ret_val)
 
+    @patch.object(ClusterTasks, 'update_statuses_on_failure')
+    @patch.object(DBInstance, 'find_by')
     @patch.object(InstanceServiceStatus, 'find_by')
-    def test_all_instances_ready(self, mock_find):
+    @patch('trove.taskmanager.models.LOG')
+    def test_all_instances_ready_bad_status(self, mock_logging,
+                                            mock_find, mock_db_find,
+                                            mock_update):
+        (mock_find.return_value.
+         get_status.return_value) = ServiceStatuses.FAILED
+        (mock_db_find.return_value.
+         get_task_status.return_value) = InstanceTasks.NONE
+        ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
+                                                         self.cluster_id)
+        mock_update.assert_called_with(self.cluster_id, None)
+        self.assertFalse(ret_val)
+
+    @patch.object(DBInstance, 'find_by')
+    @patch.object(InstanceServiceStatus, 'find_by')
+    def test_all_instances_ready(self, mock_find, mock_db_find):
         (mock_find.return_value.
          get_status.return_value) = ServiceStatuses.INSTANCE_READY
+        (mock_db_find.return_value.
+         get_task_status.return_value) = InstanceTasks.NONE
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
         self.assertTrue(ret_val)
