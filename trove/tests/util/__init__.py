@@ -35,7 +35,6 @@ from proboscis import SkipTest
 from six.moves.urllib.parse import unquote
 from sqlalchemy import create_engine
 from troveclient.compat import Dbaas
-from troveclient.compat import exceptions
 
 from trove.common import cfg
 from trove.common.utils import import_class
@@ -48,23 +47,6 @@ from trove.tests.util.users import Requirements
 
 WHITE_BOX = test_config.white_box
 CONF = cfg.CONF
-
-
-def assert_http_code(expected_http_code, func, *args, **kwargs):
-    try:
-        rtn_value = func(*args, **kwargs)
-        assert_equal(
-            expected_http_code,
-            200,
-            "Expected the function to return http code %s but instead got "
-            "no error (code 200?)." % expected_http_code)
-        return rtn_value
-    except exceptions.ClientException as ce:
-        assert_equal(
-            expected_http_code,
-            ce.code,
-            "Expected the function to return http code %s but instead got "
-            "code %s." % (expected_http_code, ce.code))
 
 
 def create_client(*args, **kwargs):
