@@ -18,11 +18,12 @@ function build_vm() {
     readonly SSH_DIR=${KEY_DIR:-${HOMEDIR}/.ssh}
     manage_ssh_keys
 
+    ARCH=amd64
     if [ $DISTRO == 'ubuntu' ]; then
         export DIB_RELEASE=$RELEASE
         export DIB_CLOUD_IMAGES=cloud-images.ubuntu.com
-    fi
-    if [ $DISTRO == 'fedora' ]; then
+        ARCH=$(dpkg --print-architecture)
+    elif [ $DISTRO == 'fedora' ]; then
         EXTRA_ELEMENTS=selinux-permissive
     fi
 
@@ -46,7 +47,7 @@ function build_vm() {
     export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
     export DIB_CLOUD_INIT_ETC_HOSTS=true
     local QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
-    disk-image-create -a amd64 -o "${VM}" \
+    disk-image-create -a ${ARCH} -o "${VM}" \
         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-${RELEASE}-guest ${DISTRO}-${RELEASE}-${SERVICE_TYPE}
 }
