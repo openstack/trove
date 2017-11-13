@@ -65,6 +65,21 @@ class TestClusterController(trove_testtools.TestCase):
         self.add_shard = {
             "add_shard": {}
         }
+        self.grow = {
+            "grow": [
+                {"flavorRef": "7"},
+            ]
+        }
+        self.shrink = {
+            "shrink": [
+                {"id": "e89aa5fd-6b0a-436d-a75c-1545d34d5331"},
+            ]
+        }
+        self.upgrade = {
+            "upgrade": {
+                "datastore_version": "2.4.10"
+            }
+        }
 
     def test_get_schema_create(self):
         schema = self.controller.get_schema('create', self.cluster)
@@ -73,9 +88,29 @@ class TestClusterController(trove_testtools.TestCase):
         self.assertTrue('cluster')
 
     def test_get_schema_action_add_shard(self):
-        schema = self.controller.get_schema('add_shard', self.add_shard)
+        schema = self.controller.get_schema('action', self.add_shard)
         self.assertIsNotNone(schema)
         self.assertIn('add_shard', schema['properties'])
+
+    def test_get_schema_action_grow(self):
+        schema = self.controller.get_schema('action', self.grow)
+        self.assertIsNotNone(schema)
+        self.assertIn('grow', schema['properties'])
+
+    def test_get_schema_action_shrink(self):
+        schema = self.controller.get_schema('action', self.shrink)
+        self.assertIsNotNone(schema)
+        self.assertIn('shrink', schema['properties'])
+
+    def test_get_schema_action_upgrade(self):
+        schema = self.controller.get_schema('action', self.upgrade)
+        self.assertIsNotNone(schema)
+        self.assertIn('upgrade', schema['properties'])
+
+    def test_get_schema_action_invalid(self):
+        schema = self.controller.get_schema('action', {'wow': {}})
+        self.assertIsNotNone(schema)
+        self.assertThat(len(schema.keys()), Is(0))
 
     def test_validate_create(self):
         body = self.cluster
@@ -85,7 +120,25 @@ class TestClusterController(trove_testtools.TestCase):
 
     def test_validate_add_shard(self):
         body = self.add_shard
-        schema = self.controller.get_schema('add_shard', body)
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_grow(self):
+        body = self.grow
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_shrink(self):
+        body = self.shrink
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_upgrade(self):
+        body = self.upgrade
+        schema = self.controller.get_schema('action', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
@@ -128,11 +181,8 @@ class TestClusterController(trove_testtools.TestCase):
                       error_messages)
         self.assertIn("locality", error_paths)
 
-    @patch.object(Cluster, 'create')
     @patch.object(datastore_models, 'get_datastore_version')
-    def test_create_clusters_disabled(self,
-                                      mock_get_datastore_version,
-                                      mock_cluster_create):
+    def test_create_clusters_disabled(self, mock_get_datastore_version):
         body = self.cluster
         tenant_id = Mock()
         context = trove_testtools.TroveTestContext(self)

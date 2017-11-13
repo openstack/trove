@@ -259,71 +259,73 @@ cluster = {
             }
         }
     },
-    "add_shard": {
-        "type": "object",
-        "required": ["add_shard"],
-        "additionalProperties": True,
-        "properties": {
-            "add_shard": {
-                "type": "object"
+    "action": {
+        "add_shard": {
+            "type": "object",
+            "required": ["add_shard"],
+            "additionalProperties": True,
+            "properties": {
+                "add_shard": {
+                    "type": "object"
+                }
             }
-        }
-    },
-    "grow": {
-        "type": "object",
-        "required": ["grow"],
-        "additionalProperties": True,
-        "properties": {
-            "grow": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "required": ["flavorRef"],
-                    "additionalProperties": True,
-                    "properties": {
-                        "name": non_empty_string,
-                        "flavorRef": flavorref,
-                        "volume": volume,
-                        "nics": nics,
-                        "availability_zone": non_empty_string,
-                        "modules": module_list,
-                        "related_to": non_empty_string,
-                        "type": non_empty_string,
-                        "region_name": non_empty_string
+        },
+        "grow": {
+            "type": "object",
+            "required": ["grow"],
+            "additionalProperties": True,
+            "properties": {
+                "grow": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["flavorRef"],
+                        "additionalProperties": True,
+                        "properties": {
+                            "name": non_empty_string,
+                            "flavorRef": flavorref,
+                            "volume": volume,
+                            "nics": nics,
+                            "availability_zone": non_empty_string,
+                            "modules": module_list,
+                            "related_to": non_empty_string,
+                            "type": non_empty_string,
+                            "region_name": non_empty_string
+                        }
                     }
                 }
             }
-        }
-    },
-    "shrink": {
-        "type": "object",
-        "required": ["shrink"],
-        "additionalProperties": True,
-        "properties": {
-            "shrink": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "required": ["id"],
-                    "additionalProperties": True,
-                    "properties": {
-                        "id": uuid
+        },
+        "shrink": {
+            "type": "object",
+            "required": ["shrink"],
+            "additionalProperties": True,
+            "properties": {
+                "shrink": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["id"],
+                        "additionalProperties": True,
+                        "properties": {
+                            "id": uuid
+                        }
                     }
                 }
             }
-        }
-    },
-    "upgrade": {
-        "type": "object",
-        "required": ["upgrade"],
-        "additionalProperties": True,
-        "properties": {
-            "upgrade": {
-                "type": "object",
-                "required": ["datastore_version"],
-                "additionalProperties": True,
-                "properties": {
-                    "datastore_version": non_empty_string
+        },
+        "upgrade": {
+            "type": "object",
+            "required": ["upgrade"],
+            "additionalProperties": True,
+            "properties": {
+                "upgrade": {
+                    "type": "object",
+                    "required": ["datastore_version"],
+                    "additionalProperties": True,
+                    "properties": {
+                        "datastore_version": non_empty_string
+                    }
                 }
             }
         }
