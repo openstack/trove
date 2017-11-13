@@ -67,7 +67,7 @@ class GaleraCommonGuestAgentAPI(guest_api.API):
         LOG.debug("Notifying cluster install completion.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("cluster_complete", self.agent_high_timeout,
                           version=version)
 
     def get_cluster_context(self):
@@ -75,7 +75,7 @@ class GaleraCommonGuestAgentAPI(guest_api.API):
         LOG.debug("Getting the cluster context.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_cluster_context", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("get_cluster_context", self.agent_high_timeout,
                           version=version)
 
     def write_cluster_configuration_overrides(self, cluster_configuration):
@@ -84,6 +84,6 @@ class GaleraCommonGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         self._call("write_cluster_configuration_overrides",
-                   guest_api.AGENT_HIGH_TIMEOUT,
+                   self.agent_high_timeout,
                    version=version,
                    cluster_configuration=cluster_configuration)

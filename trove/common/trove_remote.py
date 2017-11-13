@@ -51,4 +51,5 @@ def trove_client(context, region_name=None):
     return client
 
 
-create_trove_client = import_class(CONF.remote_trove_client)
+def create_trove_client(*arg, **kwargs):
+    return import_class(CONF.remote_trove_client)(*arg, **kwargs)

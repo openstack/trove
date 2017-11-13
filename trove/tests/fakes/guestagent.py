@@ -380,5 +380,5 @@ def get_or_create(id):
     return DB[id]
 
 
-def fake_create_guest_client(context, id):
+def fake_create_guest_client(context, id, manager=None):
     return get_or_create(id)

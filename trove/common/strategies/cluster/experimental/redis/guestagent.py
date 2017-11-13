@@ -44,7 +44,7 @@ class RedisGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("get_node_ip",
-                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.agent_high_timeout,
                           version=version)
 
     def get_node_id_for_removal(self):
@@ -52,21 +52,21 @@ class RedisGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("get_node_id_for_removal",
-                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.agent_high_timeout,
                           version=version)
 
     def remove_nodes(self, node_ids):
         LOG.debug("Removing nodes from cluster.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("remove_nodes", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("remove_nodes", self.agent_high_timeout,
                           version=version, node_ids=node_ids)
 
     def cluster_meet(self, ip, port):
         LOG.debug("Joining node to cluster.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("cluster_meet", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("cluster_meet", self.agent_high_timeout,
                           version=version, ip=ip, port=port)
 
     def cluster_addslots(self, first_slot, last_slot):
@@ -74,7 +74,7 @@ class RedisGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("cluster_addslots",
-                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.agent_high_timeout,
                           version=version,
                           first_slot=first_slot, last_slot=last_slot)
 
@@ -82,5 +82,5 @@ class RedisGuestAgentAPI(guest_api.API):
         LOG.debug("Notifying cluster install completion.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("cluster_complete", self.agent_high_timeout,
                           version=version)

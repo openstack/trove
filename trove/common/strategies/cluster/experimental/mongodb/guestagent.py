@@ -22,7 +22,6 @@ from trove.guestagent import api as guest_api
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-ADD_MEMBERS_TIMEOUT = CONF.mongodb.add_members_timeout
 
 
 class MongoDbGuestAgentStrategy(base.BaseGuestAgentStrategy):
@@ -52,7 +51,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
                              'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("add_shard", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("add_shard", self.agent_high_timeout,
                           version=version,
                           replica_set_name=replica_set_name,
                           replica_set_member=replica_set_member)
@@ -62,7 +61,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
             'members': members, 'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("add_members", ADD_MEMBERS_TIMEOUT,
+        return self._call("add_members", CONF.mongodb.add_members_timeout,
                           version=version, members=members)
 
     def add_config_servers(self, config_servers):
@@ -71,7 +70,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
                              'id': self.id})
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("add_config_servers", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("add_config_servers", self.agent_high_timeout,
                           version=version,
                           config_servers=config_servers)
 
@@ -79,28 +78,28 @@ class MongoDbGuestAgentAPI(guest_api.API):
         LOG.debug("Notify regarding cluster install completion")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("cluster_complete", self.agent_high_timeout,
                           version=version)
 
     def get_key(self):
         LOG.debug("Requesting cluster key from guest")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_key", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("get_key", self.agent_low_timeout,
                           version=version)
 
     def prep_primary(self):
         LOG.debug("Preparing member to be primary member.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("prep_primary", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("prep_primary", self.agent_high_timeout,
                           version=version)
 
     def create_admin_user(self, password):
         LOG.debug("Creating admin user")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("create_admin_user", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("create_admin_user", self.agent_high_timeout,
                           version=version, password=password)
 
     def store_admin_password(self, password):
@@ -108,7 +107,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("store_admin_password",
-                          guest_api.AGENT_LOW_TIMEOUT,
+                          self.agent_low_timeout,
                           version=version,
                           password=password)
 
@@ -117,7 +116,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("get_replica_set_name",
-                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.agent_high_timeout,
                           version=version)
 
     def get_admin_password(self):
@@ -125,7 +124,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("get_admin_password",
-                          guest_api.AGENT_LOW_TIMEOUT,
+                          self.agent_low_timeout,
                           version=version)
 
     def is_shard_active(self, replica_set_name):
@@ -133,6 +132,6 @@ class MongoDbGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("is_shard_active",
-                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.agent_high_timeout,
                           version=version,
                           replica_set_name=replica_set_name)

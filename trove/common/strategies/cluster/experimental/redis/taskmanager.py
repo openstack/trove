@@ -26,7 +26,6 @@ import trove.taskmanager.models as task_models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
 
 
 class RedisTaskManagerStrategy(base.BaseTaskManagerStrategy):

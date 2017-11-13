@@ -51,4 +51,5 @@ def glance_client(context, region_name=None):
                   session=session)
 
 
-create_glance_client = import_class(CONF.remote_glance_client)
+def create_glance_client(*arg, **kwargs):
+    return import_class(CONF.remote_glance_client)(*arg, **kwargs)

@@ -81,13 +81,6 @@ from trove import rpc
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-VOLUME_TIME_OUT = CONF.volume_time_out  # seconds.
-DNS_TIME_OUT = CONF.dns_time_out  # seconds.
-RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
-REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
-USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
-
-use_nova_server_volume = CONF.use_nova_server_volume
 
 
 class NotifyMixin(object):
@@ -284,7 +277,7 @@ class ClusterTasks(Cluster):
         try:
             utils.poll_until(lambda: instance_ids,
                              lambda ids: _all_have_status(ids),
-                             sleep_time=USAGE_SLEEP_TIME,
+                             sleep_time=CONF.usage_sleep_time,
                              time_out=CONF.usage_timeout)
         except PollTimeOut:
             LOG.exception(_("Timed out while waiting for all instances "
@@ -439,7 +432,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         error_details = ''
         try:
             utils.poll_until(self._service_is_active,
-                             sleep_time=USAGE_SLEEP_TIME,
+                             sleep_time=CONF.usage_sleep_time,
                              time_out=timeout)
             LOG.info(_("Created instance %s successfully."), self.id)
             TroveInstanceCreate(instance=self,
@@ -460,7 +453,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             if error_message:
                 inst_models.save_instance_fault(
                     self.id, error_message, error_details,
-                    skip_delta=USAGE_SLEEP_TIME + 1)
+                    skip_delta=CONF.usage_sleep_time + 1)
 
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
@@ -488,7 +481,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
-        if use_nova_server_volume:
+        if CONF.use_nova_server_volume:
             volume_info = self._create_server_volume(
                 flavor['id'],
                 image_id,
@@ -862,7 +855,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             lambda: volume_client.volumes.get(volume_ref.id),
             lambda v_ref: v_ref.status in ['available', 'error'],
             sleep_time=2,
-            time_out=VOLUME_TIME_OUT)
+            time_out=CONF.volume_time_out)
 
         v_ref = volume_client.volumes.get(volume_ref.id)
         if v_ref.status in ['error']:
@@ -973,7 +966,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     raise TroveError(status=server.status)
 
             utils.poll_until(get_server, ip_is_available,
-                             sleep_time=1, time_out=DNS_TIME_OUT)
+                             sleep_time=1, time_out=CONF.dns_time_out)
             server = self.nova_client.servers.get(
                 self.db_info.compute_instance_id)
             self.db_info.addresses = server.addresses
@@ -1815,7 +1808,7 @@ class ResizeActionBase(object):
         utils.poll_until(
             self._guest_is_awake,
             sleep_time=2,
-            time_out=RESIZE_TIME_OUT)
+            time_out=CONF.resize_time_out)
 
     def _assert_nova_status_is_ok(self):
         # Make sure Nova thinks things went well.
@@ -1833,7 +1826,7 @@ class ResizeActionBase(object):
         utils.poll_until(
             self._datastore_is_online,
             sleep_time=2,
-            time_out=RESIZE_TIME_OUT)
+            time_out=CONF.resize_time_out)
 
     def _assert_datastore_is_offline(self):
         # Tell the guest to turn off MySQL, and ensure the status becomes
@@ -1842,7 +1835,7 @@ class ResizeActionBase(object):
         utils.poll_until(
             self._datastore_is_offline,
             sleep_time=2,
-            time_out=RESIZE_TIME_OUT)
+            time_out=CONF.resize_time_out)
 
     def _assert_processes_are_ok(self):
         """Checks the procs; if anything is wrong, reverts the operation."""
@@ -1939,7 +1932,7 @@ class ResizeActionBase(object):
         utils.poll_until(
             update_server_info,
             sleep_time=2,
-            time_out=RESIZE_TIME_OUT)
+            time_out=CONF.resize_time_out)
 
     def _wait_for_revert_nova_action(self):
         # Wait for the server to return to ACTIVE after revert.
@@ -1950,7 +1943,7 @@ class ResizeActionBase(object):
         utils.poll_until(
             update_server_info,
             sleep_time=2,
-            time_out=REVERT_TIME_OUT)
+            time_out=CONF.revert_time_out)
 
 
 class ResizeAction(ResizeActionBase):

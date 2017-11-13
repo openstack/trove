@@ -172,9 +172,25 @@ def neutron_client(context, region_name=None):
     return client
 
 
-create_dns_client = import_class(CONF.remote_dns_client)
-create_guest_client = import_class(CONF.remote_guest_client)
-create_nova_client = import_class(CONF.remote_nova_client)
-create_swift_client = import_class(CONF.remote_swift_client)
-create_cinder_client = import_class(CONF.remote_cinder_client)
-create_neutron_client = import_class(CONF.remote_neutron_client)
+def create_dns_client(*arg, **kwargs):
+    return import_class(CONF.remote_dns_client)(*arg, **kwargs)
+
+
+def create_guest_client(*arg, **kwargs):
+    return import_class(CONF.remote_guest_client)(*arg, **kwargs)
+
+
+def create_nova_client(*arg, **kwargs):
+    return import_class(CONF.remote_nova_client)(*arg, **kwargs)
+
+
+def create_swift_client(*arg, **kwargs):
+    return import_class(CONF.remote_swift_client)(*arg, **kwargs)
+
+
+def create_cinder_client(*arg, **kwargs):
+    return import_class(CONF.remote_cinder_client)(*arg, **kwargs)
+
+
+def create_neutron_client(*arg, **kwargs):
+    return import_class(CONF.remote_neutron_client)(*arg, **kwargs)

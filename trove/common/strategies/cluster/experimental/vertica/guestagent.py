@@ -45,7 +45,7 @@ class VerticaGuestAgentAPI(guest_api.API):
         LOG.debug("Getting public keys for user: %s.", user)
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("get_public_keys", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("get_public_keys", self.agent_high_timeout,
                           version=version, user=user)
 
     def authorize_public_keys(self, user, public_keys):
@@ -53,7 +53,7 @@ class VerticaGuestAgentAPI(guest_api.API):
         version = guest_api.API.API_BASE_VERSION
 
         return self._call("authorize_public_keys",
-                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.agent_high_timeout,
                           version=version,
                           user=user, public_keys=public_keys)
 
@@ -89,5 +89,5 @@ class VerticaGuestAgentAPI(guest_api.API):
         LOG.debug("Notifying cluster install completion.")
         version = guest_api.API.API_BASE_VERSION
 
-        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("cluster_complete", self.agent_high_timeout,
                           version=version)
