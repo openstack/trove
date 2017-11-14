@@ -681,7 +681,7 @@ class CreateInstance(object):
         instance_info.dbaas_datastore = CONFIG.dbaas_datastore
         instance_info.dbaas_datastore_version = CONFIG.dbaas_datastore_version
         if VOLUME_SUPPORT:
-            instance_info.volume = {'size': CONFIG.get('trove_volume_size', 1)}
+            instance_info.volume = {'size': CONFIG.get('trove_volume_size', 2)}
         else:
             instance_info.volume = None
 

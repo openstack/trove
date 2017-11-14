@@ -351,7 +351,8 @@ class TestReplication(trove_testtools.TestCase):
             InstanceTasks.NONE,
             id=str(uuid.uuid4()),
             name="TestMasterInstance",
-            datastore_version_id=self.datastore_version.id)
+            datastore_version_id=self.datastore_version.id,
+            volume_size=2)
         self.master.set_task_status(InstanceTasks.NONE)
         self.master.save()
         self.master_status = InstanceServiceStatus(
@@ -381,7 +382,7 @@ class TestReplication(trove_testtools.TestCase):
         self.assertRaises(exception.UnprocessableEntity,
                           Instance.create,
                           None, 'name', 1, "UUID", [], [], self.datastore,
-                          self.datastore_version, 1,
+                          self.datastore_version, 2,
                           None, slave_of_id=self.master.id)
 
     @patch('trove.instance.models.LOG')
@@ -389,7 +390,7 @@ class TestReplication(trove_testtools.TestCase):
         self.assertRaises(exception.NotFound,
                           Instance.create,
                           None, 'name', 1, "UUID", [], [], self.datastore,
-                          self.datastore_version, 1,
+                          self.datastore_version, 2,
                           None, slave_of_id=str(uuid.uuid4()))
 
     def test_create_replica_from_replica(self):
@@ -406,13 +407,13 @@ class TestReplication(trove_testtools.TestCase):
         self.replica_info.save()
         self.assertRaises(exception.Forbidden, Instance.create,
                           None, 'name', 2, "UUID", [], [], self.datastore,
-                          self.datastore_version, 1,
+                          self.datastore_version, 2,
                           None, slave_of_id=self.replica_info.id)
 
     def test_create_replica_with_users(self):
         self.users.append({"name": "testuser", "password": "123456"})
         self.assertRaises(exception.ReplicaCreateWithUsersDatabasesError,
-                          Instance.create, None, 'name', 1, "UUID", [],
+                          Instance.create, None, 'name', 2, "UUID", [],
                           self.users, self.datastore, self.datastore_version,
                           1, None, slave_of_id=self.master.id)
 
@@ -421,8 +422,15 @@ class TestReplication(trove_testtools.TestCase):
         self.assertRaises(exception.ReplicaCreateWithUsersDatabasesError,
                           Instance.create, None, 'name', 1, "UUID",
                           self.databases, [], self.datastore,
-                          self.datastore_version, 1, None,
+                          self.datastore_version, 2, None,
                           slave_of_id=self.master.id)
+
+    def test_replica_volume_size_smaller_than_master(self):
+        self.assertRaises(exception.Forbidden,
+                          Instance.create,
+                          None, 'name', 1, "UUID", [], [], self.datastore,
+                          self.datastore_version, 1,
+                          None, slave_of_id=self.master.id)
 
 
 def trivial_key_function(id):
