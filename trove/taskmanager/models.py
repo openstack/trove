@@ -337,7 +337,8 @@ class ClusterTasks(Cluster):
         cluster_notification = context.notification
         request_info = cluster_notification.serialize(context)
         try:
-            node_db_inst = DBInstance.find_all(cluster_id=cluster_id).all()
+            node_db_inst = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all()
             for index, db_inst in enumerate(node_db_inst):
                 if index > 0:
                     LOG.debug(
@@ -381,7 +382,8 @@ class ClusterTasks(Cluster):
         cluster_notification = context.notification
         request_info = cluster_notification.serialize(context)
         try:
-            for db_inst in DBInstance.find_all(cluster_id=cluster_id).all():
+            for db_inst in DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all():
                 instance = BuiltInstanceTasks.load(
                     context, db_inst.id)
                 _upgrade_cluster_instance(instance)

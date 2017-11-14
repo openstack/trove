@@ -116,7 +116,8 @@ class CassandraClusterTasks(task_models.ClusterTasks):
 
     @classmethod
     def find_cluster_node_ids(cls, cluster_id):
-        db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
+        db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                           deleted=False).all()
         return [db_instance.id for db_instance in db_instances]
 
     @classmethod
