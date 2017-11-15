@@ -32,6 +32,7 @@ import sqlalchemy
 
 from trove.common import cfg
 from trove.common import context as trove_context
+from trove.common.db.models import DatastoreUser
 from trove.common.db.mysql import models as mysql_models
 from trove.common.exception import BadRequest
 from trove.common.exception import GuestError
@@ -444,12 +445,10 @@ class MySqlAdminTest(trove_testtools.TestCase):
         db_result = [{"grantee": "'test_user'@'%'", "table_schema": "db1"},
                      {"grantee": "'test_user'@'%'", "table_schema": "db2"},
                      {"grantee": "'test_user'@'%'", "table_schema": "db3"},
+                     {"grantee": "'test_user'@'%'", "table_schema": "db4"},
                      {"grantee": "'test_user1'@'%'", "table_schema": "db1"},
                      {"grantee": "'test_user1'@'%'", "table_schema": "db3"}]
-        user = MagicMock()
-        user.name = "test_user"
-        user.host = "%"
-        user.databases = []
+        user = DatastoreUser(name='test_user', host='%')
         expected = ("SELECT grantee, table_schema FROM "
                     "information_schema.SCHEMA_PRIVILEGES WHERE privilege_type"
                     " != 'USAGE' GROUP BY grantee, table_schema;")
@@ -457,7 +456,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
         with patch.object(self.mock_client, 'execute',
                           return_value=db_result) as mock_execute:
             self.mySqlAdmin._associate_dbs(user)
-            self.assertEqual(3, len(user.databases))
+            self.assertEqual(4, len(user.databases))
             self._assert_execute_call(expected, mock_execute)
 
     def _assert_execute_call(self, expected_query, execute_mock, call_idx=0):
