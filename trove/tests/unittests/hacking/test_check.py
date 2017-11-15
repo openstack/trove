@@ -10,7 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.hacking import translation_checks as tc
+from trove.hacking import checks as tc
 from trove.tests.unittests import trove_testtools
 
 
@@ -87,3 +87,11 @@ class HackingTestCase(trove_testtools.TestCase):
         f = tc.check_raised_localized_exceptions
         self.assertLinePasses(f, "raise KeyError('Error text')",
                               'neutron_lib/tests/unit/mytest.py')
+
+    def test_no_basestring(self):
+        self.assertEqual(
+            1,
+            len(list(tc.check_no_basestring("isinstance(x, basestring)"))))
+        self.assertEqual(
+            0,
+            len(list(tc.check_no_basestring("this basestring is good)"))))

@@ -17,6 +17,7 @@ from numbers import Number
 import os
 import re
 import shutil
+import six
 import socket
 import time
 import unittest
@@ -329,7 +330,7 @@ class SetupVolume(VolumeTest):
         device = self.story.client._setup_volume(self.story.context,
                                                 self.story.volume_id,
                                                 self.story.host)
-        if not isinstance(device, basestring):
+        if not isinstance(device, six.string_types):
             self.fail("Expected device to be a string, but instead it was " +
                       str(type(device)) + ".")
         self.story.device_path = device
