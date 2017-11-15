@@ -135,7 +135,9 @@ operating systems are not yet fully supported.
    Receiving objects: 100% (8881/8881), 1.92 MiB | 0 bytes/s, done.
    Resolving deltas: 100% (4668/4668), done.
    Checking connectivity... done.
-   user@machine:/opt/stack$
+   user@machine:/opt/stack$ cd diskimage-builder
+   user@machine:/opt/stack/diskimage-builder$ sudo pip install -r requirements.txt
+   user@machine:/opt/stack/diskimage-builder$ sudo python setup.py install
 
 
 Ensure that you have qemu-img [2]_ and kpartx installed.
@@ -146,7 +148,7 @@ takes the following options:
 
 .. code-block:: bash
 
-    user@machine:/opt/stack/diskimage-builder$ ./bin/disk-image-create -h
+    user@machine:/opt/stack/diskimage-builder$ disk-image-create -h
     Usage: disk-image-create [OPTION]... [ELEMENT]...
 
     Options:
@@ -229,10 +231,10 @@ This command will create a guest image usable by Trove:
     export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
     export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
     export DIB_CLOUD_INIT_ETC_HOSTS=true
-    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && echo "--qemu-img-options compat=0.10")
+    local QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
 
     # run disk-image-create that actually causes the image to be built
-    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
+    $disk-image-create -a amd64 -o "${VM}" \
         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
 
@@ -559,10 +561,10 @@ build_vm().  We look at this section of code in detail below.
     export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
     export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
     export DIB_CLOUD_INIT_ETC_HOSTS=true
-    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && echo "--qemu-img-options compat=0.10")
+    local QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
 
     # run disk-image-create that actually causes the image to be built
-    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
+    $disk-image-create -a amd64 -o "${VM}" \
         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
 
