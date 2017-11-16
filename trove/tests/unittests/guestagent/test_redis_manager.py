@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import DEFAULT, MagicMock, patch
+from mock import DEFAULT, MagicMock, Mock, patch
 
 from trove.guestagent import backup
 from trove.guestagent.common import configuration
@@ -177,6 +177,9 @@ class RedisGuestAgentManagerTest(DatastoreManagerTest):
                                           'dbfilename': 'dump.rdb'}))
     @patch.object(operating_system, 'chown')
     @patch.object(operating_system, 'create_directory')
+    @patch.object(redis_service.RedisApp,
+                  'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_create_backup(self, *mocks):
         backup.backup = MagicMock(return_value=None)
         RedisManager().create_backup(self.context, 'backup_id_123')

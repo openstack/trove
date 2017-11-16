@@ -26,6 +26,7 @@ from trove.guestagent.datastore.experimental.cassandra import (
 )
 from trove.guestagent.datastore.experimental.db2 import (
     service as db2_service)
+from trove.guestagent.datastore.experimental.redis.service import RedisApp
 from trove.guestagent.strategies.backup import base as backupBase
 from trove.guestagent.strategies.backup.experimental import db2_impl
 from trove.guestagent.strategies.backup.experimental.postgresql_impl \
@@ -401,6 +402,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   mock.Mock(return_value={'dir': '/var/lib/redis',
                                           'dbfilename': 'dump.rdb'}))
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_backup_encrypted_redisbackup_command(self, *mocks):
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_REDIS_CLS)
@@ -414,6 +417,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   mock.Mock(return_value={'dir': '/var/lib/redis',
                                           'dbfilename': 'dump.rdb'}))
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_backup_not_encrypted_redisbackup_command(self, *mocks):
         backupBase.BackupRunner.is_encrypted = False
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
@@ -428,6 +433,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                                           'dbfilename': 'dump.rdb'}))
     @patch.object(operating_system, 'chown')
     @patch.object(operating_system, 'create_directory')
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_restore_decrypted_redisbackup_command(self, *mocks):
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_REDIS_CLS)
@@ -440,6 +447,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                                           'dbfilename': 'dump.rdb'}))
     @patch.object(operating_system, 'chown')
     @patch.object(operating_system, 'create_directory')
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_restore_encrypted_redisbackup_command(self, *mocks):
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_REDIS_CLS)
@@ -851,6 +860,8 @@ class RedisBackupTests(trove_testtools.TestCase):
     def tearDown(self):
         super(RedisBackupTests, self).tearDown()
 
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_backup_success(self):
         with self.backup_runner(12345):
             pass
@@ -859,6 +870,8 @@ class RedisBackupTests(trove_testtools.TestCase):
         self.backup_runner_mocks['_run'].assert_called_once_with()
         self.backup_runner_mocks['_run_post_backup'].assert_called_once_with()
 
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_backup_failed_due_to_run_backup(self):
         self.backup_runner_mocks['_run'].configure_mock(
             side_effect=exception.TroveError('test')
@@ -873,7 +886,8 @@ class RedisBackupTests(trove_testtools.TestCase):
 
 
 class RedisRestoreTests(trove_testtools.TestCase):
-
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def setUp(self):
         super(RedisRestoreTests, self).setUp()
         self.conf_man_patch = patch.object(

@@ -28,6 +28,7 @@ from trove.conductor import api as conductor_api
 from trove.guestagent.backup import backupagent
 from trove.guestagent.common import configuration
 from trove.guestagent.common.configuration import ImportOverrideStrategy
+from trove.guestagent.datastore.experimental.redis.service import RedisApp
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.backup.experimental import couchbase_impl
@@ -283,6 +284,8 @@ class BackupAgentTest(trove_testtools.TestCase):
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   Mock(return_value={'dir': '/var/lib/redis',
                                      'dbfilename': 'dump.rdb'}))
+    @patch.object(RedisApp, 'get_config_command_name',
+                  Mock(return_value='fakeconfig'))
     def test_backup_impl_RedisBackup(self, *mocks):
         netutils.get_my_ipv4 = Mock(return_value="1.1.1.1")
         redis_backup = redis_impl.RedisBackup('redisbackup', extra_opts='')

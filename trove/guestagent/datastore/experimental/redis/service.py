@@ -107,8 +107,10 @@ class RedisApp(object):
     def _build_admin_client(self):
         password = self.get_configuration_property('requirepass')
         socket = self.get_configuration_property('unixsocket')
+        cmd = self.get_config_command_name()
 
-        return RedisAdmin(password=password, unix_socket_path=socket)
+        return RedisAdmin(password=password, unix_socket_path=socket,
+                          config_cmd=cmd)
 
     def install_if_needed(self, packages):
         """
@@ -406,10 +408,10 @@ class RedisAdmin(object):
 
     DEFAULT_CONFIG_CMD = 'CONFIG'
 
-    def __init__(self, password=None, unix_socket_path=None):
+    def __init__(self, password=None, unix_socket_path=None, config_cmd=None):
         self.__client = redis.StrictRedis(
             password=password, unix_socket_path=unix_socket_path)
-        self.__config_cmd_name = self.DEFAULT_CONFIG_CMD
+        self.__config_cmd_name = config_cmd or self.DEFAULT_CONFIG_CMD
 
     def set_config_command_name(self, name):
         """Set name of the 'CONFIG' command or None for default.
