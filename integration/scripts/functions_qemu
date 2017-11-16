@@ -3,6 +3,13 @@
 # Additional functions that would mostly just pertain to a Ubuntu + Qemu setup
 #
 
+# tmpfs dedicates half the available RAM to an internal cache to speed up
+# image building. This can lead to failures when the data doesn't fit into
+# the cache, for example when compiling large programs.  This flag allows
+# tmpfs to be turned off by the caller by setting USE_TMPF=false
+
+USE_TMPFS=${USE_TMPFS:-true}
+
 function build_vm() {
     exclaim "Actually building the image, this can take up to 15 minutes"
 
@@ -27,6 +34,15 @@ function build_vm() {
         EXTRA_ELEMENTS=selinux-permissive
     fi
 
+    case "$USE_TMPFS" in
+       false|FALSE|False|no|NO|n|N)
+           TMPFS_ARGS='--no-tmpfs'
+           ;;
+       *)
+           TMPFS_ARGS=''
+           ;;
+    esac
+
     export HOST_USERNAME
     export HOST_SCP_USERNAME
     export GUEST_USERNAME
@@ -47,7 +63,7 @@ function build_vm() {
     export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
     export DIB_CLOUD_INIT_ETC_HOSTS=true
     local QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
-    disk-image-create -a ${ARCH} -o "${VM}" \
+    disk-image-create ${TMPFS_ARGS} -a ${ARCH} -o "${VM}" \
         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-${RELEASE}-guest ${DISTRO}-${RELEASE}-${SERVICE_TYPE}
 }
