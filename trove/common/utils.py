@@ -228,7 +228,7 @@ def get_id_from_href(href):
 
 
 def execute_with_timeout(*args, **kwargs):
-    time = kwargs.pop('timeout', 30)
+    time = kwargs.pop('timeout', CONF.command_process_timeout)
     log_output_on_error = kwargs.pop('log_output_on_error', False)
 
     timeout = Timeout(time)

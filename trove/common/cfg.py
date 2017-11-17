@@ -168,6 +168,9 @@ common_opts = [
     cfg.IntOpt('agent_replication_snapshot_timeout', default=36000,
                help='Maximum time (in seconds) to wait for taking a Guest '
                     'Agent replication snapshot.'),
+    cfg.IntOpt('command_process_timeout', default=30,
+               help='Maximum time (in seconds) to wait for out of process '
+                    'commands to complete.'),
     # The guest_id opt definition must match the one in cmd/guest.py
     cfg.StrOpt('guest_id', default=None, help="ID of the Guest Instance."),
     cfg.IntOpt('state_change_wait_time', default=60 * 10,
