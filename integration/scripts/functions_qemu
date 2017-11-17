@@ -10,6 +10,12 @@
 
 USE_TMPFS=${USE_TMPFS:-true}
 
+# Use the latest distro provided hardware enablement stack which is required
+# by some platforms (ppc64el) for nested virtualization.  Trovestack runs a
+# VM (db guest image) in a VM (OpenStack+Trove)
+
+DIB_USE_HWE_KERNEL=${DIB_USE_HWE_KERNEL:-true}
+
 function build_vm() {
     exclaim "Actually building the image, this can take up to 15 minutes"
 
@@ -29,6 +35,7 @@ function build_vm() {
     if [ $DISTRO == 'ubuntu' ]; then
         export DIB_RELEASE=$RELEASE
         export DIB_CLOUD_IMAGES=cloud-images.ubuntu.com
+        export DIB_USE_HWE_KERNEL
         ARCH=$(dpkg --print-architecture)
     elif [ $DISTRO == 'fedora' ]; then
         EXTRA_ELEMENTS=selinux-permissive
