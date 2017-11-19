@@ -68,7 +68,7 @@ function create_trove_accounts {
 # restart apache.
 function _cleanup_trove_apache_wsgi {
     sudo rm -rf $TROVE_WSGI_DIR
-    sudo rm -f ${apache_site_config_for trove-api}
+    sudo rm -f $(apache_site_config_for trove-api)
     restart_apache_server
 }
 
