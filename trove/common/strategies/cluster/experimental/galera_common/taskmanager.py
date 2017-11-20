@@ -86,8 +86,7 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                          in instance_ids]
 
             cluster_ips = [self.get_ip(instance) for instance in instances]
-            instance_guests = [self.get_guest(instance)
-                               for instance in instances]
+            instance_guests = []
 
             # Create replication user and password for synchronizing the
             # galera cluster
@@ -108,13 +107,12 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                 # password in the my.cnf will be wrong after the joiner
                 # instances syncs with the donor instance.
                 admin_password = str(utils.generate_random_password())
-                for guest in instance_guests:
-                    guest.reset_admin_password(admin_password)
 
                 bootstrap = True
                 for instance in instances:
                     guest = self.get_guest(instance)
-
+                    instance_guests.append(guest)
+                    guest.reset_admin_password(admin_password)
                     # render the conf.d/cluster.cnf configuration
                     cluster_configuration = self._render_cluster_config(
                         context,
