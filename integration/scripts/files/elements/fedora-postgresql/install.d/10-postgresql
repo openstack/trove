@@ -14,6 +14,8 @@ vm.overcommit_memory=0
 _EOF_
 
 cat > "/etc/rc.local" << _EOF_
+#!/bin/bash
+
 # See 'http://www.postgresql.org/docs/9.3/static/kernel-resources.html'
 # Disable Linux kernel transparent huge pages. This feature is not supported by
 # by Postgres 9.3 and may negatively impact performance of the database.

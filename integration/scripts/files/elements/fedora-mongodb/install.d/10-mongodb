@@ -7,6 +7,8 @@ set -e
 set -o xtrace
 
 cat > "/etc/rc.local" << _EOF_
+#!/bin/bash
+
 # Make sure to disable Linux kernel feature transparent huge pages,
 # it will affect greatly both memory usage and latency in a negative way.
 # See: http://docs.mongodb.org/manual/tutorial/transparent-huge-pages/
