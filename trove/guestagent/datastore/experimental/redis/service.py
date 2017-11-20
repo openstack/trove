@@ -229,9 +229,10 @@ class RedisApp(object):
         """Get current name of the 'CONFIG' command.
         """
         renamed_cmds = self.configuration_manager.get_value('rename-command')
-        for name_pair in renamed_cmds:
-            if name_pair[0] == 'CONFIG':
-                return name_pair[1]
+        if renamed_cmds:
+            for name_pair in renamed_cmds:
+                if name_pair[0] == 'CONFIG':
+                    return name_pair[1]
 
         return None
 
