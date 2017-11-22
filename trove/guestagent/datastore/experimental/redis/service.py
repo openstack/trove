@@ -112,6 +112,11 @@ class RedisApp(object):
         return RedisAdmin(password=password, unix_socket_path=socket,
                           config_cmd=cmd)
 
+    def _refresh_admin_client(self):
+        self.admin = self._build_admin_client()
+        self.status.set_client(self.admin)
+        return self.admin
+
     def install_if_needed(self, packages):
         """
         Install redis if needed do nothing if it is already installed.
@@ -146,6 +151,10 @@ class RedisApp(object):
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
             self.configuration_manager.apply_user_override(overrides)
+            # apply requirepass at runtime
+            if 'requirepass' in overrides:
+                self.admin.config_set('requirepass', overrides['requirepass'])
+                self._refresh_admin_client()
 
     def apply_overrides(self, client, overrides):
         """Use the 'CONFIG SET' command to apply configuration at runtime.
@@ -167,10 +176,9 @@ class RedisApp(object):
         for prop_name, prop_args in overrides.items():
             args_string = self._join_lists(
                 self._value_converter.to_strings(prop_args), ' ')
-            client.config_set(prop_name, args_string)
-            self.admin = self._build_admin_client()
-            self.status = RedisAppStatus(self.admin)
-            client = self.admin
+            # requirepass applied at runtime during update_overrides
+            if prop_name != "requirepass":
+                client.config_set(prop_name, args_string)
 
     def _join_lists(self, items, sep):
         """Join list items (including items from sub-lists) into a string.
