@@ -63,8 +63,8 @@ class TestManager(trove_testtools.TestCase):
                 result = self.manager._most_current_replica(master, None)
                 assert_equal(result, selected_master)
 
-        with self.assertRaisesRegexp(TroveError,
-                                     'not all replicating from same'):
+        with self.assertRaisesRegex(TroveError,
+                                    'not all replicating from same'):
             test_case([['a', '2a99e-32bf', 2], ['b', '2a', 1]], None)
 
         test_case([['a', '2a99e-32bf', 2]], 'a')
@@ -158,9 +158,9 @@ class TestManager(trove_testtools.TestCase):
         with patch.object(models.BuiltInstanceTasks, 'load',
                           side_effect=[self.mock_slave1, self.mock_old_master,
                                        self.mock_slave2]):
-            self.assertRaisesRegexp(RuntimeError, 'Error',
-                                    self.manager.promote_to_replica_source,
-                                    self.context, 'some-inst-id')
+            self.assertRaisesRegex(RuntimeError, 'Error',
+                                   self.manager.promote_to_replica_source,
+                                   self.context, 'some-inst-id')
 
     @patch('trove.taskmanager.manager.LOG')
     def test_error_demote_replication_master_promote_to_replica_source(
@@ -185,9 +185,9 @@ class TestManager(trove_testtools.TestCase):
         with patch.object(models.BuiltInstanceTasks, 'load',
                           side_effect=[self.mock_master, self.mock_slave1,
                                        self.mock_slave2]):
-            self.assertRaisesRegexp(RuntimeError, 'Error',
-                                    self.manager.eject_replica_source,
-                                    self.context, 'some-inst-id')
+            self.assertRaisesRegex(RuntimeError, 'Error',
+                                   self.manager.eject_replica_source,
+                                   self.context, 'some-inst-id')
 
     @patch.object(Backup, 'delete')
     @patch.object(models.BuiltInstanceTasks, 'load')
@@ -225,7 +225,7 @@ class TestManager(trove_testtools.TestCase):
                           Mock(), 'some-master-id', None, None, None, None)
 
     def test_AttributeError_create_instance(self):
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             AttributeError, 'Cannot create multiple non-replica instances.',
             self.manager.create_instance, self.context, ['id1', 'id2'],
             Mock(), Mock(), Mock(), None, None, 'mysql', 'mysql-server', 2,

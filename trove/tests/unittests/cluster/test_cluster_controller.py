@@ -418,10 +418,10 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
         cluster.datastore_version.manager = 'test_dsv'
         mock_cluster_load.return_value = cluster
 
-        self.assertRaisesRegexp(exception.TroveError,
-                                'should have exactly one action specified',
-                                self.controller.action, req,
-                                body, tenant_id, cluster_id)
+        self.assertRaisesRegex(exception.TroveError,
+                               'should have exactly one action specified',
+                               self.controller.action, req,
+                               body, tenant_id, cluster_id)
 
     @patch.object(models.Cluster, 'load')
     def test_controller_action_no_strategy(self,
@@ -442,10 +442,10 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
                           datastore_version='test_dsv')
         mock_cluster_load.return_value = cluster
 
-        self.assertRaisesRegexp(exception.TroveError,
-                                'Action do_stuff2 not supported',
-                                self.controller.action, req,
-                                body, tenant_id, cluster_id)
+        self.assertRaisesRegex(exception.TroveError,
+                               'Action do_stuff2 not supported',
+                               self.controller.action, req,
+                               body, tenant_id, cluster_id)
 
     @patch.object(strategy, 'load_api_strategy')
     @patch.object(models.Cluster, 'load')

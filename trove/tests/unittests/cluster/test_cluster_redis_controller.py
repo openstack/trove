@@ -124,12 +124,12 @@ class TestClusterController(trove_testtools.TestCase):
         datastore_version.manager = 'mysql'
         mock_get_datastore_version.return_value = (Mock(), datastore_version)
 
-        self.assertRaisesRegexp(exception.ClusterDatastoreNotSupported,
-                                "Clusters not supported for",
-                                self.controller.create,
-                                req,
-                                body,
-                                tenant_id)
+        self.assertRaisesRegex(exception.ClusterDatastoreNotSupported,
+                               "Clusters not supported for",
+                               self.controller.create,
+                               req,
+                               body,
+                               tenant_id)
 
     @patch.object(Cluster, 'create')
     @patch.object(utils, 'get_id_from_href')
@@ -307,12 +307,12 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
         datastore_version.manager = 'redis'
         mock_get_datastore_version.return_value = (Mock(), datastore_version)
 
-        self.assertRaisesRegexp(exception.TroveError,
-                                "Clusters not supported for",
-                                self.controller.create,
-                                req,
-                                body,
-                                tenant_id)
+        self.assertRaisesRegex(exception.TroveError,
+                               "Clusters not supported for",
+                               self.controller.create,
+                               req,
+                               body,
+                               tenant_id)
 
     @patch.object(views.ClusterView, 'data', return_value={})
     @patch.object(datastore_models, 'get_datastore_version')

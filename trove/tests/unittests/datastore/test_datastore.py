@@ -36,13 +36,13 @@ class TestDatastore(TestDatastoreBase):
     @patch.object(datastore_models, 'CONF')
     def test_create_failure_with_datastore_default(self, mock_conf):
         mock_conf.default_datastore = 'bad_ds'
-        self.assertRaisesRegexp(exception.DatastoreDefaultDatastoreNotFound,
-                                "Default datastore 'bad_ds' cannot be found",
-                                datastore_models.get_datastore_version)
-        self.assertRaisesRegexp(exception.DatastoreNotFound,
-                                "Datastore 'my_ds' cannot be found",
-                                datastore_models.get_datastore_version,
-                                'my_ds')
+        self.assertRaisesRegex(exception.DatastoreDefaultDatastoreNotFound,
+                               "Default datastore 'bad_ds' cannot be found",
+                               datastore_models.get_datastore_version)
+        self.assertRaisesRegex(exception.DatastoreNotFound,
+                               "Datastore 'my_ds' cannot be found",
+                               datastore_models.get_datastore_version,
+                               'my_ds')
 
     def test_get_datastore_or_version(self):
         # datastore, datastore_version, valid, exception
