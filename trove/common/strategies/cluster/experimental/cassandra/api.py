@@ -125,7 +125,11 @@ class CassandraCluster(models.Cluster):
         # Check requirements against quota.
         num_new_instances = len(instances)
         deltas = {'instances': num_new_instances, 'volumes': req_volume_size}
+        models.assert_homogeneous_cluster(instances)
         check_quotas(context.tenant, deltas)
+
+        # Checking networks are same for the cluster
+        models.validate_instance_nics(context, instances)
 
         # Creating member instances.
         num_instances = len(

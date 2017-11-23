@@ -39,9 +39,14 @@ class ClusterTest(trove_testtools.TestCase):
 
     @patch.object(inst_models.Instance, 'create')
     @patch.object(quota.QUOTAS, 'check_quotas')
+    @patch.object(models, 'assert_homogeneous_cluster')
+    @patch.object(models, 'validate_instance_nics')
     @patch.object(models, 'validate_instance_flavors')
     @patch.object(models, 'get_required_volume_size', return_value=3)
-    def test_create_cluster_instances(self, get_vol_size, _, check_quotas,
+    def test_create_cluster_instances(self, get_vol_size, _,
+                                      mock_validate_nics,
+                                      mock_homogeneous_cluster,
+                                      check_quotas,
                                       inst_create):
         test_instances = [MagicMock(), MagicMock()]
         num_instances = len(test_instances)
