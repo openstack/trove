@@ -30,11 +30,11 @@ from trove.tests.unittests import trove_testtools
 class TestModels(trove_testtools.TestCase):
 
     @patch.object(remote, 'create_nova_client', return_value=MagicMock())
-    def test_validate_instance_flavors(self, create_nove_cli_mock):
+    def test_validate_instance_flavors(self, create_nova_cli_mock):
         patch.object(
-            create_nove_cli_mock.return_value, 'flavors',
+            create_nova_cli_mock.return_value, 'flavors',
             new_callable=PropertyMock(return_value=Mock()))
-        mock_flv = create_nove_cli_mock.return_value.flavors.get.return_value
+        mock_flv = create_nova_cli_mock.return_value.flavors.get.return_value
         mock_flv.ephemeral = 0
 
         test_instances = [{'flavor_id': 1, 'volume_size': 10},
@@ -44,7 +44,7 @@ class TestModels(trove_testtools.TestCase):
                            'region_name': 'work'}]
         models.validate_instance_flavors(Mock(), test_instances,
                                          True, True)
-        create_nove_cli_mock.assert_has_calls([call(ANY, None),
+        create_nova_cli_mock.assert_has_calls([call(ANY, None),
                                                call(ANY, 'home'),
                                                call(ANY, 'work')])
 
