@@ -17,6 +17,8 @@ vm.nr_hugepages=64
 _EOF_
 
 cat > "/etc/rc.local" << _EOF_
+#!/bin/bash
+
 # See 'http://www.postgresql.org/docs/9.4/static/kernel-resources.html'
 # Postgres 9.4 added support for THP. Using huge pages reduces overhead when
 # using large contiguous chunks of memory, like PostgreSQL does.

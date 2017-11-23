@@ -41,6 +41,8 @@ TMPDIR=/tmp JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64 make
 cd
 
 cat > "/etc/rc.local" << _EOF_
+#!/bin/bash
+
 # Vertica requires THP to be turned off
 if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
   echo never > /sys/kernel/mm/transparent_hugepage/defrag

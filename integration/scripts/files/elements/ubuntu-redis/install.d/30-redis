@@ -21,6 +21,8 @@ net.core.somaxconn=1024
 _EOF_
 
 cat > "/etc/rc.local" << _EOF_
+#!/bin/bash
+
 # Make sure to disable Linux kernel feature transparent huge pages,
 # it will affect greatly both memory usage and latency in a negative way.
 if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
