@@ -2,8 +2,8 @@
 Trove
 =====
 
-.. image:: http://governance.openstack.org/badges/trove.svg
-    :target: http://governance.openstack.org/reference/tags/index.html
+.. image:: https://governance.openstack.org/tc/badges/trove.svg
+    :target: https://governance.openstack.org/tc/reference/tags/index.html
 
 Trove is Database as a Service for OpenStack.
 
@@ -16,7 +16,7 @@ If you'd like to run from the master branch, you can clone the git repo:
 
 
 * Wiki: https://wiki.openstack.org/wiki/Trove
-* Developer Docs: http://docs.openstack.org/developer/trove
+* Developer Docs: https://docs.openstack.org/trove/latest/
 
 You can raise bugs here: https://bugs.launchpad.net/trove
 
@@ -28,8 +28,8 @@ References
 ----------
 
 * Installation docs:
-  http://docs.openstack.org/developer/trove/dev/install.html
+  https://docs.openstack.org/trove/latest/install/install.html
 * Manual installation docs:
-  http://docs.openstack.org/developer/trove/dev/manual_install.html
+  https://docs.openstack.org/trove/latest/install/manual_install.html
 * Build guest image:
-  http://docs.openstack.org/developer/trove/dev/building_guest_images.html
+  https://docs.openstack.org/trove/latest/admin/building_guest_images.html
