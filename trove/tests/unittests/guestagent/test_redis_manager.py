@@ -194,6 +194,28 @@ class RedisGuestAgentManagerTest(DatastoreManagerTest):
         self.assertEqual(
             1, mock_replication.backup_required_for_replication.call_count)
 
+    @patch.object(redis_service.RedisApp, 'update_overrides')
+    @patch.object(redis_service.RedisApp, 'remove_overrides')
+    def test_update_overrides(self, remove_config_mock, update_config_mock):
+        self.manager.update_overrides(self.context, 'overrides')
+        remove_config_mock.assert_not_called()
+        update_config_mock.assert_called_once_with(self.context, 'overrides',
+                                                   False)
+
+    @patch.object(redis_service.RedisApp, 'update_overrides')
+    @patch.object(redis_service.RedisApp, 'remove_overrides')
+    def test_update_overrides_with_remove(self, remove_config_mock,
+                                          update_config_mock):
+        self.manager.update_overrides(self.context, 'overrides', True)
+        remove_config_mock.assert_called_once_with()
+        update_config_mock.assert_not_called()
+
+    @patch.object(redis_service.RedisApp, 'apply_overrides')
+    def test_apply_overrides(self, apply_config_mock):
+        self.manager.apply_overrides(self.context, 'overrides')
+        apply_config_mock.assert_called_once_with(self.manager._app.admin,
+                                                  'overrides')
+
     def test_attach_replica(self):
         mock_replication = MagicMock()
         mock_replication.enable_as_slave = MagicMock()
