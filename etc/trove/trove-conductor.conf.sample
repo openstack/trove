@@ -52,7 +52,7 @@ connection = mysql+pymysql://root:e1a2c042c828d3566d0a@localhost/trove
 
 # The RabbitMQ password. (string value)
 # Deprecated group/name - [DEFAULT]/rabbit_password
-rabbit_password=f7999d1955c5014aa32c
+#rabbit_password=f7999d1955c5014aa32c
 
 # The RabbitMQ virtual host. (string value)
 # Deprecated group/name - [DEFAULT]/rabbit_virtual_host

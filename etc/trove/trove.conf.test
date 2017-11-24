@@ -108,7 +108,7 @@ paste_config_file=api-paste.ini.test
 [oslo_messaging_rabbit]
 # AMQP Connection info
 # Deprecated group/name - [DEFAULT]/rabbit_password
-rabbit_password=f7999d1955c5014aa32c
+#rabbit_password=f7999d1955c5014aa32c
 
 
 [mysql]
