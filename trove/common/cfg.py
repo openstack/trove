@@ -371,6 +371,9 @@ common_opts = [
                help="Admin tenant name used to connect to Nova.", secret=True),
     cfg.StrOpt('nova_proxy_admin_user_domain_name', default='Default',
                help="User domain of the admin user used to connect to Nova."),
+    cfg.StrOpt('nova_proxy_admin_project_domain_name', default='Default',
+               help="Project domain of the admin user used to connect to "
+                    "Nova."),
     cfg.StrOpt('network_label_regex', default='^private$',
                help='Regular expression to match Trove network labels.'),
     cfg.StrOpt('ip_regex', default=None,
