@@ -90,6 +90,7 @@ class MongoDbCluster(models.Cluster):
 
         flavor_id = instances[0]['flavor_id']
         volume_size = instances[0].get('volume_size', None)
+        volume_type = instances[0].get('volume_type', None)
 
         nics = [instance.get('nics', None) for instance in instances]
 
@@ -135,6 +136,7 @@ class MongoDbCluster(models.Cluster):
                                         nics=nics[i],
                                         configuration_id=None,
                                         cluster_config=member_config,
+                                        volume_type=volume_type,
                                         modules=instances[i].get('modules'),
                                         locality=locality,
                                         region_name=regions[i])
@@ -151,8 +153,10 @@ class MongoDbCluster(models.Cluster):
                                         nics=None,
                                         configuration_id=None,
                                         cluster_config=configsvr_config,
+                                        volume_type=volume_type,
                                         locality=locality,
-                                        region_name=regions[i % num_instances])
+                                        region_name=regions[i % num_instances]
+                                        )
 
         for i in range(1, num_mongos + 1):
             instance_name = "%s-%s-%s" % (name, "mongos", str(i))
@@ -166,8 +170,10 @@ class MongoDbCluster(models.Cluster):
                                         nics=None,
                                         configuration_id=None,
                                         cluster_config=mongos_config,
+                                        volume_type=volume_type,
                                         locality=locality,
-                                        region_name=regions[i % num_instances])
+                                        region_name=regions[i % num_instances]
+                                        )
 
         task_api.load(context, datastore_version.manager).create_cluster(
             db_info.id)

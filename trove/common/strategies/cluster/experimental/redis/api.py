@@ -88,6 +88,8 @@ class RedisCluster(models.Cluster):
                                             cluster_config={
                                                 "id": db_info.id,
                                                 "instance_type": "member"},
+                                            volume_type=instance.get(
+                                                'volume_type', None),
                                             modules=instance.get('modules'),
                                             locality=locality,
                                             region_name=instance.get(

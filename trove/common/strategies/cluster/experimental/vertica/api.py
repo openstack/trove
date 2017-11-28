@@ -98,6 +98,7 @@ class VerticaCluster(models.Cluster):
 
         flavor_id = instances[0]['flavor_id']
         volume_size = instances[0].get('volume_size', None)
+        volume_type = instances[0].get('volume_type', None)
 
         nics = [instance.get('nics', None) for instance in instances]
 
@@ -123,6 +124,7 @@ class VerticaCluster(models.Cluster):
                     datastore_version, volume_size, None,
                     nics=nics[i], availability_zone=azs[i],
                     configuration_id=None, cluster_config=member_config,
+                    volume_type=volume_type,
                     modules=instances[i].get('modules'), locality=locality,
                     region_name=regions[i])
             )
