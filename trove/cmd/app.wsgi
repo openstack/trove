@@ -23,6 +23,7 @@ from trove.common import profile
 
 LOG = logging.getLogger('trove.cmd.app')
 
+
 @with_initialize
 def wsgimain(CONF):
     from trove.common import cfg
