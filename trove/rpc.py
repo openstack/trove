@@ -125,7 +125,7 @@ def get_server(target, endpoints, key, serializer=None,
         endpoints,
         executor=executor,
         serializer=serializer,
-        access_policy=dispatcher.LegacyRPCAccessPolicy)
+        access_policy=dispatcher.DefaultRPCAccessPolicy)
 
 
 def get_notifier(service=None, host=None, publisher_id=None):
