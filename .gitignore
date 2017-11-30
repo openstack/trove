@@ -8,7 +8,7 @@ trove.egg*
 .eggs/
 trove/vcsversion.py
 *py*.egg
-.coverage
+.coverage.*
 coverage.xml
 cover/
 dist/
