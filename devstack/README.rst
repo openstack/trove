@@ -22,7 +22,8 @@ Download DevStack
 Enable the Trove plugin
 =======================
 
-Enable the plugin by adding the following section to ``$DEVSTACK_DIR/local.conf``
+Enable the plugin by adding the following section to
+``$DEVSTACK_DIR/local.conf``
 
 .. sourcecode:: bash
 
