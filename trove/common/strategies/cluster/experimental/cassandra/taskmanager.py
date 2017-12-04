@@ -22,6 +22,7 @@ from trove.common.strategies.cluster import base
 from trove.common import utils
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
+from trove.instance import tasks as inst_tasks
 from trove.taskmanager import api as task_api
 import trove.taskmanager.models as task_models
 
@@ -245,7 +246,8 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
                 LOG.exception(_("Error growing cluster."))
-                self.update_statuses_on_failure(cluster_id)
+                self.update_statuses_on_failure(
+                    cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
 
         timeout = Timeout(CONF.cluster_usage_timeout)
         try:
@@ -255,7 +257,8 @@ class CassandraClusterTasks(task_models.ClusterTasks):
             if t is not timeout:
                 raise  # not my timeout
             LOG.exception(_("Timeout for growing cluster."))
-            self.update_statuses_on_failure(cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
             timeout.cancel()
 
@@ -325,7 +328,9 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
                 LOG.exception(_("Error shrinking cluster."))
-                self.update_statuses_on_failure(cluster_id)
+                self.update_statuses_on_failure(
+                    cluster_id,
+                    status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
 
         timeout = Timeout(CONF.cluster_usage_timeout)
         try:
@@ -335,7 +340,8 @@ class CassandraClusterTasks(task_models.ClusterTasks):
             if t is not timeout:
                 raise  # not my timeout
             LOG.exception(_("Timeout for shrinking cluster."))
-            self.update_statuses_on_failure(cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         finally:
             timeout.cancel()
 

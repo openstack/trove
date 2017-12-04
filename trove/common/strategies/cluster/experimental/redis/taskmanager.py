@@ -20,6 +20,7 @@ from trove.common.i18n import _
 from trove.common.strategies.cluster import base
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
+from trove.instance import tasks as inst_tasks
 from trove.taskmanager import api as task_api
 import trove.taskmanager.models as task_models
 
@@ -142,10 +143,12 @@ class RedisClusterTasks(task_models.ClusterTasks):
             if t is not timeout:
                 raise  # not my timeout
             LOG.exception(_("Timeout for growing cluster."))
-            self.update_statuses_on_failure(cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         except Exception:
             LOG.exception(_("Error growing cluster %s."), cluster_id)
-            self.update_statuses_on_failure(cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
             timeout.cancel()
 
