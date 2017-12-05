@@ -39,6 +39,7 @@ from trove.common.rpc import serializer as sz
 
 CONF = cfg.CONF
 TRANSPORT = None
+NOTIFICATION_TRANSPORT = None
 NOTIFIER = None
 
 ALLOWED_EXMODS = [
@@ -49,22 +50,29 @@ EXTRA_EXMODS = []
 
 
 def init(conf):
-    global TRANSPORT, NOTIFIER
+    global TRANSPORT, NOTIFICATION_TRANSPORT, NOTIFIER
     exmods = get_allowed_exmods()
     TRANSPORT = messaging.get_rpc_transport(conf,
                                             allowed_remote_exmods=exmods)
 
+    NOTIFICATION_TRANSPORT = messaging.get_notification_transport(
+        conf,
+        allowed_remote_exmods=exmods)
+
     serializer = sz.TroveRequestContextSerializer(
         messaging.JsonPayloadSerializer())
-    NOTIFIER = messaging.Notifier(TRANSPORT, serializer=serializer)
+    NOTIFIER = messaging.Notifier(NOTIFICATION_TRANSPORT,
+                                  serializer=serializer)
 
 
 def cleanup():
-    global TRANSPORT, NOTIFIER
+    global TRANSPORT, NOTIFICATION_TRANSPORT, NOTIFIER
     assert TRANSPORT is not None
+    assert NOTIFICATION_TRANSPORT is not None
     assert NOTIFIER is not None
     TRANSPORT.cleanup()
-    TRANSPORT = NOTIFIER = None
+    NOTIFICATION_TRANSPORT.cleanup()
+    TRANSPORT = NOTIFICATION_TRANSPORT = NOTIFIER = None
 
 
 def set_defaults(control_exchange):

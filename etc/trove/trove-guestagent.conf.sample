@@ -82,6 +82,34 @@ log_config_append = /etc/trove/trove-logging-guestagent.conf
 # If False doesn't trace SQL requests.
 #trace_sqlalchemy = True
 
+[oslo_messaging_notifications]
+
+#
+# From oslo.messaging
+#
+
+# The Driver(s) to handle sending notifications. Possible
+# values are messaging, messagingv2, routing, log, test, noop
+# (multi valued)
+# Deprecated group/name - [DEFAULT]/notification_driver
+#driver =
+
+# A URL representing the messaging driver to use for
+# notifications. If not set, we fall back to the same
+# configuration used for RPC. (string value)
+# Deprecated group/name - [DEFAULT]/notification_transport_url
+#transport_url = <None>
+
+# AMQP topic used for OpenStack notifications. (list value)
+# Deprecated group/name - [rpc_notifier2]/topics
+# Deprecated group/name - [DEFAULT]/notification_topics
+#topics = notifications
+
+# The maximum number of attempts to re-send a notification
+# message which failed to be delivered due to a recoverable
+# error. 0 - No retry, -1 - indefinite (integer value)
+#retry = -1
+
 [oslo_messaging_rabbit]
 # The RabbitMQ broker address where a single node is used. (string value)
 # Deprecated group/name - [DEFAULT]/rabbit_host
