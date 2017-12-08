@@ -40,7 +40,7 @@ class DetailedModuleViewTest(trove_testtools.TestCase):
         self.module.created = 'Yesterday'
         self.module.updated = 'Now'
         self.module.datastore = 'mysql'
-        self.module.datastore_version = '5.6'
+        self.module.datastore_version = '5.7'
         self.module.auto_apply = False
         self.module.tenant_id = 'my_tenant'
         self.module.is_admin = False

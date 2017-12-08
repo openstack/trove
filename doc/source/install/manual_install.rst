@@ -26,7 +26,7 @@ A running OpenStack environment is required, including the following components:
 - A networking component (either Neutron or Nova-Network)
 - If you want to provision datastores on block-storage volumes, you also will need Block Storage (Cinder)
 - If you want to do backup/restore and replication, you will also need Object Storage (Swift)
-- An environment with a freshly installed Ubuntu 14.04 LTS to run Trove services.
+- An environment with a freshly installed Ubuntu 16.04 LTS to run Trove services.
   This will be referred to as "local environment"
 - AMQP service (RabbitMQ or QPID)
 - MySQL (SQLite, PostgreSQL) database for Trove's internal needs, accessible from the local environment
@@ -303,10 +303,10 @@ Example::
 
   - ID - edb1d22a-b66d-4e86-be60-756240439272
   - Datastore ID - 9c3d890b-a2f2-4ba5-91b2-2997d0791502
-  - Name - mysql-5.6
+  - Name - mysql-5.7
   - Datastore manager - mysql
   - Image ID - d73a402-3953-4721-8c99-86fc72e1cb51
-  - Packages - mysql-server=5.5, percona-xtrabackup=2.1
+  - Packages - mysql-server=5.7, percona-xtrabackup=2.4
   - Active - True
 
 --------------------------------------------
@@ -319,9 +319,9 @@ To register a datastore, you must execute:
 
     $ export DATASTORE_TYPE="mysql" # available options: mysql, mongodb, postgresql, redis, cassandra, couchbase, couchdb, db2, vertica, etc.
 
-    $ export DATASTORE_VERSION="5.6" # available options: for cassandra 2.0.x, for mysql: 5.x, for mongodb: 2.x.x, etc.
+    $ export DATASTORE_VERSION="5.7" # available options: for cassandra 2.0.x, for mysql: 5.x, for mongodb: 2.x.x, etc.
 
-    $ export PACKAGES="mysql-server-5.6" # available options: cassandra=2.0.9, mongodb=2.0.4, etc
+    $ export PACKAGES="mysql-server-5.7" # available options: cassandra=2.0.9, mongodb=2.0.4, etc
 
     $ export IMAGEID="9910350b-77e3-4790-86be-b971d0cf9175" # Glance image ID of the relevant Datastore version (see Source images section)
 
@@ -459,10 +459,10 @@ If you are interested in documentation for a specific OpenStack release, visit:
 
 http://docs.openstack.org/<release-code-name>/
 
-For example, the documentation for the Newton release is found at:
+For example, the documentation for the Pike release is found at:
 
-http://docs.openstack.org/newton/
+http://docs.openstack.org/pike/
 
-and the documentation for the Mitaka release is found at:
+and the documentation for the Queens release is found at:
 
-http://docs.openstack.org/mitaka/
+http://docs.openstack.org/queens/

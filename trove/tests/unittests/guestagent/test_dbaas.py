@@ -1404,6 +1404,7 @@ class MySqlAppTest(trove_testtools.TestCase):
     @patch.object(dbaas, 'get_engine')
     @patch.object(utils, 'generate_random_password',
                   return_value='some_password')
+    @patch.object(operating_system, 'write_file')
     def test_secure_root(self, *args):
         with patch.object(dbaas.MySqlApp, 'local_sql_client',
                           return_value=self.mock_client):

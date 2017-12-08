@@ -666,13 +666,24 @@ class BaseMySqlApp(object):
 
     @staticmethod
     def _generate_root_password(client):
-        """Generate and set a random root password and forget about it."""
+        """Generate, set, and preserve a random password
+           for root@localhost when invoking mysqladmin to
+           determine the execution status of the mysql service.
+        """
         localhost = "localhost"
+        new_password = utils.generate_random_password()
         uu = sql_query.SetPassword(
             models.MySQLUser.root_username, host=localhost,
-            new_password=utils.generate_random_password())
+            new_password=new_password)
         t = text(str(uu))
         client.execute(t)
+
+        # Save the password to root's private .my.cnf file
+        root_sect = {'client': {'user': 'root',
+                                'password': new_password,
+                                'host': localhost}}
+        operating_system.write_file('/root/.my.cnf',
+                                    root_sect, codec=IniCodec(), as_root=True)
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a secure

@@ -262,8 +262,8 @@ class PkgDEBVersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBVersionTestCase, self).setUp()
-        self.pkgName = 'mysql-server-5.5'
-        self.pkgVersion = '5.5.28-0'
+        self.pkgName = 'mysql-server-5.7'
+        self.pkgVersion = '5.7.20-0'
         self.getoutput = pkg.getoutput
 
     def tearDown(self):

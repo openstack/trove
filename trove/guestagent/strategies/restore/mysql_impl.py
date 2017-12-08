@@ -73,6 +73,19 @@ class MySQLRestoreMixin(object):
             raise exc
 
     def _start_mysqld_safe_with_init_file(self, init_file, err_log_file):
+        # This directory is added and removed by the mysql systemd service
+        # as the database is started and stopped. The restore operation
+        # takes place when the database is stopped, so the directory does
+        # not exist, but it is assumed to exist by the mysqld_safe command
+        # which starts the database. This command used to create this
+        # directory if it didn't exist, but it was changed recently to
+        # simply fail in this case.
+        run_dir = "/var/run/mysqld"
+        if not os.path.exists(run_dir):
+            utils.execute("mkdir", run_dir,
+                          run_as_root=True, root_helper="sudo")
+            utils.execute("chown", "mysql:mysql", run_dir, err_log_file.name,
+                          run_as_root=True, root_helper="sudo")
         child = pexpect.spawn(
             "sudo mysqld_safe --init-file=%s --log-error=%s" %
             (init_file.name, err_log_file.name))
