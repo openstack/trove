@@ -286,7 +286,7 @@ function configure_trove {
 
     # Use these values only if they're set
     iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
-    iniset_conditional $TROVE_COMMAND_PROCESS_TIMEOUT DEFAULT command_process_timeout $TROVE_COMMAND_PROCESS_TIMEOUT
+    iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT command_process_timeout $TROVE_COMMAND_PROCESS_TIMEOUT
 
     # Set up Guest Agent conf
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rpc_backend "rabbit"
