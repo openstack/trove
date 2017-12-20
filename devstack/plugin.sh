@@ -190,9 +190,6 @@ function configure_trove {
     # Copy api-paste file over to the trove conf dir
     cp $TROVE_LOCAL_API_PASTE_INI $TROVE_API_PASTE_INI
 
-    # Copy the default policy file over to the trove conf dir
-    cp $TROVE_LOCAL_POLICY_JSON $TROVE_POLICY_JSON
-
     # (Re)create trove conf files
     rm -f $TROVE_CONF
     rm -f $TROVE_TASKMANAGER_CONF

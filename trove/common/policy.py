@@ -217,6 +217,7 @@ def get_enforcer():
         _ENFORCER = policy.Enforcer(CONF)
         _ENFORCER.register_defaults(base_rules)
         _ENFORCER.register_defaults(instance_rules)
+        _ENFORCER.load_rules()
     return _ENFORCER
 
 
