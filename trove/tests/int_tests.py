@@ -404,7 +404,8 @@ register(
     ["redis_supported"],
     single=[common_groups,
             backup_groups,
-            configuration_groups, ],
+            configuration_groups,
+            root_actions_groups, ],
     multi=[replication_promote_groups, ]
     # multi=[cluster_actions_groups,
     #        cluster_negative_actions_groups,

@@ -854,7 +854,7 @@ redis_opts = [
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.common.service.DefaultRootController',
+               default='trove.extensions.redis.service.RedisRootController',
                help='Root controller implementation for redis.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),

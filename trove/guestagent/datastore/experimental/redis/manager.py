@@ -267,3 +267,19 @@ class Manager(manager.Manager):
         LOG.debug("Executing cluster_addslots to assign hash slots %s-%s.",
                   first_slot, last_slot)
         self._app.cluster_addslots(first_slot, last_slot)
+
+    def enable_root(self, context):
+        LOG.debug("Enabling authentication.")
+        return self._app.enable_root()
+
+    def enable_root_with_password(self, context, root_password=None):
+        LOG.debug("Enabling authentication with password.")
+        return self._app.enable_root(root_password)
+
+    def disable_root(self, context):
+        LOG.debug("Disabling authentication.")
+        return self._app.disable_root()
+
+    def get_root_password(self, context):
+        LOG.debug("Getting auth password.")
+        return self._app.get_auth_password()

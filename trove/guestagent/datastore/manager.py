@@ -730,6 +730,11 @@ class Manager(periodic_task.PeriodicTasks):
             raise exception.DatastoreOperationNotSupported(
                 operation='change_passwords', datastore=self.manager)
 
+    def get_root_password(self, context):
+        LOG.debug("Getting root password.")
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_root_password', datastore=self.manager)
+
     def enable_root(self, context):
         LOG.debug("Enabling root.")
         raise exception.DatastoreOperationNotSupported(
