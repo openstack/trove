@@ -305,30 +305,30 @@ class TestDBaaSNotification(trove_testtools.TestCase):
         self.test_n = DBaaSTestNotification(Mock(), request=Mock())
 
     def test_missing_required_start_traits(self):
-        self.assertRaisesRegexp(exception.TroveError,
-                                self.test_n.required_start_traits()[0],
-                                self.test_n.notify_start)
+        self.assertRaisesRegex(exception.TroveError,
+                               self.test_n.required_start_traits()[0],
+                               self.test_n.notify_start)
 
     def test_invalid_start_traits(self):
-        self.assertRaisesRegexp(exception.TroveError,
-                                "The following required keys",
-                                self.test_n.notify_start, foo='bar')
+        self.assertRaisesRegex(exception.TroveError,
+                               "The following required keys",
+                               self.test_n.notify_start, foo='bar')
 
     def test_missing_required_end_traits(self):
-        self.assertRaisesRegexp(exception.TroveError,
-                                self.test_n.required_end_traits()[0],
-                                self.test_n.notify_end)
+        self.assertRaisesRegex(exception.TroveError,
+                               self.test_n.required_end_traits()[0],
+                               self.test_n.notify_end)
 
     def test_invalid_end_traits(self):
-        self.assertRaisesRegexp(exception.TroveError,
-                                "The following required keys",
-                                self.test_n.notify_end, foo='bar')
+        self.assertRaisesRegex(exception.TroveError,
+                               "The following required keys",
+                               self.test_n.notify_end, foo='bar')
 
     def test_missing_required_error_traits(self):
-        self.assertRaisesRegexp(exception.TroveError,
-                                self.test_n.required_error_traits()[0],
-                                self.test_n._notify, 'error',
-                                self.test_n.required_error_traits(), [])
+        self.assertRaisesRegex(exception.TroveError,
+                               self.test_n.required_error_traits()[0],
+                               self.test_n._notify, 'error',
+                               self.test_n.required_error_traits(), [])
 
     @patch.object(rpc, 'get_notifier')
     def test_start_event(self, notifier):

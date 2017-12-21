@@ -214,8 +214,8 @@ class DbaasTest(trove_testtools.TestCase):
     @patch.object(operating_system, 'read_file',
                   side_effect=RuntimeError('read_file error'))
     def test_get_auth_password_error(self, _, get_cnf_mock):
-        self.assertRaisesRegexp(RuntimeError, "read_file error",
-                                MySqlApp.get_auth_password)
+        self.assertRaisesRegex(RuntimeError, "read_file error",
+                               MySqlApp.get_auth_password)
 
     def test_service_discovery(self):
         with patch.object(os.path, 'isfile', return_value=True):
@@ -713,8 +713,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
     def test_fail_get_user(self, *args):
         username = "os_admin"
         hostname = "host"
-        self.assertRaisesRegexp(BadRequest, "Username os_admin is not valid",
-                                self.mySqlAdmin.get_user, username, hostname)
+        self.assertRaisesRegex(BadRequest, "Username os_admin is not valid",
+                               self.mySqlAdmin.get_user, username, hostname)
 
     def test_grant_access(self):
         user = MagicMock()
@@ -926,8 +926,8 @@ class MySqlAppTest(trove_testtools.TestCase):
                                   mock_logging):
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
             patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
-                                    self.mySqlApp.stop_db)
+            self.assertRaisesRegex(RuntimeError, 'Service is not discovered.',
+                                   self.mySqlApp.stop_db)
             self.assertEqual(0, mock_execute.call_count)
 
     def test_restart_is_successful(self):
@@ -1097,8 +1097,8 @@ class MySqlAppTest(trove_testtools.TestCase):
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_fail__enable_mysql_on_boot(self, mock_execute, mock_service,
                                         mock_logging):
-        self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
-                                self.mySqlApp._enable_mysql_on_boot)
+        self.assertRaisesRegex(RuntimeError, 'Service is not discovered.',
+                               self.mySqlApp._enable_mysql_on_boot)
         self.assertEqual(0, mock_execute.call_count)
 
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
@@ -1116,8 +1116,8 @@ class MySqlAppTest(trove_testtools.TestCase):
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_fail__disable_mysql_on_boot(self, mock_execute, mock_service,
                                          mock_logging):
-        self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
-                                self.mySqlApp._disable_mysql_on_boot)
+        self.assertRaisesRegex(RuntimeError, 'Service is not discovered.',
+                               self.mySqlApp._disable_mysql_on_boot)
         self.assertEqual(0, mock_execute.call_count)
 
     def test_update_overrides(self):
@@ -1298,10 +1298,10 @@ class MySqlAppTest(trove_testtools.TestCase):
                   return_value=MagicMock(name='get_engine'))
     @patch.object(utils, 'poll_until', side_effect=PollTimeOut)
     def test_fail__wait_for_slave_status(self, *args):
-        self.assertRaisesRegexp(RuntimeError,
-                                "Replication is not on after 5 seconds.",
-                                self.mySqlApp._wait_for_slave_status, 'ON',
-                                Mock(), 5)
+        self.assertRaisesRegex(RuntimeError,
+                               "Replication is not on after 5 seconds.",
+                               self.mySqlApp._wait_for_slave_status, 'ON',
+                               Mock(), 5)
 
     @patch.object(dbaas, 'get_engine',
                   return_value=MagicMock(name='get_engine'))
@@ -2107,7 +2107,7 @@ class BaseDbStatusTest(trove_testtools.TestCase):
                 return_value=False) as service_call:
             with patch.multiple(operating_system, start_service=DEFAULT,
                                 enable_service_on_boot=DEFAULT) as os_cmd:
-                self.assertRaisesRegexp(
+                self.assertRaisesRegex(
                     RuntimeError, "Database failed to start.",
                     status.start_db_service,
                     service_candidates, 10, enable_on_boot=True)
@@ -2156,7 +2156,7 @@ class BaseDbStatusTest(trove_testtools.TestCase):
                 return_value=False) as service_call:
             with patch.multiple(operating_system, stop_service=DEFAULT,
                                 disable_service_on_boot=DEFAULT) as os_cmd:
-                self.assertRaisesRegexp(
+                self.assertRaisesRegex(
                     RuntimeError, "Database failed to stop.",
                     status.stop_db_service,
                     service_candidates, 10, disable_on_boot=True)
@@ -2189,7 +2189,7 @@ class BaseDbStatusTest(trove_testtools.TestCase):
                     side_effect=Exception("Error in database start.")),
                 stop_db_service=DEFAULT, begin_restart=DEFAULT,
                 end_restart=DEFAULT):
-            self.assertRaisesRegexp(
+            self.assertRaisesRegex(
                 RuntimeError, "Database restart failed.",
                 status.restart_db_service, service_candidates, 10)
             status.begin_restart.assert_called_once_with()
@@ -2865,9 +2865,9 @@ class VerticaAppTest(trove_testtools.TestCase):
     def test_failure_install_vertica(self, *args):
         with patch.object(vertica_system, 'shell_execute',
                           side_effect=ProcessExecutionError('some exception')):
-            self.assertRaisesRegexp(RuntimeError, 'install_vertica failed.',
-                                    self.app.install_vertica,
-                                    members='10.0.0.2')
+            self.assertRaisesRegex(RuntimeError, 'install_vertica failed.',
+                                   self.app.install_vertica,
+                                   members='10.0.0.2')
 
     def test_create_db(self):
         with patch.object(self.app, 'read_config',
@@ -2884,9 +2884,9 @@ class VerticaAppTest(trove_testtools.TestCase):
     def test_failure_create_db(self, *args):
         with patch.object(self.app, 'read_config',
                           side_effect=RuntimeError('Error')):
-            self.assertRaisesRegexp(RuntimeError,
-                                    'Vertica database create failed.',
-                                    self.app.create_db)
+            self.assertRaisesRegex(RuntimeError,
+                                   'Vertica database create failed.',
+                                   self.app.create_db)
         # Because of an exception in read_config there was no shell execution.
         self.assertEqual(0, vertica_system.shell_execute.call_count)
 
@@ -3165,9 +3165,9 @@ class VerticaAppTest(trove_testtools.TestCase):
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_failure__enable_db_on_boot(self, *args):
         with patch.object(subprocess, 'Popen', side_effect=OSError):
-            self.assertRaisesRegexp(RuntimeError,
-                                    'Could not enable database on boot.',
-                                    self.app._enable_db_on_boot)
+            self.assertRaisesRegex(RuntimeError,
+                                   'Could not enable database on boot.',
+                                   self.app._enable_db_on_boot)
 
     def test__disable_db_on_boot(self):
         self.app._disable_db_on_boot()
@@ -3187,9 +3187,9 @@ class VerticaAppTest(trove_testtools.TestCase):
     def test_failure__disable_db_on_boot(self, *args):
         with patch.object(vertica_system, 'shell_execute',
                           side_effect=ProcessExecutionError('Error')):
-            self.assertRaisesRegexp(RuntimeError,
-                                    'Could not disable database on boot.',
-                                    self.app._disable_db_on_boot)
+            self.assertRaisesRegex(RuntimeError,
+                                   'Could not disable database on boot.',
+                                   self.app._disable_db_on_boot)
 
     def test_read_config(self):
         with patch.object(configparser, 'ConfigParser',

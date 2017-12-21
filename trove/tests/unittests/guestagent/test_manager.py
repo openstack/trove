@@ -141,28 +141,28 @@ class ManagerTest(trove_testtools.TestCase):
         return "".join(sorted(value))
 
     def test_guest_log_action_enable_disable(self):
-        self.assertRaisesRegexp(exception.BadRequest,
-                                "Cannot enable and disable",
-                                self.manager.guest_log_action,
-                                self.context,
-                                self.log_name_sys,
-                                True, True, False, False)
+        self.assertRaisesRegex(exception.BadRequest,
+                               "Cannot enable and disable",
+                               self.manager.guest_log_action,
+                               self.context,
+                               self.log_name_sys,
+                               True, True, False, False)
 
     def test_guest_log_action_enable_sys(self):
-        self.assertRaisesRegexp(exception.BadRequest,
-                                "Cannot enable a SYSTEM log",
-                                self.manager.guest_log_action,
-                                self.context,
-                                self.log_name_sys,
-                                True, False, False, False)
+        self.assertRaisesRegex(exception.BadRequest,
+                               "Cannot enable a SYSTEM log",
+                               self.manager.guest_log_action,
+                               self.context,
+                               self.log_name_sys,
+                               True, False, False, False)
 
     def test_guest_log_action_disable_sys(self):
-        self.assertRaisesRegexp(exception.BadRequest,
-                                "Cannot disable a SYSTEM log",
-                                self.manager.guest_log_action,
-                                self.context,
-                                self.log_name_sys,
-                                False, True, False, False)
+        self.assertRaisesRegex(exception.BadRequest,
+                               "Cannot disable a SYSTEM log",
+                               self.manager.guest_log_action,
+                               self.context,
+                               self.log_name_sys,
+                               False, True, False, False)
 
     def test_guest_log_action_publish_sys(self):
         with patch.object(os.path, 'isfile', return_value=True):
@@ -472,7 +472,7 @@ class ManagerTest(trove_testtools.TestCase):
                     side_effect=expected_failure
                 )):
             expected_msg = encodeutils.exception_to_unicode(expected_failure)
-            self.assertRaisesRegexp(
+            self.assertRaisesRegex(
                 Exception, expected_msg,
                 self.manager.prepare,
                 self.context, packages, databases, memory_mb, users,

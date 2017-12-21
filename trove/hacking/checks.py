@@ -115,8 +115,23 @@ def check_no_basestring(logical_line):
         yield(0, msg)
 
 
+asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
+
+
+def assert_raises_regexp(logical_line):
+    """Check for usage of deprecated assertRaisesRegexp
+
+    N335
+    """
+    res = asse_raises_regexp.search(logical_line)
+    if res:
+        yield (0, "N335: assertRaisesRegex must be used instead "
+                  "of assertRaisesRegexp")
+
+
 def factory(register):
     register(validate_log_translations)
     register(no_translate_debug_logs)
     register(check_raised_localized_exceptions)
     register(check_no_basestring)
+    register(assert_raises_regexp)

@@ -74,7 +74,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             "packages": "test-pkg",
             "active": True,
             "default": True}}
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.DatastoreVersionAlreadyExists,
             "A datastore version with the name 'test_new_vr' already exists",
             self.version_controller.create, self.req, body, self.tenant_id)
@@ -91,7 +91,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             "packages": "test-pkg",
             "active": True,
             "default": True}}
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.ImageNotFound,
             "Image image-id cannot be found.",
             self.version_controller.create, self.req, body, self.tenant_id)
@@ -108,7 +108,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
         self.assertEqual(202, output.status)
 
         # Try to find deleted version, this should raise exception.
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.DatastoreVersionNotFound,
             err_msg, models.DatastoreVersion.load_by_uuid, ds_version1.id)
 
@@ -131,7 +131,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             side_effect=glance_exceptions.HTTPNotFound())
         body = {"image": "non-existent-image-id"}
 
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.ImageNotFound,
             "Image non-existent-image-id cannot be found.",
             self.version_controller.edit, self.req, body,

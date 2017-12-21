@@ -83,7 +83,7 @@ class TestClusterController(trove_testtools.TestCase):
         tenant_id = Mock()
         id = Mock()
 
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.BadRequest, 'Invalid request body.',
             self.controller.action, self.req, None, tenant_id, id)
 
@@ -94,6 +94,6 @@ class TestClusterController(trove_testtools.TestCase):
         id = Mock()
         mock_cluster_load.return_value = self.mock_clusters[0]
 
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             exception.BadRequest, 'Invalid cluster action requested.',
             self.controller.action, self.req, body, tenant_id, id)

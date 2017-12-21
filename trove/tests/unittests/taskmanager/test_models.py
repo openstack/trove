@@ -324,7 +324,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     @patch('trove.taskmanager.models.LOG')
     def test_error_create_dns_entry_create_instance(self, *args):
         mock_flavor = {'id': 6, 'ram': 512, 'name': 'big_flavor'}
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             TroveError,
             'Error creating DNS entry for instance',
             self.freshinstancetasks.create_instance, mock_flavor,
@@ -406,7 +406,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
         snapshot = {'replication_strategy': 'MysqlGTIDReplication',
                     'master': {'id': 'master-id'}}
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             TroveError, 'Error attaching instance',
             self.freshinstancetasks.attach_replication_slave,
             snapshot, mock_flavor)
@@ -475,7 +475,7 @@ class InstanceSecurityGroupRuleTests(BaseFreshInstanceTasksTest):
         mock_conf.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['3306', '-3306']))
         mock_flavor = {'id': 7, 'ram': 256, 'name': 'smaller_flavor'}
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             TroveError,
             'Error creating security group for instance',
             self.freshinstancetasks.create_instance, mock_flavor,

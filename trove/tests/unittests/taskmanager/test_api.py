@@ -118,9 +118,9 @@ class ApiTest(trove_testtools.TestCase):
 
     def test_transform_obj(self):
         flavor = Mock()
-        self.assertRaisesRegexp(ValueError,
-                                ('Could not transform %s' % flavor),
-                                self.api._transform_obj, flavor)
+        self.assertRaisesRegex(ValueError,
+                               ('Could not transform %s' % flavor),
+                               self.api._transform_obj, flavor)
 
     def test_upgrade(self):
         self.api.upgrade('some-instance-id', 'some-datastore-version')
