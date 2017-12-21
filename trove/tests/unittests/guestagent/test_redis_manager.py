@@ -14,7 +14,7 @@
 
 from mock import DEFAULT, MagicMock, Mock, patch
 
-from trove.common import utils as utils
+from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.common import configuration
 from trove.guestagent.common.configuration import ImportOverrideStrategy
