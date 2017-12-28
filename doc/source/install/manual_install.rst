@@ -23,7 +23,7 @@ A running OpenStack environment is required, including the following components:
 - Compute (Nova)
 - Image Service (Glance)
 - Identity (Keystone)
-- A networking component (either Neutron or Nova-Network)
+- Network (Neutron)
 - If you want to provision datastores on block-storage volumes, you also will need Block Storage (Cinder)
 - If you want to do backup/restore and replication, you will also need Object Storage (Swift)
 - An environment with a freshly installed Ubuntu 14.04 LTS to run Trove services.
