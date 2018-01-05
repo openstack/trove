@@ -638,4 +638,4 @@ References
 .. [3] User (especially in the USA) are cautioned about this spelling which once resulted in several sleepless nights.
 .. [4] https://git.openstack.org/cgit/openstack/diskimage-builder/tree/README.rst#writing-an-element
 .. [5] https://git.openstack.org/cgit/openstack/tripleo-image-elements/tree/elements
-.. [6] https://git.openstack.org/cgit/openstack/trove/integration/tree/scripts/files/elements
+.. [6] https://git.openstack.org/cgit/openstack/trove/tree/integration/scripts/files/elements
