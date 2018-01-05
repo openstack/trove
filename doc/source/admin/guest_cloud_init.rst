@@ -26,7 +26,7 @@ Currently the most tested Guest image is Ubunutu 14.04 (trusty).
 Setting up the Image
 ====================
 
-* Visit the `Ubuntu Cloud Archive <https://cloud-images.ubuntu.com/trusty/20160816>`_ and download ``trusty-server-cloudimg-amd64-disk1.img``.
+* Visit the `Ubuntu Cloud Archive <https://cloud-images.ubuntu.com/releases/trusty/release>`_ and download ``ubuntu-14.04-server-cloudimg-amd64-disk1.img``.
 
 * Upload that image to glance, and note the glance ID for the image.
 
