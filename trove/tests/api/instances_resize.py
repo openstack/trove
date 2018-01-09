@@ -123,7 +123,7 @@ class ResizeTests(ResizeTestBase):
     def _start_mysql(self):
         datastore = Mock(spec=DatastoreVersion)
         datastore.datastore_name = 'mysql'
-        datastore.name = 'mysql-5.6'
+        datastore.name = 'mysql-5.7'
         datastore.manager = 'mysql'
         config = template.SingleInstanceConfigTemplate(
             datastore, NEW_FLAVOR.__dict__, self.instance.id)

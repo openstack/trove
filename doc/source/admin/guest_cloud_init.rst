@@ -36,19 +36,19 @@ Setting up the Image
   example ``mysql.cloudinit``.
 
 * Create a cloud-init file for your datastore and put it into place.
-  For this example, it is assumed you are using Ubuntu 14.04, with
-  the MySQL database and a Trove Agent from the Mitaka release. You
+  For this example, it is assumed you are using Ubuntu 16.04, with
+  the MySQL database and a Trove Agent from the Pike release. You
   would put this into ``/etc/trove/cloudinit/mysql.cloudinit``.
 
 .. code-block:: console
 
     #cloud-config
-    # For Ubuntu-14.04 cloudimage
+    # For Ubuntu-16.04 cloudimage
     apt_sources:
-    - source: "cloud-archive:mitaka"
+    - source: "cloud-archive:pike"
     packages:
     - trove-guestagent
-    - mysql-server-5.5
+    - mysql-server-5.7
     write_files:
     - path: /etc/sudoers.d/trove
       content: |
@@ -69,6 +69,6 @@ Setting up the Image
   the Trusty Cloud image.
 
 When trove launches the Guest Instance, the cloud-init will install
-the Mitaka Trove Guest Agent and MySQL database, and then adjust
+the Pike Trove Guest Agent and MySQL database, and then adjust
 the configuration files and launch the Guest Agent.
 

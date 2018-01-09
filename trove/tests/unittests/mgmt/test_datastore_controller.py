@@ -35,7 +35,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "name": "test_vr1",
                 "datastore_manager": "mysql",
                 "image": "154b350d-4d86-4214-9067-9c54b230c0da",
-                "packages": ["mysql-server-5.6"],
+                "packages": ["mysql-server-5.7"],
                 "active": True,
                 "default": False
             }
@@ -96,7 +96,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         mock_ds_version_create.assert_called_with(
             'test_dsx', 'test_vr1', 'mysql',
             '154b350d-4d86-4214-9067-9c54b230c0da',
-            'mysql-server-5.6', True)
+            'mysql-server-5.7', True)
 
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     def test_show_ds_version(self, mock_ds_version_load):
@@ -154,4 +154,4 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         mock_ds_version_update.assert_called_with(
             'test_dsx', 'test_vr1', 'mysql',
             '21c8805a-a800-4bca-a192-3a5a2519044d',
-            'mysql-server-5.6', True)
+            'mysql-server-5.7', True)

@@ -8,14 +8,45 @@ set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
 
-add-apt-repository 'deb http://archive.ubuntu.com/ubuntu trusty universe'
-apt-get -y  update
+apt-get --allow-unauthenticated -y install mysql-client mysql-server
 
-apt-get --allow-unauthenticated -y install mysql-client-5.6 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
+# Xenial provides mysql 5.7 which requires percona-xtrabackup-24
+
+PXB_VERSION_OVERRIDE=24
+PKGS=$(apt-cache search percona-xtrabackup-${PXB_VERSION_OVERRIDE})
+if [[ "$PKGS" == *"percona-xtrabackup-$PXB_VERSION_OVERRIDE"* ]]; then
+    apt-get --allow-unauthenticated -y install percona-xtrabackup-${PXB_VERSION_OVERRIDE}
+else
+    # Architecture is not supported by percona website.  Compile and install it
+    PXB_VERSION=${PXB_VERSION_OVERRIDE:0:1}.${PXB_VERSION_OVERRIDE:1:1}
+
+    apt-get --allow-unauthenticated -y install build-essential flex bison automake autoconf \
+       libtool cmake libaio-dev mysql-client libncurses-dev zlib1g-dev \
+       libgcrypt11-dev libev-dev libcurl4-gnutls-dev vim-common
+
+    pushd /tmp
+
+    git clone https://github.com/percona/percona-xtrabackup.git
+    cd percona-xtrabackup
+    git checkout $PXB_VERSION
+
+    mkdir /tmp/boost
+    cmake -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/tmp/boost -DBUILD_CONFIG=xtrabackup_release -DWITH_MAN_PAGES=OFF && make -j4
+    make install
+    ln -s /usr/local/xtrabackup/bin/* /usr/bin/
+
+    dpkg -P build-essential automake autoconf libtool cmake
+    apt-get -y clean
+
+    popd
+
+    rm -rf /tmp/boost /tmp/percona-xtrabackup
+fi
 
 cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
 [mysqld]
 performance_schema = off
+show_compatibility_56 = on
 _EOF_
 
 mv /etc/mysql/my.cnf.fallback /etc/mysql/my.cnf
@@ -26,7 +57,9 @@ cat >/etc/mysql/my.cnf <<_EOF_
 !includedir /etc/mysql/conf.d/
 _EOF_
 
-rm /etc/init/mysql.conf
-systemctl daemon-reload
+if [ -e /etc/init/mysql.conf ]; then
+    rm -f /etc/init/mysql.conf
+fi
+
 systemctl enable mysql
 

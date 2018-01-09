@@ -535,8 +535,15 @@ function set_bin_path() {
 function set_mysql_pkg() {
     if is_fedora; then
        MYSQL_PKG="mysql-community-server"
+       MYSQL_VER="5.6"
     else
-       MYSQL_PKG="mysql-server-5.6"
+       if [ "$RELEASE" == "xenial" ]; then
+           MYSQL_PKG="mysql-server-5.7"
+           MYSQL_VER="5.7"
+       else
+           MYSQL_PKG="mysql-server-5.6"
+           MYSQL_VER="5.6"
+       fi
     fi
 }
 
@@ -549,10 +556,11 @@ function cmd_set_datastore() {
     # rd_manage datastore_update <datastore_name> <default_version>
     rd_manage datastore_update "$DATASTORE_TYPE" ""
     PACKAGES=${PACKAGES:-""}
+
     if [ "$DATASTORE_TYPE" == "mysql" ]; then
         set_mysql_pkg
         PACKAGES=${PACKAGES:-$MYSQL_PKG}
-        VERSION="5.6"
+        VERSION=$MYSQL_VER
     elif [ "$DATASTORE_TYPE" == "percona" ]; then
         PACKAGES=${PACKAGES:-"percona-server-server-5.6"}
         VERSION="5.6"
@@ -768,23 +776,23 @@ function add_test_flavors() {
     # name id ram root_vol vcpu
     # the ram and vcpu for name.resize are automatically calculated
     # eph and non-eph flavors are created for each entry
-    add_flavor 'tiny' 10 512 3 1
+    add_flavor 'tiny' 10 768 4 1
 
-    add_flavor 'small' 15 768 3 1
-    add_flavor 'small' 16 768 4 1
-    add_flavor 'small' 17 768 5 1
+    add_flavor 'small' 15 1024 6 1
+    add_flavor 'small' 16 1024 7 1
+    add_flavor 'small' 17 1024 8 1
 
-    add_flavor 'medium' 20 1024 4 1
-    add_flavor 'medium' 21 1024 5 1
+    add_flavor 'medium' 20 1536 7 1
+    add_flavor 'medium' 21 1536 8 1
 
-    add_flavor 'large' 25 2048 5 1
-    add_flavor 'large' 26 2048 10 1
-    add_flavor 'large' 27 2048 15 1
+    add_flavor 'large' 25 2048 8 1
+    add_flavor 'large' 26 2048 13 1
+    add_flavor 'large' 27 2048 18 1
 
     # This will allow Nova to create an instance, but not enough disk to boot the image
-    add_flavor 'fault_1' 30 512 1 1 'skip_resize'
+    add_flavor 'fault_1' 30 1536 1 1 'skip_resize'
     # This should be enough memory to cause Nova to fail entirely due to too much allocation
-    add_flavor 'fault_2' 31 131072 5 1 'skip_resize'
+    add_flavor 'fault_2' 31 131072 7 1 'skip_resize'
 }
 
 function cmd_test_init() {
@@ -914,7 +922,7 @@ function init_fake_mode() {
          INSERT INTO datastores values ('e00000e0-00e0-0e00-00e0-000e000000ee', \
             'Test_Datastore_1', ''); \
          INSERT INTO datastore_versions VALUES ('b00000b0-00b0-0b00-00b0-000b000000bb', \
-            'a00000a0-00a0-0a00-00a0-000a000000aa', '5.6', \
+            'a00000a0-00a0-0a00-00a0-000a000000aa', $MYSQL_VER, \
             'c00000c0-00c0-0c00-00c0-000c000000cc', $MYSQL_PKG, 1, 'mysql'); \
          INSERT INTO datastore_versions VALUES ('d00000d0-00d0-0d00-00d0-000d000000dd', \
             'a00000a0-00a0-0a00-00a0-000a000000aa', 'inactive_version', \

@@ -56,11 +56,11 @@ class BaseInstanceStatusTestCase(trove_testtools.TestCase):
         self.version = models.DBDatastoreVersion.create(
             id=self.db_info.datastore_version_id,
             datastore_id=self.datastore.id,
-            name='5.5' + str(uuid.uuid4()),
+            name='5.7' + str(uuid.uuid4()),
             manager='mysql',
             image_id=str(uuid.uuid4()),
             active=1,
-            packages="mysql-server-5.5"
+            packages="mysql-server-5.7"
         )
         super(BaseInstanceStatusTestCase, self).setUp()
 

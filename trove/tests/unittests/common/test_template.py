@@ -62,7 +62,7 @@ class TemplateTest(trove_testtools.TestCase):
     def test_single_instance_config_rendering(self):
         datastore = Mock(spec=DatastoreVersion)
         datastore.datastore_name = 'MySql'
-        datastore.name = 'mysql-5.6'
+        datastore.name = 'mysql-5.7'
         datastore.manager = 'mysql'
         config = template.SingleInstanceConfigTemplate(datastore,
                                                        self.flavor_dict,
@@ -85,7 +85,7 @@ class TemplateTest(trove_testtools.TestCase):
     def test_replica_source_config_rendering(self):
         datastore = Mock(spec=DatastoreVersion)
         datastore.datastore_name = 'MySql'
-        datastore.name = 'mysql-5.6'
+        datastore.name = 'mysql-5.7'
         datastore.manager = 'mysql'
         config = template.ReplicaSourceConfigTemplate(datastore,
                                                       self.flavor_dict,
@@ -95,7 +95,7 @@ class TemplateTest(trove_testtools.TestCase):
     def test_replica_config_rendering(self):
         datastore = Mock(spec=DatastoreVersion)
         datastore.datastore_name = 'MySql'
-        datastore.name = 'mysql-5.6'
+        datastore.name = 'mysql-5.7'
         datastore.manager = 'mysql'
         config = template.ReplicaConfigTemplate(datastore,
                                                 self.flavor_dict,
