@@ -25,6 +25,7 @@ from trove.common import utils
 from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
+from trove.instance import tasks as inst_tasks
 from trove.taskmanager import api as task_api
 import trove.taskmanager.models as task_models
 
@@ -250,7 +251,8 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             if t is not timeout:
                 raise  # not my timeout
             LOG.exception(_("timeout for growing cluster."))
-            self.update_statuses_on_failure(cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
             timeout.cancel()
 
@@ -285,7 +287,8 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             if t is not timeout:
                 raise  # not my timeout
             LOG.exception(_("timeout for shrinking cluster."))
-            self.update_statuses_on_failure(cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         finally:
             timeout.cancel()
 
