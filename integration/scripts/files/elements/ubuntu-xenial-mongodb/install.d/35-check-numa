@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+mkdir -p /usr/share/mongodb
+
+cat > /usr/share/mongodb/check_numa.sh << '_EOF_'
+#!/bin/sh
+# Handle NUMA access to CPUs (SERVER-3574)
+# This verifies the existence of numactl as well as testing that the command works
+# Then it generates an environment file for systemd
+NUMACTL_ARGS="--interleave=all"
+if which numactl >/dev/null 2>/dev/null && numactl $NUMACTL_ARGS ls / >/dev/null 2>/dev/null
+then
+  echo -n NUMACTL="$(which numactl) $NUMACTL_ARGS" > /etc/numactl.env
+else
+  echo -n NUMACTL="" > /etc/numactl.env
+fi
+_EOF_
+
+chmod 755 /usr/share/mongodb/check_numa.sh

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+# Remove the default pid file
+rm -f /var/run/mongodb.pid
+
+
+cat > /etc/mongod.conf << '_EOF_'
+storage.dbPath: /var/lib/mongodb
+security.authorization: enabled
+storage.engine: wiredTiger
+storage.journal.enabled: true
+systemLog.destination: file
+systemLog.logAppend: true
+systemLog.path: /var/log/mongodb/mongod.log
+_EOF_
+
+
+cat > /etc/mongos.conf << '_EOF_'
+security.authorization: enabled
+systemLog.destination: file
+systemLog.logAppend: true
+systemLog.path: /var/log/mongodb/mongos.log
+_EOF_

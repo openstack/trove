@@ -3,7 +3,7 @@
 set -e
 set -o xtrace
 
-[ -n "${RELEASE}" ] || die "RELEASE must be set to either Precise or Quantal"
+[ -n "${RELEASE}" ] || die "RELEASE must be set to either trusty or xenial"
 
 apt-get --allow-unauthenticated -y install software-properties-common
 

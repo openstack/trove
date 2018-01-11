@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+cat > /lib/systemd/system/check-numa.service << '_EOF_'
+[Unit]
+Description=Generates /etc/numactl.env
+
+[Service]
+Type=oneshot
+ExecStart=/usr/share/mongodb/check-numa.sh
+
+[Install]
+WantedBy=multi-user.target
+_EOF_
+
+systemctl daemon-reload
+systemctl enable check-numa.service

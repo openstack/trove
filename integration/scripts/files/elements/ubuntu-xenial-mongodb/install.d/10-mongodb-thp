@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+cat > /lib/systemd/system/disable_transparent_huge_pages.service << '_EOF_'
+[Unit]
+Description=Disable Transparent Huge Pages
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sh -c "/usr/bin/echo "never" | tee /sys/kernel/mm/transparent_hugepage/enabled"
+ExecStart=/usr/bin/sh -c "/usr/bin/echo "never" | tee /sys/kernel/mm/transparent_hugepage/defrag"
+
+[Install]
+WantedBy=multi-user.target
+_EOF_
+
+systemctl daemon-reload
+systemctl enable disable_transparent_huge_pages.service
+systemctl start disable-transparent-huge-pages.service
