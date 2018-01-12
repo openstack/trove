@@ -3,17 +3,25 @@
 set -ex
 set -o xtrace
 
+# Set CASSANDRA_JAVA to override which release of Java to use, defaults to 8
+if [ ! -z "$CASSANDRA_JAVA" ]; then CASSANDRA_JAVA=8; fi
+
+# Set CASSANDRA_RELEASE to override which casandra release to use, defaults to 311x
+#  For current releases supported, see http://cassandra.apache.org/download/ or
+#  http://dl.bintray.com/apache/cassandra/dists/
+if [ ! -z "$CASSANDRA_RELEASE" ]; then CASSANDRA_RELEASE=311x; fi
+
 export DEBIAN_FRONTEND=noninteractive
 apt-get --allow-unauthenticated install -qy curl
-echo "deb http://debian.datastax.com/community stable main" >> /etc/apt/sources.list.d/cassandra.sources.list
-curl -L http://debian.datastax.com/debian/repo_key | apt-key add -
+echo "deb http://www.apache.org/dist/cassandra/debian ${CASSANDRA_RELEASE} main" >> /etc/apt/sources.list.d/cassandra.sources.list
+curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
 apt-get update
-apt-get --allow-unauthenticated install -qy openjdk-7-jdk expect python-dev
+apt-get --allow-unauthenticated install -qy openjdk-${CASSANDRA_JAVA}-jdk expect python-dev
 apt-get --allow-unauthenticated install -qy libxml2-dev ntp mc
 apt-get --allow-unauthenticated install -qy libxslt1-dev python-pexpect
 apt-get --allow-unauthenticated install -qy python-migrate build-essential
 
-apt-get --allow-unauthenticated install dsc21=2.1.* cassandra=2.1.* -qy
+apt-get --allow-unauthenticated install -qy cassandra
 
 # The Python Driver 2.0 for Apache Cassandra.
 pip2 install cassandra-driver
