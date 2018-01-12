@@ -1,0 +1,72 @@
+- hosts: all
+  name: Autoconverted job legacy-trove-scenario-dsvm-mongodb-multi from old job gate-trove-scenario-dsvm-mongodb-multi-ubuntu-xenial-nv
+  tasks:
+
+    - name: Ensure legacy workspace directory
+      file:
+        path: '{{ ansible_user_dir }}/workspace'
+        state: directory
+
+    - shell:
+        cmd: |
+          set -e
+          set -x
+          cat > clonemap.yaml << EOF
+          clonemap:
+            - name: openstack-infra/devstack-gate
+              dest: devstack-gate
+          EOF
+          /usr/zuul-env/bin/zuul-cloner -m clonemap.yaml --cache-dir /opt/git \
+              git://git.openstack.org \
+              openstack-infra/devstack-gate
+        executable: /bin/bash
+        chdir: '{{ ansible_user_dir }}/workspace'
+      environment: '{{ zuul | zuul_legacy_vars }}'
+
+    - shell:
+        cmd: |
+          set -e
+          set -x
+          cat << 'EOF' >>"/tmp/dg-local.conf"
+          [[local|localrc]]
+          enable_plugin trove git://git.openstack.org/openstack/trove
+
+          EOF
+        executable: /bin/bash
+        chdir: '{{ ansible_user_dir }}/workspace'
+      environment: '{{ zuul | zuul_legacy_vars }}'
+
+    - shell:
+        cmd: |
+          set -e
+          set -x
+          ENABLED_SERVICES=tempest
+          ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
+          ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond
+          export ENABLED_SERVICES
+
+          export PYTHONUNBUFFERED=true
+          export DEVSTACK_GATE_TROVE=1
+          export PROJECTS="openstack/trove-dashboard $PROJECTS"
+          export DEVSTACK_PROJECT_FROM_GIT=python-troveclient
+          export PROJECTS="openstack/tripleo-image-elements $PROJECTS"
+          export PROJECTS="openstack/diskimage-builder $PROJECTS"
+
+          function post_test_hook {
+              export BRIDGE_IP=10.1.0.1
+              export DEST=$BASE/new
+              export PATH_DEVSTACK_SRC=$DEST/devstack
+              cd /opt/stack/new/trove/integration/scripts
+              ./trovestack dsvm-gate-tests mongodb mongodb-supported-multi
+          }
+          export -f post_test_hook
+
+          export BRANCH_OVERRIDE=default
+          if [ "$BRANCH_OVERRIDE" != "default" ] ; then
+              export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
+          fi
+          cp devstack-gate/devstack-vm-gate-wrap.sh ./safe-devstack-vm-gate-wrap.sh
+          ./safe-devstack-vm-gate-wrap.sh
+        executable: /bin/bash
+        chdir: '{{ ansible_user_dir }}/workspace'
+      environment: '{{ zuul | zuul_legacy_vars }}'
