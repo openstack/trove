@@ -1,0 +1,201 @@
+- project:
+    name: openstack/trove
+    check:
+      jobs:
+        - trove-functional-dsvm-mysql
+        - trove-scenario-dsvm-mariadb-single:
+            voting: false
+        - trove-scenario-dsvm-mariadb-multi:
+            voting: false
+        - trove-scenario-dsvm-mysql-single
+        - trove-scenario-dsvm-mysql-multi
+        - trove-scenario-dsvm-postgresql-single:
+            voting: false
+        - trove-scenario-dsvm-postgresql-multi:
+            voting: false
+        - trove-scenario-dsvm-pxc-single:
+            voting: false
+        - trove-scenario-dsvm-pxc-multi:
+            voting: false
+        - trove-scenario-dsvm-redis-single:
+            voting: false
+        - trove-scenario-dsvm-redis-multi:
+            voting: false
+        - trove-tox-fakemodetests
+        - trove-tox-apiexamples
+    gate:
+      queue: trove
+      jobs:
+        - trove-functional-dsvm-mysql
+        - trove-scenario-dsvm-mysql-single
+        - trove-scenario-dsvm-mysql-multi
+        - trove-tox-fakemodetests
+        - trove-tox-apiexamples
+
+- job:
+    name: trove-functional-dsvm-mysql
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-functional-dsvm-mysql/run.yaml
+    post-run: playbooks/legacy/trove-functional-dsvm-mysql/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-mariadb-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-mariadb-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-mariadb-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-mariadb-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-mariadb-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-mariadb-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-mysql-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-mysql-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-mysql-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-mysql-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-mysql-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-mysql-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-postgresql-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-postgresql-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-postgresql-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-postgresql-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-postgresql-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-postgresql-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+
+- job:
+    name: trove-scenario-dsvm-pxc-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-pxc-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-pxc-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-pxc-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-pxc-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-pxc-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-dsvm-redis-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-redis-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-redis-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+
+- job:
+    name: trove-scenario-dsvm-redis-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-redis-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-redis-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-tox-fakemodetests
+    parent: openstack-tox-py27
+    vars:
+      tox_envlist: fakemodetests
+
+- job:
+    name: trove-tox-apiexamples
+    parent: openstack-tox-py27
+    vars:
+      tox_envlist: apiexamples
