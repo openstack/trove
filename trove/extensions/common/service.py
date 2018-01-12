@@ -122,7 +122,7 @@ class DefaultRootController(BaseDatastoreRootController):
         try:
             found_user = self._find_root_user(context, instance_id)
         except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=str(e))
+            raise exception.BadRequest(message=str(e))
         if not found_user:
             raise exception.UserNotFound(uuid="root")
         models.Root.delete(context, instance_id)
