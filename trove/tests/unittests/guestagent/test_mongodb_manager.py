@@ -332,8 +332,11 @@ class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
 
         self.manager.create_database(self.context, [schema])
 
-        db_client['dummy'].insert.assert_called_with({'dummy': True})
-        db_client.drop_collection.assert_called_with('dummy')
+        # FIXME(songjian):can not create database with null content,
+        # so create a collection
+        # db_client['dummy'].insert.assert_called_with({'dummy': True})
+        # db_client.drop_collection.assert_called_with('dummy')
+        db_client.create_collection.assert_called_with('dummy')
 
     @mock.patch.object(service, 'MongoDBClient')
     @mock.patch.object(service.MongoDBAdmin, '_admin_user')
