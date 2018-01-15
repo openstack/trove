@@ -649,3 +649,22 @@ def validate_volume_size(size):
                "of %d Gb, %s cannot be accepted."
                % (max_size, size))
         raise exception.VolumeQuotaExceeded(msg)
+
+
+def validate_instance_nics(context, instances):
+    """Checking networks are same for the cluster."""
+    instance_nics = []
+    for instance in instances:
+        nics = instance.get('nics')
+        if nics:
+            instance_nics.append(nics[0].get('net-id'))
+    if len(set(instance_nics)) > 1:
+        raise exception.ClusterNetworksNotEqual()
+    if not instance_nics:
+        return
+    instance_nic = instance_nics[0]
+    try:
+        nova_client = remote.create_nova_client(context)
+        nova_client.networks.get(instance_nic)
+    except nova_exceptions.NotFound:
+        raise exception.NetworkNotFound(uuid=instance_nic)

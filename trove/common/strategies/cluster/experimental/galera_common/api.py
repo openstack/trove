@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 import time
@@ -22,7 +21,6 @@ from trove.cluster.tasks import ClusterTasks
 from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
-from trove.common import remote
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import base as cluster_base
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
@@ -80,21 +78,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
         check_quotas(context.tenant, deltas)
 
         # Checking networks are same for the cluster
-        instance_nics = []
-        for instance in instances:
-            nics = instance.get('nics')
-            if nics:
-                instance_nics.append(nics[0].get('net-id'))
-        if len(set(instance_nics)) > 1:
-            raise exception.ClusterNetworksNotEqual()
-        if not instance_nics:
-            return
-        instance_nic = instance_nics[0]
-        try:
-            nova_client = remote.create_nova_client(context)
-            nova_client.networks.get(instance_nic)
-        except nova_exceptions.NotFound:
-            raise exception.NetworkNotFound(uuid=instance_nic)
+        cluster_models.validate_instance_nics(context, instances)
 
     @staticmethod
     def _create_instances(context, db_info, datastore, datastore_version,

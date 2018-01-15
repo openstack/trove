@@ -61,6 +61,10 @@ class RedisCluster(models.Cluster):
         total_volume_allocation = models.get_required_volume_size(
             instances, volume_enabled)
 
+        models.assert_homogeneous_cluster(instances)
+
+        models.validate_instance_nics(context, instances)
+
         name_index = 1
         for instance in instances:
             if not instance.get('name'):

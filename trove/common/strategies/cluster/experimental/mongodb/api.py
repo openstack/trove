@@ -87,6 +87,8 @@ class MongoDbCluster(models.Cluster):
         deltas = {'instances': delta_instances, 'volumes': req_volume_size}
 
         check_quotas(context.tenant, deltas)
+        # Checking networks are same for the cluster
+        models.validate_instance_nics(context, instances)
 
         flavor_id = instances[0]['flavor_id']
         volume_size = instances[0].get('volume_size', None)

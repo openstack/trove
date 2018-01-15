@@ -21,6 +21,8 @@ from mock import Mock
 from mock import patch
 from mock import PropertyMock
 
+from novaclient import exceptions as nova_exceptions
+
 from trove.cluster import models
 from trove.common import exception
 from trove.common import remote
@@ -170,3 +172,36 @@ class TestModels(trove_testtools.TestCase):
             test_instances, required_flavor=required_flavor)
         assert_same_instance_volumes.assert_called_once_with(
             test_instances, required_size=required_volume_size)
+
+    @patch.object(remote, 'create_nova_client', return_value=MagicMock())
+    def test_validate_instance_nics(self, create_nova_cli_mock):
+
+        test_instances = [
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "surprise"}]},
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}]},
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}]}]
+
+        self.assertRaises(exception.ClusterNetworksNotEqual,
+                          models.validate_instance_nics,
+                          Mock(),
+                          test_instances)
+
+        test_instances = [
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}]},
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}]},
+            {'volume_size': 1, 'flavor_id': '1234',
+             'nics': [{"net-id": "foo-bar"}]}]
+
+        create_nova_cli_mock.return_value.networks.get = Mock(
+            side_effect=nova_exceptions.NotFound(
+                404, "Nic id not found %s" % id))
+
+        self.assertRaises(exception.NetworkNotFound,
+                          models.validate_instance_nics,
+                          Mock(),
+                          test_instances)

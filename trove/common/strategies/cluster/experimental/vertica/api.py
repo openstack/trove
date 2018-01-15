@@ -92,6 +92,8 @@ class VerticaCluster(models.Cluster):
             instances, vertica_conf.volume_support)
         models.assert_homogeneous_cluster(instances)
 
+        models.validate_instance_nics(context, instances)
+
         deltas = {'instances': num_instances, 'volumes': req_volume_size}
 
         check_quotas(context.tenant, deltas)
