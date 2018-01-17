@@ -583,8 +583,8 @@ function cmd_set_datastore() {
         PACKAGES=${PACKAGES:-"couchbase-server"}
         VERSION="2.2.0"
     elif [ "$DATASTORE_TYPE" == "postgresql" ]; then
-        PACKAGES=${PACKAGES:-"postgresql-9.4"}
-        VERSION="9.4"
+        PACKAGES=${PACKAGES:-"postgresql-9.6"}
+        VERSION="9.6"
     elif [ "$DATASTORE_TYPE" == "couchdb" ]; then
         PACKAGES=${PACKAGES:-"couchdb"}
         VERSION="1.6.1"
