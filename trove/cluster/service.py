@@ -216,7 +216,7 @@ class ClusterController(wsgi.Controller):
                                    (locality,
                                     "', '".join(locality_domain)))
             if locality not in locality_domain:
-                raise exception.BadRequest(msg=locality_domain_msg)
+                raise exception.BadRequest(message=locality_domain_msg)
 
         configuration = body['cluster'].get('configuration')
 
