@@ -43,9 +43,9 @@ trove_auth_url = http://0.0.0.0/identity/v2.0
 #swift_url = http://localhost:8080/v1/AUTH_
 #neutron_url = http://localhost:9696/
 
-# nova_compute_url, cinder_url, swift_url, and heat_url can all be fetched
+# nova_compute_url, cinder_url, swift_url, and can all be fetched
 # from Keystone. To fetch from Keystone, comment out nova_compute_url,
-# cinder_url, swift_url, and heat_url and optionally uncomment the lines below.
+# cinder_url, swift_url, and and optionally uncomment the lines below.
 
 # Region name of this node. Used when searching catalog. Default value is None.
 #os_region_name = RegionOne
@@ -55,8 +55,6 @@ trove_auth_url = http://0.0.0.0/identity/v2.0
 #cinder_service_type = volumev2
 # Service type to use when searching catalog.
 #swift_service_type = object-store
-# Service type to use when searching catalog.
-#heat_service_type = orchestration
 # Service type to use when searching catalog.
 #neutron_service_type = network
 
