@@ -6,7 +6,8 @@ set -o xtrace
 cat > /lib/systemd/system/mongod.service << '_EOF_'
 [Unit]
 Description=High-performance, schema-free document-oriented database
-After=network.target
+After=network.target check-numa.service
+Wants=check-numa.service
 Documentation=https://docs.mongodb.org/manual
 
 [Service]
@@ -14,7 +15,7 @@ User=mongodb
 Group=mongodb
 RuntimeDirectory=mongodb
 EnvironmentFile=/etc/numactl.env
-ExecStart=$NUMACTL /usr/bin/mongod --quiet --config /etc/mongod.conf
+ExecStart=/bin/bash -c "${NUMACTL} /usr/bin/mongod --quiet --config /etc/mongod.conf"
 LimitFSIZE=infinity
 LimitCPU=infinity
 LimitAS=infinity

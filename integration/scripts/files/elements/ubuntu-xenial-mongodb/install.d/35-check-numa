@@ -7,7 +7,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 mkdir -p /usr/share/mongodb
 
-cat > /usr/share/mongodb/check_numa.sh << '_EOF_'
+cat > /usr/share/mongodb/check-numa.sh << '_EOF_'
 #!/bin/sh
 # Handle NUMA access to CPUs (SERVER-3574)
 # This verifies the existence of numactl as well as testing that the command works
@@ -21,4 +21,4 @@ else
 fi
 _EOF_
 
-chmod 755 /usr/share/mongodb/check_numa.sh
+chmod 755 /usr/share/mongodb/check-numa.sh
