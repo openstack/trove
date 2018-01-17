@@ -2,38 +2,49 @@
     name: openstack/trove
     check:
       jobs:
-        - trove-functional-dsvm-mysql
-        - trove-scenario-dsvm-mariadb-single:
+        - trove-functional-mysql
+        - trove-scenario-mariadb-single:
             voting: false
-        - trove-scenario-dsvm-mariadb-multi:
+        - trove-scenario-mariadb-multi:
             voting: false
-        - trove-scenario-dsvm-mysql-single
-        - trove-scenario-dsvm-mysql-multi
-        - trove-scenario-dsvm-postgresql-single:
+        - trove-scenario-mysql-single
+        - trove-scenario-mysql-multi
+        - trove-scenario-postgresql-single:
             voting: false
-        - trove-scenario-dsvm-postgresql-multi:
+        - trove-scenario-postgresql-multi:
             voting: false
-        - trove-scenario-dsvm-pxc-single:
+        - trove-scenario-pxc-single:
             voting: false
-        - trove-scenario-dsvm-pxc-multi:
+        - trove-scenario-pxc-multi:
             voting: false
-        - trove-scenario-dsvm-redis-single:
+        - trove-scenario-redis-single:
             voting: false
-        - trove-scenario-dsvm-redis-multi:
+        - trove-scenario-redis-multi:
             voting: false
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
     gate:
       queue: trove
       jobs:
-        - trove-functional-dsvm-mysql
-        - trove-scenario-dsvm-mysql-single
-        - trove-scenario-dsvm-mysql-multi
+        - trove-functional-mysql
+        - trove-scenario-mysql-single
+        - trove-scenario-mysql-multi
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
+    experimental:
+      jobs:
+        - trove-grenade
+        - trove-scenario-cassandra-single
+        - trove-scenario-cassandra-multi
+        - trove-scenario-couchbase-single
+        - trove-scenario-couchdb-single
+        - trove-scenario-mongodb-single
+        - trove-scenario-mongodb-multi
+        - trove-scenario-percona-single
+        - trove-scenario-percona-multi
 
 - job:
-    name: trove-functional-dsvm-mysql
+    name: trove-functional-mysql
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-functional-dsvm-mysql/run.yaml
     post-run: playbooks/legacy/trove-functional-dsvm-mysql/post.yaml
@@ -47,7 +58,75 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-mariadb-single
+    name: trove-grenade
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/grenade-dsvm-trove/run.yaml
+    post-run: playbooks/legacy/grenade-dsvm-trove/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-dev/grenade
+      - openstack-infra/devstack-gate
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-cassandra-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-cassandra-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-cassandra-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-cassandra-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-cassandra-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-cassandra-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-couchdb-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-couchdb-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-couchdb-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-couchbase-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-couchbase-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-couchbase-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-mariadb-single
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-mariadb-single/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-mariadb-single/post.yaml
@@ -61,7 +140,7 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-mariadb-multi
+    name: trove-scenario-mariadb-multi
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-mariadb-multi/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-mariadb-multi/post.yaml
@@ -75,7 +154,35 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-mysql-single
+    name: trove-scenario-mongodb-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-mongodb-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-mongodb-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-mongodb-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-mongodb-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-mongodb-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-mysql-single
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-mysql-single/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-mysql-single/post.yaml
@@ -89,7 +196,7 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-mysql-multi
+    name: trove-scenario-mysql-multi
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-mysql-multi/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-mysql-multi/post.yaml
@@ -103,7 +210,35 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-postgresql-single
+    name: trove-scenario-percona-multi
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-percona-multi/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-percona-multi/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-percona-single
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/trove-scenario-dsvm-percona-single/run.yaml
+    post-run: playbooks/legacy/trove-scenario-dsvm-percona-single/post.yaml
+    timeout: 10800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/diskimage-builder
+      - openstack/python-troveclient
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+
+- job:
+    name: trove-scenario-postgresql-single
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-postgresql-single/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-postgresql-single/post.yaml
@@ -117,7 +252,7 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-postgresql-multi
+    name: trove-scenario-postgresql-multi
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-postgresql-multi/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-postgresql-multi/post.yaml
@@ -130,9 +265,8 @@
       - openstack/trove
       - openstack/trove-dashboard
 
-
 - job:
-    name: trove-scenario-dsvm-pxc-single
+    name: trove-scenario-pxc-single
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-pxc-single/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-pxc-single/post.yaml
@@ -146,7 +280,7 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-pxc-multi
+    name: trove-scenario-pxc-multi
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-pxc-multi/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-pxc-multi/post.yaml
@@ -160,7 +294,7 @@
       - openstack/trove-dashboard
 
 - job:
-    name: trove-scenario-dsvm-redis-single
+    name: trove-scenario-redis-single
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-redis-single/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-redis-single/post.yaml
@@ -173,9 +307,8 @@
       - openstack/trove
       - openstack/trove-dashboard
 
-
 - job:
-    name: trove-scenario-dsvm-redis-multi
+    name: trove-scenario-redis-multi
     parent: legacy-dsvm-base
     run: playbooks/legacy/trove-scenario-dsvm-redis-multi/run.yaml
     post-run: playbooks/legacy/trove-scenario-dsvm-redis-multi/post.yaml
