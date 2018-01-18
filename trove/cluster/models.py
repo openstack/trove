@@ -17,6 +17,7 @@ import six
 
 from oslo_log import log as logging
 
+from neutronclient.common import exceptions as neutron_exceptions
 from novaclient import exceptions as nova_exceptions
 from trove.cluster.tasks import ClusterTask
 from trove.cluster.tasks import ClusterTasks
@@ -664,7 +665,7 @@ def validate_instance_nics(context, instances):
         return
     instance_nic = instance_nics[0]
     try:
-        nova_client = remote.create_nova_client(context)
-        nova_client.networks.get(instance_nic)
-    except nova_exceptions.NotFound:
+        neutron_client = remote.create_neutron_client(context)
+        neutron_client.find_resource('network', instance_nic)
+    except neutron_exceptions.NotFound:
         raise exception.NetworkNotFound(uuid=instance_nic)

@@ -201,13 +201,15 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
     @patch.object(remote, 'create_nova_client')
-    def test_create(self, mock_client, mock_check_quotas, mock_task_api,
-                    mock_db_create, mock_ins_create, mock_find_all):
+    @patch.object(remote, 'create_neutron_client')
+    def test_create(self, mock_neutron_client, mock_nova_client,
+                    mock_check_quotas, mock_task_api, mock_db_create,
+                    mock_ins_create, mock_find_all):
         instances = self.instances
         flavors = Mock()
         networks = Mock()
-        mock_client.return_value.flavors = flavors
-        mock_client.return_value.networks = networks
+        mock_nova_client.return_value.flavors = flavors
+        mock_neutron_client.return_value.find_resource = networks
         self.cluster.create(Mock(),
                             self.cluster_name,
                             self.datastore,
@@ -311,9 +313,12 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
     @patch.object(remote, 'create_nova_client')
-    def test_grow(self, mock_client, mock_check_quotas, mock_task_api,
+    @patch.object(remote, 'create_neutron_client')
+    def test_grow(self, mock_neutron_client, mock_nova_client,
+                  mock_check_quotas, mock_task_api,
                   mock_inst_create, mock_conf, mock_update):
-        mock_client.return_value.flavors = Mock()
+        mock_nova_client.return_value.flavors = Mock()
+        mock_neutron_client.return_value.find_resource = Mock()
         self.cluster.grow(self.instances)
         mock_update.assert_called_with(
             task_status=ClusterTasks.GROWING_CLUSTER)
@@ -327,9 +332,12 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(inst_models.Instance, 'create')
     @patch.object(QUOTAS, 'check_quotas')
     @patch.object(remote, 'create_nova_client')
-    def test_grow_exception(self, mock_client, mock_check_quotas,
-                            mock_inst_create, mock_conf, mock_update):
-        mock_client.return_value.flavors = Mock()
+    @patch.object(remote, 'create_neutron_client')
+    def test_grow_exception(self, mock_neutron_client, mock_nova_client,
+                            mock_check_quotas, mock_inst_create,
+                            mock_conf, mock_update):
+        mock_nova_client.return_value.flavors = Mock()
+        mock_neutron_client.return_value.find_resource = Mock()
         with patch.object(task_api, 'load') as mock_load:
             mock_load.return_value.grow_cluster = Mock(
                 side_effect=exception.BadRequest)
