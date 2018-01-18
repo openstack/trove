@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Create [mysql] section if no section exsists in /etc/mysql/my.cnf
+if ! grep -q -P '^\[.*\]' /etc/mysql/my.cnf; then
+  sed -i '1s/^/[mysql]\n/' /etc/mysql/my.cnf
+fi
