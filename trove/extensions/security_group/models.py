@@ -153,7 +153,7 @@ class SecurityGroupRule(DatabaseModelBase):
 
             if not remote_rule_id:
                 raise exception.SecurityGroupRuleCreationError(
-                    "Failed to create Security Group Rule")
+                    "Failed to create Remote Security Group Rule")
             else:
                 # Create db record
                 return cls.create(
@@ -165,7 +165,7 @@ class SecurityGroupRule(DatabaseModelBase):
                     group_id=sec_group['id'])
 
         except exception.SecurityGroupRuleCreationError:
-            LOG.exception(_("Failed to create remote security group."))
+            LOG.exception(_("Failed to create remote security group rule."))
             raise
 
     def get_security_group(self, tenant_id):
@@ -179,9 +179,9 @@ class SecurityGroupRule(DatabaseModelBase):
             RemoteSecurityGroup.delete_rule(self.id, context, region_name)
             super(SecurityGroupRule, self).delete()
         except exception.TroveError:
-            LOG.exception(_('Failed to delete security group.'))
+            LOG.exception(_('Failed to delete remote security group rule.'))
             raise exception.SecurityGroupRuleDeletionError(
-                "Failed to delete Security Group")
+                "Failed to delete Remote Security Group Rule")
 
 
 class SecurityGroupInstanceAssociation(DatabaseModelBase):
