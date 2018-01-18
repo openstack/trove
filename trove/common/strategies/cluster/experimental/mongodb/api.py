@@ -486,7 +486,7 @@ class MongoDbCluster(models.Cluster):
         query_routers = []
         for item in instances:
             if item['instance_type'] == 'replica':
-                replica_requirements = ['related_to', 'name']
+                replica_requirements = ['name']
                 if not all(key in item for key in replica_requirements):
                     raise exception.TroveError(
                         _('Replica instance does not have required field(s) '
