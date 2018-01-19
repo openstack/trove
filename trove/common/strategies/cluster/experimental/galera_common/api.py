@@ -58,11 +58,6 @@ class GaleraCommonCluster(cluster_models.Cluster):
         ds_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)
 
-        # Check number of instances is at least min_cluster_member_count
-        if num_instances < ds_conf.min_cluster_member_count:
-            raise exception.ClusterNumInstancesNotLargeEnough(
-                num_instances=ds_conf.min_cluster_member_count)
-
         # Checking volumes and get delta for quota check
         cluster_models.validate_instance_flavors(
             context, instances, ds_conf.volume_support, ds_conf.device_path)
@@ -118,6 +113,11 @@ class GaleraCommonCluster(cluster_models.Cluster):
     def create(cls, context, name, datastore, datastore_version,
                instances, extended_properties, locality, configuration):
         LOG.debug("Initiating Galera cluster creation.")
+        ds_conf = CONF.get(datastore_version.manager)
+        # Check number of instances is at least min_cluster_member_count
+        if len(instances) < ds_conf.min_cluster_member_count:
+            raise exception.ClusterNumInstancesNotLargeEnough(
+                num_instances=ds_conf.min_cluster_member_count)
         cls._validate_cluster_instances(context, instances, datastore,
                                         datastore_version)
         # Updating Cluster Task
@@ -146,6 +146,9 @@ class GaleraCommonCluster(cluster_models.Cluster):
         db_info = self.db_info
         datastore = self.ds
         datastore_version = self.ds_version
+
+        self._validate_cluster_instances(context, instances, datastore,
+                                         datastore_version)
 
         db_info.update(task_status=ClusterTasks.GROWING_CLUSTER)
         try:
