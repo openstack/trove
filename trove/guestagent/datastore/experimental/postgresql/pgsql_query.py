@@ -100,7 +100,7 @@ class UserQuery(object):
         create_clause = "CREATE USER \"{name}\"".format(name=name)
         with_clause = cls._build_with_clause(
             password, encrypt_password, *options)
-        return ''.join([create_clause, with_clause])
+        return ' '.join([create_clause, with_clause])
 
     @classmethod
     def _build_with_clause(cls, password, encrypt_password=None, *options):

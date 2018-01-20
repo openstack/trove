@@ -283,11 +283,11 @@ class PostgresqlReplicationStreaming(base.Replication):
                                group=service.pgsql_owner, as_root=True)
 
     def enable_hot_standby(self, service):
+        # Only support pg version > 9.6, wal_level set to replica, and
+        # remove parameter "checkpoint_segments".
         opts = {'hot_standby': 'on',
-                'wal_level': 'hot_standby'}
-        # wal_log_hints for pg_rewind is only supported in 9.4+
-        if service.pg_version[1] in ('9.4', '9.5'):
-            opts['wal_log_hints'] = 'on'
+                'wal_level': 'replica',
+                'wal_log_hints': 'on'}
 
         service.configuration_manager.\
             apply_system_override(opts, SLAVE_STANDBY_OVERRIDE)

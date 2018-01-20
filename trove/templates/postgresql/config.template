@@ -218,11 +218,6 @@ wal_level = minimal			# minimal, archive, hot_standby, or logical
 
 # - Checkpoints -
 
-checkpoint_segments = {{ (shared_buffers_mb[0] / 16 + 1)|int }}		# in logfile segments, min 1, 16MB each
-								# Each segment is normally 16MB long.
-								# The number of segments should be enough to
-								# span the 'shared_buffers' size.
-								# We set the default to (shared_buffers / 16 + 1).
 #checkpoint_timeout = 5min		# range 30s-1h
 #checkpoint_completion_target = 0.5	# checkpoint target duration, 0.0 - 1.0
 #checkpoint_warning = 30s		# 0 disables

@@ -280,16 +280,16 @@ class PgSqlApp(object):
         arch_cmd = "'test ! -f {wal_arch}/%f && cp %p {wal_arch}/%f'".format(
             wal_arch=wal_arch_loc
         )
+        # Only support pg version > 9.6, wal_level set to replica, and
+        # remove parameter "checkpoint_segments".
         opts = {
-            'wal_level': 'hot_standby',
+            'wal_level': 'replica',
             'archive_mode': 'on',
             'max_wal_senders': 8,
-            'checkpoint_segments': 8,
+            'wal_log_hints': 'on',
             'wal_keep_segments': 8,
             'archive_command': arch_cmd
         }
-        if not self.pg_version[1] in ('9.3'):
-            opts['wal_log_hints'] = 'on'
 
         self.configuration_manager.apply_system_override(
             opts, BACKUP_CFG_OVERRIDE)
@@ -594,7 +594,7 @@ class PgSqlAdmin(object):
     # Default set of options of an administrative account.
     ADMIN_OPTIONS = (
         'SUPERUSER', 'CREATEDB', 'CREATEROLE', 'INHERIT', 'REPLICATION',
-        'LOGIN'
+        'BYPASSRLS', 'LOGIN'
     )
 
     def __init__(self, user):
