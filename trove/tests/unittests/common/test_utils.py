@@ -22,6 +22,7 @@ from trove.common import exception
 from trove.common import utils
 from trove.tests.unittests import trove_testtools
 from trove.tests.util import utils as test_utils
+import webob
 
 
 class TestUtils(trove_testtools.TestCase):
@@ -173,3 +174,15 @@ class TestUtils(trove_testtools.TestCase):
         assert_retry(te.test_foo_2, TestEx3, 1, TestEx3)
         assert_retry(te.test_foo_2, TestEx2, 3, TestEx2)
         assert_retry(te.test_foo_2, [TestEx1, TestEx3, TestEx2], 2, TestEx3)
+
+    def test_req_to_text(self):
+        req = webob.Request.blank('/')
+        expected = u'GET / HTTP/1.0\r\nHost: localhost:80'
+        self.assertEqual(expected, utils.req_to_text(req))
+
+        # add a header containing unicode characters
+        req.headers.update({
+            'X-Auth-Project-Id': u'\u6d4b\u8bd5'})
+        expected = (u'GET / HTTP/1.0\r\nHost: localhost:80\r\n'
+                    u'X-Auth-Project-Id: \u6d4b\u8bd5')
+        self.assertEqual(expected, utils.req_to_text(req))
