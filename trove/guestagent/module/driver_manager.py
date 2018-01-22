@@ -31,7 +31,7 @@ class ModuleDriverManager(object):
     MODULE_DRIVER_NAMESPACE = 'trove.guestagent.module.drivers'
 
     def __init__(self):
-        LOG.info(_('Initializing module driver manager.'))
+        LOG.info('Initializing module driver manager.')
 
         self._drivers = {}
         self._module_types = [mt.lower() for mt in CONF.module_types]
@@ -47,14 +47,14 @@ class ModuleDriverManager(object):
         try:
             manager.map(self.add_driver_extension)
         except stevedore.exception.NoMatches:
-            LOG.info(_("No module drivers loaded"))
+            LOG.info("No module drivers loaded")
 
     def _check_extension(self, extension):
         """Checks for required methods in driver objects."""
         driver = extension.obj
         supported = False
         try:
-            LOG.info(_('Loading Module driver: %s'), driver.get_type())
+            LOG.info('Loading Module driver: %s', driver.get_type())
             if driver.get_type() != driver.get_type().lower():
                 raise AttributeError(_("Driver 'type' must be lower-case"))
             LOG.debug('  description: %s', driver.get_description())
@@ -68,10 +68,10 @@ class ModuleDriverManager(object):
             if driver.get_type() in self._module_types:
                 supported = True
             else:
-                LOG.info(_("Driver '%s' not supported, skipping"),
+                LOG.info("Driver '%s' not supported, skipping",
                          driver.get_type())
         except AttributeError as ex:
-            LOG.exception(_("Exception loading module driver: %s"),
+            LOG.exception("Exception loading module driver: %s",
                           encodeutils.exception_to_unicode(ex))
 
         return supported
@@ -83,7 +83,7 @@ class ModuleDriverManager(object):
         # by calling self._check_extension(extension)
         driver = extension.obj
         driver_type = driver.get_type()
-        LOG.info(_('Loaded module driver: %s'), driver_type)
+        LOG.info('Loaded module driver: %s', driver_type)
 
         if driver_type in self._drivers:
             raise exception.Error(_("Found duplicate driver: %s") %

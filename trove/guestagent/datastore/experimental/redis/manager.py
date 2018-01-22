@@ -50,15 +50,15 @@ class Manager(manager.Manager):
 
     def _perform_restore(self, backup_info, context, restore_location, app):
         """Perform a restore on this instance."""
-        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
+        LOG.info("Restoring database from backup %s.", backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s."),
+            LOG.exception("Error performing restore from backup %s.",
                           backup_info['id'])
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
-        LOG.info(_("Restored database successfully."))
+        LOG.info("Restored database successfully.")
 
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,
@@ -75,7 +75,7 @@ class Manager(manager.Manager):
                                    as_root=True)
             LOG.debug('Mounted the volume.')
         self._app.install_if_needed(packages)
-        LOG.info(_('Writing redis configuration.'))
+        LOG.info('Writing redis configuration.')
         if cluster_config:
             config_contents = (config_contents + "\n"
                                + "cluster-enabled yes\n"
@@ -192,7 +192,7 @@ class Manager(manager.Manager):
             self.replication.enable_as_slave(self._app, replica_info,
                                              slave_config)
         except Exception:
-            LOG.exception(_("Error enabling replication."))
+            LOG.exception("Error enabling replication.")
             raise
 
     def make_read_only(self, context, read_only):
@@ -221,11 +221,11 @@ class Manager(manager.Manager):
         return master_host, repl_offset
 
     def get_latest_txn_id(self, context):
-        LOG.info(_("Retrieving latest repl offset."))
+        LOG.info("Retrieving latest repl offset.")
         return self._get_repl_offset()
 
     def wait_for_txn(self, context, txn):
-        LOG.info(_("Waiting on repl offset '%s'."), txn)
+        LOG.info("Waiting on repl offset '%s'."), txn
 
         def _wait_for_txn():
             current_offset = self._get_repl_offset()

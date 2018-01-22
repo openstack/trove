@@ -273,7 +273,7 @@ class Manager(periodic_task.PeriodicTasks):
                  device_path, mount_point, backup_info,
                  config_contents, root_password, overrides,
                  cluster_config, snapshot, modules):
-        LOG.info(_("Starting datastore prepare for '%s'."), self.manager)
+        LOG.info("Starting datastore prepare for '%s'.", self.manager)
         self.status.begin_install()
         post_processing = True if cluster_config else False
         try:
@@ -284,23 +284,23 @@ class Manager(periodic_task.PeriodicTasks):
                             config_contents, root_password, overrides,
                             cluster_config, snapshot)
             if overrides:
-                LOG.info(_("Applying user-specified configuration "
-                           "(called from 'prepare')."))
+                LOG.info("Applying user-specified configuration "
+                         "(called from 'prepare').")
                 self.apply_overrides_on_prepare(context, overrides)
         except Exception as ex:
             self.prepare_error = True
-            LOG.exception(_("An error occurred preparing datastore: %s"),
+            LOG.exception("An error occurred preparing datastore: %s",
                           encodeutils.exception_to_unicode(ex))
             raise
         finally:
-            LOG.info(_("Ending datastore prepare for '%s'."), self.manager)
+            LOG.info("Ending datastore prepare for '%s'.", self.manager)
             self.status.end_install(error_occurred=self.prepare_error,
                                     post_processing=post_processing)
         # At this point critical 'prepare' work is done and the instance
         # is now in the correct 'ACTIVE' 'INSTANCE_READY' or 'ERROR' state.
         # Of cource if an error has occurred, none of the code that follows
         # will run.
-        LOG.info(_("Completed setup of '%s' datastore successfully."),
+        LOG.info("Completed setup of '%s' datastore successfully.",
                  self.manager)
 
         # The following block performs additional instance initialization.
@@ -308,56 +308,56 @@ class Manager(periodic_task.PeriodicTasks):
         # or change the instance state.
         try:
             if modules:
-                LOG.info(_("Applying modules (called from 'prepare')."))
+                LOG.info("Applying modules (called from 'prepare').")
                 self.module_apply(context, modules)
-                LOG.info(_('Module apply completed.'))
+                LOG.info('Module apply completed.')
         except Exception as ex:
-            LOG.exception(_("An error occurred applying modules: "
-                            "%s"), ex.message)
+            LOG.exception("An error occurred applying modules: "
+                          "%s", ex.message)
         # The following block performs single-instance initialization.
         # Failures will be recorded, but won't stop the provisioning
         # or change the instance state.
         if not cluster_config:
             try:
                 if databases:
-                    LOG.info(_("Creating databases (called from 'prepare')."))
+                    LOG.info("Creating databases (called from 'prepare').")
                     self.create_database(context, databases)
-                    LOG.info(_('Databases created successfully.'))
+                    LOG.info('Databases created successfully.')
             except Exception as ex:
-                LOG.exception(_("An error occurred creating databases: "
-                                "%s"), ex.message)
+                LOG.exception("An error occurred creating databases: "
+                              "%s", ex.message)
             try:
                 if users:
-                    LOG.info(_("Creating users (called from 'prepare')"))
+                    LOG.info("Creating users (called from 'prepare')")
                     self.create_user(context, users)
-                    LOG.info(_('Users created successfully.'))
+                    LOG.info('Users created successfully.')
             except Exception as ex:
-                LOG.exception(_("An error occurred creating users: "
-                                "%s"), ex.message)
+                LOG.exception("An error occurred creating users: "
+                              "%s", ex.message)
 
             # We only enable-root automatically if not restoring a backup
             # that may already have root enabled in which case we keep it
             # unchanged.
             if root_password and not backup_info:
                 try:
-                    LOG.info(_("Enabling root user (with password)."))
+                    LOG.info("Enabling root user (with password).")
                     self.enable_root_on_prepare(context, root_password)
-                    LOG.info(_('Root enabled successfully.'))
+                    LOG.info('Root enabled successfully.')
                 except Exception as ex:
-                    LOG.exception(_("An error occurred enabling root user: "
-                                    "%s"), ex.message)
+                    LOG.exception("An error occurred enabling root user: "
+                                  "%s", ex.message)
 
         try:
-            LOG.info(_("Calling post_prepare for '%s' datastore."),
+            LOG.info("Calling post_prepare for '%s' datastore.",
                      self.manager)
             self.post_prepare(context, packages, databases, memory_mb,
                               users, device_path, mount_point, backup_info,
                               config_contents, root_password, overrides,
                               cluster_config, snapshot)
-            LOG.info(_("Post prepare for '%s' datastore completed."),
+            LOG.info("Post prepare for '%s' datastore completed.",
                      self.manager)
         except Exception as ex:
-            LOG.exception(_("An error occurred in post prepare: %s"),
+            LOG.exception("An error occurred in post prepare: %s",
                           ex.message)
             raise
 
@@ -394,7 +394,7 @@ class Manager(periodic_task.PeriodicTasks):
         however no status changes are made and the end-user will not be
         informed of the error.
         """
-        LOG.info(_('No post_prepare work has been defined.'))
+        LOG.info('No post_prepare work has been defined.')
         pass
 
     def pre_upgrade(self, context):
@@ -472,13 +472,13 @@ class Manager(periodic_task.PeriodicTasks):
     # Log related
     #############
     def guest_log_list(self, context):
-        LOG.info(_("Getting list of guest logs."))
+        LOG.info("Getting list of guest logs.")
         self.guest_log_context = context
         gl_cache = self.guest_log_cache
         result = filter(None, [gl_cache[log_name].show()
                                if gl_cache[log_name].exposed else None
                                for log_name in gl_cache.keys()])
-        LOG.info(_("Returning list of logs: %s"), result)
+        LOG.info("Returning list of logs: %s", result)
         return result
 
     def guest_log_action(self, context, log_name, enable, disable,
@@ -489,9 +489,9 @@ class Manager(periodic_task.PeriodicTasks):
         # Enable if we are publishing, unless told to disable
         if publish and not disable:
             enable = True
-        LOG.info(_("Processing guest log '%(log)s' "
-                   "(enable=%(en)s, disable=%(dis)s, "
-                   "publish=%(pub)s, discard=%(disc)s)."),
+        LOG.info("Processing guest log '%(log)s' "
+                 "(enable=%(en)s, disable=%(dis)s, "
+                 "publish=%(pub)s, discard=%(disc)s).",
                  {'log': log_name, 'en': enable, 'dis': disable,
                   'pub': publish, 'disc': discard})
         self.guest_log_context = context
@@ -522,7 +522,7 @@ class Manager(periodic_task.PeriodicTasks):
                 log_details = gl_cache[log_name].discard_log()
             if publish:
                 log_details = gl_cache[log_name].publish_log()
-            LOG.info(_("Details for log '%(log)s': %(det)s"),
+            LOG.info("Details for log '%(log)s': %(det)s",
                      {'log': log_name, 'det': log_details})
             return log_details
 
@@ -561,11 +561,14 @@ class Manager(periodic_task.PeriodicTasks):
                     gl_def.get(self.GUEST_LOG_SECTION_LABEL),
                     restart_required)
         else:
-            msg = (_("%(verb)s log '%(log)s' not supported - "
-                     "no configuration manager defined!") %
-                   {'verb': verb, 'log': log_name})
-            LOG.error(msg)
-            raise exception.GuestError(original_message=msg)
+            log_fmt = ("%(verb)s log '%(log)s' not supported - "
+                       "no configuration manager defined!")
+            exc_fmt = _("%(verb)s log '%(log)s' not supported - "
+                        "no configuration manager defined!")
+            msg_content = {'verb': verb, 'log': log_name}
+            LOG.error(log_fmt, msg_content)
+            raise exception.GuestError(
+                original_message=(exc_fmt % msg_content))
 
         return restart_required
 
@@ -642,14 +645,14 @@ class Manager(periodic_task.PeriodicTasks):
     # Module related
     ################
     def module_list(self, context, include_contents=False):
-        LOG.info(_("Getting list of modules."))
+        LOG.info("Getting list of modules.")
         results = module_manager.ModuleManager.read_module_results(
             is_admin=context.is_admin, include_contents=include_contents)
-        LOG.info(_("Returning list of modules: %s"), results)
+        LOG.info("Returning list of modules: %s", results)
         return results
 
     def module_apply(self, context, modules=None):
-        LOG.info(_("Applying modules."))
+        LOG.info("Applying modules.")
         results = []
         modules = [data['module'] for data in modules]
         try:
@@ -699,11 +702,11 @@ class Manager(periodic_task.PeriodicTasks):
                 driver, module_type, name, tenant, datastore, ds_version,
                 contents, id, md5, auto_apply, visible, is_admin)
             results.append(result)
-        LOG.info(_("Returning list of modules: %s"), results)
+        LOG.info("Returning list of modules: %s", results)
         return results
 
     def module_remove(self, context, module=None):
-        LOG.info(_("Removing module."))
+        LOG.info("Removing module.")
         module = module['module']
         id = module.get('id', None)
         module_type = module.get('type', None)
@@ -719,7 +722,7 @@ class Manager(periodic_task.PeriodicTasks):
                 module_type)
         module_manager.ModuleManager.remove_module(
             driver, module_type, id, name, datastore, ds_version)
-        LOG.info(_("Deleted module: %s"), name)
+        LOG.info("Deleted module: %s", name)
 
     ###############
     # Not Supported

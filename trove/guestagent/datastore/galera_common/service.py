@@ -36,7 +36,7 @@ class GaleraApp(service.BaseMySqlApp):
                                         keep_alive_connection_cls)
 
     def _grant_cluster_replication_privilege(self, replication_user):
-        LOG.info(_("Granting Replication Slave privilege."))
+        LOG.info("Granting Replication Slave privilege.")
         with self.local_sql_client(self.get_engine()) as client:
             perms = ['REPLICATION CLIENT', 'RELOAD', 'LOCK TABLES']
             g = sql_query.Grant(permissions=perms,
@@ -46,13 +46,13 @@ class GaleraApp(service.BaseMySqlApp):
             client.execute(t)
 
     def _bootstrap_cluster(self, timeout=120):
-        LOG.info(_("Bootstraping cluster."))
+        LOG.info("Bootstraping cluster.")
         try:
             utils.execute_with_timeout(
                 self.mysql_service['cmd_bootstrap_galera_cluster'],
                 shell=True, timeout=timeout)
         except KeyError:
-            LOG.exception(_("Error bootstrapping cluster."))
+            LOG.exception("Error bootstrapping cluster.")
             raise RuntimeError(_("Service is not discovered."))
 
     def write_cluster_configuration_overrides(self, cluster_configuration):
@@ -61,7 +61,7 @@ class GaleraApp(service.BaseMySqlApp):
 
     def install_cluster(self, replication_user, cluster_configuration,
                         bootstrap=False):
-        LOG.info(_("Installing cluster configuration."))
+        LOG.info("Installing cluster configuration.")
         self._grant_cluster_replication_privilege(replication_user)
         self.stop_db()
         self.write_cluster_configuration_overrides(cluster_configuration)

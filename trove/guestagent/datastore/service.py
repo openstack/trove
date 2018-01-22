@@ -119,14 +119,14 @@ class BaseDbStatus(object):
             final_status = instance.ServiceStatuses.INSTANCE_READY
 
         if final_status:
-            LOG.info(_("Set final status to %s."), final_status)
+            LOG.info("Set final status to %s.", final_status)
             self.set_status(final_status, force=True)
         else:
             self._end_install_or_restart(True)
 
     def end_restart(self):
         self.restart_mode = False
-        LOG.info(_("Ending restart."))
+        LOG.info("Ending restart.")
         self._end_install_or_restart(False)
 
     def _end_install_or_restart(self, force):
@@ -134,7 +134,7 @@ class BaseDbStatus(object):
         Updates the database with the actual DB server status.
         """
         real_status = self._get_actual_db_status()
-        LOG.info(_("Current database status is '%s'."), real_status)
+        LOG.info("Current database status is '%s'.", real_status)
         self.set_status(real_status, force=force)
 
     def _get_actual_db_status(self):
@@ -184,9 +184,9 @@ class BaseDbStatus(object):
             status = self._get_actual_db_status()
             self.set_status(status)
         else:
-            LOG.info(_("DB server is not installed or is in restart mode, so "
-                       "for now we'll skip determining the status of DB on "
-                       "this instance."))
+            LOG.info("DB server is not installed or is in restart mode, so "
+                     "for now we'll skip determining the status of DB on "
+                     "this instance.")
 
     def restart_db_service(self, service_candidates, timeout):
         """Restart the database.
@@ -241,13 +241,13 @@ class BaseDbStatus(object):
 
         :raises:              :class:`RuntimeError` on failure.
         """
-        LOG.info(_("Starting database service."))
+        LOG.info("Starting database service.")
         operating_system.start_service(service_candidates, timeout=timeout)
 
         self.wait_for_database_service_start(timeout, update_db=update_db)
 
         if enable_on_boot:
-            LOG.info(_("Enable service auto-start on boot."))
+            LOG.info("Enable service auto-start on boot.")
             operating_system.enable_service_on_boot(service_candidates)
 
     def wait_for_database_service_start(self, timeout, update_db=False):
@@ -266,7 +266,7 @@ class BaseDbStatus(object):
                 instance.ServiceStatuses.RUNNING, timeout, update_db):
             raise RuntimeError(_("Database failed to start."))
 
-        LOG.info(_("Database has started successfully."))
+        LOG.info("Database has started successfully.")
 
     def stop_db_service(self, service_candidates, timeout,
                         disable_on_boot=False, update_db=False):
@@ -288,7 +288,7 @@ class BaseDbStatus(object):
 
         :raises:              :class:`RuntimeError` on failure.
         """
-        LOG.info(_("Stopping database service."))
+        LOG.info("Stopping database service.")
         operating_system.stop_service(service_candidates, timeout=timeout)
 
         LOG.debug("Waiting for database to shutdown.")
@@ -296,10 +296,10 @@ class BaseDbStatus(object):
                 instance.ServiceStatuses.SHUTDOWN, timeout, update_db):
             raise RuntimeError(_("Database failed to stop."))
 
-        LOG.info(_("Database has stopped successfully."))
+        LOG.info("Database has stopped successfully.")
 
         if disable_on_boot:
-            LOG.info(_("Disable service auto-start on boot."))
+            LOG.info("Disable service auto-start on boot.")
             operating_system.disable_service_on_boot(service_candidates)
 
     def _wait_for_database_service_status(self, status, timeout, update_db):
@@ -318,8 +318,8 @@ class BaseDbStatus(object):
         """
         if not self.wait_for_real_status_to_change_to(
                 status, timeout, update_db):
-            LOG.info(_("Service status did not change to %(status)s "
-                       "within the given timeout: %(timeout)ds"),
+            LOG.info("Service status did not change to %(status)s "
+                     "within the given timeout: %(timeout)ds",
                      {'status': status, 'timeout': timeout})
             LOG.debug("Attempting to cleanup stalled services.")
             try:
@@ -367,9 +367,9 @@ class BaseDbStatus(object):
 
                 time.sleep(CONF.state_change_poll_time)
 
-        LOG.error(_("Timeout while waiting for database status to change."
-                    "Expected state %(status)s, "
-                    "current state is %(actual_status)s"),
+        LOG.error("Timeout while waiting for database status to change."
+                  "Expected state %(status)s, "
+                  "current state is %(actual_status)s",
                   {"status": status, "actual_status": self.status})
         return False
 

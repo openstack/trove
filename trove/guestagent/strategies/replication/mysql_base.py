@@ -22,7 +22,6 @@ from oslo_utils import netutils
 
 from trove.common import cfg
 from trove.common.db.mysql import models
-from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
@@ -89,7 +88,7 @@ class MysqlReplicationBase(base.Replication):
             except Exception:
                 retry_count += 1
                 if retry_count > 5:
-                    LOG.error(_("Replication user retry count exceeded"))
+                    LOG.error("Replication user retry count exceeded")
                     raise
 
         return replication_user
@@ -138,7 +137,7 @@ class MysqlReplicationBase(base.Replication):
             service.restart()
             self.connect_to_master(service, snapshot)
         except Exception:
-            LOG.exception(_("Exception enabling guest as replica"))
+            LOG.exception("Exception enabling guest as replica")
             raise
 
     def detach_slave(self, service, for_failover):

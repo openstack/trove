@@ -24,7 +24,6 @@ import pexpect
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
@@ -58,7 +57,7 @@ class MySQLRestoreMixin(object):
     def mysql_is_not_running(self):
         try:
             utils.execute_with_timeout("/usr/bin/pgrep", "mysqld")
-            LOG.info(_("MySQL is still running."))
+            LOG.info("MySQL is still running.")
             return False
         except exception.ProcessExecutionError:
             LOG.debug("MySQL is not running.")
@@ -92,9 +91,9 @@ class MySQLRestoreMixin(object):
         try:
             index = child.expect(['Starting mysqld daemon'])
             if index == 0:
-                LOG.info(_("Starting MySQL"))
+                LOG.info("Starting MySQL")
         except pexpect.TIMEOUT:
-            LOG.exception(_("Got a timeout launching mysqld_safe"))
+            LOG.exception("Got a timeout launching mysqld_safe")
         finally:
             # There is a race condition here where we kill mysqld before
             # the init file been executed. We need to ensure mysqld is up.
@@ -110,7 +109,7 @@ class MySQLRestoreMixin(object):
                 raise base.RestoreError("Reset root password failed: %s"
                                         % first_err_message)
 
-            LOG.info(_("Root password reset successfully."))
+            LOG.info("Root password reset successfully.")
             LOG.debug("Cleaning up the temp mysqld process.")
             utils.execute_with_timeout("mysqladmin", "-uroot",
                                        "--protocol=tcp", "shutdown")
@@ -206,7 +205,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
 
     def pre_restore(self):
         self.app.stop_db()
-        LOG.info(_("Cleaning out restore location: %s."),
+        LOG.info("Cleaning out restore location: %s.",
                  self.restore_location)
         operating_system.chmod(self.restore_location, FileMode.SET_FULL,
                                as_root=True)
@@ -215,7 +214,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
     def _run_prepare(self):
         LOG.debug("Running innobackupex prepare: %s.", self.prepare_cmd)
         self.prep_retcode = utils.execute(self.prepare_cmd, shell=True)
-        LOG.info(_("Innobackupex prepare finished successfully."))
+        LOG.info("Innobackupex prepare finished successfully.")
 
     def post_restore(self):
         self._run_prepare()
@@ -271,7 +270,7 @@ class InnoBackupExIncremental(InnoBackupEx):
         prepare_cmd = self._incremental_prepare_cmd(incremental_dir)
         LOG.debug("Running innobackupex prepare: %s.", prepare_cmd)
         utils.execute(prepare_cmd, shell=True)
-        LOG.info(_("Innobackupex prepare finished successfully."))
+        LOG.info("Innobackupex prepare finished successfully.")
 
     def _incremental_restore(self, location, checksum):
         """Recursively apply backups from all parents.
@@ -286,8 +285,8 @@ class InnoBackupExIncremental(InnoBackupEx):
         metadata = self.storage.load_metadata(location, checksum)
         incremental_dir = None
         if 'parent_location' in metadata:
-            LOG.info(_("Restoring parent: %(parent_location)s"
-                       " checksum: %(parent_checksum)s."), metadata)
+            LOG.info("Restoring parent: %(parent_location)s"
+                     " checksum: %(parent_checksum)s.", metadata)
             parent_location = metadata['parent_location']
             parent_checksum = metadata['parent_checksum']
             # Restore parents recursively so backup are applied sequentially

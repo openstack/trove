@@ -16,7 +16,6 @@
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.guestagent.datastore.mysql_common import manager
 
@@ -56,7 +55,7 @@ class GaleraManager(manager.MySqlManager):
                 replication_user, cluster_configuration, bootstrap)
             LOG.debug("install_cluster call has finished.")
         except Exception:
-            LOG.exception(_('Cluster installation failed.'))
+            LOG.exception('Cluster installation failed.')
             app.status.set_status(
                 rd_instance.ServiceStatuses.FAILED)
             raise

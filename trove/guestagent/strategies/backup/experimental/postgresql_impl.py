@@ -161,13 +161,13 @@ class PgBaseBackup(base.BackupRunner, PgBaseBackupUtil):
         # or direct retrieval from the pgsql backup commands, then something
         # has gone wrong
         if not self.start_segment or not self.start_wal_file:
-            LOG.info(_("Unable to determine starting WAL file/segment"))
+            LOG.info("Unable to determine starting WAL file/segment")
             return False
         if not self.stop_segment or not self.stop_wal_file:
-            LOG.info(_("Unable to determine ending WAL file/segment"))
+            LOG.info("Unable to determine ending WAL file/segment")
             return False
         if not self.label:
-            LOG.info(_("No backup label found"))
+            LOG.info("No backup label found")
             return False
         return True
 
@@ -191,7 +191,7 @@ class PgBaseBackup(base.BackupRunner, PgBaseBackupUtil):
                       "label found: %(label)s",
                       {'base_filename': self.base_filename,
                        'label': metadata['label']})
-            LOG.info(_("Metadata for backup: %s."), str(metadata))
+            LOG.info("Metadata for backup: %s.", str(metadata))
             return metadata['label'] == self.base_filename
 
         try:

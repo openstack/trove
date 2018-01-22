@@ -63,7 +63,7 @@ class RedisAppStatus(service.BaseDbStatus):
         except BusyLoadingError:
             return rd_instance.ServiceStatuses.BLOCKED
         except Exception:
-            LOG.exception(_("Error getting Redis status."))
+            LOG.exception("Error getting Redis status.")
 
         return rd_instance.ServiceStatuses.CRASHED
 
@@ -123,11 +123,11 @@ class RedisApp(object):
         """
         Install redis if needed do nothing if it is already installed.
         """
-        LOG.info(_('Preparing Guest as Redis Server.'))
+        LOG.info('Preparing Guest as Redis Server.')
         if not packager.pkg_is_installed(packages):
-            LOG.info(_('Installing Redis.'))
+            LOG.info('Installing Redis.')
             self._install_redis(packages)
-        LOG.info(_('Redis installed completely.'))
+        LOG.info('Redis installed completely.')
 
     def _install_redis(self, packages):
         """
@@ -203,12 +203,12 @@ class RedisApp(object):
         pass
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_('Starting redis with conf changes.'))
+        LOG.info('Starting redis with conf changes.')
         if self.status.is_running:
             format = 'Cannot start_db_with_conf_changes because status is %s.'
             LOG.debug(format, self.status)
             raise RuntimeError(format % self.status)
-        LOG.info(_("Initiating config."))
+        LOG.info("Initiating config.")
         self.configuration_manager.save_configuration(config_contents)
         # The configuration template has to be updated with
         # guestagent-controlled settings.
@@ -350,7 +350,7 @@ class RedisApp(object):
             utils.execute_with_timeout('redis-cli', 'cluster', 'meet',
                                        ip, port)
         except exception.ProcessExecutionError:
-            LOG.exception(_('Error joining node to cluster at %s.'), ip)
+            LOG.exception('Error joining node to cluster at %s.', ip)
             raise
 
     def cluster_addslots(self, first_slot, last_slot):
@@ -367,8 +367,8 @@ class RedisApp(object):
                                        % out)
                 del slots[0:group_size]
         except exception.ProcessExecutionError:
-            LOG.exception(_('Error adding slots %(first_slot)s-%(last_slot)s'
-                            ' to cluster.'),
+            LOG.exception('Error adding slots %(first_slot)s-%(last_slot)s'
+                          ' to cluster.',
                           {'first_slot': first_slot, 'last_slot': last_slot})
             raise
 
@@ -378,7 +378,7 @@ class RedisApp(object):
                                                 'cluster', 'nodes')
             return [line.split(' ') for line in out.splitlines()]
         except exception.ProcessExecutionError:
-            LOG.exception(_('Error getting node info.'))
+            LOG.exception('Error getting node info.')
             raise
 
     def _get_node_details(self):
@@ -400,7 +400,7 @@ class RedisApp(object):
                                                   'cluster', 'slots')
             return node_id if my_ip not in slots else None
         except exception.ProcessExecutionError:
-            LOG.exception(_('Error validating node to for removal.'))
+            LOG.exception('Error validating node to for removal.')
             raise
 
     def remove_nodes(self, node_ids):
@@ -409,7 +409,7 @@ class RedisApp(object):
                 utils.execute_with_timeout('redis-cli', 'cluster',
                                            'forget', node_id)
         except exception.ProcessExecutionError:
-            LOG.exception(_('Error removing node from cluster.'))
+            LOG.exception('Error removing node from cluster.')
             raise
 
     def enable_root(self, password=None):
@@ -423,7 +423,7 @@ class RedisApp(object):
             self.apply_overrides(
                 self.admin, {'requirepass': password, 'masterauth': password})
         except exception.TroveError:
-            LOG.exception(_('Error enabling authentication for instance.'))
+            LOG.exception('Error enabling authentication for instance.')
             raise
         return redis_password.serialize()
 
@@ -434,7 +434,7 @@ class RedisApp(object):
             self.apply_overrides(self.admin,
                                  {'requirepass': '', 'masterauth': ''})
         except exception.TroveError:
-            LOG.exception(_('Error disabling authentication for instance.'))
+            LOG.exception('Error disabling authentication for instance.')
             raise
 
 
@@ -473,7 +473,7 @@ class RedisAdmin(object):
             # If an auto-save is in progress just use it, since it must have
             # just happened
             if "Background save already in progress" in str(re):
-                LOG.info(_("Waiting for existing background save to finish"))
+                LOG.info("Waiting for existing background save to finish")
             else:
                 raise
         if save_ok:
@@ -538,7 +538,7 @@ class RedisAdmin(object):
                 LOG.debug("Found '%(value)s' for field %(key)s.",
                           {'value': current_value, 'key': key})
             else:
-                LOG.error(_('Output from Redis command: %s'), redis_info)
+                LOG.error('Output from Redis command: %s', redis_info)
                 raise RuntimeError(_("Field %(field)s not found "
                                      "(Section: '%(sec)s').") %
                                    ({'field': key, 'sec': section}))

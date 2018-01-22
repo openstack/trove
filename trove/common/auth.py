@@ -63,17 +63,16 @@ class TenantBasedAuth(object):
         if (match_for_tenant and
                 tenant_id == match_for_tenant.group('tenant_id')):
             LOG.debug(strutils.mask_password(
-                      _("Authorized tenant '%(tenant_id)s' request: "
-                        "%(request)s") %
-                      {'tenant_id': tenant_id,
-                       'request': req_to_text(request)}))
+                ("Authorized tenant '%(tenant_id)s' request: "
+                 "%(request)s") %
+                {'tenant_id': tenant_id, 'request': req_to_text(request)}))
             return True
 
-        msg = _(
-            "User with tenant id %s cannot access this resource.") % tenant_id
+        log_fmt = "User with tenant id %s cannot access this resource."
+        exc_fmt = _("User with tenant id %s cannot access this resource.")
 
-        LOG.error(msg)
-        raise webob.exc.HTTPForbidden(msg)
+        LOG.error(log_fmt, tenant_id)
+        raise webob.exc.HTTPForbidden(exc_fmt % tenant_id)
 
 
 def admin_context(f):

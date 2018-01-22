@@ -73,11 +73,11 @@ class InnoBackupEx(base.BackupRunner):
             output = backup_log.read()
             LOG.info(output)
             if not output:
-                LOG.error(_("Innobackupex log file empty."))
+                LOG.error("Innobackupex log file empty.")
                 return False
             last_line = output.splitlines()[-1].strip()
             if not re.search('completed OK!', last_line):
-                LOG.error(_("Innobackupex did not complete successfully."))
+                LOG.error("Innobackupex did not complete successfully.")
                 return False
 
         return True
@@ -91,7 +91,7 @@ class InnoBackupEx(base.BackupRunner):
             match = lsn.search(output)
             if match:
                 meta = {'lsn': match.group(1)}
-        LOG.info(_("Metadata for backup: %s."), str(meta))
+        LOG.info("Metadata for backup: %s.", str(meta))
         return meta
 
     @property

@@ -36,7 +36,7 @@ def load_mgmt_instances(context, deleted=None, client=None,
         mgmt_servers = client.rdservers.list()
     except AttributeError:
         mgmt_servers = client.servers.list(search_opts={'all_tenants': 1})
-    LOG.info(_("Found %d servers in Nova"),
+    LOG.info("Found %d servers in Nova",
              len(mgmt_servers if mgmt_servers else []))
     args = {}
     if deleted is not None:
@@ -198,7 +198,7 @@ class NotificationTransformer(object):
             datastore_manager_id = id_map[datastore_manager]
         else:
             datastore_manager_id = cfg.UNKNOWN_SERVICE_ID
-            LOG.error(_("Datastore ID for Manager (%s) is not configured"),
+            LOG.error("Datastore ID for Manager (%s) is not configured",
                       datastore_manager)
         return datastore_manager_id
 
@@ -257,7 +257,7 @@ class NovaNotificationTransformer(NotificationTransformer):
             LOG.debug("Flavor cache hit for %s", flavor_id)
             return self._flavor_cache[flavor_id]
         # fetch flavor resource from nova
-        LOG.info(_("Flavor cache miss for %s"), flavor_id)
+        LOG.info("Flavor cache miss for %s", flavor_id)
         flavor = self.nova_client.flavors.get(flavor_id)
         self._flavor_cache[flavor_id] = flavor.name if flavor else 'unknown'
         return self._flavor_cache[flavor_id]

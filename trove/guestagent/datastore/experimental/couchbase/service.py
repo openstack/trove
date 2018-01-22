@@ -61,7 +61,7 @@ class CouchbaseApp(object):
         """
         Install couchbase if needed, do nothing if it is already installed.
         """
-        LOG.info(_('Preparing Guest as Couchbase Server.'))
+        LOG.info('Preparing Guest as Couchbase Server.')
         if not packager.pkg_is_installed(packages):
             LOG.debug('Installing Couchbase.')
             self._install_couchbase(packages)
@@ -70,7 +70,7 @@ class CouchbaseApp(object):
         self.ip_address = netutils.get_my_ipv4()
         mount_point = CONF.couchbase.mount_point
         try:
-            LOG.info(_('Couchbase Server change data dir path.'))
+            LOG.info('Couchbase Server change data dir path.')
             operating_system.chown(mount_point, 'couchbase', 'couchbase',
                                    as_root=True)
             pwd = CouchbaseRootAccess.get_password()
@@ -89,9 +89,9 @@ class CouchbaseApp(object):
             utils.execute_with_timeout(system.cmd_set_swappiness, shell=True)
             utils.execute_with_timeout(system.cmd_update_sysctl_conf,
                                        shell=True)
-            LOG.info(_('Couchbase Server initial setup finished.'))
+            LOG.info('Couchbase Server initial setup finished.')
         except exception.ProcessExecutionError:
-            LOG.exception(_('Error performing initial Couchbase setup.'))
+            LOG.exception('Error performing initial Couchbase setup.')
             raise RuntimeError(_("Couchbase Server initial setup failed"))
 
     def _install_couchbase(self, packages):
@@ -125,11 +125,11 @@ class CouchbaseApp(object):
         return CouchbaseRootAccess.enable_root(root_password)
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting Couchbase with configuration changes.\n"
-                   "Configuration contents:\n %s."), config_contents)
+        LOG.info("Starting Couchbase with configuration changes.\n"
+                 "Configuration contents:\n %s.", config_contents)
         if self.status.is_running:
-            LOG.error(_("Cannot start Couchbase with configuration changes. "
-                        "Couchbase state == %s."), self.status)
+            LOG.error("Cannot start Couchbase with configuration changes. "
+                      "Couchbase state == %s.", self.status)
             raise RuntimeError(_("Couchbase is not stopped."))
         self._write_config(config_contents)
         self.start_db(True)
@@ -159,14 +159,14 @@ class CouchbaseAppStatus(service.BaseDbStatus):
             return self._get_status_from_couchbase(pwd)
         except exception.ProcessExecutionError:
             # log the exception, but continue with native config approach
-            LOG.exception(_("Error getting the Couchbase status."))
+            LOG.exception("Error getting the Couchbase status.")
 
         try:
             out, err = utils.execute_with_timeout(
                 system.cmd_get_password_from_config, shell=True)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error getting the root password from the "
-                            "native Couchbase config file."))
+            LOG.exception("Error getting the root password from the "
+                          "native Couchbase config file.")
             return rd_instance.ServiceStatuses.SHUTDOWN
 
         config_pwd = out.strip() if out is not None else None
@@ -179,9 +179,9 @@ class CouchbaseAppStatus(service.BaseDbStatus):
         try:
             status = self._get_status_from_couchbase(config_pwd)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error getting Couchbase status using the "
-                            "password parsed from the native Couchbase "
-                            "config file."))
+            LOG.exception("Error getting Couchbase status using the "
+                          "password parsed from the native Couchbase "
+                          "config file.")
             return rd_instance.ServiceStatuses.SHUTDOWN
 
         # if the parsed root password worked, update the stored value to

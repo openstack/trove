@@ -95,7 +95,7 @@ def clear_expired_password():
         out, err = utils.execute("cat", secret_file,
                                  run_as_root=True, root_helper="sudo")
     except exception.ProcessExecutionError:
-        LOG.exception(_("/root/.mysql_secret does not exist."))
+        LOG.exception("/root/.mysql_secret does not exist.")
         return
     m = re.match('# The random password set for the root user at .*: (.*)',
                  out)
@@ -105,7 +105,7 @@ def clear_expired_password():
                                      "password", "", run_as_root=True,
                                      root_helper="sudo")
         except exception.ProcessExecutionError:
-            LOG.exception(_("Cannot change mysql password."))
+            LOG.exception("Cannot change mysql password.")
             return
         operating_system.remove(secret_file, force=True, as_root=True)
         LOG.debug("Expired password removed.")
@@ -149,29 +149,29 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
                 "/usr/bin/mysqladmin",
                 "ping", run_as_root=True, root_helper="sudo",
                 log_output_on_error=True)
-            LOG.info(_("MySQL Service Status is RUNNING."))
+            LOG.info("MySQL Service Status is RUNNING.")
             return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to get database status."))
+            LOG.exception("Failed to get database status.")
             try:
                 out, err = utils.execute_with_timeout("/bin/ps", "-C",
                                                       "mysqld", "h")
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
-                LOG.info(_('MySQL Service Status %(pid)s is BLOCKED.'),
+                LOG.info('MySQL Service Status %(pid)s is BLOCKED.',
                          {'pid': pid})
                 return rd_instance.ServiceStatuses.BLOCKED
             except exception.ProcessExecutionError:
-                LOG.exception(_("Process execution failed."))
+                LOG.exception("Process execution failed.")
                 mysql_args = load_mysqld_options()
                 pid_file = mysql_args.get('pid_file',
                                           ['/var/run/mysqld/mysqld.pid'])[0]
                 if os.path.exists(pid_file):
-                    LOG.info(_("MySQL Service Status is CRASHED."))
+                    LOG.info("MySQL Service Status is CRASHED.")
                     return rd_instance.ServiceStatuses.CRASHED
                 else:
-                    LOG.info(_("MySQL Service Status is SHUTDOWN."))
+                    LOG.info("MySQL Service Status is SHUTDOWN.")
                     return rd_instance.ServiceStatuses.SHUTDOWN
 
 
@@ -358,7 +358,7 @@ class BaseMySqlAdmin(object):
             user = models.MySQLUser(name=username)
             user.check_reserved()
         except ValueError as ve:
-            LOG.exception(_("Error Getting user information"))
+            LOG.exception("Error Getting user information")
             err_msg = encodeutils.exception_to_unicode(ve)
             raise exception.BadRequest(_("Username %(user)s is not valid"
                                          ": %(reason)s") %
@@ -395,7 +395,7 @@ class BaseMySqlAdmin(object):
                         mydb = models.MySQLSchema(name=database)
                         mydb.check_reserved()
                 except ValueError:
-                    LOG.exception(_("Error granting access"))
+                    LOG.exception("Error granting access")
                     raise exception.BadRequest(_(
                         "Grant access to %s is not allowed") % database)
 
@@ -689,7 +689,7 @@ class BaseMySqlApp(object):
         """Prepare the guest machine with a secure
            mysql server installation.
         """
-        LOG.info(_("Preparing Guest as MySQL Server."))
+        LOG.info("Preparing Guest as MySQL Server.")
         if not packager.pkg_is_installed(packages):
             LOG.debug("Installing MySQL server.")
             self._clear_mysql_config()
@@ -698,7 +698,7 @@ class BaseMySqlApp(object):
                         'root_password_again': ''}
             packager.pkg_install(packages, pkg_opts, self.TIME_OUT)
             self._create_mysql_confd_dir()
-            LOG.info(_("Finished installing MySQL server."))
+            LOG.info("Finished installing MySQL server.")
         self.start_mysql()
 
     def secure(self, config_contents):
@@ -743,7 +743,7 @@ class BaseMySqlApp(object):
 
     def secure_root(self, secure_remote_root=True):
         with self.local_sql_client(self.get_engine()) as client:
-            LOG.info(_("Preserving root access from restore."))
+            LOG.info("Preserving root access from restore.")
             self._generate_root_password(client)
             if secure_remote_root:
                 self._remove_remote_root_access(client)
@@ -774,7 +774,7 @@ class BaseMySqlApp(object):
             utils.execute_with_timeout(self.mysql_service['cmd_enable'],
                                        shell=True)
         except KeyError:
-            LOG.exception(_("Error enabling MySQL start on boot."))
+            LOG.exception("Error enabling MySQL start on boot.")
             raise RuntimeError(_("Service is not discovered."))
 
     def _disable_mysql_on_boot(self):
@@ -782,23 +782,23 @@ class BaseMySqlApp(object):
             utils.execute_with_timeout(self.mysql_service['cmd_disable'],
                                        shell=True)
         except KeyError:
-            LOG.exception(_("Error disabling MySQL start on boot."))
+            LOG.exception("Error disabling MySQL start on boot.")
             raise RuntimeError(_("Service is not discovered."))
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        LOG.info(_("Stopping MySQL."))
+        LOG.info("Stopping MySQL.")
         if do_not_start_on_reboot:
             self._disable_mysql_on_boot()
         try:
             utils.execute_with_timeout(self.mysql_service['cmd_stop'],
                                        shell=True)
         except KeyError:
-            LOG.exception(_("Error stopping MySQL."))
+            LOG.exception("Error stopping MySQL.")
             raise RuntimeError(_("Service is not discovered."))
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
-            LOG.error(_("Could not stop MySQL."))
+            LOG.error("Could not stop MySQL.")
             self.status.end_restart()
             raise RuntimeError(_("Could not stop MySQL!"))
 
@@ -844,8 +844,8 @@ class BaseMySqlApp(object):
                     client.execute(t)
                 except exc.OperationalError:
                     output = {'key': k, 'value': byte_value}
-                    LOG.exception(_("Unable to set %(key)s with value "
-                                    "%(value)s."), output)
+                    LOG.exception("Unable to set %(key)s with value "
+                                  "%(value)s.", output)
 
     def make_read_only(self, read_only):
         with self.local_sql_client(self.get_engine()) as client:
@@ -859,7 +859,7 @@ class BaseMySqlApp(object):
         current size of the files MySQL will fail to start, so we delete the
         files to be safe.
         """
-        LOG.info(_("Wiping ib_logfiles."))
+        LOG.info("Wiping ib_logfiles.")
         for index in range(2):
             try:
                 # On restarts, sometimes these are wiped. So it can be a race
@@ -870,14 +870,14 @@ class BaseMySqlApp(object):
                                         % (self.get_data_dir(), index),
                                         force=True, as_root=True)
             except exception.ProcessExecutionError:
-                LOG.exception(_("Could not delete logfile."))
+                LOG.exception("Could not delete logfile.")
                 raise
 
     def remove_overrides(self):
         self.configuration_manager.remove_user_override()
 
     def _remove_replication_overrides(self, cnf_file):
-        LOG.info(_("Removing replication configuration file."))
+        LOG.info("Removing replication configuration file.")
         if os.path.exists(cnf_file):
             operating_system.remove(cnf_file, as_root=True)
 
@@ -899,7 +899,7 @@ class BaseMySqlApp(object):
         self.configuration_manager.remove_system_override(CNF_SLAVE)
 
     def grant_replication_privilege(self, replication_user):
-        LOG.info(_("Granting Replication Slave privilege."))
+        LOG.info("Granting Replication Slave privilege.")
 
         LOG.debug("grant_replication_privilege: %s", replication_user)
 
@@ -931,14 +931,14 @@ class BaseMySqlApp(object):
             return client.execute(sql_statement)
 
     def start_slave(self):
-        LOG.info(_("Starting slave replication."))
+        LOG.info("Starting slave replication.")
         with self.local_sql_client(self.get_engine()) as client:
             client.execute('START SLAVE')
             self._wait_for_slave_status("ON", client, 60)
 
     def stop_slave(self, for_failover):
         replication_user = None
-        LOG.info(_("Stopping slave replication."))
+        LOG.info("Stopping slave replication.")
         with self.local_sql_client(self.get_engine()) as client:
             result = client.execute('SHOW SLAVE STATUS')
             replication_user = result.first()['Master_User']
@@ -952,7 +952,7 @@ class BaseMySqlApp(object):
         }
 
     def stop_master(self):
-        LOG.info(_("Stopping replication master."))
+        LOG.info("Stopping replication master.")
         with self.local_sql_client(self.get_engine()) as client:
             client.execute('RESET MASTER')
 
@@ -967,14 +967,14 @@ class BaseMySqlApp(object):
         try:
             utils.poll_until(verify_slave_status, sleep_time=3,
                              time_out=max_time)
-            LOG.info(_("Replication is now %s."), status.lower())
+            LOG.info("Replication is now %s.", status.lower())
         except PollTimeOut:
             raise RuntimeError(
                 _("Replication is not %(status)s after %(max)d seconds.") % {
                     'status': status.lower(), 'max': max_time})
 
     def start_mysql(self, update_db=False, disable_on_boot=False, timeout=120):
-        LOG.info(_("Starting MySQL."))
+        LOG.info("Starting MySQL.")
         # This is the site of all the trouble in the restart tests.
         # Essentially what happens is that mysql start fails, but does not
         # die. It is then impossible to kill the original, so
@@ -999,32 +999,32 @@ class BaseMySqlApp(object):
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of MySQL failed."))
+            LOG.error("Start up of MySQL failed.")
             # If it won't start, but won't die either, kill it by hand so we
             # don't let a rouge process wander around.
             try:
                 utils.execute_with_timeout("sudo", "pkill", "-9", "mysql")
             except exception.ProcessExecutionError:
-                LOG.exception(_("Error killing stalled MySQL start command."))
+                LOG.exception("Error killing stalled MySQL start command.")
                 # There's nothing more we can do...
             self.status.end_restart()
             raise RuntimeError(_("Could not start MySQL!"))
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting MySQL with conf changes."))
+        LOG.info("Starting MySQL with conf changes.")
         LOG.debug("Inside the guest - Status is_running = (%s).",
                   self.status.is_running)
         if self.status.is_running:
-            LOG.error(_("Cannot execute start_db_with_conf_changes because "
-                        "MySQL state == %s."), self.status)
+            LOG.error("Cannot execute start_db_with_conf_changes because "
+                      "MySQL state == %s.", self.status)
             raise RuntimeError(_("MySQL not stopped."))
-        LOG.info(_("Resetting configuration."))
+        LOG.info("Resetting configuration.")
         self._reset_configuration(config_contents)
         self.start_mysql(True)
 
     def reset_configuration(self, configuration):
         config_contents = configuration['config_contents']
-        LOG.info(_("Resetting configuration."))
+        LOG.info("Resetting configuration.")
         self._reset_configuration(config_contents)
 
     def reset_admin_password(self, admin_password):

@@ -86,7 +86,7 @@ class PostgresqlReplicationStreaming(base.Replication):
                 extra_opts=self.repl_backup_extra_opts,
                 incremental_runner=self.repl_incr_backup_runner)
         else:
-            LOG.info(_("Using existing backup created for previous replica."))
+            LOG.info("Using existing backup created for previous replica.")
 
         repl_user_info = self._get_or_create_replication_user(service)
 
@@ -185,7 +185,7 @@ class PostgresqlReplicationStreaming(base.Replication):
 
     def detach_slave(self, service, for_failover):
         """Touch trigger file in to disable recovery mode"""
-        LOG.info(_("Detaching slave, use trigger to disable recovery mode"))
+        LOG.info("Detaching slave, use trigger to disable recovery mode")
         operating_system.write_file(TRIGGER_FILE, '')
         operating_system.chown(TRIGGER_FILE, user=service.pgsql_owner,
                                group=service.pgsql_owner, as_root=True)
@@ -252,7 +252,7 @@ class PostgresqlReplicationStreaming(base.Replication):
 
     def _write_standby_recovery_file(self, service, snapshot,
                                      sslmode='prefer'):
-        LOG.info(_("Snapshot data received: %s"), str(snapshot))
+        LOG.info("Snapshot data received: %s", str(snapshot))
 
         logging_config = snapshot['log_position']
         conninfo_params = \

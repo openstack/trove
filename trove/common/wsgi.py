@@ -301,7 +301,7 @@ class Resource(base_wsgi.Resource):
             # If action_result is not a Fault then there really was a
             # serialization error which we log. Otherwise return the Fault.
             if not isinstance(action_result, Fault):
-                LOG.exception(_("Unserializable result detected."))
+                LOG.exception("Unserializable result detected.")
                 raise
             return action_result
 
@@ -578,7 +578,7 @@ class FaultWrapper(base_wsgi.Middleware):
                 return resp
             return resp
         except Exception as ex:
-            LOG.exception(_("Caught error: %s."),
+            LOG.exception("Caught error: %s.",
                           encodeutils.exception_to_unicode(ex))
             exc = webob.exc.HTTPInternalServerError()
             return Fault(exc)

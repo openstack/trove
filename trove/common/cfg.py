@@ -1600,8 +1600,8 @@ def get_configuration_property(property_name):
     datastore_manager = CONF.datastore_manager
     if not datastore_manager:
         datastore_manager = 'mysql'
-        LOG.warning(_("Manager name ('datastore_manager') not defined, "
-                      "using '%s' options instead."), datastore_manager)
+        LOG.warning("Manager name ('datastore_manager') not defined, "
+                    "using '%s' options instead.", datastore_manager)
 
     try:
         return CONF.get(datastore_manager).get(property_name)

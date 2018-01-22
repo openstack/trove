@@ -18,7 +18,6 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.exception import PollTimeOut
-from trove.common.i18n import _
 from trove.common.instance import ServiceStatuses
 from trove.common.strategies.cluster import base
 from trove.common import utils
@@ -121,7 +120,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("timeout for building cluster."))
+            LOG.exception("timeout for building cluster.")
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
@@ -170,7 +169,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("timeout for building shard."))
+            LOG.exception("timeout for building shard.")
             self.update_statuses_on_failure(cluster_id, shard_id)
         finally:
             timeout.cancel()
@@ -250,7 +249,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("timeout for growing cluster."))
+            LOG.exception("timeout for growing cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
@@ -275,7 +274,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                                  sleep_time=2,
                                  time_out=CONF.cluster_delete_time_out)
             except PollTimeOut:
-                LOG.error(_("timeout for instances to be marked as deleted."))
+                LOG.error("timeout for instances to be marked as deleted.")
                 return
 
         cluster_usage_timeout = CONF.cluster_usage_timeout
@@ -286,7 +285,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("timeout for shrinking cluster."))
+            LOG.exception("timeout for shrinking cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         finally:
@@ -314,7 +313,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             self.get_guest(primary_member).prep_primary()
             self.get_guest(primary_member).add_members(other_members_ips)
         except Exception:
-            LOG.exception(_("error initializing replica set"))
+            LOG.exception("error initializing replica set")
             self.update_statuses_on_failure(self.id,
                                             shard_id=primary_member.shard_id)
             return False
@@ -337,7 +336,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             self.get_guest(query_router).add_shard(
                 replica_set, self.get_ip(primary_member))
         except Exception:
-            LOG.exception(_("error adding shard"))
+            LOG.exception("error adding shard")
             self.update_statuses_on_failure(self.id,
                                             shard_id=primary_member.shard_id)
             return False
@@ -351,7 +350,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                 instance_id=instance_id).get_status()
             if status == ServiceStatuses.RUNNING:
                 return instance_id
-        LOG.exception(_("no query routers ready to accept requests"))
+        LOG.exception("no query routers ready to accept requests")
         self.update_statuses_on_failure(self.id)
         return False
 
@@ -378,7 +377,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                 else:
                     guest.store_admin_password(admin_password)
             except Exception:
-                LOG.exception(_("error adding config servers"))
+                LOG.exception("error adding config servers")
                 self.update_statuses_on_failure(self.id)
                 return False
         return True

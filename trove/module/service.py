@@ -64,7 +64,7 @@ class ModuleController(wsgi.Controller):
         return wsgi.Result(view.data(), 200)
 
     def show(self, req, tenant_id, id):
-        LOG.info(_("Showing module %s."), id)
+        LOG.info("Showing module %s.", id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
@@ -78,7 +78,7 @@ class ModuleController(wsgi.Controller):
     def create(self, req, body, tenant_id):
 
         name = body['module']['name']
-        LOG.info(_("Creating module '%s'"), name)
+        LOG.info("Creating module '%s'", name)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'module:create')
@@ -106,7 +106,7 @@ class ModuleController(wsgi.Controller):
         return wsgi.Result(view_data.data(), 200)
 
     def delete(self, req, tenant_id, id):
-        LOG.info(_("Deleting module %s."), id)
+        LOG.info("Deleting module %s.", id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
@@ -115,7 +115,7 @@ class ModuleController(wsgi.Controller):
         return wsgi.Result(None, 200)
 
     def update(self, req, body, tenant_id, id):
-        LOG.info(_("Updating module %s."), id)
+        LOG.info("Updating module %s.", id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
@@ -173,7 +173,7 @@ class ModuleController(wsgi.Controller):
         return wsgi.Result(view_data.data(), 200)
 
     def instances(self, req, tenant_id, id):
-        LOG.info(_("Getting instances for module %s."), id)
+        LOG.info("Getting instances for module %s.", id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
 
@@ -206,7 +206,7 @@ class ModuleController(wsgi.Controller):
         return wsgi.Result(result_list, 200)
 
     def reapply(self, req, body, tenant_id, id):
-        LOG.info(_("Reapplying module %s to all instances."), id)
+        LOG.info("Reapplying module %s to all instances.", id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         md5 = None

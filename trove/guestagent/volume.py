@@ -32,9 +32,20 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-def log_and_raise(message):
-    LOG.exception(message)
-    raise_msg = message + _("\nExc: %s") % traceback.format_exc()
+# We removed all translation for messages destinated to log file.
+# However we cannot use _(xxx) instead of _("xxxx") because of the
+# H701 pep8 checking, so we have to pass different message format
+# string and format content here.
+def log_and_raise(log_fmt, exc_fmt, fmt_content=None):
+    if fmt_content is not None:
+        LOG.exception(log_fmt, fmt_content)
+        raise_msg = exc_fmt % fmt_content
+    else:
+        # if fmt_content is not provided, log_fmt and
+        # exc_fmt are just plain string messages
+        LOG.exception(log_fmt)
+        raise_msg = exc_fmt
+    raise_msg += _("\nExc: %s") % traceback.format_exc()
     raise exception.GuestError(original_message=raise_msg)
 
 
@@ -59,8 +70,9 @@ class VolumeDevice(object):
                           "--sparse", source_dir, target_dir,
                           run_as_root=True, root_helper="sudo")
         except exception.ProcessExecutionError:
-            msg = _("Could not migrate data.")
-            log_and_raise(msg)
+            log_msg = "Could not migrate data."
+            exc_msg = _("Could not migrate date.")
+            log_and_raise(log_msg, exc_msg)
         self.unmount(TMP_MOUNT_POINT)
 
     def _check_device_exists(self):
@@ -78,8 +90,9 @@ class VolumeDevice(object):
                           run_as_root=True, root_helper="sudo",
                           attempts=num_tries)
         except exception.ProcessExecutionError:
-            msg = _("Device '%s' is not ready.") % self.device_path
-            log_and_raise(msg)
+            log_fmt = "Device '%s' is not ready."
+            exc_fmt = _("Device '%s' is not ready.")
+            log_and_raise(log_fmt, exc_fmt, self.device_path)
 
     def _check_format(self):
         """Checks that a volume is formatted."""
@@ -95,11 +108,13 @@ class VolumeDevice(object):
         except exception.ProcessExecutionError as pe:
             if 'Wrong magic number' in pe.stderr:
                 volume_fstype = CONF.volume_fstype
-                msg = _("'Device '%(dev)s' did not seem to be '%(type)s'.") % (
-                    {'dev': self.device_path, 'type': volume_fstype})
-                log_and_raise(msg)
-            msg = _("Volume '%s' was not formatted.") % self.device_path
-            log_and_raise(msg)
+                log_fmt = "'Device '%(dev)s' did not seem to be '%(type)s'."
+                exc_fmt = _("'Device '%(dev)s' did not seem to be '%(type)s'.")
+                log_and_raise(log_fmt, exc_fmt, {'dev': self.device_path,
+                                                 'type': volume_fstype})
+            log_fmt = "Volume '%s' was not formatted."
+            exc_fmt = _("Volume '%s' was not formatted.")
+            log_and_raise(log_fmt, exc_fmt, self.device_path)
 
     def _format(self):
         """Calls mkfs to format the device at device_path."""
@@ -114,8 +129,9 @@ class VolumeDevice(object):
                 run_as_root=True, root_helper="sudo",
                 timeout=volume_format_timeout)
         except exception.ProcessExecutionError:
-            msg = _("Could not format '%s'.") % self.device_path
-            log_and_raise(msg)
+            log_fmt = "Could not format '%s'."
+            exc_fmt = _("Could not format '%s'.")
+            log_and_raise(log_fmt, exc_fmt, self.device_path)
 
     def format(self):
         """Formats the device at device_path and checks the filesystem."""
@@ -161,9 +177,9 @@ class VolumeDevice(object):
             utils.execute("resize2fs", self.device_path,
                           run_as_root=True, root_helper="sudo")
         except exception.ProcessExecutionError:
-            msg = _("Error resizing the filesystem with device '%s'.") % (
-                self.device_path)
-            log_and_raise(msg)
+            log_fmt = "Error resizing the filesystem with device '%s'."
+            exc_fmt = _("Error resizing the filesystem with device '%s'.")
+            log_and_raise(log_fmt, exc_fmt, self.device_path)
 
     def unmount(self, mount_point):
         if operating_system.is_mount(mount_point):
@@ -171,8 +187,9 @@ class VolumeDevice(object):
                 utils.execute("umount", mount_point,
                               run_as_root=True, root_helper='sudo')
             except exception.ProcessExecutionError:
-                msg = _("Error unmounting '%s'.") % mount_point
-                log_and_raise(msg)
+                log_fmt = "Error unmounting '%s'."
+                exc_fmt = _("Error unmounting '%s'.")
+                log_and_raise(log_fmt, exc_fmt, mount_point)
         else:
             LOG.debug("'%s' is not a mounted fs, cannot unmount", mount_point)
 
@@ -180,8 +197,8 @@ class VolumeDevice(object):
         # unmount if device is already mounted
         mount_points = self.mount_points(device_path)
         for mnt in mount_points:
-            LOG.info(_("Device '%(device)s' is mounted on "
-                       "'%(mount_point)s'. Unmounting now."),
+            LOG.info("Device '%(device)s' is mounted on "
+                     "'%(mount_point)s'. Unmounting now.",
                      {'device': device_path, 'mount_point': mnt})
             self.unmount(mnt)
 
@@ -200,10 +217,12 @@ class VolumeDevice(object):
                           readahead_size, self.device_path,
                           run_as_root=True, root_helper="sudo")
         except exception.ProcessExecutionError:
-            msg = _("Error setting readahead size to %(size)s "
-                    "for device %(device)s.") % {
-                'size': readahead_size, 'device': self.device_path}
-            log_and_raise(msg)
+            log_fmt = ("Error setting readahead size to %(size)s "
+                       "for device %(device)s.")
+            exc_fmt = _("Error setting readahead size to %(size)s "
+                        "for device %(device)s.")
+            log_and_raise(log_fmt, exc_fmt, {'size': readahead_size,
+                                             'device': self.device_path})
 
 
 class VolumeMountPoint(object):
@@ -228,8 +247,9 @@ class VolumeMountPoint(object):
                           self.device_path, self.mount_point,
                           run_as_root=True, root_helper="sudo")
         except exception.ProcessExecutionError:
-            msg = _("Could not mount '%s'.") % self.mount_point
-            log_and_raise(msg)
+            log_fmt = "Could not mount '%s'."
+            exc_fmt = _("Could not mount '%s'.")
+            log_and_raise(log_fmt, exc_fmt, self.mount_point)
 
     def write_to_fstab(self):
         fstab_line = ("%s\t%s\t%s\t%s\t0\t0" %
@@ -245,6 +265,7 @@ class VolumeMountPoint(object):
                           "-m", "644", tempfstab.name, "/etc/fstab",
                           run_as_root=True, root_helper="sudo")
         except exception.ProcessExecutionError:
-            msg = _("Could not add '%s' to fstab.") % self.mount_point
-            log_and_raise(msg)
+            log_fmt = "Could not add '%s' to fstab."
+            exc_fmt = _("Could not add '%s' to fstab.")
+            log_and_raise(log_fmt, exc_fmt, self.mount_point)
         os.remove(tempfstab.name)

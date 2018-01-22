@@ -17,7 +17,6 @@ from eventlet.timeout import Timeout
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common.i18n import _
 from trove.common.strategies.cluster import base
 from trove.common import utils
 from trove.instance.models import DBInstance
@@ -98,7 +97,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
 
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
-                LOG.exception(_("Error creating cluster."))
+                LOG.exception("Error creating cluster.")
                 self.update_statuses_on_failure(cluster_id)
 
         timeout = Timeout(CONF.cluster_usage_timeout)
@@ -108,7 +107,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for building cluster."))
+            LOG.exception("Timeout for building cluster.")
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
@@ -240,12 +239,12 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                     LOG.debug("Waiting for node to finish its "
                               "cleanup: %s", nid)
                     if not self._all_instances_running([nid], cluster_id):
-                        LOG.warning(_("Node did not complete cleanup "
-                                      "successfully: %s"), nid)
+                        LOG.warning("Node did not complete cleanup "
+                                    "successfully: %s", nid)
 
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
-                LOG.exception(_("Error growing cluster."))
+                LOG.exception("Error growing cluster.")
                 self.update_statuses_on_failure(
                     cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
 
@@ -256,7 +255,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for growing cluster."))
+            LOG.exception("Timeout for growing cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
@@ -327,7 +326,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
 
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
-                LOG.exception(_("Error shrinking cluster."))
+                LOG.exception("Error shrinking cluster.")
                 self.update_statuses_on_failure(
                     cluster_id,
                     status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
@@ -339,7 +338,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for shrinking cluster."))
+            LOG.exception("Timeout for shrinking cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         finally:

@@ -108,8 +108,8 @@ class Backup(object):
                                           datastore_version_id=ds_version.id,
                                           deleted=False)
             except exception.InvalidModelError as ex:
-                LOG.exception(_("Unable to create backup record for "
-                                "instance: %s"), instance_id)
+                LOG.exception("Unable to create backup record for "
+                              "instance: %s", instance_id)
                 raise exception.BackupCreationError(str(ex))
 
             backup_info = {'id': db_info.id,
@@ -268,7 +268,7 @@ class Backup(object):
             try:
                 cls.delete(context, child.id)
             except exception.NotFound:
-                LOG.exception(_("Backup %s cannot be found."), backup_id)
+                LOG.exception("Backup %s cannot be found.", backup_id)
 
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)

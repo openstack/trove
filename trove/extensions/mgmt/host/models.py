@@ -72,8 +72,8 @@ class DetailedHost(object):
                 instance['status'] = instance_info.status
             except exception.TroveError as re:
                 LOG.error(re)
-                LOG.error(_("Compute Instance ID found with no associated RD "
-                          "instance: %s."), instance['server_id'])
+                LOG.error("Compute Instance ID found with no associated RD "
+                          "instance: %s.", instance['server_id'])
                 instance['id'] = None
 
     def update_all(self, context):
@@ -87,7 +87,7 @@ class DetailedHost(object):
                 client.update_guest()
             except exception.TroveError as re:
                 LOG.error(re)
-                LOG.error(_("Unable to update instance: %s."), instance['id'])
+                LOG.error("Unable to update instance: %s.", instance['id'])
                 failed_instances.append(instance['id'])
         if len(failed_instances) > 0:
             msg = _("Failed to update instances: %s.") % failed_instances

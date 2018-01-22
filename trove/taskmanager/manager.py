@@ -123,24 +123,30 @@ class Manager(periodic_task.PeriodicTasks):
                         replica.detach_replica(old_master, for_failover=True)
                         replica.attach_replica(master_candidate)
                 except exception.TroveError as ex:
-                    msg = (_("Unable to migrate replica %(slave)s from "
-                             "old replica source %(old_master)s to "
-                             "new source %(new_master)s on promote.") %
-                           {"slave": replica.id,
-                            "old_master": old_master.id,
-                            "new_master": master_candidate.id})
-                    LOG.exception(msg)
+                    log_fmt = ("Unable to migrate replica %(slave)s from "
+                               "old replica source %(old_master)s to "
+                               "new source %(new_master)s on promote.")
+                    exc_fmt = _("Unable to migrate replica %(slave)s from "
+                                "old replica source %(old_master)s to "
+                                "new source %(new_master)s on promote.")
+                    msg_content = {
+                        "slave": replica.id,
+                        "old_master": old_master.id,
+                        "new_master": master_candidate.id}
+                    LOG.exception(log_fmt, msg_content)
                     exception_replicas.append(replica)
-                    error_messages += "%s (%s)\n" % (msg, ex)
+                    error_messages += "%s (%s)\n" % (
+                        exc_fmt % msg_content, ex)
 
             try:
                 old_master.demote_replication_master()
             except Exception as ex:
-                msg = (_("Exception demoting old replica source %s.") %
-                       old_master.id)
-                LOG.exception(msg)
+                log_fmt = "Exception demoting old replica source %s."
+                exc_fmt = _("Exception demoting old replica source %s.")
+                LOG.exception(log_fmt, old_master.id)
                 exception_replicas.append(old_master)
-                error_messages += "%s (%s)\n" % (msg, ex)
+                error_messages += "%s (%s)\n" % (
+                    exc_fmt % old_master.id, ex)
 
             self._set_task_status([old_master] + replica_models,
                                   InstanceTasks.NONE)
@@ -213,15 +219,20 @@ class Manager(periodic_task.PeriodicTasks):
                         replica.detach_replica(old_master, for_failover=True)
                         replica.attach_replica(master_candidate)
                 except exception.TroveError as ex:
-                    msg = (_("Unable to migrate replica %(slave)s from "
-                             "old replica source %(old_master)s to "
-                             "new source %(new_master)s on eject.") %
-                           {"slave": replica.id,
-                            "old_master": old_master.id,
-                            "new_master": master_candidate.id})
-                    LOG.exception(msg)
+                    log_fmt = ("Unable to migrate replica %(slave)s from "
+                               "old replica source %(old_master)s to "
+                               "new source %(new_master)s on eject.")
+                    exc_fmt = _("Unable to migrate replica %(slave)s from "
+                                "old replica source %(old_master)s to "
+                                "new source %(new_master)s on eject.")
+                    msg_content = {
+                        "slave": replica.id,
+                        "old_master": old_master.id,
+                        "new_master": master_candidate.id}
+                    LOG.exception(log_fmt, msg_content)
                     exception_replicas.append(replica)
-                    error_messages += "%s (%s)\n" % (msg, ex)
+                    error_messages += "%s (%s)\n" % (
+                        exc_fmt % msg_content, ex)
 
             self._set_task_status([old_master] + replica_models,
                                   InstanceTasks.NONE)
@@ -321,8 +332,8 @@ class Manager(periodic_task.PeriodicTasks):
                     replicas.append(instance_tasks)
                 except Exception:
                     # if it's the first replica, then we shouldn't continue
-                    LOG.exception(_(
-                        "Could not create replica %(num)d of %(count)d."),
+                    LOG.exception(
+                        "Could not create replica %(num)d of %(count)d.",
                         {'num': replica_number, 'count': len(ids)})
                     if replica_number == 1:
                         raise

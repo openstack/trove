@@ -134,7 +134,7 @@ class RPMPackagerMixin(BasePackagerMixin):
             utils.execute("rpm", "-e", "--nodeps", package_name,
                           run_as_root=True, root_helper="sudo")
         except ProcessExecutionError:
-            LOG.exception(_("Error removing conflict %(package)s"),
+            LOG.exception("Error removing conflict %(package)s",
                           package_name)
 
     def _install(self, packages, time_out):
@@ -179,7 +179,7 @@ class RPMPackagerMixin(BasePackagerMixin):
                 line = matches.group()
                 return line
 
-        LOG.error(_("Unexpected output from rpm command. (%(output)s)"),
+        LOG.error("Unexpected output from rpm command. (%(output)s)",
                   {'output': std_out})
 
     def pkg_remove(self, package_name, time_out):
@@ -265,7 +265,7 @@ class DebianPackagerMixin(BasePackagerMixin):
             utils.execute("dpkg", "--configure", "-a", run_as_root=True,
                           root_helper="sudo")
         except ProcessExecutionError:
-            LOG.exception(_("Error fixing dpkg"))
+            LOG.exception("Error fixing dpkg")
 
     def _fix_package_selections(self, packages, config_opts):
         """
@@ -377,7 +377,7 @@ class DebianPackagerMixin(BasePackagerMixin):
             utils.execute("apt-get", "update", run_as_root=True,
                           root_helper="sudo")
         except ProcessExecutionError:
-            LOG.exception(_("Error updating the apt sources"))
+            LOG.exception("Error updating the apt sources")
 
         result = self._install(packages, time_out)
         if result != OK:

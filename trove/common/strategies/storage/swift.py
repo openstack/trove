@@ -112,7 +112,7 @@ class SwiftStorage(base.Storage):
         which is typically in the format '<backup_id>.<ext>.gz'
         """
 
-        LOG.info(_('Saving %(filename)s to %(container)s in swift.'),
+        LOG.info('Saving %(filename)s to %(container)s in swift.',
                  {'filename': filename, 'container': BACKUP_CONTAINER})
 
         # Create the container if it doesn't already exist
@@ -146,8 +146,8 @@ class SwiftStorage(base.Storage):
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
             if etag != segment_checksum:
-                LOG.error(_("Error saving data segment to swift. "
-                          "ETAG: %(tag)s Segment MD5: %(checksum)s."),
+                LOG.error("Error saving data segment to swift. "
+                          "ETAG: %(tag)s Segment MD5: %(checksum)s.",
                           {'tag': etag, 'checksum': segment_checksum})
                 return False, "Error saving data to Swift!", None, location
 
@@ -180,7 +180,7 @@ class SwiftStorage(base.Storage):
 
         LOG.debug('Metadata headers: %s', str(headers))
         if large_object:
-            LOG.info(_('Creating the manifest file.'))
+            LOG.info('Creating the manifest file.')
             manifest_data = json.dumps(segment_results)
             LOG.debug('Manifest contents: %s', manifest_data)
             # The etag returned from the manifest PUT is the checksum of the
@@ -194,8 +194,8 @@ class SwiftStorage(base.Storage):
             # Validation checksum is the Swift Checksum
             final_swift_checksum = swift_checksum.hexdigest()
         else:
-            LOG.info(_('Backup fits in a single segment. Moving segment '
-                       '%(segment)s to %(filename)s.'),
+            LOG.info('Backup fits in a single segment. Moving segment '
+                     '%(segment)s to %(filename)s.',
                      {'segment': stream_reader.first_segment,
                       'filename': filename})
             segment_result = segment_results[0]
@@ -221,8 +221,8 @@ class SwiftStorage(base.Storage):
         # Raise an error and mark backup as failed
         if etag != final_swift_checksum:
             LOG.error(
-                _("Error saving data to swift. Manifest "
-                  "ETAG: %(tag)s Swift MD5: %(checksum)s"),
+                ("Error saving data to swift. Manifest "
+                 "ETAG: %(tag)s Swift MD5: %(checksum)s"),
                 {'tag': etag, 'checksum': final_swift_checksum})
             return False, "Error saving data to Swift!", None, location
 
@@ -238,11 +238,15 @@ class SwiftStorage(base.Storage):
     def _verify_checksum(self, etag, checksum):
         etag_checksum = etag.strip('"')
         if etag_checksum != checksum:
-            msg = (_("Original checksum: %(original)s does not match"
-                     " the current checksum: %(current)s") %
-                   {'original': etag_checksum, 'current': checksum})
-            LOG.error(msg)
-            raise SwiftDownloadIntegrityError(msg)
+            log_fmt = ("Original checksum: %(original)s does not match"
+                       " the current checksum: %(current)s")
+            exc_fmt = _("Original checksum: %(original)s does not match"
+                        " the current checksum: %(current)s")
+            msg_content = {
+                'original': etag_checksum,
+                'current': checksum}
+            LOG.error(log_fmt, msg_content)
+            raise SwiftDownloadIntegrityError(exc_fmt % msg_content)
         return True
 
     def load(self, location, backup_checksum):
@@ -294,5 +298,5 @@ class SwiftStorage(base.Storage):
         for key, value in metadata.items():
             headers[self._set_attr(key)] = value
 
-        LOG.info(_("Writing metadata: %s"), str(headers))
+        LOG.info("Writing metadata: %s", str(headers))
         self.connection.post_object(container, filename, headers=headers)

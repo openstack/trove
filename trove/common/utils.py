@@ -238,24 +238,29 @@ def execute_with_timeout(*args, **kwargs):
     except exception.ProcessExecutionError as e:
         if log_output_on_error:
             LOG.error(
-                _("Command '%(cmd)s' failed. %(description)s "
-                  "Exit code: %(exit_code)s\nstderr: %(stderr)s\n"
-                  "stdout: %(stdout)s"),
+                ("Command '%(cmd)s' failed. %(description)s "
+                 "Exit code: %(exit_code)s\nstderr: %(stderr)s\n"
+                 "stdout: %(stdout)s"),
                 {'cmd': e.cmd, 'description': e.description or '',
                  'exit_code': e.exit_code, 'stderr': e.stderr,
                  'stdout': e.stdout})
         raise
     except Timeout as t:
         if t is not timeout:
-            LOG.error(_("Got a timeout but not the one expected."))
+            LOG.error("Got a timeout but not the one expected.")
             raise
         else:
-            msg = (_("Time out after waiting "
-                     "%(time)s seconds when running proc: %(args)s"
-                     " %(kwargs)s.") % {'time': time, 'args': args,
-                                        'kwargs': kwargs})
-            LOG.error(msg)
-            raise exception.ProcessExecutionError(msg)
+            log_fmt = ("Time out after waiting "
+                       "%(time)s seconds when running proc: %(args)s"
+                       " %(kwargs)s.")
+            exc_fmt = _("Time out after waiting "
+                        "%(time)s seconds when running proc: %(args)s"
+                        " %(kwargs)s.")
+            msg_content = {
+                'time': time, 'args': args,
+                'kwargs': kwargs}
+            LOG.error(log_fmt, msg_content)
+            raise exception.ProcessExecutionError(exc_fmt % msg_content)
     finally:
         timeout.cancel()
 

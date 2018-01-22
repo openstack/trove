@@ -27,7 +27,6 @@ from oslo_utils import importutils
 from osprofiler import profiler
 
 from trove.common import cfg
-from trove.common.i18n import _
 from trove.common import profile
 from trove.common.rpc import secure_serializer as ssz
 from trove import rpc
@@ -83,7 +82,7 @@ class RpcService(service.Service):
         try:
             self.rpcserver.stop()
         except Exception:
-            LOG.info(_("Failed to stop RPC server before shutdown. "))
+            LOG.info("Failed to stop RPC server before shutdown. ")
             pass
 
         super(RpcService, self).stop()

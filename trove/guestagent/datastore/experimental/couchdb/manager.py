@@ -17,7 +17,6 @@ import os
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.couchdb import service
@@ -92,16 +91,16 @@ class Manager(manager.Manager):
         Restores all CouchDB databases and their documents from the
         backup.
         """
-        LOG.info(_("Restoring database from backup %s"),
+        LOG.info("Restoring database from backup %s",
                  backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s"),
+            LOG.exception("Error performing restore from backup %s",
                           backup_info['id'])
             self.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
-        LOG.info(_("Restored database successfully"))
+        LOG.info("Restored database successfully")
 
     def create_backup(self, context, backup_info):
         LOG.debug("Creating backup for CouchDB.")

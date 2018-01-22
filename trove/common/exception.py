@@ -93,8 +93,9 @@ class DatabaseNotFound(NotFound):
 
 class ComputeInstanceNotFound(NotFound):
 
-    internal_message = _("Cannot find compute instance %(server_id)s for "
-                         "instance %(instance_id)s.")
+    # internal_message is used for log, stop translating.
+    internal_message = ("Cannot find compute instance %(server_id)s for "
+                        "instance %(instance_id)s.")
 
     message = _("Resource %(instance_id)s can not be retrieved.")
 
@@ -202,8 +203,9 @@ class NoUniqueMatch(TroveError):
 
 class OverLimit(TroveError):
 
-    internal_message = _("The server rejected the request due to its size or "
-                         "rate.")
+    # internal_message is used for log, stop translating.
+    internal_message = ("The server rejected the request due to its size or "
+                        "rate.")
 
 
 class QuotaLimitTooSmall(TroveError):

@@ -115,7 +115,7 @@ class Manager(manager.Manager):
             self.app.add_udls()
             LOG.debug("install_cluster call has finished.")
         except Exception:
-            LOG.exception(_('Cluster installation failed.'))
+            LOG.exception('Cluster installation failed.')
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
             raise
 
@@ -137,7 +137,7 @@ class Manager(manager.Manager):
             self.app.grow_cluster(members)
             LOG.debug("grow_cluster call has finished.")
         except Exception:
-            LOG.exception(_('Cluster grow failed.'))
+            LOG.exception('Cluster grow failed.')
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
             raise
 
@@ -147,7 +147,7 @@ class Manager(manager.Manager):
             self.app.shrink_cluster(members)
             LOG.debug("shrink_cluster call has finished.")
         except Exception:
-            LOG.exception(_('Cluster shrink failed.'))
+            LOG.exception('Cluster shrink failed.')
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
             raise
 
@@ -156,6 +156,6 @@ class Manager(manager.Manager):
             LOG.debug("Setting vertica k-safety to %s.", k)
             self.app.mark_design_ksafe(k)
         except Exception:
-            LOG.exception(_('K-safety setting failed.'))
+            LOG.exception('K-safety setting failed.')
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
             raise

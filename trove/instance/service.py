@@ -22,7 +22,6 @@ import trove.common.apischema as apischema
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.i18n import _LI
 from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import pagination
@@ -97,8 +96,8 @@ class InstanceController(wsgi.Controller):
             if key in _actions:
                 selected_action = _actions[key]
                 action_name = key
-        LOG.info(_LI("Performing %(action_name)s action against "
-                     "instance %(instance_id)s for tenant '%(tenant_id)s'"),
+        LOG.info("Performing %(action_name)s action against "
+                 "instance %(instance_id)s for tenant '%(tenant_id)s'",
                  {'action_name': action_name, 'instance_id': id,
                   'tenant_id': tenant_id})
         needs_server = True
@@ -195,7 +194,7 @@ class InstanceController(wsgi.Controller):
 
     def index(self, req, tenant_id):
         """Return all instances."""
-        LOG.info(_LI("Listing database instances for tenant '%s'"), tenant_id)
+        LOG.info("Listing database instances for tenant '%s'", tenant_id)
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'instance:index')
@@ -209,7 +208,7 @@ class InstanceController(wsgi.Controller):
 
     def backups(self, req, tenant_id, id):
         """Return all backups for the specified instance."""
-        LOG.info(_LI("Listing backups for instance '%s'"),
+        LOG.info("Listing backups for instance '%s'",
                  id)
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -225,8 +224,8 @@ class InstanceController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        LOG.info(_LI("Showing database instance '%(instance_id)s' for tenant "
-                     "'%(tenant_id)s'"),
+        LOG.info("Showing database instance '%(instance_id)s' for tenant "
+                 "'%(tenant_id)s'",
                  {'instance_id': id, 'tenant_id': tenant_id})
         LOG.debug("req : '%s'\n\n", req)
 
@@ -239,8 +238,8 @@ class InstanceController(wsgi.Controller):
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
-        LOG.info(_LI("Deleting database instance '%(instance_id)s' for tenant "
-                     "'%(tenant_id)s'"),
+        LOG.info("Deleting database instance '%(instance_id)s' for tenant "
+                 "'%(tenant_id)s'",
                  {'instance_id': id, 'tenant_id': tenant_id})
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -264,7 +263,7 @@ class InstanceController(wsgi.Controller):
 
     def create(self, req, body, tenant_id):
         # TODO(hub-cap): turn this into middleware
-        LOG.info(_LI("Creating a database instance for tenant '%s'"),
+        LOG.info("Creating a database instance for tenant '%s'",
                  tenant_id)
         LOG.debug("req : '%s'\n\n", strutils.mask_password(req))
         LOG.debug("body : '%s'\n\n", strutils.mask_password(body))
@@ -404,8 +403,8 @@ class InstanceController(wsgi.Controller):
 
     def update(self, req, id, body, tenant_id):
         """Updates the instance to attach/detach configuration."""
-        LOG.info(_LI("Updating database instance '%(instance_id)s' for tenant "
-                     "'%(tenant_id)s'"),
+        LOG.info("Updating database instance '%(instance_id)s' for tenant "
+                 "'%(tenant_id)s'",
                  {'instance_id': id, 'tenant_id': tenant_id})
         LOG.debug("req: %s", req)
         LOG.debug("body: %s", body)
@@ -424,7 +423,7 @@ class InstanceController(wsgi.Controller):
         """
         Updates the instance to set or unset one or more attributes.
         """
-        LOG.info(_LI("Editing instance for tenant id %s."), tenant_id)
+        LOG.info("Editing instance for tenant id %s.", tenant_id)
         LOG.debug("req: %s", strutils.mask_password(req))
         LOG.debug("body: %s", strutils.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -451,7 +450,7 @@ class InstanceController(wsgi.Controller):
         """
         Returns the default configuration template applied to the instance.
         """
-        LOG.info(_LI("Getting default configuration for instance %s"), id)
+        LOG.info("Getting default configuration for instance %s", id)
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
         self.authorize_instance_action(context, 'configuration', instance)
@@ -477,7 +476,7 @@ class InstanceController(wsgi.Controller):
 
     def guest_log_action(self, req, body, tenant_id, id):
         """Processes a guest log."""
-        LOG.info(_("Processing log for tenant %s"), tenant_id)
+        LOG.info("Processing log for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
         if not instance:

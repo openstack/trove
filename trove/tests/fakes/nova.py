@@ -17,7 +17,6 @@ from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 from trove.common.exception import PollTimeOut
-from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.tests.fakes.common import authorize
 
@@ -277,7 +276,7 @@ class FakeServers(object):
             while volume.status == "BUILD":
                 eventlet.sleep(0.1)
             if volume.status != "available":
-                LOG.info(_("volume status = %s"), volume.status)
+                LOG.info("volume status = %s", volume.status)
                 raise nova_exceptions.ClientException("Volume was bad!")
             mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
             block_device_mapping = {'vdb': mapping}
@@ -329,7 +328,7 @@ class FakeServers(object):
 
     def get(self, id):
         if id not in self.db:
-            LOG.error(_("Couldn't find server id %(id)s, collection=%(db)s"),
+            LOG.error("Couldn't find server id %(id)s, collection=%(db)s",
                       {'id': id, 'db': self.db})
             raise nova_exceptions.NotFound(404, "Not found")
         else:
@@ -349,7 +348,7 @@ class FakeServers(object):
 
     def schedule_delete(self, id, time_from_now):
         def delete_server():
-            LOG.info(_("Simulated event ended, deleting server %s."), id)
+            LOG.info("Simulated event ended, deleting server %s.", id)
             del self.db[id]
         eventlet.spawn_after(time_from_now, delete_server)
 
@@ -491,7 +490,7 @@ class FakeVolumes(object):
 
     def get(self, id):
         if id not in self.db:
-            LOG.error(_("Couldn't find volume id %(id)s, collection=%(db)s"),
+            LOG.error("Couldn't find volume id %(id)s, collection=%(db)s",
                       {'id': id, 'db': self.db})
             raise nova_exceptions.NotFound(404, "Not found")
         else:

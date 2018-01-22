@@ -85,10 +85,10 @@ def _create_facade(options):
                 if conf.query_log:
                     if conf.connection_debug < 50:
                         conf['connection_debug'] = 50
-                    LOG.warning(_('Configuration option "query_log" has been '
-                                  'depracated. Use "connection_debug" '
-                                  'instead. Setting connection_debug = '
-                                  '%(debug_level)s instead.'),
+                    LOG.warning(('Configuration option "query_log" has been '
+                                 'depracated. Use "connection_debug" '
+                                 'instead. Setting connection_debug = '
+                                 '%(debug_level)s instead.'),
                                 conf.get('connection_debug'))
                 # TODO(mvandijk): once query_log is removed,
                 #                 use enginefacade.from_config() instead
@@ -103,9 +103,9 @@ def _create_facade(options):
 
 def _check_facade():
     if _FACADE is None:
-        msg = _("***The Database has not been setup!!!***")
-        LOG.exception(msg)
-        raise RuntimeError(msg)
+        LOG.exception("***The Database has not been setup!!!***")
+        raise RuntimeError(
+            _("***The Database has not been setup!!!***"))
 
 
 def get_facade():

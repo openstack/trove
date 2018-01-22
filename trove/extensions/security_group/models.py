@@ -66,7 +66,7 @@ class SecurityGroup(DatabaseModelBase):
                     tenant_id=context.tenant)
 
         except exception.SecurityGroupCreationError:
-            LOG.exception(_("Failed to create remote security group."))
+            LOG.exception("Failed to create remote security group.")
             raise
 
     @classmethod
@@ -112,7 +112,7 @@ class SecurityGroup(DatabaseModelBase):
             super(SecurityGroup, self).delete()
 
         except exception.TroveError:
-            LOG.exception(_('Failed to delete security group.'))
+            LOG.exception('Failed to delete security group.')
             raise exception.TroveError("Failed to delete Security Group")
 
     @classmethod
@@ -128,8 +128,8 @@ class SecurityGroup(DatabaseModelBase):
                 association.delete()
         except (exception.ModelNotFoundError,
                 exception.TroveError):
-            LOG.info(_('Security Group with id: %(id)s '
-                       'already had been deleted'),
+            LOG.info('Security Group with id: %(id)s '
+                     'already had been deleted',
                      {'id': instance_id})
 
 
@@ -165,7 +165,7 @@ class SecurityGroupRule(DatabaseModelBase):
                     group_id=sec_group['id'])
 
         except exception.SecurityGroupRuleCreationError:
-            LOG.exception(_("Failed to create remote security group rule."))
+            LOG.exception("Failed to create remote security group rule.")
             raise
 
     def get_security_group(self, tenant_id):
@@ -179,7 +179,7 @@ class SecurityGroupRule(DatabaseModelBase):
             RemoteSecurityGroup.delete_rule(self.id, context, region_name)
             super(SecurityGroupRule, self).delete()
         except exception.TroveError:
-            LOG.exception(_('Failed to delete remote security group rule.'))
+            LOG.exception('Failed to delete remote security group rule.')
             raise exception.SecurityGroupRuleDeletionError(
                 "Failed to delete Remote Security Group Rule")
 

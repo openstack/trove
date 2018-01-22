@@ -34,47 +34,36 @@ class HackingTestCase(trove_testtools.TestCase):
         self.assertIsNone(tc.factory(check_callable))
 
     def test_log_translations(self):
-        expected_marks = {
-            'error': '_',
-            'info': '_',
-            'warning': '_',
-            'critical': '_',
-            'exception': '_',
-        }
-        logs = expected_marks.keys()
-        debug = "LOG.debug('OK')"
-        self.assertEqual(
-            0, len(list(tc.validate_log_translations(debug, debug, 'f'))))
-        for log in logs:
-            bad = 'LOG.%s("Bad")' % log
+        all_log_levels = (
+            'critical',
+            'debug',
+            'error',
+            'exception',
+            'info',
+            'reserved',
+            'warning',
+        )
+        for level in all_log_levels:
+            bad = 'LOG.%s(_("Bad"))' % level
             self.assertEqual(
-                1, len(list(tc.validate_log_translations(bad, bad, 'f'))))
-            ok = 'LOG.%s(_("OK"))' % log
+                1, len(list(tc.no_translate_logs(bad, bad, 'f'))))
+            bad = "LOG.%s(_('Bad'))" % level
             self.assertEqual(
-                0, len(list(tc.validate_log_translations(ok, ok, 'f'))))
-            ok = "LOG.%s('OK')    # noqa" % log
+                1, len(list(tc.no_translate_logs(bad, bad, 'f'))))
+            ok = 'LOG.%s("OK")' % level
             self.assertEqual(
-                0, len(list(tc.validate_log_translations(ok, ok, 'f'))))
-            ok = "LOG.%s(variable)" % log
+                0, len(list(tc.no_translate_logs(ok, ok, 'f'))))
+            ok = "LOG.%s(_('OK'))    # noqa" % level
             self.assertEqual(
-                0, len(list(tc.validate_log_translations(ok, ok, 'f'))))
+                0, len(list(tc.no_translate_logs(ok, ok, 'f'))))
+            ok = "LOG.%s(variable)" % level
+            self.assertEqual(
+                0, len(list(tc.no_translate_logs(ok, ok, 'f'))))
             # Do not do validations in tests
-            ok = 'LOG.%s("OK - unit tests")' % log
+            ok = 'LOG.%s(_("OK - unit tests"))' % level
             self.assertEqual(
-                0, len(list(tc.validate_log_translations(ok, ok,
-                                                         'f/tests/f'))))
-
-            for mark in tc._all_hints:
-                stmt = "LOG.%s(%s('test'))" % (log, mark)
-                self.assertEqual(
-                    0 if expected_marks[log] == mark else 1,
-                    len(list(tc.validate_log_translations(stmt, stmt, 'f'))))
-
-    def test_no_translate_debug_logs(self):
-        for hint in tc._all_hints:
-            bad = "LOG.debug(%s('bad'))" % hint
-            self.assertEqual(
-                1, len(list(tc.no_translate_debug_logs(bad, 'f'))))
+                0, len(list(tc.no_translate_logs(ok, ok,
+                                                 'f/tests/f'))))
 
     def test_check_localized_exception_messages(self):
         f = tc.check_raised_localized_exceptions

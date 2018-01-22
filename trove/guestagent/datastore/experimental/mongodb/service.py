@@ -67,11 +67,11 @@ class MongoDBApp(object):
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a MongoDB installation."""
-        LOG.info(_("Preparing Guest as MongoDB."))
+        LOG.info("Preparing Guest as MongoDB.")
         if not system.PACKAGER.pkg_is_installed(packages):
             LOG.debug("Installing packages: %s.", str(packages))
             system.PACKAGER.pkg_install(packages, {}, system.TIME_OUT)
-        LOG.info(_("Finished installing MongoDB server."))
+        LOG.info("Finished installing MongoDB server.")
 
     def _get_service_candidates(self):
         if self.is_query_router:
@@ -100,12 +100,12 @@ class MongoDBApp(object):
         self.configuration_manager.remove_user_override()
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_('Starting MongoDB with configuration changes.'))
+        LOG.info('Starting MongoDB with configuration changes.')
         if self.status.is_running:
             format = 'Cannot start_db_with_conf_changes because status is %s.'
             LOG.debug(format, self.status)
             raise RuntimeError(format % self.status)
-        LOG.info(_("Initiating config."))
+        LOG.info("Initiating config.")
         self.configuration_manager.save_configuration(config_contents)
         # The configuration template has to be updated with
         # guestagent-controlled settings.
@@ -161,15 +161,15 @@ class MongoDBApp(object):
             self._configure_as_cluster_member(
                 cluster_config['replica_set_name'])
         else:
-            LOG.error(_("Bad cluster configuration; instance type "
-                        "given as %s."), cluster_config['instance_type'])
+            LOG.error("Bad cluster configuration; instance type "
+                      "given as %s.", cluster_config['instance_type'])
             return ds_instance.ServiceStatuses.FAILED
 
         if 'key' in cluster_config:
             self._configure_cluster_security(cluster_config['key'])
 
     def _configure_as_query_router(self):
-        LOG.info(_("Configuring instance as a cluster query router."))
+        LOG.info("Configuring instance as a cluster query router.")
         self.is_query_router = True
 
         # FIXME(pmalik): We should really have a separate configuration
@@ -193,13 +193,13 @@ class MongoDBApp(object):
             {'sharding.configDB': ''}, CNF_CLUSTER)
 
     def _configure_as_config_server(self):
-        LOG.info(_("Configuring instance as a cluster config server."))
+        LOG.info("Configuring instance as a cluster config server.")
         self._configure_network(CONFIGSVR_PORT)
         self.configuration_manager.apply_system_override(
             {'sharding.clusterRole': 'configsvr'}, CNF_CLUSTER)
 
     def _configure_as_cluster_member(self, replica_set_name):
-        LOG.info(_("Configuring instance as a cluster member."))
+        LOG.info("Configuring instance as a cluster member.")
         self.is_cluster_member = True
         self._configure_network(MONGODB_PORT)
         # we don't want these thinking they are in a replica set yet
@@ -240,7 +240,7 @@ class MongoDBApp(object):
         try:
             operating_system.remove(mount_point, force=True, as_root=True)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error clearing storage."))
+            LOG.exception("Error clearing storage.")
 
     def _has_config_db(self):
         value_string = self.configuration_manager.get_value(
@@ -256,7 +256,7 @@ class MongoDBApp(object):
         """
         config_servers_string = ','.join(['%s:%s' % (host, CONFIGSVR_PORT)
                                           for host in config_server_hosts])
-        LOG.info(_("Setting config servers: %s"), config_servers_string)
+        LOG.info("Setting config servers: %s", config_servers_string)
         self.configuration_manager.apply_system_override(
             {'sharding.configDB': config_servers_string}, CNF_CLUSTER)
         self.start_db(True)
@@ -454,7 +454,7 @@ class MongoDBAppStatus(service.BaseDbStatus):
                 pymongo.errors.AutoReconnect):
             return ds_instance.ServiceStatuses.SHUTDOWN
         except Exception:
-            LOG.exception(_("Error getting MongoDB status."))
+            LOG.exception("Error getting MongoDB status.")
 
         return ds_instance.ServiceStatuses.SHUTDOWN
 
@@ -528,8 +528,8 @@ class MongoDBAdmin(object):
                     self.create_validated_user(user, client=client)
                 except (ValueError, pymongo.errors.PyMongoError) as e:
                     LOG.error(e)
-                    LOG.warning(_('Skipping creation of user with name '
-                                  '%(user)s'), {'user': user.name})
+                    LOG.warning('Skipping creation of user with name '
+                                '%(user)s', {'user': user.name})
 
     def delete_validated_user(self, user):
         """Deletes a user from their database. The caller should ensure that
@@ -553,8 +553,8 @@ class MongoDBAdmin(object):
         """Get the user's record."""
         user = models.MongoDBUser(name)
         if user.is_ignored:
-            LOG.warning(_('Skipping retrieval of user with reserved '
-                          'name %(user)s'), {'user': user.name})
+            LOG.warning('Skipping retrieval of user with reserved '
+                        'name %(user)s', {'user': user.name})
             return None
         if client:
             user_info = client.admin.system.users.find_one(
@@ -613,8 +613,8 @@ class MongoDBAdmin(object):
                     self._create_user_with_client(user, admin_client)
                 except (ValueError, pymongo.errors.PyMongoError) as e:
                     LOG.error(e)
-                    LOG.warning(_('Skipping password change for user with '
-                                  'name %(user)s'), {'user': user.name})
+                    LOG.warning('Skipping password change for user with '
+                                'name %(user)s', {'user': user.name})
 
     def update_attributes(self, name, user_attrs):
         """Update user attributes."""
@@ -624,9 +624,9 @@ class MongoDBAdmin(object):
             user.password = password
             self.change_passwords([user.serialize()])
         if user_attrs.get('name'):
-            LOG.warning(_('Changing user name is not supported.'))
+            LOG.warning('Changing user name is not supported.')
         if user_attrs.get('host'):
-            LOG.warning(_('Changing user host is not supported.'))
+            LOG.warning('Changing user host is not supported.')
 
     def enable_root(self, password=None):
         """Create a user 'root' with role 'root'."""

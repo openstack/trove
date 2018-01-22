@@ -114,11 +114,11 @@ class BackupAgent(object):
 
         except Exception:
             LOG.exception(
-                _("Error saving backup: %(backup_id)s."), backup_state)
+                "Error saving backup: %(backup_id)s.", backup_state)
             backup_state.update({'state': BackupState.FAILED})
             raise
         finally:
-            LOG.info(_("Completed backup %(backup_id)s."), backup_state)
+            LOG.info("Completed backup %(backup_id)s.", backup_state)
             conductor.update_backup(CONF.guest_id,
                                     sent=timeutils.utcnow_ts(
                                         microsecond=True),
@@ -176,7 +176,7 @@ class BackupAgent(object):
             LOG.debug("Restore size: %s.", content_size)
 
         except Exception:
-            LOG.exception(_("Error restoring backup %(id)s."), backup_info)
+            LOG.exception("Error restoring backup %(id)s.", backup_info)
             raise
 
         else:

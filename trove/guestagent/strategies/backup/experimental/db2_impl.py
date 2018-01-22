@@ -16,7 +16,6 @@
 from oslo_log import log as logging
 from trove.common.db import models
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.db2 import service
@@ -57,8 +56,8 @@ class DB2Backup(base.BackupRunner):
                                                                 dbname})
                 size = size + int(out[0])
         except exception.ProcessExecutionError:
-            LOG.exception(_("An error occurred while trying to "
-                            "estimate backup size"))
+            LOG.exception("An error occurred while trying to "
+                          "estimate backup size")
         LOG.debug("Estimated size for databases: %d", size)
         return size
 
@@ -130,8 +129,8 @@ class DB2OnlineBackup(DB2Backup):
                 log_size = log_size + int(out[0])
             log_size = log_size * 1024
         except exception.ProcessExecutionError:
-            LOG.exception(_("An error occurred while trying to estimate log "
-                            "size"))
+            LOG.exception("An error occurred while trying to estimate log "
+                          "size")
         LOG.debug("Estimated log size for all databases: %d", log_size)
         return log_size
 
@@ -139,8 +138,8 @@ class DB2OnlineBackup(DB2Backup):
         try:
             self.execute_backup_cmd(system.ONLINE_BACKUP_DB)
         except exception.ProcessExecutionError:
-            LOG.exception(_("An exception occurred while doing an online "
-                            "backup."))
+            LOG.exception("An exception occurred while doing an online "
+                          "backup.")
             self.cleanup()
             raise
 
@@ -172,7 +171,7 @@ class DB2OfflineBackup(DB2Backup):
             self.execute_backup_cmd(system.OFFLINE_BACKUP_DB)
             service.run_command(system.UNQUIESCE_DB2)
         except exception.ProcessExecutionError:
-            LOG.exception(_("An exception occurred while doing an offline "
-                            "backup."))
+            LOG.exception("An exception occurred while doing an offline "
+                          "backup.")
             self.cleanup()
             raise

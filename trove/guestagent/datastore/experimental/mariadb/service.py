@@ -16,7 +16,6 @@
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.galera_common import service as galera_service
 from trove.guestagent.datastore.mysql_common import service as mysql_service
@@ -84,11 +83,11 @@ class MariaDBApp(galera_service.GaleraApp):
         return master_UUID, int(last_txn_id)
 
     def get_latest_txn_id(self):
-        LOG.info(_("Retrieving latest txn id."))
+        LOG.info("Retrieving latest txn id.")
         return self._get_gtid_executed()
 
     def wait_for_txn(self, txn):
-        LOG.info(_("Waiting on txn '%s'."), txn)
+        LOG.info("Waiting on txn '%s'.", txn)
         with self.local_sql_client(self.get_engine()) as client:
             client.execute("SELECT MASTER_GTID_WAIT('%s')" % txn)
 

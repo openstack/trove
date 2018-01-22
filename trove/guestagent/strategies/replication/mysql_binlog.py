@@ -62,9 +62,9 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
 
     def _read_log_position(self):
         INFO_FILE = ('%s/xtrabackup_binlog_info' % MySqlApp.get_data_dir())
-        LOG.info(_("Setting read permissions on %s"), INFO_FILE)
+        LOG.info("Setting read permissions on %s", INFO_FILE)
         operating_system.chmod(INFO_FILE, FileMode.ADD_READ_ALL, as_root=True)
-        LOG.info(_("Reading log position from %s"), INFO_FILE)
+        LOG.info("Reading log position from %s", INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
                 row = next(csv.reader(f, delimiter='\t',

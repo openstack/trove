@@ -106,8 +106,8 @@ class ConfigurationsController(wsgi.Controller):
         description = body['configuration'].get('description')
         values = body['configuration']['values']
 
-        msg = _("Creating configuration group on tenant "
-                "%(tenant_id)s with name: %(cfg_name)s")
+        msg = ("Creating configuration group on tenant "
+               "%(tenant_id)s with name: %(cfg_name)s")
         LOG.info(msg, {"tenant_id": tenant_id, "cfg_name": name})
 
         datastore_args = body['configuration'].get('datastore', {})
@@ -143,8 +143,8 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(view_data.data(), 200)
 
     def delete(self, req, tenant_id, id):
-        msg = _("Deleting configuration group %(cfg_id)s on tenant: "
-                "%(tenant_id)s")
+        msg = ("Deleting configuration group %(cfg_id)s on tenant: "
+               "%(tenant_id)s")
         LOG.info(msg, {"tenant_id": tenant_id, "cfg_id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -163,8 +163,8 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
     def update(self, req, body, tenant_id, id):
-        msg = _("Updating configuration group %(cfg_id)s for tenant "
-                "id %(tenant_id)s")
+        msg = ("Updating configuration group %(cfg_id)s for tenant "
+               "id %(tenant_id)s")
         LOG.info(msg, {"tenant_id": tenant_id, "cfg_id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -269,7 +269,7 @@ class ConfigurationsController(wsgi.Controller):
 
     @staticmethod
     def _validate_configuration(values, datastore_version, config_rules):
-        LOG.info(_("Validating configuration values"))
+        LOG.info("Validating configuration values")
 
         # create rules dictionary based on parameter name
         rules_lookup = {}

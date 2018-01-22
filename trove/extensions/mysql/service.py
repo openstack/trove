@@ -57,8 +57,8 @@ class UserController(ExtensionController):
 
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
-        LOG.info(_("Listing users for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Listing users for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(context, 'user:index', instance_id)
@@ -70,9 +70,9 @@ class UserController(ExtensionController):
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of users."""
-        LOG.info(_("Creating users for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"
-                   "body: '%(body)s'\n'n"),
+        LOG.info("Creating users for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n"
+                 "body: '%(body)s'\n'n",
                  {"id": instance_id,
                   "req": strutils.mask_password(req),
                   "body": strutils.mask_password(body)})
@@ -93,8 +93,8 @@ class UserController(ExtensionController):
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
-        LOG.info(_("Delete instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Delete instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(context, 'user:delete', instance_id)
@@ -122,8 +122,8 @@ class UserController(ExtensionController):
 
     def show(self, req, tenant_id, instance_id, id):
         """Return a single user."""
-        LOG.info(_("Showing a user for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Showing a user for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(context, 'user:show', instance_id)
@@ -142,8 +142,8 @@ class UserController(ExtensionController):
 
     def update(self, req, body, tenant_id, instance_id, id):
         """Change attributes for one user."""
-        LOG.info(_("Updating user attributes for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Updating user attributes for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": strutils.mask_password(req)})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(context, 'user:update', instance_id)
@@ -173,8 +173,8 @@ class UserController(ExtensionController):
 
     def update_all(self, req, body, tenant_id, instance_id):
         """Change the password of one or more users."""
-        LOG.info(_("Updating user password for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Updating user password for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": strutils.mask_password(req)})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(context, 'user:update_all', instance_id)
@@ -234,8 +234,8 @@ class UserAccessController(ExtensionController):
 
     def index(self, req, tenant_id, instance_id, user_id):
         """Show permissions for the given user."""
-        LOG.info(_("Showing user access for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Showing user access for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -245,7 +245,7 @@ class UserAccessController(ExtensionController):
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
-            LOG.error(_("No such user: %(user)s "), {'user': user})
+            LOG.error("No such user: %(user)s ", {'user': user})
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
@@ -254,8 +254,8 @@ class UserAccessController(ExtensionController):
 
     def update(self, req, body, tenant_id, instance_id, user_id):
         """Grant access for a user to one or more databases."""
-        LOG.info(_("Granting user access for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Granting user access for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(
@@ -265,7 +265,7 @@ class UserAccessController(ExtensionController):
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
-            LOG.error(_("No such user: %(user)s "), {'user': user})
+            LOG.error("No such user: %(user)s ", {'user': user})
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         databases = [db['name'] for db in body['databases']]
@@ -277,8 +277,8 @@ class UserAccessController(ExtensionController):
 
     def delete(self, req, tenant_id, instance_id, user_id, id):
         """Revoke access for a user."""
-        LOG.info(_("Revoking user access for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Revoking user access for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(
@@ -288,7 +288,7 @@ class UserAccessController(ExtensionController):
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
-            LOG.error(_("No such user: %(user)s "), {'user': user})
+            LOG.error("No such user: %(user)s ", {'user': user})
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
@@ -307,8 +307,8 @@ class SchemaController(ExtensionController):
 
     def index(self, req, tenant_id, instance_id):
         """Return all schemas."""
-        LOG.info(_("Listing schemas for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Listing schemas for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
 
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -322,9 +322,9 @@ class SchemaController(ExtensionController):
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of schemas."""
-        LOG.info(_("Creating schema for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"
-                   "body: '%(body)s'\n'n"),
+        LOG.info("Creating schema for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n"
+                 "body: '%(body)s'\n'n",
                  {"id": instance_id,
                   "req": req,
                   "body": body})
@@ -347,8 +347,8 @@ class SchemaController(ExtensionController):
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
-        LOG.info(_("Deleting schema for instance '%(id)s'\n"
-                   "req : '%(req)s'\n\n"),
+        LOG.info("Deleting schema for instance '%(id)s'\n"
+                 "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         self.authorize_target_action(

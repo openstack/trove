@@ -257,7 +257,7 @@ class PgSqlApp(object):
         if not self.configuration_manager.has_system_override(
                 BACKUP_CFG_OVERRIDE):
             return
-        LOG.info(_("Removing configuration changes for backups"))
+        LOG.info("Removing configuration changes for backups")
         self.configuration_manager.remove_system_override(BACKUP_CFG_OVERRIDE)
         self.remove_wal_archive_dir()
         self.restart()
@@ -266,13 +266,13 @@ class PgSqlApp(object):
         """Apply necessary changes to config to enable WAL-based backups
         if we are using the PgBaseBackup strategy
         """
-        LOG.info(_("Checking if we need to apply changes to WAL config"))
+        LOG.info("Checking if we need to apply changes to WAL config")
         if 'PgBaseBackup' not in self.backup_strategy:
             return
         if self.configuration_manager.has_system_override(BACKUP_CFG_OVERRIDE):
             return
 
-        LOG.info(_("Applying changes to WAL config for use by base backups"))
+        LOG.info("Applying changes to WAL config for use by base backups")
         wal_arch_loc = self.wal_archive_location
         if not os.path.isdir(wal_arch_loc):
             raise RuntimeError(_("Cannot enable backup as WAL dir '%s' does "
@@ -323,7 +323,7 @@ class PgSqlApp(object):
         if not packager.pkg_is_installed(packages):
             try:
                 LOG.info(
-                    _("{guest_id}: Installing ({packages}).").format(
+                    "{guest_id}: Installing ({packages}).".format(
                         guest_id=CONF.guest_id,
                         packages=packages,
                     )
@@ -335,8 +335,8 @@ class PgSqlApp(object):
                     pkg.PkgDownloadError, pkg.PkgSignError,
                     pkg.PkgBrokenError):
                 LOG.exception(
-                    _("{guest_id}: There was a package manager error while "
-                      "trying to install ({packages}).").format(
+                    "{guest_id}: There was a package manager error while "
+                    "trying to install ({packages}).".format(
                         guest_id=CONF.guest_id,
                         packages=packages,
                     )
@@ -344,8 +344,8 @@ class PgSqlApp(object):
                 raise
             except Exception:
                 LOG.exception(
-                    _("{guest_id}: The package manager encountered an unknown "
-                      "error while trying to install ({packages}).").format(
+                    "{guest_id}: The package manager encountered an unknown "
+                    "error while trying to install ({packages}).".format(
                         guest_id=CONF.guest_id,
                         packages=packages,
                     )
@@ -583,7 +583,7 @@ class PgSqlAppStatus(service.BaseDbStatus):
         except utils.Timeout:
             return instance.ServiceStatuses.BLOCKED
         except Exception:
-            LOG.exception(_("Error getting Postgres status."))
+            LOG.exception("Error getting Postgres status.")
             return instance.ServiceStatuses.CRASHED
 
         return instance.ServiceStatuses.SHUTDOWN
@@ -610,11 +610,11 @@ class PgSqlAdmin(object):
         """
         for database in databases:
             LOG.info(
-                _("{guest_id}: Granting user ({user}) access to database "
-                    "({database}).").format(
-                        guest_id=CONF.guest_id,
-                        user=username,
-                        database=database,)
+                "{guest_id}: Granting user ({user}) access to database "
+                "({database}).".format(
+                    guest_id=CONF.guest_id,
+                    user=username,
+                    database=database,)
             )
             self.psql(
                 pgsql_query.AccessQuery.grant(
@@ -632,11 +632,11 @@ class PgSqlAdmin(object):
         database.
         """
         LOG.info(
-            _("{guest_id}: Revoking user ({user}) access to database"
-                "({database}).").format(
-                    guest_id=CONF.guest_id,
-                    user=username,
-                    database=database,)
+            "{guest_id}: Revoking user ({user}) access to database"
+            "({database}).".format(
+                guest_id=CONF.guest_id,
+                user=username,
+                database=database,)
         )
         self.psql(
             pgsql_query.AccessQuery.revoke(
@@ -673,7 +673,7 @@ class PgSqlAdmin(object):
         :type database:           PostgreSQLSchema
         """
         LOG.info(
-            _("{guest_id}: Creating database {name}.").format(
+            "{guest_id}: Creating database {name}.".format(
                 guest_id=CONF.guest_id,
                 name=database.name,
             )
@@ -700,7 +700,7 @@ class PgSqlAdmin(object):
         :type database:           PostgreSQLSchema
         """
         LOG.info(
-            _("{guest_id}: Dropping database {name}.").format(
+            "{guest_id}: Dropping database {name}.".format(
                 guest_id=CONF.guest_id,
                 name=database.name,
             )
@@ -755,7 +755,7 @@ class PgSqlAdmin(object):
         :type options:            list
         """
         LOG.info(
-            _("{guest_id}: Creating user {user} {with_clause}.")
+            "{guest_id}: Creating user {user} {with_clause}."
             .format(
                 guest_id=CONF.guest_id,
                 user=user.name,
@@ -844,7 +844,7 @@ class PgSqlAdmin(object):
             self.revoke_access(context, user.name, None, db.name)
 
         LOG.info(
-            _("{guest_id}: Dropping user {name}.").format(
+            "{guest_id}: Dropping user {name}.".format(
                 guest_id=CONF.guest_id,
                 name=user.name,
             )
@@ -907,7 +907,7 @@ class PgSqlAdmin(object):
         :type options:            list
         """
         LOG.info(
-            _("{guest_id}: Altering user {user} {with_clause}.")
+            "{guest_id}: Altering user {user} {with_clause}."
             .format(
                 guest_id=CONF.guest_id,
                 user=user.name,
@@ -962,7 +962,7 @@ class PgSqlAdmin(object):
         :type user:               PostgreSQLUser
         """
         LOG.info(
-            _("{guest_id}: Changing username for {old} to {new}.").format(
+            "{guest_id}: Changing username for {old} to {new}.".format(
                 guest_id=CONF.guest_id,
                 old=user.name,
                 new=new_username,

@@ -178,7 +178,7 @@ class GuestLog(object):
                     self.swift_client.put_container(
                         container_name, headers=self._get_headers())
                 else:
-                    LOG.exception(_("Could not retrieve container '%s'"),
+                    LOG.exception("Could not retrieve container '%s'",
                                   container_name)
                     raise
             self._container_name = container_name
@@ -230,7 +230,7 @@ class GuestLog(object):
                               self._name)
                     self._published_size = 0
                 else:
-                    LOG.exception(_("Could not get meta details for log '%s'"),
+                    LOG.exception("Could not get meta details for log '%s'",
                                   self._name)
                     raise
             except ConnectionError as e:

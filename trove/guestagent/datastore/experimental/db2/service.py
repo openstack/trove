@@ -211,7 +211,7 @@ class DB2App(object):
                 "Command to disable DB2 server on boot failed."))
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting DB2 with configuration changes."))
+        LOG.info("Starting DB2 with configuration changes.")
         self.configuration_manager.save_configuration(config_contents)
         self.start_db(True)
 
@@ -226,7 +226,7 @@ class DB2App(object):
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
-            LOG.error(_("Start of DB2 server instance failed."))
+            LOG.error("Start of DB2 server instance failed.")
             self.status.end_restart()
             raise RuntimeError(_("Could not start DB2."))
 
@@ -242,7 +242,7 @@ class DB2App(object):
         if not (self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db)):
-            LOG.error(_("Could not stop DB2."))
+            LOG.error("Could not stop DB2.")
             self.status.end_restart()
             raise RuntimeError(_("Could not stop DB2."))
 
@@ -275,7 +275,7 @@ class DB2App(object):
                     "parameter": param,
                     "value": value})
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to update config %s"), param)
+            LOG.exception("Failed to update config %s", param)
             raise
 
     def _reset_config(self, config):
@@ -284,18 +284,18 @@ class DB2App(object):
                 default_cfg_value = self.dbm_default_config[k]
                 self._update_dbm_config(k, default_cfg_value)
         except Exception:
-            LOG.exception(_("DB2 configuration reset failed."))
+            LOG.exception("DB2 configuration reset failed.")
             raise RuntimeError(_("DB2 configuration reset failed."))
-        LOG.info(_("DB2 configuration reset completed."))
+        LOG.info("DB2 configuration reset completed.")
 
     def _apply_config(self, config):
         try:
             for k, v in config.items():
                 self._update_dbm_config(k, v)
         except Exception:
-            LOG.exception(_("DB2 configuration apply failed"))
+            LOG.exception("DB2 configuration apply failed")
             raise RuntimeError(_("DB2 configuration apply failed"))
-        LOG.info(_("DB2 config apply completed."))
+        LOG.info("DB2 config apply completed.")
 
 
 class DB2AppStatus(service.BaseDbStatus):
@@ -312,7 +312,7 @@ class DB2AppStatus(service.BaseDbStatus):
             else:
                 return rd_instance.ServiceStatuses.SHUTDOWN
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error getting the DB2 server status."))
+            LOG.exception("Error getting the DB2 server status.")
             return rd_instance.ServiceStatuses.CRASHED
 
 
@@ -353,8 +353,8 @@ class DB2Admin(object):
             try:
                 run_command(system.CREATE_DB_COMMAND % {'dbname': dbName})
             except exception.ProcessExecutionError:
-                LOG.exception(_(
-                    "There was an error creating database: %s."), dbName)
+                LOG.exception(
+                    "There was an error creating database: %s.", dbName)
                 db_create_failed.append(dbName)
                 pass
 
@@ -373,12 +373,12 @@ class DB2Admin(object):
                     run_command(system.RECOVER_FROM_BACKUP_PENDING_MODE % {
                         'dbname': dbName})
             except exception.ProcessExecutionError:
-                LOG.exception(_(
+                LOG.exception(
                     "There was an error while configuring the database for "
-                    "online backup: %s."), dbName)
+                    "online backup: %s.", dbName)
 
         if len(db_create_failed) > 0:
-            LOG.exception(_("Creating the following databases failed: %s."),
+            LOG.exception("Creating the following databases failed: %s.",
                           db_create_failed)
 
     def delete_database(self, database):
@@ -391,8 +391,8 @@ class DB2Admin(object):
             LOG.debug("Deleting DB2 database: %s.", dbName)
             run_command(system.DELETE_DB_COMMAND % {'dbname': dbName})
         except exception.ProcessExecutionError:
-            LOG.exception(_(
-                "There was an error while deleting database:%s."), dbName)
+            LOG.exception(
+                "There was an error while deleting database:%s.", dbName)
             raise exception.GuestError(original_message=_(
                 "Unable to delete database: %s.") % dbName)
 
@@ -436,7 +436,7 @@ class DB2Admin(object):
             LOG.debug("databases = %s.", str(databases))
         except exception.ProcessExecutionError as pe:
             err_msg = encodeutils.exception_to_unicode(pe)
-            LOG.exception(_("An error occurred listing databases: %s."),
+            LOG.exception("An error occurred listing databases: %s.",
                           err_msg)
             pass
         return databases, next_marker
@@ -454,7 +454,7 @@ class DB2Admin(object):
                             'login': user.name, 'login': user.name,
                             'passwd': user.password}, shell=True)
                 except exception.ProcessExecutionError as pe:
-                    LOG.exception(_("Error creating user: %s."), user.name)
+                    LOG.exception("Error creating user: %s.", user.name)
                     continue
 
                 for database in user.databases:
@@ -472,7 +472,7 @@ class DB2Admin(object):
                         LOG.debug(pe)
                         pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_("An error occurred creating users: %s."),
+            LOG.exception("An error occurred creating users: %s.",
                           pe.message)
             pass
 
@@ -508,8 +508,8 @@ class DB2Admin(object):
                 utils.execute_with_timeout(system.DELETE_USER_COMMAND % {
                     'login': db2_user.name.lower()}, shell=True)
             except exception.ProcessExecutionError as pe:
-                LOG.exception(_(
-                    "There was an error while deleting user: %s."), pe)
+                LOG.exception(
+                    "There was an error while deleting user: %s.", pe)
                 raise exception.GuestError(original_message=_(
                     "Unable to delete user: %s.") % userName)
 

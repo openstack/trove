@@ -24,7 +24,6 @@ from oslo_messaging.rpc.client import RemoteError
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common.notification import NotificationCastWrapper
 from trove import rpc
 
@@ -93,10 +92,10 @@ class API(object):
             LOG.debug("Result is %s.", result)
             return result
         except RemoteError as r:
-            LOG.exception(_("Error calling %s"), method_name)
+            LOG.exception("Error calling %s", method_name)
             raise exception.GuestError(original_message=r.value)
         except Exception as e:
-            LOG.exception(_("Error calling %s"), method_name)
+            LOG.exception("Error calling %s", method_name)
             raise exception.GuestError(original_message=str(e))
         except Timeout:
             raise exception.GuestTimeout()
@@ -108,10 +107,10 @@ class API(object):
                 cctxt = self.client.prepare(version=version)
                 cctxt.cast(self.context, method_name, **kwargs)
         except RemoteError as r:
-            LOG.exception(_("Error calling %s"), method_name)
+            LOG.exception("Error calling %s", method_name)
             raise exception.GuestError(original_message=r.value)
         except Exception as e:
-            LOG.exception(_("Error calling %s"), method_name)
+            LOG.exception("Error calling %s", method_name)
             raise exception.GuestError(original_message=str(e))
 
     def _get_routing_key(self):

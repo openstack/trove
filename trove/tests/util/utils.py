@@ -19,8 +19,6 @@ import time
 from functools import wraps
 from oslo_log import log as logging
 
-from trove.common.i18n import _
-
 
 LOG = logging.getLogger(__name__)
 
@@ -47,9 +45,9 @@ def retry(expected_exception_cls, retries=3, delay_fun=lambda n: 3 * n):
                 except expected_exception_cls:
                     remaining_attempts -= 1
                     delay = delay_fun(retries - remaining_attempts)
-                    LOG.exception(_(
+                    LOG.exception(
                         "Retrying in %(delay)d seconds "
-                        "(remaining attempts: %(remaining)d)...") %
+                        "(remaining attempts: %(remaining)d)..." %
                         {'delay': delay, 'remaining': remaining_attempts})
                     time.sleep(delay)
             return f(*args, **kwargs)

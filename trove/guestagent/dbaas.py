@@ -76,7 +76,7 @@ def get_filesystem_volume_stats(fs_path):
     try:
         stats = os.statvfs(fs_path)
     except OSError:
-        LOG.exception(_("Error getting volume stats."))
+        LOG.exception("Error getting volume stats.")
         raise RuntimeError(_("Filesystem not found (%s)") % fs_path)
 
     total = stats.f_blocks * stats.f_bsize

@@ -18,8 +18,6 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.i18n import _LE
-from trove.common.i18n import _LI
 from trove.common import wsgi
 from trove.extensions.common.service import DefaultRootController
 from trove.extensions.redis.models import RedisRoot
@@ -52,9 +50,9 @@ class RedisRootController(DefaultRootController):
 
     def _instance_root_create(self, req, instance_id, password,
                               slave_instances=None):
-        LOG.info(_LI("Enabling authentication for instance '%s'."),
+        LOG.info("Enabling authentication for instance '%s'.",
                  instance_id)
-        LOG.info(_LI("req : '%s'\n\n"), req)
+        LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user_name = context.user
 
@@ -70,15 +68,15 @@ class RedisRootController(DefaultRootController):
         except exception.TroveError:
             self._rollback_once(req, instance_id, original_auth_password)
             raise exception.TroveError(
-                _LE("Failed to do root-enable for instance "
-                    "'%(instance_id)s'.") % {'instance_id': instance_id}
+                _("Failed to do root-enable for instance "
+                  "'%(instance_id)s'.") % {'instance_id': instance_id}
             )
 
         failed_slaves = []
         for slave_id in slave_instances:
             try:
-                LOG.info(_LI("Enabling authentication for slave instance "
-                             "'%s'."), slave_id)
+                LOG.info("Enabling authentication for slave instance "
+                         "'%s'.", slave_id)
                 RedisRoot.create(context, slave_id, user_name, password)
             except exception.TroveError:
                 failed_slaves.append(slave_id)
@@ -87,9 +85,9 @@ class RedisRootController(DefaultRootController):
             RedisRootCreatedView(root, failed_slaves).data(), 200)
 
     def _instance_root_delete(self, req, instance_id, slave_instances=None):
-        LOG.info(_LI("Disabling authentication for instance '%s'."),
+        LOG.info("Disabling authentication for instance '%s'.",
                  instance_id)
-        LOG.info(_LI("req : '%s'\n\n"), req)
+        LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
 
         original_auth_password = self._get_original_auth_password(
@@ -101,15 +99,15 @@ class RedisRootController(DefaultRootController):
         except exception.TroveError:
             self._rollback_once(req, instance_id, original_auth_password)
             raise exception.TroveError(
-                _LE("Failed to do root-disable for instance "
-                    "'%(instance_id)s'.") % {'instance_id': instance_id}
+                _("Failed to do root-disable for instance "
+                  "'%(instance_id)s'.") % {'instance_id': instance_id}
             )
 
         failed_slaves = []
         for slave_id in slave_instances:
             try:
-                LOG.info(_LI("Disabling authentication for slave instance "
-                             "'%s'."), slave_id)
+                LOG.info("Disabling authentication for slave instance "
+                         "'%s'.", slave_id)
                 RedisRoot.delete(context, slave_id)
             except exception.TroveError:
                 failed_slaves.append(slave_id)
@@ -124,8 +122,8 @@ class RedisRootController(DefaultRootController):
 
     @staticmethod
     def _rollback_once(req, instance_id, original_auth_password):
-        LOG.info(_LI("Rolling back enable/disable authentication "
-                     "for instance '%s'."), instance_id)
+        LOG.info("Rolling back enable/disable authentication "
+                 "for instance '%s'.", instance_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         user_name = context.user
         try:
@@ -138,7 +136,7 @@ class RedisRootController(DefaultRootController):
                 RedisRoot.create(context, instance_id, user_name,
                                  original_auth_password)
         except exception.TroveError:
-            LOG.exception(_("Rolling back failed for instance '%s'"),
+            LOG.exception("Rolling back failed for instance '%s'",
                           instance_id)
 
     @staticmethod
@@ -149,8 +147,8 @@ class RedisRootController(DefaultRootController):
 
     @staticmethod
     def _get_slaves(tenant_id, instance_or_cluster_id, deleted=False):
-        LOG.info(_LI("Getting non-deleted slaves of instance '%s', "
-                     "if any."), instance_or_cluster_id)
+        LOG.info("Getting non-deleted slaves of instance '%s', "
+                 "if any.", instance_or_cluster_id)
         args = {'slave_of_id': instance_or_cluster_id, 'tenant_id': tenant_id,
                 'deleted': deleted}
         db_infos = DBInstance.find_all(**args)
@@ -168,8 +166,8 @@ class RedisRootController(DefaultRootController):
                 password = RedisRoot.get_auth_password(context, instance_id)
             except exception.TroveError:
                 raise exception.TroveError(
-                    _LE("Failed to get original auth password of instance "
-                        "'%(instance_id)s'.") % {'instance_id': instance_id}
+                    _("Failed to get original auth password of instance "
+                      "'%(instance_id)s'.") % {'instance_id': instance_id}
                 )
         return password
 

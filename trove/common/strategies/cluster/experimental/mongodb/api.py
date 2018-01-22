@@ -250,10 +250,12 @@ class MongoDbCluster(models.Cluster):
 
         if self.db_info.task_status != ClusterTasks.NONE:
             current_task = self.db_info.task_status.name
-            msg = _("This action cannot be performed on the cluster while "
-                    "the current cluster task is '%s'.") % current_task
-            LOG.error(msg)
-            raise exception.UnprocessableEntity(msg)
+            log_fmt = ("This action cannot be performed on the cluster while "
+                       "the current cluster task is '%s'.")
+            exc_fmt = _("This action cannot be performed on the cluster while "
+                        "the current cluster task is '%s'.")
+            LOG.error(log_fmt, current_task)
+            raise exception.UnprocessableEntity(exc_fmt % current_task)
 
         db_insts = inst_models.DBInstance.find_all(cluster_id=self.id,
                                                    deleted=False,
@@ -261,10 +263,11 @@ class MongoDbCluster(models.Cluster):
         num_unique_shards = len(set([db_inst.shard_id for db_inst
                                      in db_insts]))
         if num_unique_shards == 0:
-            msg = _("This action cannot be performed on the cluster as no "
-                    "reference shard exists.")
-            LOG.error(msg)
-            raise exception.UnprocessableEntity(msg)
+            LOG.error("This action cannot be performed on the cluster as no "
+                      "reference shard exists.")
+            raise exception.UnprocessableEntity(
+                _("This action cannot be performed on the cluster as no "
+                  "reference shard exists."))
 
         arbitrary_shard_id = db_insts[0].shard_id
         members_in_shard = [db_inst for db_inst in db_insts
@@ -461,10 +464,12 @@ class MongoDbCluster(models.Cluster):
         """Get information about the cluster's current state."""
         if self.db_info.task_status != ClusterTasks.NONE:
             current_task = self.db_info.task_status.name
-            msg = _("This action cannot be performed on the cluster while "
-                    "the current cluster task is '%s'.") % current_task
-            LOG.error(msg)
-            raise exception.UnprocessableEntity(msg)
+            log_fmt = ("This action cannot be performed on the cluster while "
+                       "the current cluster task is '%s'.")
+            exc_fmt = _("This action cannot be performed on the cluster while "
+                        "the current cluster task is '%s'.")
+            LOG.error(log_fmt, current_task)
+            raise exception.UnprocessableEntity(exc_fmt % current_task)
 
         def _instances_of_type(instance_type):
             return [db_inst for db_inst in self.db_instances

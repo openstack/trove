@@ -147,11 +147,11 @@ class Cluster(object):
         self.db_info.save()
 
     def reset_task(self):
-        LOG.info(_("Setting task to NONE on cluster %s"), self.id)
+        LOG.info("Setting task to NONE on cluster %s", self.id)
         self.update_db(task_status=ClusterTasks.NONE)
 
     def reset_status(self):
-        LOG.info(_("Resetting status to NONE on cluster %s"), self.id)
+        LOG.info("Resetting status to NONE on cluster %s", self.id)
         self.reset_task()
         instances = inst_models.DBInstance.find_all(cluster_id=self.id,
                                                     deleted=False).all()
@@ -271,11 +271,13 @@ class Cluster(object):
 
     def validate_cluster_available(self, valid_states=[ClusterTasks.NONE]):
         if self.db_info.task_status not in valid_states:
-            msg = (_("This action cannot be performed on the cluster while "
-                     "the current cluster task is '%s'.") %
-                   self.db_info.task_status.name)
-            LOG.error(msg)
-            raise exception.UnprocessableEntity(msg)
+            log_fmt = ("This action cannot be performed on the cluster while "
+                       "the current cluster task is '%s'.")
+            exc_fmt = _("This action cannot be performed on the cluster while "
+                        "the current cluster task is '%s'.")
+            LOG.error(log_fmt, self.db_info.task_status.name)
+            raise exception.UnprocessableEntity(
+                exc_fmt % self.db_info.task_status.name)
 
     def delete(self):
 

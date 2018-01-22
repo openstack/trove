@@ -63,11 +63,11 @@ class CouchDBApp(object):
         """
         Install CouchDB if needed, do nothing if it is already installed.
         """
-        LOG.info(_('Preparing guest as a CouchDB server.'))
+        LOG.info('Preparing guest as a CouchDB server.')
         if not packager.pkg_is_installed(packages):
             LOG.debug("Installing packages: %s.", str(packages))
             packager.pkg_install(packages, {}, system.TIME_OUT)
-        LOG.info(_("Finished installing CouchDB server."))
+        LOG.info("Finished installing CouchDB server.")
 
     def change_permissions(self):
         """
@@ -87,7 +87,7 @@ class CouchDBApp(object):
                                                as_root=True)
             LOG.debug("Successfully changed permissions.")
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error changing permissions."))
+            LOG.exception("Error changing permissions.")
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         self.status.stop_db_service(
@@ -112,8 +112,8 @@ class CouchDBApp(object):
             )
             self.start_db()
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error while trying to update bind address of"
-                            " CouchDB server."))
+            LOG.exception("Error while trying to update bind address of"
+                          " CouchDB server.")
 
     def start_db_with_conf_changes(self, config_contents):
         '''
@@ -123,7 +123,7 @@ class CouchDBApp(object):
          this needs to be implemented to enable volume resize on the guest
          agent side.
         '''
-        LOG.info(_("Starting CouchDB with configuration changes."))
+        LOG.info("Starting CouchDB with configuration changes.")
         self.start_db(True)
 
     def store_admin_password(self, password):
@@ -185,7 +185,7 @@ class CouchDBAppStatus(service.BaseDbStatus):
                 LOG.debug("Status of CouchDB is not active.")
                 return rd_instance.ServiceStatuses.SHUTDOWN
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error getting CouchDB status."))
+            LOG.exception("Error getting CouchDB status.")
             return rd_instance.ServiceStatuses.SHUTDOWN
 
 
@@ -230,7 +230,7 @@ class CouchDBAdmin(object):
                          'password': user.password},
                         shell=True)
                 except exception.ProcessExecutionError as pe:
-                    LOG.exception(_("Error creating user: %s."), user.name)
+                    LOG.exception("Error creating user: %s.", user.name)
                     pass
 
                 for database in user.databases:
@@ -253,7 +253,7 @@ class CouchDBAdmin(object):
                         LOG.debug(pe)
                         pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_("An error occurred creating users: %s."),
+            LOG.exception("An error occurred creating users: %s.",
                           pe.message)
             pass
 
@@ -318,8 +318,8 @@ class CouchDBAdmin(object):
                     'revid': revid},
                 shell=True)
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_(
-                "There was an error while deleting user: %s."), pe)
+            LOG.exception(
+                "There was an error while deleting user: %s.", pe)
             raise exception.GuestError(original_message=_(
                 "Unable to delete user: %s.") % couchdb_user.name)
 
@@ -413,8 +413,8 @@ class CouchDBAdmin(object):
         else:
             user = models.CouchDBUser(username)
             if not self._is_modifiable_user(user.name):
-                LOG.warning(_('Cannot grant access for reserved user '
-                              '%(user)s'), {'user': username})
+                LOG.warning('Cannot grant access for reserved user '
+                            '%(user)s', {'user': username})
             if not user:
                 raise exception.BadRequest(_(
                     'Cannot grant access for reserved or non-existant user '
@@ -499,16 +499,16 @@ class CouchDBAdmin(object):
                          'dbname': dbName},
                         shell=True)
                 except exception.ProcessExecutionError:
-                    LOG.exception(_(
-                        "There was an error creating database: %s."), dbName)
+                    LOG.exception(
+                        "There was an error creating database: %s.", dbName)
                     db_create_failed.append(dbName)
                     pass
             else:
-                LOG.warning(_('Cannot create database with a reserved name '
-                              '%(db)s'), {'db': dbName})
+                LOG.warning('Cannot create database with a reserved name '
+                            '%(db)s', {'db': dbName})
                 db_create_failed.append(dbName)
         if len(db_create_failed) > 0:
-            LOG.exception(_("Creating the following databases failed: %s."),
+            LOG.exception("Creating the following databases failed: %s.",
                           db_create_failed)
 
     def list_database_names(self):
@@ -548,13 +548,13 @@ class CouchDBAdmin(object):
                      'dbname': dbName},
                     shell=True)
             except exception.ProcessExecutionError:
-                LOG.exception(_(
-                    "There was an error while deleting database:%s."), dbName)
+                LOG.exception(
+                    "There was an error while deleting database:%s.", dbName)
                 raise exception.GuestError(original_message=_(
                     "Unable to delete database: %s.") % dbName)
         else:
-            LOG.warning(_('Cannot delete a reserved database '
-                          '%(db)s'), {'db': dbName})
+            LOG.warning('Cannot delete a reserved database '
+                        '%(db)s', {'db': dbName})
 
 
 class CouchDBCredentials(object):
