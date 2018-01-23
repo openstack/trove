@@ -453,7 +453,7 @@ class Fault(webob.exc.HTTPException):
     code_wrapper = {
         400: webob.exc.HTTPBadRequest,
         401: webob.exc.HTTPUnauthorized,
-        403: webob.exc.HTTPUnauthorized,
+        403: webob.exc.HTTPForbidden,
         404: webob.exc.HTTPNotFound,
     }
 
