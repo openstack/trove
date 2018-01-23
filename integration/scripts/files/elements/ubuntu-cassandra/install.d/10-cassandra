@@ -9,7 +9,7 @@ if [ -z "$CASSANDRA_JAVA" ]; then CASSANDRA_JAVA=8; fi
 # Set CASSANDRA_RELEASE to override which casandra release to use, defaults to 311x
 #  For current releases supported, see http://cassandra.apache.org/download/ or
 #  http://dl.bintray.com/apache/cassandra/dists/
-if [ -z "$CASSANDRA_RELEASE" ]; then CASSANDRA_RELEASE=311x; fi
+if [ -z "$CASSANDRA_RELEASE" ]; then CASSANDRA_RELEASE=21x; fi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get --allow-unauthenticated install -qy curl
