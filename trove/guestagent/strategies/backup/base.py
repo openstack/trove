@@ -74,9 +74,8 @@ class BackupRunner(Strategy):
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Clean up everything."""
-        if exc_type is not None:
-            return False
-
+        # NOTE(zhaochao): all child processes should always be killed even the
+        # context exits by an exception.
         if getattr(self, 'process', None):
             try:
                 # Send a sigterm to the session leader, so that all
@@ -88,6 +87,10 @@ class BackupRunner(Strategy):
             except OSError:
                 # Already stopped
                 pass
+
+            if exc_type is not None:
+                return False
+
             utils.raise_if_process_errored(self.process, BackupError)
             if not self.check_process():
                 raise BackupError

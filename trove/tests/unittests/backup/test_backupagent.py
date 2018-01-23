@@ -313,6 +313,26 @@ class BackupAgentTest(trove_testtools.TestCase):
             self.assertIsNone(backup_runner.zip_cmd)
         self.assertEqual('BackupRunner', backup_runner.backup_type)
 
+    @patch('os.killpg')
+    def test_backup_runner_exits_with_exception(self, mock_kill_pg):
+        """This test is for
+           guestagent/strategies/backup/base,
+           ensures that when backup runner exits with an exception,
+           all child processes are also killed.
+        """
+        BackupRunner.cmd = "%s"
+        backup_runner = BackupRunner('sample', cmd='echo command')
+
+        def test_backup_runner_reraise_exception():
+            mock_func = mock.Mock(side_effect=RuntimeError)
+
+            with backup_runner:
+                mock_func()
+
+        self.assertRaises(RuntimeError,
+                          test_backup_runner_reraise_exception)
+        self.assertTrue(mock_kill_pg.called)
+
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(conductor_api.API, 'update_backup',
                   Mock(return_value=Mock()))
