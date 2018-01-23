@@ -24,7 +24,9 @@ value.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -71,7 +73,9 @@ Nova API.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request

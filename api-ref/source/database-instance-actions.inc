@@ -20,10 +20,10 @@ in the database instance.
 
 The database instance is unavailable until the instance restarts.
 
-If the operation succeeds, it returns the ``Accepted (202)``
-response code.
-
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -67,7 +67,10 @@ Resizes the memory for an instance.
 If you provide a valid ``flavorRef``, this operation changes the
 memory size of the instance, and restarts the database.
 
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -114,9 +117,10 @@ size. A valid volume size is an integer value in gigabytes (GB).
 You cannot increase the volume to a size that is larger than the
 API volume size limit.
 
-If this operation succeeds, it returns a 202 Accepted response.
-
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -173,7 +177,10 @@ instance.
 For ``instanceId``, pass in the instance ID of the replica you want
 to promote.
 
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -234,7 +241,10 @@ This operation:
 For ``instanceId``, pass in the instance ID of the unreachable base
 instance.
 
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
