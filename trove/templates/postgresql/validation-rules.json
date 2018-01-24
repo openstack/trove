@@ -222,12 +222,6 @@
             "type": "integer"
         },
         {
-            "name": "checkpoint_segments",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
             "name": "checkpoint_timeout",
             "restart_required": false,
             "type": "string"
