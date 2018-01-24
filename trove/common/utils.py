@@ -26,6 +26,7 @@ import jinja2
 from oslo_concurrency import processutils
 from oslo_log import log as logging
 from oslo_service import loopingcall
+from oslo_utils.encodeutils import safe_encode
 from oslo_utils import importutils
 from oslo_utils import strutils
 from passlib import pwd
@@ -383,3 +384,28 @@ def to_mb(bytes):
     size = bytes / 1024.0 ** 2
     # Make sure we don't return 0.0 if the size is greater than 0
     return max(round(size, 2), 0.01)
+
+
+def req_to_text(req):
+    """
+    We do a lot request logging for debug, but if the value of one
+    requst header is encoded in utf-8, an UnicodeEncodeError will
+    be raised. So we should carefully encode request headers.
+
+    To be consitent with webob, main procedures are copied from
+    webob.Request.as_bytes.
+    """
+    url = req.url
+    host = req.host_url
+    assert url.startswith(host)
+    url = url[len(host):]
+    parts = [safe_encode('%s %s %s' % (req.method, url, req.http_version))]
+
+    for k, v in sorted(req.headers.items()):
+        header = safe_encode('%s: %s' % (k, v))
+        parts.append(header)
+
+    if req.body:
+        parts.extend([b'', safe_encode(req.body)])
+
+    return b'\r\n'.join(parts).decode(req.charset)

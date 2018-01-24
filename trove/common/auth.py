@@ -21,6 +21,7 @@ import webob.exc
 
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common.utils import req_to_text
 from trove.common import wsgi
 
 LOG = logging.getLogger(__name__)
@@ -64,7 +65,8 @@ class TenantBasedAuth(object):
             LOG.debug(strutils.mask_password(
                       _("Authorized tenant '%(tenant_id)s' request: "
                         "%(request)s") %
-                      {'tenant_id': tenant_id, 'request': request}))
+                      {'tenant_id': tenant_id,
+                       'request': req_to_text(request)}))
             return True
 
         msg = _(

@@ -41,6 +41,7 @@ from xml.parsers import expat
 
 from trove.common import base_exception
 from trove.common.i18n import _
+from trove.common.utils import req_to_text
 from trove.common import xmlutils
 
 socket_opts = [
@@ -331,6 +332,8 @@ class Request(webob.Request):
         if content_type not in allowed_content_types:
             raise base_exception.InvalidContentType(content_type=content_type)
         return content_type
+
+    __str__ = req_to_text
 
 
 class Resource(object):
