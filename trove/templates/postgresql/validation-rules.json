@@ -890,7 +890,55 @@
         {
             "name": "log_min_duration_statement",
             "restart_required": false,
+            "min": -1,
+            "type": "integer"
+        },
+        {
+            "name": "backend_flush_after",
+            "restart_required": false,
             "type": "string"
+        },
+        {
+            "name": "bgwriter_flush_after",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "checkpoint_flush_after",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "force_parallel_mode",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "parallel_setup_cost",
+            "restart_required": false,
+            "type": "float"
+        },
+        {
+            "name": "parallel_tuple_cost",
+            "restart_required": false,
+            "type": "float"
+        },
+        {
+            "name": "gin_pending_list_limit",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "idle_in_transaction_session_timeout",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "replacement_sort_tuples",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
         }
     ]
 }
