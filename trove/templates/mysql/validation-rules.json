@@ -244,6 +244,371 @@
             "max": 1048576,
             "min": 0,
             "type": "integer"
+        },
+        {
+            "name": "innodb_adaptive_flushing_lwm",
+            "restart_required": false,
+            "max": 70,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_adaptive_max_sleep_delay",
+            "restart_required": false,
+            "max": 1000000,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_buffer_pool_dump_at_shutdown",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_change_buffer_max_size",
+            "restart_required": false,
+            "max": 50,
+            "min": 25,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_checksum_algorithm",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_cmp_per_index_enabled",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_compression_failure_threshold_pct",
+            "restart_required": false,
+            "max": 100,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_compression_level",
+            "restart_required": false,
+            "max": 9,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_compression_pad_pct_max",
+            "restart_required": false,
+            "max": 75,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_disable_sort_file_cache",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_flush_log_at_timeout",
+            "restart_required": false,
+            "max": 2700,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_flush_neighbors",
+            "restart_required": false,
+            "max": 2,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_flushing_avg_loops",
+            "restart_required": false,
+            "max": 1000,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_force_load_corrupted",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_ft_aux_table",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_ft_cache_size",
+            "restart_required": true,
+            "max": 80000000,
+            "min": 1600000,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_ft_max_token_size",
+            "restart_required": false,
+            "max": 84,
+            "min": 10,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_ft_num_word_optimize",
+            "restart_required": false,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_ft_result_cache_limit",
+            "restart_required": false,
+            "min": 1000000,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_ft_server_stopword_table",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_ft_sort_pll_degree",
+            "restart_required": true,
+            "max": 32,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_ft_user_stopword_table",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_io_capacity_max",
+            "restart_required": false,
+            "min": 100,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_log_compressed_pages",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_lru_scan_depth",
+            "restart_required": false,
+            "min": 100,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_max_dirty_pages_pct_lwm",
+            "restart_required": false,
+            "max": 99,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_max_purge_lag_delay",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_monitor_disable",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_monitor_enable",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_monitor_reset",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_monitor_reset_all",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_online_alter_log_max_size",
+            "restart_required": false,
+            "min": 65536,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_optimize_fulltext_only",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_page_size",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_random_read_ahead",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_read_only",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_rollback_segments",
+            "restart_required": false,
+            "max": 128,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_sort_buffer_size",
+            "restart_required": true,
+            "max": 67108864,
+            "min": 65536,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_stats_method",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_stats_persistent",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_stats_persistent_sample_pages",
+            "restart_required": false,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_stats_sample_pages",
+            "restart_required": false,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_stats_transient_sample_pages",
+            "restart_required": false,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_sync_array_size",
+            "restart_required": true,
+            "max": 1024,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_sync_spin_loops",
+            "restart_required": false,
+            "max": 4294967295,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_buffer_pool_dump_pct",
+            "restart_required": false,
+            "max": 100,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_adaptive_hash_index_parts",
+            "restart_required": true,
+            "max": 512,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_background_drop_list_empty",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_buffer_pool_chunk_size",
+            "restart_required": true,
+            "min": 1048576,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_deadlock_detect",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_default_row_format",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "innodb_fill_factor",
+            "restart_required": false,
+            "max": 100,
+            "min": 10,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_flush_sync",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_ft_total_cache_size",
+            "restart_required": true,
+            "max": 1600000000,
+            "min": 32000000,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_large_prefix",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_log_checksums",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_log_write_ahead_size",
+            "restart_required": false,
+            "min": 512,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_max_undo_log_size",
+            "restart_required": false,
+            "min": 10485760,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_page_cleaners",
+            "restart_required": true,
+            "max": 64,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_purge_rseg_truncate_frequency",
+            "restart_required": false,
+            "max": 128,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_stats_include_delete_marked",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "innodb_support_xa",
+            "restart_required": false,
+            "type": "boolean"
         }
     ]
 }
