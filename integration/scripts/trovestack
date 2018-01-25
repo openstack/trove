@@ -590,7 +590,7 @@ function cmd_set_datastore() {
         VERSION="1.6.1"
     elif [ "$DATASTORE_TYPE" == "vertica" ]; then
         PACKAGES=${PACKAGES:-"vertica"}
-        VERSION="7.1"
+        VERSION="9.0.1"
     elif [ "$DATASTORE_TYPE" == "db2" ]; then
         PACKAGES=${PACKAGES:-""}
         VERSION="10.5"
