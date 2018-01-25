@@ -119,6 +119,12 @@ datastore_version:
   in: body
   required: false
   type: string
+datastore_version1:
+  description: |
+    Name or ID of a datastore version.
+  in: body
+  required: false
+  type: string
 description:
   description: |
     New description of the configuration group.
@@ -147,6 +153,12 @@ instance:
   in: body
   required: true
   type: object
+instanceName:
+  description: |
+    Name of the instance.
+  in: body
+  required: false
+  type: string
 name:
   description: |
     Name of the configuration group you are creating.
