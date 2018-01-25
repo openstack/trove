@@ -23,7 +23,6 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
@@ -185,15 +184,15 @@ class MySqlManager(manager.Manager):
         return self.mysql_admin().disable_root()
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
+        LOG.info("Restoring database from backup %s.", backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s."),
+            LOG.exception("Error performing restore from backup %s.",
                           backup_info['id'])
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
-        LOG.info(_("Restored database successfully."))
+        LOG.info("Restored database successfully.")
 
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,
@@ -415,7 +414,7 @@ class MySqlManager(manager.Manager):
                 self._validate_slave_for_replication(context, replica_info)
             self.replication.enable_as_slave(app, replica_info, slave_config)
         except Exception:
-            LOG.exception(_("Error enabling replication."))
+            LOG.exception("Error enabling replication.")
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
 

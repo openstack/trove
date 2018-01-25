@@ -17,7 +17,6 @@ from oslo_log import log as logging
 
 import trove.common.apischema as apischema
 from trove.common.auth import admin_context
-from trove.common.i18n import _
 from trove.common import wsgi
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 
@@ -33,8 +32,8 @@ class UpgradeController(wsgi.Controller):
 
     @admin_context
     def create(self, req, body, tenant_id, instance_id):
-        LOG.info(_("Sending upgrade notifications\nreq : '%(req)s'\n"
-                   "Admin tenant_id: %(tenant_id)s"),
+        LOG.info("Sending upgrade notifications\nreq : '%(req)s'\n"
+                 "Admin tenant_id: %(tenant_id)s",
                  {"tenant_id": tenant_id, "req": req})
 
         context = req.environ.get(wsgi.CONTEXT_KEY)

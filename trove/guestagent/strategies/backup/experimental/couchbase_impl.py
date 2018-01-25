@@ -19,7 +19,6 @@ import json
 from oslo_log import log as logging
 
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import service
@@ -88,8 +87,8 @@ class CbBackup(base.BackupRunner):
                     if not all_memcached:
                         self._backup(pw)
                     else:
-                        LOG.info(_("All buckets are memcached.  "
-                                   "Skipping backup."))
+                        LOG.info("All buckets are memcached.  "
+                                 "Skipping backup.")
             operating_system.move(OUTFILE, system.COUCHBASE_DUMP_DIR)
             if pw != "password":
                 # Not default password, backup generated root password
@@ -97,7 +96,7 @@ class CbBackup(base.BackupRunner):
                                       system.COUCHBASE_DUMP_DIR,
                                       preserve=True, as_root=True)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error during pre-backup phase."))
+            LOG.exception("Error during pre-backup phase.")
             raise
 
     def _run_post_backup(self):
@@ -105,5 +104,5 @@ class CbBackup(base.BackupRunner):
             for cmd in self.post_backup_commands:
                 utils.execute_with_timeout(*cmd)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error during post-backup phase."))
+            LOG.exception("Error during post-backup phase.")
             raise

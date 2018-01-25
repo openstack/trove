@@ -22,7 +22,6 @@ import six
 from oslo_log import log as logging
 
 from trove.common import exception
-from trove.common.i18n import _
 
 
 LOG = logging.getLogger(__name__)
@@ -168,7 +167,7 @@ def output(log_message=None, success_message=None,
                         fail_msg = fail_msg % message_args
                     except Exception:
                         # if there's a problem, just log it and drive on
-                        LOG.warning(_("Could not apply message args: %s"),
+                        LOG.warning("Could not apply message args: %s",
                                     message_args)
                         pass
 
@@ -184,7 +183,7 @@ def output(log_message=None, success_message=None,
                     success = True
                     message = success_msg
             except exception.ProcessExecutionError as ex:
-                message = (_("%(msg)s: %(out)s\n%(err)s") %
+                message = ("%(msg)s: %(out)s\n%(err)s" %
                            {'msg': fail_msg,
                             'out': ex.stdout,
                             'err': ex.stderr})
@@ -192,11 +191,11 @@ def output(log_message=None, success_message=None,
                 message = message.rstrip()
                 LOG.exception(message)
             except exception.TroveError as ex:
-                message = (_("%(msg)s: %(err)s") %
+                message = ("%(msg)s: %(err)s" %
                            {'msg': fail_msg, 'err': ex._error_string})
                 LOG.exception(message)
             except Exception as ex:
-                message = (_("%(msg)s: %(err)s") %
+                message = ("%(msg)s: %(err)s" %
                            {'msg': fail_msg, 'err': ex.message})
                 LOG.exception(message)
             return success, message

@@ -16,7 +16,6 @@
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.guestagent.datastore.mysql_common import service
 
 LOG = logging.getLogger(__name__)
@@ -63,11 +62,11 @@ class MySqlApp(service.BaseMySqlApp):
         return master_UUID, int(last_txn_id)
 
     def get_latest_txn_id(self):
-        LOG.info(_("Retrieving latest txn id."))
+        LOG.info("Retrieving latest txn id.")
         return self._get_gtid_executed()
 
     def wait_for_txn(self, txn):
-        LOG.info(_("Waiting on txn '%s'."), txn)
+        LOG.info("Waiting on txn '%s'.", txn)
         with self.local_sql_client(self.get_engine()) as client:
             client.execute("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')"
                            % txn)

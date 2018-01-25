@@ -19,7 +19,6 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import timeutils
 from trove.common import utils
 from trove.db import get_db_api
@@ -83,7 +82,7 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
             return cls.find_by(instance_id=instance_id)
 
         except exception.NotFound:
-            LOG.exception(_("Error finding instance %s"), instance_id)
+            LOG.exception("Error finding instance %s", instance_id)
             raise exception.ModelNotFoundError(instance_id=instance_id)
 
     @staticmethod

@@ -19,7 +19,6 @@ import os
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common.i18n import _
 from trove.common import instance as trove_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
@@ -239,17 +238,17 @@ class Manager(manager.Manager):
         return self.app.is_root_enabled()
 
     def _perform_restore(self, backup_info, context, restore_location):
-        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
+        LOG.info("Restoring database from backup %s.", backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
             self.app._apply_post_restore_updates(backup_info)
         except Exception as e:
             LOG.error(e)
-            LOG.error(_("Error performing restore from backup %s."),
+            LOG.error("Error performing restore from backup %s.",
                       backup_info['id'])
             self.app.status.set_status(trove_instance.ServiceStatuses.FAILED)
             raise
-        LOG.info(_("Restored database successfully."))
+        LOG.info("Restored database successfully.")
 
     def create_backup(self, context, backup_info):
         """

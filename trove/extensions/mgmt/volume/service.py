@@ -18,7 +18,6 @@ from oslo_log import log as logging
 
 from trove.common.auth import admin_context
 from trove.common import cfg
-from trove.common.i18n import _
 from trove.common import wsgi
 from trove.extensions.mgmt.volume import models
 from trove.extensions.mgmt.volume import views
@@ -33,8 +32,8 @@ class StorageController(wsgi.Controller):
     @admin_context
     def index(self, req, tenant_id):
         """Return all storage devices."""
-        LOG.info(_("req : '%s'\n\n"), req)
-        LOG.info(_("Indexing storage info for tenant '%s'"), tenant_id)
+        LOG.info("req : '%s'\n\n", req)
+        LOG.info("Indexing storage info for tenant '%s'", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         storages = models.StorageDevices.load(context, CONF.os_region_name)
         return wsgi.Result(views.StoragesView(storages).data(), 200)

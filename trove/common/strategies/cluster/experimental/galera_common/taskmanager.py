@@ -133,7 +133,7 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                 for guest in instance_guests:
                     guest.cluster_complete()
             except Exception:
-                LOG.exception(_("Error creating cluster."))
+                LOG.exception("Error creating cluster.")
                 self.update_statuses_on_failure(cluster_id)
 
         timeout = Timeout(CONF.cluster_usage_timeout)
@@ -143,10 +143,10 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for building cluster."))
+            LOG.exception("Timeout for building cluster.")
             self.update_statuses_on_failure(cluster_id)
         except TroveError:
-            LOG.exception(_("Error creating cluster %s."), cluster_id)
+            LOG.exception("Error creating cluster %s.", cluster_id)
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
@@ -245,11 +245,11 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for growing cluster."))
+            LOG.exception("Timeout for growing cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         except Exception:
-            LOG.exception(_("Error growing cluster %s."), cluster_id)
+            LOG.exception("Error growing cluster %s.", cluster_id)
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:
@@ -277,12 +277,12 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
                         set(non_deleted_ids))
                 )
             try:
-                LOG.info(_("Deleting instances (%s)"), removal_instance_ids)
+                LOG.info("Deleting instances (%s)", removal_instance_ids)
                 utils.poll_until(all_instances_marked_deleted,
                                  sleep_time=2,
                                  time_out=CONF.cluster_delete_time_out)
             except PollTimeOut:
-                LOG.error(_("timeout for instances to be marked as deleted."))
+                LOG.error("timeout for instances to be marked as deleted.")
                 return
 
             db_instances = DBInstance.find_all(
@@ -317,11 +317,11 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for shrinking cluster."))
+            LOG.exception("Timeout for shrinking cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         except Exception:
-            LOG.exception(_("Error shrinking cluster %s."), cluster_id)
+            LOG.exception("Error shrinking cluster %s.", cluster_id)
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
         finally:

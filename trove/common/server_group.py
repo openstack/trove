@@ -18,7 +18,6 @@ import six
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.common.remote import create_nova_client
 
 
@@ -36,7 +35,7 @@ class ServerGroup(object):
                 if compute_id in sg.members:
                     server_group = sg
         except Exception:
-            LOG.exception(_("Could not load server group for compute %s"),
+            LOG.exception("Could not load server group for compute %s",
                           compute_id)
         return server_group
 

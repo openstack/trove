@@ -21,7 +21,6 @@ import time
 from oslo_log import log as logging
 
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import service
@@ -46,7 +45,7 @@ class CbBackup(base.RestoreRunner):
         try:
             operating_system.remove(system.COUCHBASE_DUMP_DIR, force=True)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error during pre-restore phase."))
+            LOG.exception("Error during pre-restore phase.")
             raise
 
     def post_restore(self):
@@ -191,7 +190,7 @@ class CbBackup(base.RestoreRunner):
                         # cbrestore fails or hangs at times:
                         # http://www.couchbase.com/issues/browse/MB-10832
                         # Retrying typically works
-                        LOG.exception(_("cbrestore failed. Retrying..."))
+                        LOG.exception("cbrestore failed. Retrying...")
                         utils.execute_with_timeout(restore_cmd,
                                                    shell=True,
                                                    timeout=300)

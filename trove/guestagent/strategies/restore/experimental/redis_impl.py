@@ -16,7 +16,6 @@
 import os
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.redis import service
@@ -44,7 +43,7 @@ class RedisBackup(base.RestoreRunner):
 
     def pre_restore(self):
         self.app.stop_db()
-        LOG.info(_("Removing old persistence file: %s."),
+        LOG.info("Removing old persistence file: %s.",
                  self.restore_location)
         operating_system.remove(self.restore_location, force=True,
                                 as_root=True)

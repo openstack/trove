@@ -18,7 +18,6 @@ from datetime import date
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.common import stream_codecs
 from trove.common import utils
 from trove.guestagent.common import operating_system
@@ -42,9 +41,9 @@ class NewRelicLicenseDriver(module_driver.ModuleDriver):
         return date(2016, 4, 12)
 
     @module_driver.output(
-        log_message=_('Installing New Relic license key'),
-        success_message=_('New Relic license key installed'),
-        fail_message=_('New Relic license key not installed'))
+        log_message='Installing New Relic license key',
+        success_message='New Relic license key installed',
+        fail_message='New Relic license key not installed')
     def apply(self, name, datastore, ds_version, data_file, admin_module):
         license_key = None
         data = operating_system.read_file(
@@ -68,7 +67,7 @@ class NewRelicLicenseDriver(module_driver.ModuleDriver):
             cmd[-1] = cmd[-1] % license_key
             utils.execute_with_timeout(*cmd, **exec_args)
         except Exception:
-            LOG.exception(_("Could not install license key '%s'"),
+            LOG.exception("Could not install license key '%s'",
                           license_key)
             raise
 
@@ -81,13 +80,13 @@ class NewRelicLicenseDriver(module_driver.ModuleDriver):
             cmd.append(command)
             utils.execute_with_timeout(*cmd, **exec_args)
         except Exception:
-            LOG.exception(_("Could not %s New Relic server"), command)
+            LOG.exception("Could not %s New Relic server", command)
             raise
 
     @module_driver.output(
-        log_message=_('Removing New Relic license key'),
-        success_message=_('New Relic license key removed'),
-        fail_message=_('New Relic license key not removed'))
+        log_message='Removing New Relic license key',
+        success_message='New Relic license key removed',
+        fail_message='New Relic license key not removed')
     def remove(self, name, datastore, ds_version, data_file):
         self._add_license_key("bad_key_that_is_exactly_40_characters_xx")
         self._server_control('stop')

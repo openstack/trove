@@ -18,7 +18,6 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import wsgi
 from trove.datastore.models import DatastoreVersion
 from trove.extensions.security_group import models
@@ -74,8 +73,8 @@ class SecurityGroupRuleController(wsgi.Controller):
         sec_group = sec_group_rule.get_security_group(tenant_id)
 
         if sec_group is None:
-            LOG.error(_("Attempting to delete Group Rule that does not "
-                        "exist or does not belong to tenant %s"), tenant_id)
+            LOG.error("Attempting to delete Group Rule that does not "
+                      "exist or does not belong to tenant %s", tenant_id)
             raise exception.Forbidden("Unauthorized")
 
         sec_group_rule.delete(context, CONF.os_region_name)
@@ -130,8 +129,8 @@ class SecurityGroupRuleController(wsgi.Controller):
             body['security_group_rule']['group_id']
             body['security_group_rule']['cidr']
         except KeyError as e:
-            LOG.error(_("Create Security Group Rules Required field(s) "
-                        "- %s"), e)
+            LOG.error("Create Security Group Rules Required field(s) "
+                      "- %s", e)
             raise exception.SecurityGroupRuleCreationError(
                 "Required element/key - %s was not specified" % e)
 

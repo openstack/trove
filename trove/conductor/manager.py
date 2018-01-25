@@ -19,7 +19,6 @@ from oslo_service import periodic_task
 from trove.backup import models as bkup_models
 from trove.common import cfg
 from trove.common import exception as trove_exception
-from trove.common.i18n import _
 from trove.common.instance import ServiceStatus
 from trove.common.rpc import version as rpc_version
 from trove.common.serializable_notification import SerializableNotification
@@ -46,8 +45,8 @@ class Manager(periodic_task.PeriodicTasks):
         }
 
         if sent is None:
-            LOG.error(_("[Instance %s] sent field not present. Cannot "
-                        "compare."), instance_id)
+            LOG.error("[Instance %s] sent field not present. Cannot "
+                      "compare.", instance_id)
             return False
 
         LOG.debug("Instance %(instance)s sent %(method)s at %(sent)s ", fields)
@@ -77,8 +76,8 @@ class Manager(periodic_task.PeriodicTasks):
             seen.save()
             return False
 
-        LOG.info(_("[Instance %s] Rec'd message is older than last seen. "
-                   "Discarding."), instance_id)
+        LOG.info("[Instance %s] Rec'd message is older than last seen. "
+                 "Discarding.", instance_id)
         return True
 
     def heartbeat(self, context, instance_id, payload, sent=None):
@@ -112,8 +111,8 @@ class Manager(periodic_task.PeriodicTasks):
                 'found': backup.id,
                 'instance': str(instance_id),
             }
-            LOG.error(_("[Instance: %(instance)s] Backup IDs mismatch! "
-                        "Expected %(expected)s, found %(found)s"), fields)
+            LOG.error("[Instance: %(instance)s] Backup IDs mismatch! "
+                      "Expected %(expected)s, found %(found)s", fields)
             return
         if instance_id != backup.instance_id:
             fields = {
@@ -121,9 +120,9 @@ class Manager(periodic_task.PeriodicTasks):
                 'found': backup.instance_id,
                 'instance': str(instance_id),
             }
-            LOG.error(_("[Instance: %(instance)s] Backup instance IDs "
-                        "mismatch! Expected %(expected)s, found "
-                        "%(found)s"), fields)
+            LOG.error("[Instance: %(instance)s] Backup instance IDs "
+                      "mismatch! Expected %(expected)s, found "
+                      "%(found)s", fields)
             return
 
         for k, v in backup_fields.items():
@@ -148,6 +147,6 @@ class Manager(periodic_task.PeriodicTasks):
                         message, exception):
         notification = SerializableNotification.deserialize(
             context, serialized_notification)
-        LOG.error(_("Guest exception on request %(req)s:\n%(exc)s"),
+        LOG.error("Guest exception on request %(req)s:\n%(exc)s",
                   {'req': notification.request_id, 'exc': exception})
         notification.notify_exc_info(message, exception)

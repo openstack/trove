@@ -17,7 +17,6 @@ from oslo_log import log as logging
 
 import trove.common.apischema as apischema
 from trove.common.auth import admin_context
-from trove.common.i18n import _
 from trove.common import wsgi
 from trove.extensions.account import models
 from trove.extensions.account import views
@@ -32,9 +31,9 @@ class AccountController(wsgi.Controller):
     @admin_context
     def show(self, req, tenant_id, id):
         """Return a account and instances associated with a single account."""
-        LOG.info(_("req : '%s'\n\n"), req)
-        LOG.info(_("Showing account information for '%(account)s' "
-                   "to '%(tenant)s'"), {'account': id, 'tenant': tenant_id})
+        LOG.info("req : '%s'\n\n", req)
+        LOG.info("Showing account information for '%(account)s' "
+                 "to '%(tenant)s'", {'account': id, 'tenant': tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         account = models.Account.load(context, id)
@@ -43,7 +42,7 @@ class AccountController(wsgi.Controller):
     @admin_context
     def index(self, req, tenant_id):
         """Return a list of all accounts with non-deleted instances."""
-        LOG.info(_("req : '%s'\n\n"), req)
-        LOG.info(_("Showing all accounts with instances for '%s'"), tenant_id)
+        LOG.info("req : '%s'\n\n", req)
+        LOG.info("Showing all accounts with instances for '%s'", tenant_id)
         accounts_summary = models.AccountsSummary.load()
         return wsgi.Result(views.AccountsView(accounts_summary).data(), 200)

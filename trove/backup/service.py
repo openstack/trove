@@ -18,7 +18,6 @@ from oslo_log import log as logging
 from trove.backup.models import Backup
 from trove.backup import views
 from trove.common import apischema
-from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import pagination
@@ -59,7 +58,7 @@ class BackupController(wsgi.Controller):
         return wsgi.Result(views.BackupView(backup).data(), 200)
 
     def create(self, req, body, tenant_id):
-        LOG.info(_("Creating a backup for tenant %s"), tenant_id)
+        LOG.info("Creating a backup for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'backup:create')
         data = body['backup']
@@ -77,8 +76,8 @@ class BackupController(wsgi.Controller):
         return wsgi.Result(views.BackupView(backup).data(), 202)
 
     def delete(self, req, tenant_id, id):
-        LOG.info(_('Deleting backup for tenant %(tenant_id)s '
-                   'ID: %(backup_id)s'),
+        LOG.info('Deleting backup for tenant %(tenant_id)s '
+                 'ID: %(backup_id)s',
                  {'tenant_id': tenant_id, 'backup_id': id})
         context = req.environ[wsgi.CONTEXT_KEY]
         backup = Backup.get_by_id(context, id)

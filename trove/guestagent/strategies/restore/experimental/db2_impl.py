@@ -16,7 +16,6 @@
 from oslo_log import log as logging
 
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.datastore.experimental.db2 import service
 from trove.guestagent.datastore.experimental.db2 import system
@@ -47,7 +46,7 @@ class DB2Backup(base.RestoreRunner):
             out, err = utils.execute_with_timeout(system.GET_DB_NAMES,
                                                   shell=True)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Couldn't find any databases."))
+            LOG.exception("Couldn't find any databases.")
 
         dbNames = out.split()
         for dbName in dbNames:
@@ -56,7 +55,7 @@ class DB2Backup(base.RestoreRunner):
                 service.run_command(system.ROLL_FORWARD_DB % {'dbname':
                                                               dbName})
 
-        LOG.info(_("Cleaning out restore location: %s."),
+        LOG.info("Cleaning out restore location: %s.",
                  system.DB2_BACKUP_DIR)
         service.remove_db2_dir(system.DB2_BACKUP_DIR)
 

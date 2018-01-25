@@ -85,7 +85,7 @@ class RedisClusterTasks(task_models.ClusterTasks):
                 for guest in guests:
                     guest.cluster_complete()
             except Exception:
-                LOG.exception(_("Error creating cluster."))
+                LOG.exception("Error creating cluster.")
                 self.update_statuses_on_failure(cluster_id)
 
         timeout = Timeout(CONF.cluster_usage_timeout)
@@ -95,7 +95,7 @@ class RedisClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for building cluster."))
+            LOG.exception("Timeout for building cluster.")
             self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
@@ -142,11 +142,11 @@ class RedisClusterTasks(task_models.ClusterTasks):
         except Timeout as t:
             if t is not timeout:
                 raise  # not my timeout
-            LOG.exception(_("Timeout for growing cluster."))
+            LOG.exception("Timeout for growing cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         except Exception:
-            LOG.exception(_("Error growing cluster %s."), cluster_id)
+            LOG.exception("Error growing cluster %s.", cluster_id)
             self.update_statuses_on_failure(
                 cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
         finally:

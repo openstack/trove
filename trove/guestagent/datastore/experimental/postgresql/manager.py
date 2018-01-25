@@ -234,7 +234,7 @@ class Manager(manager.Manager):
             self.app.set_current_admin_user(os_admin)
 
         if snapshot:
-            LOG.info(_("Found snapshot info: %s"), str(snapshot))
+            LOG.info("Found snapshot info: %s", str(snapshot))
             self.attach_replica(context, snapshot, snapshot['config'])
 
         self.app.start_db()
@@ -284,7 +284,7 @@ class Manager(manager.Manager):
             lsn = self.app.pg_last_xlog_replay_location()
         else:
             lsn = self.app.pg_current_xlog_location()
-        LOG.info(_("Last xlog location found: %s"), lsn)
+        LOG.info("Last xlog location found: %s", lsn)
         return lsn
 
     def get_last_txn(self, context):
@@ -299,7 +299,7 @@ class Manager(manager.Manager):
 
         def _wait_for_txn():
             lsn = self.app.pg_last_xlog_replay_location()
-            LOG.info(_("Last xlog location found: %s"), lsn)
+            LOG.info("Last xlog location found: %s", lsn)
             return lsn >= txn
         try:
             utils.poll_until(_wait_for_txn, time_out=120)

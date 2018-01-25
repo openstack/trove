@@ -17,7 +17,6 @@ import os
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.common import instance as ds_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
@@ -182,15 +181,15 @@ class Manager(manager.Manager):
         return service.MongoDBAdmin().is_root_enabled()
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        LOG.info(_("Restoring database from backup %s."), backup_info['id'])
+        LOG.info("Restoring database from backup %s.", backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
-            LOG.exception(_("Error performing restore from backup %s."),
+            LOG.exception("Error performing restore from backup %s.",
                           backup_info['id'])
             self.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
-        LOG.info(_("Restored database successfully."))
+        LOG.info("Restored database successfully.")
 
     def create_backup(self, context, backup_info):
         LOG.debug("Creating backup.")

@@ -19,8 +19,6 @@ Exceptions common to OpenStack projects
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
-
 _FATAL_EXCEPTION_FORMAT_ERRORS = False
 
 LOG = logging.getLogger(__name__)
@@ -100,7 +98,7 @@ def wrap_exception(f):
             return f(*args, **kw)
         except Exception as e:
             if not isinstance(e, Error):
-                LOG.exception(_('Uncaught exception'))
+                LOG.exception('Uncaught exception')
                 raise Error(str(e))
             raise
     _wrap.func_name = f.func_name

@@ -14,73 +14,24 @@ import re
 
 import pep8
 
-_all_log_levels = {
-    'critical': '_',
-    'error': '_',
-    'exception': '_',
-    'info': '_',
-    'reserved': '_',
-    'warning': '_',
-}
-_all_hints = set(_all_log_levels.values())
+_all_log_levels = (
+    'critical',
+    'debug',
+    'error',
+    'exception',
+    'info',
+    'reserved',
+    'warning',
+)
 
-
-def _regex_for_level(level, hint):
-    return r".*LOG\.%(level)s\(\s*((%(wrong_hints)s)\(|'|\")" % {
-        'level': level,
-        'wrong_hints': '|'.join(_all_hints - set([hint])),
-    }
-
-
-_log_translation_hint = re.compile(
-    '|'.join('(?:%s)' % _regex_for_level(level, hint)
-             for level, hint in _all_log_levels.items()))
-
-_log_string_interpolation = re.compile(
-    r".*LOG\.(error|warning|info|critical|exception|debug)\([^,]*%[^,]*[,)]")
+_translated_log = re.compile(
+    r".*LOG\.(%(levels)s)\(\s*_\(\s*('|\")" % {
+        'levels': '|'.join(_all_log_levels)})
 
 
 def _translation_is_not_expected(filename):
     # Do not do these validations on tests
     return any(pat in filename for pat in ["/tests/"])
-
-
-def validate_log_translations(logical_line, physical_line, filename):
-    """T101 - Log messages require translation hints.
-    :param logical_line: The logical line to check.
-    :param physical_line: The physical line to check.
-    :param filename: The file name where the logical line exists.
-    :returns: None if the logical line passes the check, otherwise a tuple
-    is yielded that contains the offending index in logical line and a
-    message describe the check validation failure.
-    """
-    if _translation_is_not_expected(filename):
-        return
-
-    if pep8.noqa(physical_line):
-        return
-
-    msg = "T101: Untranslated Log message."
-    if _log_translation_hint.match(logical_line):
-        yield (0, msg)
-
-
-def no_translate_debug_logs(logical_line, filename):
-    """T102 - Don't translate debug level logs.
-    Check for 'LOG.debug(_(' and 'LOG.debug(_Lx('
-    As per our translation policy,
-    https://wiki.openstack.org/wiki/LoggingStandards#Log_Translation
-    we shouldn't translate debug level logs.
-    * This check assumes that 'LOG' is a logger.
-    :param logical_line: The logical line to check.
-    :param filename: The file name where the logical line exists.
-    :returns: None if the logical line passes the check, otherwise a tuple
-    is yielded that contains the offending index in logical line and a
-    message describe the check validation failure.
-    """
-    for hint in _all_hints:
-        if logical_line.startswith("LOG.debug(%s(" % hint):
-            yield(0, "T102 Don't translate debug level logs")
 
 
 def check_raised_localized_exceptions(logical_line, filename):
@@ -115,6 +66,27 @@ def check_no_basestring(logical_line):
         yield(0, msg)
 
 
+def no_translate_logs(logical_line, physical_line, filename):
+    """T105 - Log messages shouldn't be translated from the
+    Pike release.
+    :param logical_line: The logical line to check.
+    :param physical_line: The physical line to check.
+    :param filename: The file name where the logical line exists.
+    :returns: None if the logical line passes the check, otherwise a tuple
+    is yielded that contains the offending index in logical line and a
+    message describe the check validation failure.
+    """
+    if _translation_is_not_expected(filename):
+        return
+
+    if pep8.noqa(physical_line):
+        return
+
+    msg = "T105: Log message shouldn't be translated."
+    if _translated_log.match(logical_line):
+        yield (0, msg)
+
+
 asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
 
 
@@ -130,8 +102,7 @@ def assert_raises_regexp(logical_line):
 
 
 def factory(register):
-    register(validate_log_translations)
-    register(no_translate_debug_logs)
     register(check_raised_localized_exceptions)
     register(check_no_basestring)
+    register(no_translate_logs)
     register(assert_raises_regexp)

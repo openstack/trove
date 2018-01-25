@@ -74,7 +74,7 @@ class ConfigurationsParameterController(wsgi.Controller):
     @admin_context
     def create(self, req, body, tenant_id, version_id):
         """Create configuration parameter for datastore version."""
-        LOG.info(_("Creating configuration parameter for datastore"))
+        LOG.info("Creating configuration parameter for datastore")
         LOG.debug("req : '%s'\n\n", req)
         LOG.debug("body : '%s'\n\n", body)
         if not body:
@@ -101,7 +101,7 @@ class ConfigurationsParameterController(wsgi.Controller):
     @admin_context
     def update(self, req, body, tenant_id, version_id, id):
         """Updating configuration parameter for datastore version."""
-        LOG.info(_("Updating configuration parameter for datastore"))
+        LOG.info("Updating configuration parameter for datastore")
         LOG.debug("req : '%s'\n\n", req)
         LOG.debug("body : '%s'\n\n", body)
         if not body:
@@ -126,7 +126,7 @@ class ConfigurationsParameterController(wsgi.Controller):
     @admin_context
     def delete(self, req, tenant_id, version_id, id):
         """Delete configuration parameter for datastore version."""
-        LOG.info(_("Deleting configuration parameter for datastore"))
+        LOG.info("Deleting configuration parameter for datastore")
         LOG.debug("req : '%s'\n\n", req)
         ds_config_params = config_models.DatastoreConfigurationParameters
         try:

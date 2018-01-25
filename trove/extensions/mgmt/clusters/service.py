@@ -41,7 +41,7 @@ class MgmtClusterController(ClusterController):
     def index(self, req, tenant_id):
         """Return a list of clusters."""
         LOG.debug("Showing a list of clusters for tenant '%s'.", tenant_id)
-        LOG.info(_("req : '%s'\n\n"), req)
+        LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         deleted = None
         deleted_q = req.GET.get('deleted', '').lower()
@@ -56,10 +56,10 @@ class MgmtClusterController(ClusterController):
     @admin_context
     def show(self, req, tenant_id, id):
         """Return a single cluster."""
-        LOG.info(_("Showing cluster for tenant '%(tenant_id)s'.\n"
-                   "req : '%(req)s'\n"
-                   "id : '%(id)s'"), {
-                       "tenant_id": tenant_id, "req": req, "id": id})
+        LOG.info("Showing cluster for tenant '%(tenant_id)s'.\n"
+                 "req : '%(req)s'\n"
+                 "id : '%(id)s'", {
+                     "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.MgmtCluster.load(context, id)
@@ -72,7 +72,7 @@ class MgmtClusterController(ClusterController):
         LOG.debug("Committing an action against cluster %(cluster)s for "
                   "tenant '%(tenant)s'.", {'cluster': id,
                                            'tenant': tenant_id})
-        LOG.info(_("req : '%s'\n\n"), req)
+        LOG.info("req : '%s'\n\n", req)
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]

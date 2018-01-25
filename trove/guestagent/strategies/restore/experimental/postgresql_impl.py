@@ -20,7 +20,6 @@ from eventlet.green import subprocess
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common.i18n import _
 from trove.common import stream_codecs
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
@@ -68,7 +67,7 @@ class PgDump(base.RestoreRunner):
             content_length += len(chunk)
         process.stdin.close()
         self._handle_errors(process)
-        LOG.info(_("Restored %s bytes from stream."), content_length)
+        LOG.info("Restored %s bytes from stream.", content_length)
 
         return content_length
 
@@ -119,7 +118,7 @@ class PgBaseBackup(base.RestoreRunner):
 
     def pre_restore(self):
         self.app.stop_db()
-        LOG.info(_("Preparing WAL archive dir"))
+        LOG.info("Preparing WAL archive dir")
         self.app.recreate_wal_archive_dir()
         datadir = self.app.pgsql_data_dir
         operating_system.remove(datadir, force=True, recursive=True,
@@ -178,7 +177,7 @@ class PgBaseBackupIncremental(PgBaseBackup):
 
         metadata = self.storage.load_metadata(location, checksum)
         if 'parent_location' in metadata:
-            LOG.info(_("Found parent at %s"), metadata['parent_location'])
+            LOG.info("Found parent at %s", metadata['parent_location'])
             parent_location = metadata['parent_location']
             parent_checksum = metadata['parent_checksum']
             self._incremental_restore(parent_location, parent_checksum)
@@ -187,7 +186,7 @@ class PgBaseBackupIncremental(PgBaseBackup):
 
         else:
             # For the parent base backup, revert to the default restore cmd
-            LOG.info(_("Recursed back to full backup."))
+            LOG.info("Recursed back to full backup.")
 
             super(PgBaseBackupIncremental, self).pre_restore()
             cmd = self._incremental_restore_cmd(incr=False)

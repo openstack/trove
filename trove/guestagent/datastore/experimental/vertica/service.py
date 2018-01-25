@@ -23,7 +23,6 @@ from trove.common import cfg
 from trove.common.db import models
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.i18n import _LI
 from trove.common import instance as rd_instance
 from trove.common.stream_codecs import PropertiesCodec
 from trove.common import utils
@@ -56,13 +55,13 @@ class VerticaAppStatus(service.BaseDbStatus):
                                             system.VERTICA_ADMIN)
             if out.strip() == DB_NAME:
                 # UP status is confirmed
-                LOG.info(_("Service Status is RUNNING."))
+                LOG.info("Service Status is RUNNING.")
                 return rd_instance.ServiceStatuses.RUNNING
             else:
-                LOG.info(_("Service Status is SHUTDOWN."))
+                LOG.info("Service Status is SHUTDOWN.")
                 return rd_instance.ServiceStatuses.SHUTDOWN
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to get database status."))
+            LOG.exception("Failed to get database status.")
             return rd_instance.ServiceStatuses.CRASHED
 
 
@@ -119,9 +118,9 @@ class VerticaApp(object):
                         raise RuntimeError(_("Failed to remove config %s") % k)
 
         except Exception:
-            LOG.exception(_("Vertica configuration remove failed."))
+            LOG.exception("Vertica configuration remove failed.")
             raise RuntimeError(_("Vertica configuration remove failed."))
-        LOG.info(_("Vertica configuration reset completed."))
+        LOG.info("Vertica configuration reset completed.")
 
     def _apply_config(self, config):
         try:
@@ -137,9 +136,9 @@ class VerticaApp(object):
                         raise RuntimeError(_("Failed to apply config %s") % k)
 
         except Exception:
-            LOG.exception(_("Vertica configuration apply failed"))
+            LOG.exception("Vertica configuration apply failed")
             raise RuntimeError(_("Vertica configuration apply failed"))
-        LOG.info(_("Vertica config apply completed."))
+        LOG.info("Vertica config apply completed.")
 
     def _enable_db_on_boot(self):
         try:
@@ -150,7 +149,7 @@ class VerticaApp(object):
                        (system.VERTICA_AGENT_SERVICE_COMMAND % "enable")]
             subprocess.Popen(command)
         except Exception:
-            LOG.exception(_("Failed to enable database on boot."))
+            LOG.exception("Failed to enable database on boot.")
             raise RuntimeError(_("Could not enable database on boot."))
 
     def _disable_db_on_boot(self):
@@ -160,12 +159,12 @@ class VerticaApp(object):
             command = (system.VERTICA_AGENT_SERVICE_COMMAND % "disable")
             system.shell_execute(command)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to disable database on boot."))
+            LOG.exception("Failed to disable database on boot.")
             raise RuntimeError(_("Could not disable database on boot."))
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         """Stop the database."""
-        LOG.info(_("Stopping Vertica."))
+        LOG.info("Stopping Vertica.")
         if do_not_start_on_reboot:
             self._disable_db_on_boot()
 
@@ -184,19 +183,19 @@ class VerticaApp(object):
                     if not self.status.wait_for_real_status_to_change_to(
                             rd_instance.ServiceStatuses.SHUTDOWN,
                             self.state_change_wait_time, update_db):
-                        LOG.error(_("Could not stop Vertica."))
+                        LOG.error("Could not stop Vertica.")
                         self.status.end_restart()
                         raise RuntimeError(_("Could not stop Vertica!"))
                 LOG.debug("Database stopped.")
             else:
                 LOG.debug("Database is not running.")
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to stop database."))
+            LOG.exception("Failed to stop database.")
             raise RuntimeError(_("Could not stop database."))
 
     def start_db(self, update_db=False):
         """Start the database."""
-        LOG.info(_("Starting Vertica."))
+        LOG.info("Starting Vertica.")
         try:
             self._enable_db_on_boot()
             # Start vertica-agent service
@@ -219,12 +218,12 @@ class VerticaApp(object):
          Currently all that this method does is to start Vertica. This method
          needs to be implemented to enable volume resize on guestagent side.
         """
-        LOG.info(_("Starting Vertica with configuration changes."))
+        LOG.info("Starting Vertica with configuration changes.")
         if self.status.is_running:
             format = 'Cannot start_db_with_conf_changes because status is %s.'
             LOG.debug(format, self.status)
             raise RuntimeError(format % self.status)
-        LOG.info(_("Initiating config."))
+        LOG.info("Initiating config.")
         self.configuration_manager.save_configuration(config_contents)
         self.start_db(True)
 
@@ -239,7 +238,7 @@ class VerticaApp(object):
 
     def add_db_to_node(self, members=netutils.get_my_ipv4()):
         """Add db to host with admintools"""
-        LOG.info(_("Calling admintools to add DB to host"))
+        LOG.info("Calling admintools to add DB to host")
         try:
             # Create db after install
             db_password = self._get_database_password()
@@ -250,13 +249,13 @@ class VerticaApp(object):
         except exception.ProcessExecutionError:
             # Give vertica some time to get the node up, won't be available
             # by the time adminTools -t db_add_node completes
-            LOG.info(_("adminTools failed as expected - wait for node"))
+            LOG.info("adminTools failed as expected - wait for node")
         self.wait_for_node_status()
-        LOG.info(_("Vertica add db to host completed."))
+        LOG.info("Vertica add db to host completed.")
 
     def remove_db_from_node(self, members=netutils.get_my_ipv4()):
         """Remove db from node with admintools"""
-        LOG.info(_("Removing db from node"))
+        LOG.info("Removing db from node")
         try:
             # Create db after install
             db_password = self._get_database_password()
@@ -267,16 +266,16 @@ class VerticaApp(object):
         except exception.ProcessExecutionError:
             # Give vertica some time to get the node up, won't be available
             # by the time adminTools -t db_add_node completes
-            LOG.info(_("adminTools failed as expected - wait for node"))
+            LOG.info("adminTools failed as expected - wait for node")
 
         # Give vertica some time to take the node down - it won't be available
         # by the time adminTools -t db_add_node completes
         self.wait_for_node_status()
-        LOG.info(_("Vertica remove host from db completed."))
+        LOG.info("Vertica remove host from db completed.")
 
     def create_db(self, members=netutils.get_my_ipv4()):
         """Prepare the guest machine with a Vertica db creation."""
-        LOG.info(_("Creating database on Vertica host."))
+        LOG.info("Creating database on Vertica host.")
         try:
             # Create db after install
             db_password = self._get_database_password()
@@ -285,39 +284,39 @@ class VerticaApp(object):
                                                      db_password))
             system.shell_execute(create_db_command, system.VERTICA_ADMIN)
         except Exception:
-            LOG.exception(_("Vertica database create failed."))
+            LOG.exception("Vertica database create failed.")
             raise RuntimeError(_("Vertica database create failed."))
-        LOG.info(_("Vertica database create completed."))
+        LOG.info("Vertica database create completed.")
 
     def install_vertica(self, members=netutils.get_my_ipv4()):
         """Prepare the guest machine with a Vertica db creation."""
-        LOG.info(_("Installing Vertica Server."))
+        LOG.info("Installing Vertica Server.")
         try:
             # Create db after install
             install_vertica_cmd = (system.INSTALL_VERTICA % (members,
                                                              MOUNT_POINT))
             system.shell_execute(install_vertica_cmd)
         except exception.ProcessExecutionError:
-            LOG.exception(_("install_vertica failed."))
+            LOG.exception("install_vertica failed.")
             raise RuntimeError(_("install_vertica failed."))
         self._generate_database_password()
-        LOG.info(_("install_vertica completed."))
+        LOG.info("install_vertica completed.")
 
     def update_vertica(self, command, members=netutils.get_my_ipv4()):
-        LOG.info(_("Calling update_vertica with command %s"), command)
+        LOG.info("Calling update_vertica with command %s", command)
         try:
             update_vertica_cmd = (system.UPDATE_VERTICA % (command, members,
                                                            MOUNT_POINT))
             system.shell_execute(update_vertica_cmd)
         except exception.ProcessExecutionError:
-            LOG.exception(_("update_vertica failed."))
+            LOG.exception("update_vertica failed.")
             raise RuntimeError(_("update_vertica failed."))
         # self._generate_database_password()
-        LOG.info(_("update_vertica completed."))
+        LOG.info("update_vertica completed.")
 
     def add_udls(self):
         """Load the user defined load libraries into the database."""
-        LOG.info(_("Adding configured user defined load libraries."))
+        LOG.info("Adding configured user defined load libraries.")
         password = self._get_database_password()
         loaded_udls = []
         for lib in system.UDL_LIBS:
@@ -354,9 +353,9 @@ class VerticaApp(object):
                                            % func_name)
                 loaded_udls.append(func_name)
             else:
-                LOG.warning(_("Skipping %(func)s as path %(path)s not "
-                              "found."), {"func": func_name, "path": path})
-        LOG.info(_("The following UDL functions are available for use: %s"),
+                LOG.warning("Skipping %(func)s as path %(path)s not "
+                            "found.", {"func": func_name, "path": path})
+        LOG.info("The following UDL functions are available for use: %s",
                  loaded_udls)
 
     def _generate_database_password(self):
@@ -392,7 +391,7 @@ class VerticaApp(object):
             config.read(system.VERTICA_CONF)
             return config
         except Exception:
-            LOG.exception(_("Failed to read config %s."), system.VERTICA_CONF)
+            LOG.exception("Failed to read config %s.", system.VERTICA_CONF)
             raise RuntimeError
 
     def _get_database_password(self):
@@ -401,7 +400,7 @@ class VerticaApp(object):
 
     def install_if_needed(self, packages):
         """Install Vertica package if needed."""
-        LOG.info(_("Preparing Guest as Vertica Server."))
+        LOG.info("Preparing Guest as Vertica Server.")
         if not packager.pkg_is_installed(packages):
             LOG.debug("Installing Vertica Package.")
             packager.pkg_install(packages, None, system.INSTALL_TIMEOUT)
@@ -424,12 +423,12 @@ class VerticaApp(object):
             self._set_readahead_for_disks()
             system.shell_execute(command)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Failed to prepare for install_vertica."))
+            LOG.exception("Failed to prepare for install_vertica.")
             raise
 
     def mark_design_ksafe(self, k):
         """Wrapper for mark_design_ksafe function for setting k-safety """
-        LOG.info(_("Setting Vertica k-safety to %s"), str(k))
+        LOG.info("Setting Vertica k-safety to %s", str(k))
         out, err = system.exec_vsql_command(self._get_database_password(),
                                             system.MARK_DESIGN_KSAFE % k)
         # Only fail if we get an ERROR as opposed to a warning complaining
@@ -440,7 +439,7 @@ class VerticaApp(object):
 
     def _create_user(self, username, password, role=None):
         """Creates a user, granting and enabling the given role for it."""
-        LOG.info(_("Creating user in Vertica database."))
+        LOG.info("Creating user in Vertica database.")
         out, err = system.exec_vsql_command(self._get_database_password(),
                                             system.CREATE_USER %
                                             (username, password))
@@ -474,7 +473,7 @@ class VerticaApp(object):
 
     def enable_root(self, root_password=None):
         """Resets the root password."""
-        LOG.info(_LI("Enabling root."))
+        LOG.info("Enabling root.")
         user = models.DatastoreUser.root(password=root_password)
         if not self.is_root_enabled():
             self._create_user(user.name, user.password, 'pseudosuperuser')
@@ -492,7 +491,7 @@ class VerticaApp(object):
                         raise RuntimeError(_("Failed to update %s "
                                              "password.") % user.name)
             except exception.ProcessExecutionError:
-                LOG.error(_("Failed to update %s password."), user.name)
+                LOG.error("Failed to update %s password.", user.name)
                 raise RuntimeError(_("Failed to update %s password.")
                                    % user.name)
         return user.serialize()
@@ -527,7 +526,7 @@ class VerticaApp(object):
             read_key_cmd = ("cat %(file)s" % {'file': public_key_file_name})
             out, err = system.shell_execute(read_key_cmd)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Cannot read public key."))
+            LOG.exception("Cannot read public key.")
             raise
         return out.strip()
 
@@ -554,7 +553,7 @@ class VerticaApp(object):
             system.shell_execute(copy_key_cmd)
             os.remove(tempkeyfile.name)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Cannot install public keys."))
+            LOG.exception("Cannot install public keys.")
             os.remove(tempkeyfile.name)
             raise
 
@@ -567,7 +566,7 @@ class VerticaApp(object):
                                                           system.VERTICA_CONF))
                 system.shell_execute(COPY_CMD)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Cannot export configuration."))
+            LOG.exception("Cannot export configuration.")
             raise
 
     def install_cluster(self, members):

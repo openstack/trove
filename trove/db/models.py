@@ -105,13 +105,16 @@ class DatabaseModelBase(models.ModelBase):
 
         if ((context and not context.is_admin and hasattr(model, 'tenant_id')
              and model.tenant_id != context.tenant)):
-            msg = _("Tenant %(s_tenant)s tried to access "
-                    "%(s_name)s, owned by %(s_owner)s.") % {
-                "s_tenant": context.tenant, "s_name": cls.__name__,
+            log_fmt = ("Tenant %(s_tenant)s tried to access "
+                       "%(s_name)s, owned by %(s_owner)s.")
+            exc_fmt = _("Tenant %(s_tenant)s tried to access "
+                        "%(s_name)s, owned by %(s_owner)s.")
+            msg_content = {
+                "s_tenant": context.tenant,
+                "s_name": cls.__name__,
                 "s_owner": model.tenant_id}
-
-            LOG.error(msg)
-            raise exception.ModelNotFoundError(msg)
+            LOG.error(log_fmt, msg_content)
+            raise exception.ModelNotFoundError(exc_fmt % msg_content)
 
         return model
 

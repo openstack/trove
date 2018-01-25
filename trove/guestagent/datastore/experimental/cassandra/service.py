@@ -159,7 +159,7 @@ class CassandraApp(object):
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a Cassandra server installation."""
-        LOG.info(_("Preparing Guest as a Cassandra Server"))
+        LOG.info("Preparing Guest as a Cassandra Server")
         if not packager.pkg_is_installed(packages):
             self._install_db(packages)
         LOG.debug("Cassandra install_if_needed complete")
@@ -168,7 +168,7 @@ class CassandraApp(object):
         try:
             operating_system.create_directory(mount_point, as_root=True)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error while initiating storage structure."))
+            LOG.exception("Error while initiating storage structure.")
 
     def start_db(self, update_db=False, enable_on_boot=True):
         self.status.start_db_service(
@@ -208,7 +208,7 @@ class CassandraApp(object):
             raise RuntimeError(_("Cannot remove system tables. "
                                  "The service is still running."))
 
-        LOG.info(_('Removing existing system tables.'))
+        LOG.info('Removing existing system tables.')
         system_keyspace_dir = guestagent_utils.build_file_path(
             self.cassandra_data_dir, 'system')
         commitlog_file = guestagent_utils.build_file_path(
@@ -295,7 +295,7 @@ class CassandraApp(object):
         Create a new one using the default database credentials
         otherwise and drop the built-in user when finished.
         """
-        LOG.info(_('Configuring Trove superuser.'))
+        LOG.info('Configuring Trove superuser.')
 
         if password is None:
             password = utils.generate_random_password()
@@ -443,8 +443,8 @@ class CassandraApp(object):
             return self._load_current_superuser()
 
         LOG.warning(
-            _("Trove administrative user has not been configured yet. "
-              "Using the built-in default: %s"),
+            "Trove administrative user has not been configured yet. "
+            "Using the built-in default: %s",
             models.CassandraUser.root_username)
         return models.CassandraUser(models.CassandraUser.root_username,
                                     self.default_superuser_password)
@@ -560,7 +560,7 @@ class CassandraApp(object):
         self.configuration_manager.remove_user_override()
 
     def write_cluster_topology(self, data_center, rack, prefer_local=True):
-        LOG.info(_('Saving Cassandra cluster topology configuration.'))
+        LOG.info('Saving Cassandra cluster topology configuration.')
 
         config = {'dc': data_center,
                   'rack': rack,
@@ -664,7 +664,7 @@ class CassandraApp(object):
             self._run_nodetool_command('cleanup')
             self.status.set_status(rd_instance.ServiceStatuses.RUNNING)
         except Exception:
-            LOG.exception(_("The node failed to complete its cleanup."))
+            LOG.exception("The node failed to complete its cleanup.")
         finally:
             self.status.end_restart()
 
@@ -684,7 +684,7 @@ class CassandraApp(object):
         try:
             self._run_nodetool_command('decommission')
         except Exception:
-            LOG.exception(_("The node failed to decommission itself."))
+            LOG.exception("The node failed to decommission itself.")
             self.status.set_status(rd_instance.ServiceStatuses.FAILED)
             return
         finally:
@@ -771,7 +771,7 @@ class CassandraAppStatus(service.BaseDbStatus):
         except NoHostAvailable:
             return rd_instance.ServiceStatuses.SHUTDOWN
         except Exception:
-            LOG.exception(_("Error getting Cassandra status."))
+            LOG.exception("Error getting Cassandra status.")
 
         return rd_instance.ServiceStatuses.SHUTDOWN
 
@@ -1231,7 +1231,7 @@ class CassandraConnection(object):
                                               data_values, timeout)
                 return rows or []
             except OperationTimedOut:
-                LOG.error(_("Query execution timed out."))
+                LOG.error("Query execution timed out.")
                 raise
 
         LOG.debug("Cannot perform this operation on a closed connection.")

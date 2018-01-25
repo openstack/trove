@@ -21,7 +21,6 @@ from oslo_utils import importutils
 import six
 
 from trove.common import exception
-from trove.common.i18n import _
 from trove.quota.models import Quota
 from trove.quota.models import QuotaUsage
 from trove.quota.models import Reservation
@@ -325,8 +324,8 @@ class QuotaEngine(object):
         try:
             self._driver.commit(reservations)
         except Exception:
-            LOG.exception(_("Failed to commit reservations "
-                          "%(reservations)s"), {'reservations': reservations})
+            LOG.exception("Failed to commit reservations "
+                          "%(reservations)s", {'reservations': reservations})
 
     def rollback(self, reservations):
         """Roll back reservations.
@@ -338,8 +337,8 @@ class QuotaEngine(object):
         try:
             self._driver.rollback(reservations)
         except Exception:
-            LOG.exception(_("Failed to roll back reservations "
-                          "%(reservations)s"), {'reservations': reservations})
+            LOG.exception("Failed to roll back reservations "
+                          "%(reservations)s", {'reservations': reservations})
 
     @property
     def resources(self):

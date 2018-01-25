@@ -16,7 +16,6 @@
 
 from datetime import date
 
-from trove.common.i18n import _
 from trove.common import stream_codecs
 from trove.guestagent.common import operating_system
 from trove.guestagent.module.drivers import module_driver
@@ -37,8 +36,8 @@ class PingDriver(module_driver.ModuleDriver):
         return date(2016, 3, 4)
 
     @module_driver.output(
-        log_message=_('Extracting %(type)s message'),
-        fail_message=_('Could not extract %(type)s message'))
+        log_message='Extracting %(type)s message',
+        fail_message='Could not extract %(type)s message')
     def apply(self, name, datastore, ds_version, data_file, admin_module):
         data = operating_system.read_file(
             data_file, codec=stream_codecs.KeyValueCodec())
@@ -48,6 +47,6 @@ class PingDriver(module_driver.ModuleDriver):
         return False, 'Message not found in contents file'
 
     @module_driver.output(
-        log_message=_('Removing %(type)s module'))
+        log_message='Removing %(type)s module')
     def remove(self, name, datastore, ds_version, data_file):
         return True, ""

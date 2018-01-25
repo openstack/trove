@@ -17,7 +17,6 @@ import os
 
 from oslo_log import log as logging
 
-from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
@@ -104,16 +103,16 @@ class Manager(manager.Manager):
         Restores all couchbase buckets and their documents from the
         backup.
         """
-        LOG.info(_("Restoring database from backup %s"), backup_info['id'])
+        LOG.info("Restoring database from backup %s", backup_info['id'])
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception as e:
-            LOG.error(_("Error performing restore from backup %s"),
+            LOG.error("Error performing restore from backup %s",
                       backup_info['id'])
             LOG.error(e)
             self.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
-        LOG.info(_("Restored database successfully"))
+        LOG.info("Restored database successfully")
 
     def create_backup(self, context, backup_info):
         """
