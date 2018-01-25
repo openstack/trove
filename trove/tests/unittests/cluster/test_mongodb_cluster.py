@@ -195,11 +195,15 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
     @mock.patch.object(remote, 'create_nova_client')
-    def test_create(self, mock_client, mock_check_quotas,
-                    mock_db_create, mock_ins_create, mock_task_api):
+    @mock.patch.object(remote, 'create_neutron_client')
+    def test_create(self, mock_neutron_client, mock_nova_client,
+                    mock_check_quotas, mock_db_create,
+                    mock_ins_create, mock_task_api):
         instances = self.instances
         flavors = mock.Mock()
-        mock_client.return_value.flavors = flavors
+        networks = mock.Mock()
+        mock_neutron_client.return_value.find_resource = networks
+        mock_nova_client.return_value.flavors = flavors
         self.cluster.create(mock.Mock(),
                             self.cluster_name,
                             self.datastore,
@@ -214,15 +218,19 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
     @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(remote, 'create_neutron_client')
     @mock.patch.object(api, 'CONF')
-    def test_create_with_lower_configsvr(self, mock_conf, mock_client,
-                                         mock_check_quotas, mock_db_create,
-                                         mock_ins_create, mock_task_api):
+    def test_create_with_lower_configsvr(self, mock_conf, mock_neutron_client,
+                                         mock_nova_client, ock_check_quotas,
+                                         mock_db_create, mock_ins_create,
+                                         mock_task_api):
         mock_conf.get = mock.Mock(
             return_value=FakeOptGroup(num_config_servers_per_cluster=1))
         instances = self.instances
         flavors = mock.Mock()
-        mock_client.return_value.flavors = flavors
+        networks = mock.Mock()
+        mock_nova_client.return_value.flavors = flavors
+        mock_neutron_client.return_value.find_resource = networks
         self.cluster.create(mock.Mock(),
                             self.cluster_name,
                             self.datastore,
@@ -237,15 +245,19 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
     @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(remote, 'create_neutron_client')
     @mock.patch.object(api, 'CONF')
-    def test_create_with_higher_configsvr(self, mock_conf, mock_client,
-                                          mock_check_quotas, mock_db_create,
-                                          mock_ins_create, mock_task_api):
+    def test_create_with_higher_configsvr(self, mock_conf, mock_neutron_client,
+                                          mock_nova_client, mock_check_quotas,
+                                          mock_db_create, mock_ins_create,
+                                          mock_task_api):
         mock_conf.get = mock.Mock(
             return_value=FakeOptGroup(num_config_servers_per_cluster=5))
         instances = self.instances
         flavors = mock.Mock()
-        mock_client.return_value.flavors = flavors
+        networks = mock.Mock()
+        mock_nova_client.return_value.flavors = flavors
+        mock_neutron_client.return_value.find_resource = networks
         self.cluster.create(mock.Mock(),
                             self.cluster_name,
                             self.datastore,
@@ -260,15 +272,19 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
     @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(remote, 'create_neutron_client')
     @mock.patch.object(api, 'CONF')
-    def test_create_with_higher_mongos(self, mock_conf, mock_client,
-                                       mock_check_quotas, mock_db_create,
-                                       mock_ins_create, mock_task_api):
+    def test_create_with_higher_mongos(self, mock_conf, mock_neutron_client,
+                                       mock_nova_client, mock_check_quotas,
+                                       mock_db_create, mock_ins_create,
+                                       mock_task_api):
         mock_conf.get = mock.Mock(
             return_value=FakeOptGroup(num_query_routers_per_cluster=4))
         instances = self.instances
         flavors = mock.Mock()
-        mock_client.return_value.flavors = flavors
+        networks = mock.Mock()
+        mock_nova_client.return_value.flavors = flavors
+        mock_neutron_client.return_value.find_resource = networks
         self.cluster.create(mock.Mock(),
                             self.cluster_name,
                             self.datastore,

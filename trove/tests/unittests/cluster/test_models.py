@@ -21,7 +21,7 @@ from mock import Mock
 from mock import patch
 from mock import PropertyMock
 
-from novaclient import exceptions as nova_exceptions
+from neutronclient.common import exceptions as neutron_exceptions
 
 from trove.cluster import models
 from trove.common import exception
@@ -173,8 +173,8 @@ class TestModels(trove_testtools.TestCase):
         assert_same_instance_volumes.assert_called_once_with(
             test_instances, required_size=required_volume_size)
 
-    @patch.object(remote, 'create_nova_client', return_value=MagicMock())
-    def test_validate_instance_nics(self, create_nova_cli_mock):
+    @patch.object(remote, 'create_neutron_client', return_value=MagicMock())
+    def test_validate_instance_nics(self, create_neutron_cli_mock):
 
         test_instances = [
             {'volume_size': 1, 'flavor_id': '1234',
@@ -197,9 +197,9 @@ class TestModels(trove_testtools.TestCase):
             {'volume_size': 1, 'flavor_id': '1234',
              'nics': [{"net-id": "foo-bar"}]}]
 
-        create_nova_cli_mock.return_value.networks.get = Mock(
-            side_effect=nova_exceptions.NotFound(
-                404, "Nic id not found %s" % id))
+        create_neutron_cli_mock.return_value.find_resource = Mock(
+            side_effect=neutron_exceptions.NotFound(
+                "Nic id not found %s" % id))
 
         self.assertRaises(exception.NetworkNotFound,
                           models.validate_instance_nics,
