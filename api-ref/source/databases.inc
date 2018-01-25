@@ -17,7 +17,10 @@ Deletes a database.
 This operation also deletes all data that is associated with the
 database.
 
-Error response codes:202,413,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405), overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -51,7 +54,10 @@ Create database
 
 Creates a database within an instance.
 
-Error response codes:202,413,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -101,7 +107,9 @@ databases.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request

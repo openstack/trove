@@ -27,7 +27,9 @@ your instance, and so on.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -72,7 +74,9 @@ Otherwise, returns ``false``.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -112,7 +116,10 @@ Disable root user
 
 Disables the root user.
 
-Error response codes:202,413,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -145,7 +152,10 @@ Delete user
 
 Deletes a user for a database instance.
 
-Error response codes:202,413,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -266,7 +276,10 @@ names, and passwords.
 |   Password maximum length    | unlimited (no restrictions) |
 +------------------------------+-----------------------------+
 
-Error response codes:202,413,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -325,7 +338,9 @@ The following notes apply to MySQL users:
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request

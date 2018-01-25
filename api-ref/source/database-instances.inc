@@ -22,7 +22,10 @@ This operation does not delete any read slaves.
 You cannot complete this operation when the instance state is
 either ``REBUILDING`` or ``BUILDING``.
 
-Error response codes:202,413,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405), overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -76,7 +79,9 @@ instance.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -116,7 +121,10 @@ Attach configuration group
 
 Attaches a configuration group to an instance.
 
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -162,7 +170,10 @@ When you pass in only an instance ID and omit the configuration ID,
 this operation detaches any configuration group that was attached
 to the instance.
 
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -211,7 +222,10 @@ replica from the source, making the replica a standalone database
 instance. You can then take the new standalone instance and create
 a new replica of that instance.
 
-Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
+Normal response codes: 202
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
+notImplemented(501),serviceUnavailable(503)
 
 
 Request
@@ -271,7 +285,9 @@ database instance.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -351,7 +367,9 @@ Lists status and information for all database instances.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -392,7 +410,9 @@ Lists the configuration defaults for an instance.
 
 
 Normal response codes: 200
-Error response codes:413,405,404,403,401,400,422,503,500,501,
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
+badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
