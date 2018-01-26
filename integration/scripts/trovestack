@@ -578,7 +578,7 @@ function cmd_set_datastore() {
         VERSION="3.2.6"
     elif [ "$DATASTORE_TYPE" == "cassandra" ]; then
         PACKAGES=${PACKAGES:-"cassandra"}
-        VERSION="2.1.0"
+        VERSION="3.11.1"
     elif [ "$DATASTORE_TYPE" == "couchbase" ]; then
         PACKAGES=${PACKAGES:-"couchbase-server"}
         VERSION="2.2.0"
