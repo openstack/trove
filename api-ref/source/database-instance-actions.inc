@@ -8,7 +8,7 @@ Resizes instances and volumes and restarts instances.
 
 
 Restart instance
-================
+~~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
 
@@ -21,9 +21,11 @@ in the database instance.
 The database instance is unavailable until the instance restarts.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
-notImplemented(501),serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), badMediaType(415),
+unprocessableEntity(422), instanceFault(500), notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -33,6 +35,7 @@ Request
 
    - instanceId: instanceId
    - accountId: accountId
+
 
 Request Example
 ---------------
@@ -43,22 +46,8 @@ Request Example
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Resize instance
-===============
+~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
 
@@ -68,9 +57,11 @@ If you provide a valid ``flavorRef``, this operation changes the
 memory size of the instance, and restarts the database.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
-notImplemented(501),serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), badMediaType(415),
+unprocessableEntity(422), instanceFault(500), notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -81,6 +72,7 @@ Request
    - instanceId: instanceId
    - accountId: accountId
 
+
 Request Example
 ---------------
 
@@ -90,22 +82,8 @@ Request Example
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Resize instance volume
-======================
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
 
@@ -118,9 +96,11 @@ You cannot increase the volume to a size that is larger than the
 API volume size limit.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
-notImplemented(501),serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), badMediaType(415),
+unprocessableEntity(422), instanceFault(500), notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -131,6 +111,7 @@ Request
    - instanceId: instanceId
    - accountId: accountId
 
+
 Request Example
 ---------------
 
@@ -140,22 +121,8 @@ Request Example
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Promote instance to replica source
-==================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
 
@@ -178,9 +145,11 @@ For ``instanceId``, pass in the instance ID of the replica you want
 to promote.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
-notImplemented(501),serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), badMediaType(415),
+unprocessableEntity(422), instanceFault(500), notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -191,6 +160,7 @@ Request
    - instanceId: instanceId
    - accountId: accountId
 
+
 Request Example
 ---------------
 
@@ -200,22 +170,8 @@ Request Example
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 Delete replication base instance
-================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
 
@@ -242,9 +198,11 @@ For ``instanceId``, pass in the instance ID of the unreachable base
 instance.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),badMediaType(415),unprocessableEntity(422),instanceFault(500),
-notImplemented(501),serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), badMediaType(415),
+unprocessableEntity(422), instanceFault(500), notImplemented(501),
+serviceUnavailable(503)
 
 
 Request
@@ -255,25 +213,9 @@ Request
    - instanceId: instanceId
    - accountId: accountId
 
+
 Request Example
 ---------------
 
 .. literalinclude:: samples/db-instance-eject-replica-request.json
    :language: javascript
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

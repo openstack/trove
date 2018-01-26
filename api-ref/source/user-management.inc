@@ -8,7 +8,7 @@ Creates, lists all, and deletes users.
 
 
 Enable root user
-================
+~~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/root
 
@@ -25,11 +25,11 @@ you change core database settings. These changes can be, but are not
 limited to, turning off bin logs, removing users that we use to access
 your instance, and so on.
 
-
 Normal response codes: 200
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
+instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -39,8 +39,6 @@ Request
 
    - instanceId: instanceId
    - accountId: accountId
-
-
 
 
 Response Example
@@ -52,18 +50,8 @@ Response Example
 
 
 
-
-
-
-
-
-
-
-
-
-
 Show root-enabled status for database instance
-==============================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/root
 
@@ -72,11 +60,11 @@ Shows root-enabled status for a database instance.
 Returns ``true`` if root user is enabled for a database instance.
 Otherwise, returns ``false``.
 
-
 Normal response codes: 200
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
+instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -86,8 +74,6 @@ Request
 
    - instanceId: instanceId
    - accountId: accountId
-
-
 
 
 Response Example
@@ -99,27 +85,18 @@ Response Example
 
 
 
-
-
-
-
-
-
-
-
-
-
 Disable root user
-=================
+~~~~~~~~~~~~~~~~~
 
 .. rest_method::  DELETE /v1.0/{accountId}/instances/{instanceId}/root
 
 Disables the root user.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
+instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -133,29 +110,18 @@ Request
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 Delete user
-===========
+~~~~~~~~~~~
 
 .. rest_method::  DELETE /v1.0/{accountId}/instances/{instanceId}/users/{name}
 
 Deletes a user for a database instance.
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
+instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -170,20 +136,8 @@ Request
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 Create user
-===========
+~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/users
 
@@ -217,7 +171,8 @@ This table lists the required attributes for creating users:
 |                 |      | one or more database names.        |          |
 +-----------------+------+------------------------------------+----------+
 
-Name of the database that the user can access. You can specify one or more database names.
+Name of the database that the user can access. You can specify one or more
+database names.
 
  **Notes**
 
@@ -277,9 +232,10 @@ names, and passwords.
 +------------------------------+-----------------------------+
 
 Normal response codes: 202
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
+instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -299,25 +255,13 @@ Request Example
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 List database instance users
-============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/users
 
-Lists the users in a database instance and the associated databases for that user.
+Lists the users in a database instance and the associated databases for that
+user.
 
 This operation does not return system users. A system user is a
 database administrator who administers the health of the database.
@@ -336,11 +280,11 @@ The following notes apply to MySQL users:
   management.html <http://dev.mysql.com/doc/refman/5.1/en/user-
   account-management.html>`_
 
-
 Normal response codes: 200
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400), unauthorized(401), forbidden(403),
+itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
+instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -352,23 +296,8 @@ Request
    - accountId: accountId
 
 
-
-
 Response Example
 ----------------
 
 .. literalinclude:: samples/db-list-users-response.json
    :language: javascript
-
-
-
-
-
-
-
-
-
-
-
-
-

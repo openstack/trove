@@ -8,7 +8,7 @@ Lists all flavors and shows details for a flavor, by ID.
 
 
 Show flavor details
-===================
+~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  GET /v1.0/{accountId}/flavors/{flavorId}
 
@@ -22,11 +22,11 @@ floating point value for this parameter, this call truncates the
 decimal portion and uses the integer portion as the ``flavorId``
 value.
 
-
 Normal response codes: 200
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),
+itemNotFound(404), badMethod(405),overLimit(413),unprocessableEntity(422),
+instanceFault(500),notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -38,8 +38,6 @@ Request
    - accountId: accountId
 
 
-
-
 Response Example
 ----------------
 
@@ -49,18 +47,8 @@ Response Example
 
 
 
-
-
-
-
-
-
-
-
-
-
 List flavors
-============
+~~~~~~~~~~~~
 
 .. rest_method::  GET /v1.0/{accountId}/flavors
 
@@ -71,11 +59,11 @@ This operation lists information for all available flavors.
 This resource is identical to the flavors found in the OpenStack
 Nova API.
 
-
 Normal response codes: 200
-Error response codes: badRequest(400),unauthorized(401),forbidden(403),itemNotFound(404),
-badMethod(405),overLimit(413),unprocessableEntity(422),instanceFault(500),notImplemented(501),
-serviceUnavailable(503)
+
+Error response codes: badRequest(400),unauthorized(401),forbidden(403),
+itemNotFound(404), badMethod(405),overLimit(413),unprocessableEntity(422),
+instanceFault(500),notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -86,23 +74,8 @@ Request
    - accountId: accountId
 
 
-
-
 Response Example
 ----------------
 
 .. literalinclude:: samples/db-flavors-response.json
    :language: javascript
-
-
-
-
-
-
-
-
-
-
-
-
-
