@@ -15,16 +15,20 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get --allow-unauthenticated install -qy curl
 echo "deb http://www.apache.org/dist/cassandra/debian ${CASSANDRA_RELEASE} main" >> /etc/apt/sources.list.d/cassandra.sources.list
 curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
-apt-get update
+apt-get -y update
 apt-get --allow-unauthenticated install -qy openjdk-${CASSANDRA_JAVA}-jdk expect python-dev
-apt-get --allow-unauthenticated install -qy libxml2-dev ntp mc
+apt-get --allow-unauthenticated install -qy libxml2-dev ntp mc libev4 libev-dev
 apt-get --allow-unauthenticated install -qy libxslt1-dev python-pexpect
 apt-get --allow-unauthenticated install -qy python-migrate build-essential
+apt-get --allow-unauthenticated install -qy python-setuptools python-pip python-snappy
 
-apt-get --allow-unauthenticated install -qy cassandra
+apt-get --allow-unauthenticated install -qy cassandra cassandra-tools
+
+pip2 install Cython
 
 # The Python Driver 2.0 for Apache Cassandra.
 pip2 install cassandra-driver
+
 # Sorted sets support for the Python driver.
 pip2 install blist
 
