@@ -1,0 +1,24 @@
+{
+    "logs": [
+        {
+            "name": "general",
+            "type": "USER",
+            "status": "Partial",
+            "published": "128",
+            "pending": "4096",
+            "container": "data_logs",
+            "prefix": "5e9e616c-1827-45f5-a487-679084d82f7e/mysql-general/",
+            "metafile": "5e9e616c-1827-45f5-a487-679084d82f7e/mysql-general_metafile"
+        },
+        {
+            "name": "slow_query",
+            "type": "USER",
+            "status": "Ready",
+            "published": "0",
+            "pending": "128",
+            "container": "None",
+            "prefix": "None",
+            "metafile": "5e9e616c-1827-45f5-a487-679084d82f7e/mysql-slow_query_metafile"
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "log": {
+            "name": "general",
+            "type": "USER",
+            "status": "Published",
+            "published": "128",
+            "pending": "0",
+            "container": "data_logs",
+            "prefix": "5e9e616c-1827-45f5-a487-679084d82f7e/mysql-general/",
+            "metafile": "5e9e616c-1827-45f5-a487-679084d82f7e/mysql-general_metafile"
+        }
+}

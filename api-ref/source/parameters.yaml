@@ -153,11 +153,100 @@ instance:
   in: body
   required: true
   type: object
+instance_log:
+  description: |
+    A ``log`` objects.
+  in: body
+  required: true
+  type: array
+instance_logs:
+  description: |
+    A list of ``log`` objects.
+  in: body
+  required: true
+  type: array
 instanceName:
   description: |
     Name of the instance.
   in: body
   required: false
+  type: string
+log_container:
+  description: |
+    The object store container where the published
+    log data will be stored. Defaults to ``None``
+    before the log has been published.
+  in: body
+  required: true
+  type: string
+log_disable_action:
+  description: |
+    To disable a log type, this should always set to 1.
+  in: body
+  required: false
+  type: integer
+log_discard_action:
+  description: |
+    To discard a log type which has been published previously,
+    this should always set to 1.
+  in: body
+  required: false
+  type: integer
+log_enable_action:
+  description: |
+    To enable a log type, this should always set to 1.
+  in: body
+  required: false
+  type: integer
+log_metafile:
+  description: |
+    The log metafile location.
+  in: body
+  required: true
+  type: string
+log_name:
+  description: |
+    The name of the log.
+  in: body
+  required: true
+  type: string
+log_pending_size:
+  description: |
+    Log file size pending to be published.
+  in: body
+  required: true
+  type: string
+log_prefix:
+  description: |
+    If the log has been published, thi is the prefix location
+    of where the log data are stored. Otherwize the prefix is
+    ``None``.
+  in: body
+  required: true
+  type: string
+log_publish_action:
+  description: |
+    To publish a log type, this should always set to 1.
+  in: body
+  required: false
+  type: integer
+log_published_size:
+  description: |
+    Published size of the log.
+  in: body
+  required: true
+  type: string
+log_status:
+  description: |
+    The log status.
+  in: body
+  required: true
+  type: string
+log_type:
+  description: |
+    The type of the log.
+  in: body
+  required: true
   type: string
 name:
   description: |

@@ -9,6 +9,7 @@
 .. include:: api-versions.inc
 .. include:: database-instances.inc
 .. include:: database-instance-actions.inc
+.. include:: database-instance-logs.inc
 .. include:: databases.inc
 .. include:: user-management.inc
 .. include:: flavors.inc
