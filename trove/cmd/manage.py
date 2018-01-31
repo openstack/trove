@@ -212,7 +212,8 @@ def main():
             'packages', help='Packages required by the datastore version that '
             'are installed on the guest image.')
         parser.add_argument(
-            'active', help='Whether the datastore version is active or not. '
+            'active', type=int,
+            help='Whether the datastore version is active or not. '
             'Accepted values are 0 and 1.')
 
         parser = subparser.add_parser(

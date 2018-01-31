@@ -31,10 +31,10 @@ class TestDatastoreVersion(trove_testtools.TestCase):
         models.update_datastore(name='test_ds', default_version=None)
         models.update_datastore_version(
             'test_ds', 'test_vr1', 'mysql',
-            '154b350d-4d86-4214-9067-9c54b230c0da', 'pkg-1', '1')
+            '154b350d-4d86-4214-9067-9c54b230c0da', 'pkg-1', 1)
         models.update_datastore_version(
             'test_ds', 'test_vr2', 'mysql',
-            '154b350d-4d86-4214-9067-9c54b230c0da', 'pkg-1', '1')
+            '154b350d-4d86-4214-9067-9c54b230c0da', 'pkg-1', 1)
         self.ds = models.Datastore.load('test_ds')
         self.ds_version2 = models.DatastoreVersion.load(self.ds, 'test_vr2')
 
