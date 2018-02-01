@@ -1,8 +1,9 @@
- Creates an image for DB2 Express-C v10.5
+ Creates an image for DB2 Express-C v11.1
 
  The packages for DB2 Express-C can be downloaded from:
- http://www-01.ibm.com/software/data/db2/express-c/download.html
- and click on the link "DB2 Express-C for Linux 64-bit".
+ https://www.ibm.com/developerworks/downloads/im/db2express/
+ and click on the link "Download" button and then click on
+ "DB2 Express-C for Linux 64-bit".
  New users can either get an IBM ID or click on the "Proceed without an
  IBM ID". User is provided with a registration form which needs to be
  completed in order to proceed further to download the DB2 Express-C
@@ -14,13 +15,13 @@
   - place the package in a private repository and set the environment
     variable DATASTORE_PKG_LOCATION with the url to this private
     repository.
-    e.g. export DATASTORE_PKG_LOCATION="http://www.foo.com/db2/v10.5_linuxx64_expc.tar.gz"
+    e.g. export DATASTORE_PKG_LOCATION="http://www.foo.com/db2/v11.1_linuxx64_expc.tar.gz"
 
   - download the package and place it in any directory on the local
     filesystem that the trovestack script can access. Set the
     environment variable DATASTORE_PKG_LOCATION with the full path to
     the downloaded package.
-    e.g. export DATASTORE_PKG_LOCATION="/home/stack/db2/v10.5_linuxx64_expc.tar.gz"
+    e.g. export DATASTORE_PKG_LOCATION="/home/stack/db2/v11.1_linuxx64_expc.tar.gz"
 
  The environment variables used are as follows:
 

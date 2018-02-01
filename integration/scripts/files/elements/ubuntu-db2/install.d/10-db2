@@ -12,6 +12,9 @@ DB2_PKG_LOCATION="/db2"
 mkdir ${DB2_PKG_LOCATION}
 cd ${DB2_PKG_LOCATION}
 
+# DB2 install location
+DB2_INSTALL_LOCATION="/opt/ibm/db2/current"
+
 # DB2 install requires the hostname to be resolved correctly
 host_name=`hostname`
 echo "127.0.0.1 ${host_name}" >> /etc/hosts
@@ -22,8 +25,8 @@ tar -xvzf /tmp/in_target.d/db2.tar.gz
 apt-get --allow-unauthenticated install libaio1
 apt-get --allow-unauthenticated install libstdc++6
 
-# start the installation process. Accepts the default installation directory '/opt/ibm/db2/V10.5'
-${DB2_PKG_LOCATION}/expc/db2_install -b /opt/ibm/db2/V10.5 -f sysreq -l ${DB2_PKG_LOCATION}/db2_install.log
+# start the installation process. Accepts the default installation directory '/opt/ibm/db2/current'
+${DB2_PKG_LOCATION}/expc/db2_install -b ${DB2_INSTALL_LOCATION} -f sysreq -l ${DB2_PKG_LOCATION}/db2_install.log
 
 # create the DB2 users.
 # DB2 instance owner - db2inst1
@@ -34,8 +37,8 @@ useradd -m db2fenc1
 useradd -m db2das1
 
 # Create the DB2 server instance
-/opt/ibm/db2/V10.5/instance/db2icrt -a server -u db2fenc1 db2inst1
-/opt/ibm/db2/V10.5/cfg/db2ln
+${DB2_INSTALL_LOCATION}/instance/db2icrt -a server -u db2fenc1 db2inst1
+${DB2_INSTALL_LOCATION}/cfg/db2ln
 
 # Configure DB2 server instance to communicate via TCP/IP on a particulat port.
 echo 'db2c_db2inst1 50000/tcp # DB2 connection service port' >> /etc/services
