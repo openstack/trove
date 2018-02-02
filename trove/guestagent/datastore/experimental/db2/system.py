@@ -25,9 +25,9 @@ UPDATE_HOSTNAME = (
     'source /home/db2inst1/sqllib/db2profile;'
     'db2set -g DB2SYSTEM="$(hostname)"')
 ENABLE_AUTOSTART = (
-    "/opt/ibm/db2/V10.5/instance/db2iauto -on " + DB2_INSTANCE_OWNER)
+    "/opt/ibm/db2/current/instance/db2iauto -on " + DB2_INSTANCE_OWNER)
 DISABLE_AUTOSTART = (
-    "/opt/ibm/db2/V10.5/instance/db2iauto -off " + DB2_INSTANCE_OWNER)
+    "/opt/ibm/db2/current/instance/db2iauto -off " + DB2_INSTANCE_OWNER)
 START_DB2 = "db2start"
 QUIESCE_DB2 = ("db2 QUIESCE INSTANCE DB2INST1 RESTRICTED ACCESS IMMEDIATE "
                "FORCE CONNECTIONS")

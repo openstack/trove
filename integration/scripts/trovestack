@@ -593,7 +593,7 @@ function cmd_set_datastore() {
         VERSION="7.1"
     elif [ "$DATASTORE_TYPE" == "db2" ]; then
         PACKAGES=${PACKAGES:-""}
-        VERSION="10.5"
+        VERSION="11.1"
     else
         echo "Unrecognized datastore type. ($DATASTORE_TYPE)"
         exit 1
