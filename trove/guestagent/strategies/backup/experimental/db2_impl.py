@@ -38,8 +38,7 @@ class DB2Backup(base.BackupRunner):
         dbNames = []
         databases, marker = self.admin.list_databases()
         for database in databases:
-            mydb = models.DatastoreSchema()
-            mydb.deserialize(database)
+            mydb = models.DatastoreSchema.deserialize(database)
             dbNames.append(mydb.name)
         return dbNames
 
