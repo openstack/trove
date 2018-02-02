@@ -26,7 +26,7 @@ apt-get --allow-unauthenticated install libaio1
 apt-get --allow-unauthenticated install libstdc++6
 
 # start the installation process. Accepts the default installation directory '/opt/ibm/db2/current'
-${DB2_PKG_LOCATION}/expc/db2_install -b ${DB2_INSTALL_LOCATION} -f sysreq -l ${DB2_PKG_LOCATION}/db2_install.log
+${DB2_PKG_LOCATION}/expc/db2_install -b ${DB2_INSTALL_LOCATION} -f sysreq -l ${DB2_PKG_LOCATION}/db2_install.log -y
 
 # create the DB2 users.
 # DB2 instance owner - db2inst1
