@@ -23,7 +23,7 @@ ADD_DB_TO_NODE = ("/opt/vertica/bin/adminTools -t db_add_node -a"
                   " %s -d %s -p '%s'")
 REMOVE_DB_FROM_NODE = ("/opt/vertica/bin/adminTools -t db_remove_node -s"
                        " %s -d %s -i -p '%s'")
-CREATE_DB = ("/opt/vertica/bin/adminTools -t create_db -s"
+CREATE_DB = ("echo yes | /opt/vertica/bin/adminTools -t create_db -s"
              " %s -d %s -c %s -D %s -p '%s'")
 CREATE_USER = "CREATE USER %s IDENTIFIED BY '%s'"
 ENABLE_FOR_USER = "ALTER USER %s DEFAULT ROLE %s"
@@ -31,7 +31,8 @@ GRANT_TO_USER = "GRANT %s to %s"
 INSTALL_VERTICA = ("/opt/vertica/sbin/install_vertica -s %s"
                    " -d %s -X -N -S default -r"
                    " /vertica.deb -L CE -Y --no-system-checks"
-                   " --ignore-aws-instance-type")
+                   " --ignore-aws-instance-type"
+                   " --ignore-install-config")
 MARK_DESIGN_KSAFE = "SELECT MARK_DESIGN_KSAFE(%s)"
 NODE_STATUS = "SELECT node_state FROM nodes where node_state <> '%s'"
 STOP_DB = "/opt/vertica/bin/adminTools -t stop_db -F -d %s -p '%s'"
