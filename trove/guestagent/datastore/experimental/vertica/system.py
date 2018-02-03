@@ -49,15 +49,18 @@ SSH_KEY_GEN = "ssh-keygen -f %s/.ssh/id_rsa -t rsa -N ''"
 UPDATE_VERTICA = ("/opt/vertica/sbin/update_vertica %s %s "
                   " -d %s -X -N -S default -r"
                   " /vertica.deb -L CE -Y --no-system-checks"
-                  " --ignore-aws-instance-type")
+                  " --ignore-aws-instance-type"
+                  " --ignore-install-config")
 UPDATE_REMOVE = ("/opt/vertica/sbin/update_vertica --remove-hosts %s "
                  " -d %s -X -N -S default -r"
                  " /vertica.deb -L CE -Y --no-system-checks"
-                 " --ignore-aws-instance-type")
+                 " --ignore-aws-instance-type"
+                 " --ignore-install-config")
 UPDATE_ADD = ("/opt/vertica/sbin/update_vertica --add-hosts %s "
               " -d %s -X -N -S default -r"
               " /vertica.deb -L CE -Y --no-system-checks"
-              " --ignore-aws-instance-type")
+              " --ignore-aws-instance-type"
+              " --ignore-install-config")
 USER_EXISTS = ("/opt/vertica/bin/vsql -w '%s' -c "
                "\"select 1 from users where user_name = '%s'\" "
                "| grep row | awk '{print $1}' | cut -c2-")
