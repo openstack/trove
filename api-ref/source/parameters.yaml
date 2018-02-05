@@ -5,6 +5,12 @@ accountId:
   in: path
   required: false
   type: string
+backup_id:
+  description: |
+    The ID of the backup.
+  in: path
+  required: true
+  type: string
 configId:
   description: |
     The ID of the configuration group.
@@ -60,6 +66,74 @@ availability_zone:
     The availability zone of the instance.
   in: body
   required: false
+  type: string
+backup_description:
+  description: |
+    An optional description for the backup.
+  in: body
+  required: false
+  type: string
+backup_description1:
+  description: |
+    An optional description for the backup.
+  in: body
+  required: true
+  type: string
+backup_incremental:
+  description: |
+    Create an incremental backup based on the last full backup by setting this
+    parameter to 1 or 0. It will create a full backup if no existing backup
+    found.
+  in: body
+  required: false
+  type: integer
+backup_instanceId:
+  description: |
+    The ID of the instance to create backup for.
+  in: body
+  required: true
+  type: string
+backup_list:
+  description: |
+    A list of ``backup`` objects.
+  in: body
+  required: true
+  type: array
+backup_locationRef:
+  description: |
+    The URL of the backup location.
+  in: body
+  required: true
+  type: string
+backup_name:
+  description: |
+    Name of the backup.
+  in: body
+  required: true
+  type: string
+backup_parentId:
+  description: |
+    ID of the parent backup to perform an incremental backup from.
+  in: body
+  required: false
+  type: string
+backup_parentId1:
+  description: |
+    ID of the parent backup to perform an incremental backup from.
+  in: body
+  required: true
+  type: string
+backup_size:
+  description: |
+    Size of the backup, the unit is GB.
+  in: body
+  required: true
+  type: string
+backup_status:
+  description: |
+    Status of the backup.
+  in: body
+  required: true
   type: string
 characterSet:
   description: |
@@ -200,6 +274,18 @@ datastore_version:
 datastore_version1:
   description: |
     Name or ID of a datastore version.
+  in: body
+  required: true
+  type: string
+datastore_version_id1:
+  description: |
+    The UUID of the data store version.
+  in: body
+  required: true
+  type: string
+datastore_version_name:
+  description: |
+    The name of the datastore version.
   in: body
   required: true
   type: string
