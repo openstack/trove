@@ -91,7 +91,7 @@ class Manager(manager.Manager):
         if not cluster_config and backup_info:
             self._perform_restore(backup_info, context, mount_point, self.app)
             if service.MongoDBAdmin().is_root_enabled():
-                self.app.status.report_root(context, 'root')
+                self.app.status.report_root(context)
 
     def restart(self, context):
         LOG.debug("Restarting MongoDB.")

@@ -159,8 +159,7 @@ class GaleraCommonClusterTasks(task_models.ClusterTasks):
         for instance in existing_instances:
             if ext_models.Root.load(context, instance.id):
                 for new_instance in new_instances:
-                    ext_models.RootHistory.create(context, new_instance.id,
-                                                  context.user)
+                    ext_models.RootHistory.create(context, new_instance.id)
                 return
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):

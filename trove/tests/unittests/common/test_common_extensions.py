@@ -72,7 +72,7 @@ class TestDefaultRootController(trove_testtools.TestCase):
         password = Mock()
         body = {'password': password}
         self.controller.root_create(req, body, tenant_id, uuid, is_cluster)
-        root_create.assert_called_with(context, uuid, context.user, password)
+        root_create.assert_called_with(context, uuid, password)
 
     def test_root_create_with_cluster(self):
         req = Mock()
@@ -297,7 +297,7 @@ class TestClusterRootController(trove_testtools.TestCase):
         self.controller.instance_root_create(
             req, body, instance_id, cluster_instances)
         mock_cluster_root_create.assert_called_with(
-            self.context, instance_id, self.context.user, password,
+            self.context, instance_id, password,
             cluster_instances)
 
     @patch.object(models.ClusterRoot, "create")
@@ -314,5 +314,5 @@ class TestClusterRootController(trove_testtools.TestCase):
         self.controller.instance_root_create(
             req, body, instance_id, cluster_instances)
         mock_cluster_root_create.assert_called_with(
-            self.context, instance_id, self.context.user, password,
+            self.context, instance_id, password,
             cluster_instances)

@@ -177,7 +177,7 @@ class Manager(manager.Manager):
             self._admin = self.app.build_admin()
 
         if not cluster_config and self.is_root_enabled(context):
-            self.status.report_root(context, self.app.default_superuser_name)
+            self.status.report_root(context)
 
     def change_passwords(self, context, users):
         with EndNotification(context):

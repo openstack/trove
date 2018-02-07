@@ -105,10 +105,8 @@ class DefaultRootController(BaseDatastoreRootController):
         LOG.info("Enabling root for instance '%s'.", instance_id)
         LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        user_name = context.user
         password = DefaultRootController._get_password_from_body(body)
-        root = models.Root.create(context, instance_id,
-                                  user_name, password)
+        root = models.Root.create(context, instance_id, password)
         return wsgi.Result(views.RootCreatedView(root).data(), 200)
 
     def root_delete(self, req, tenant_id, instance_id, is_cluster):
@@ -175,9 +173,8 @@ class ClusterRootController(DefaultRootController):
         LOG.info("Enabling root for instance '%s'.", instance_id)
         LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        user_name = context.user
         password = ClusterRootController._get_password_from_body(body)
-        root = models.ClusterRoot.create(context, instance_id, user_name,
+        root = models.ClusterRoot.create(context, instance_id,
                                          password, cluster_instances)
         return wsgi.Result(views.RootCreatedView(root).data(), 200)
 

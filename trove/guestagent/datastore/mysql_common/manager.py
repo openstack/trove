@@ -234,7 +234,7 @@ class MySqlManager(manager.Manager):
                                   self.mysql_admin().is_root_enabled())
         if enable_root_on_restore:
             app.secure_root(secure_remote_root=False)
-            self.mysql_app_status.get().report_root(context, 'root')
+            self.mysql_app_status.get().report_root(context)
         else:
             app.secure_root(secure_remote_root=True)
 
