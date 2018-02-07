@@ -1,5 +1,4 @@
 - project:
-    name: openstack/trove
     check:
       jobs:
         - trove-functional-mysql
