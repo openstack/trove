@@ -44,6 +44,15 @@ path_opts = [
                help='Directory where the Trove python module is installed.'),
 ]
 
+versions_opts = [
+    cfg.StrOpt('public_endpoint', default=None,
+               help='Public URL to use for versions endpoint. The default '
+                    'is None, which will use the request\'s host_url '
+                    'attribute to populate the URL base. If Trove is '
+                    'operating behind a proxy, you will want to change '
+                    'this to represent the proxy\'s URL.')
+]
+
 common_opts = [
     cfg.IPOpt('bind_host', default='0.0.0.0',
               help='IP address the API server will listen on.'),
@@ -1526,6 +1535,7 @@ rpcapi_cap_opts = [
 CONF = cfg.CONF
 
 CONF.register_opts(path_opts)
+CONF.register_opts(versions_opts)
 CONF.register_opts(common_opts)
 
 CONF.register_opts(database_opts, 'database')

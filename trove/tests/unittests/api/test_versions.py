@@ -14,7 +14,9 @@
 #    under the License.
 
 from mock import Mock
+import webob
 
+from trove.common import cfg
 from trove.tests.unittests import trove_testtools
 from trove.versions import BaseVersion
 from trove.versions import Version
@@ -41,6 +43,10 @@ class VersionsControllerTest(trove_testtools.TestCase):
         self.assertIsNotNone(self.controller,
                              "VersionsController instance was None")
 
+    def tearDown(self):
+        super(VersionsControllerTest, self).tearDown()
+        cfg.CONF.clear_override('public_endpoint')
+
     def test_index_json(self):
         request = Mock()
         result = self.controller.index(request)
@@ -66,6 +72,23 @@ class VersionsControllerTest(trove_testtools.TestCase):
         self.assertEqual('2012-08-01T00:00:00Z', json_data['updated'],
                          'Version updated value is incorrect')
 
+    def test_index_json_with_public_endpoint(self):
+        cfg.CONF.set_override('public_endpoint', "https://example.com:8779")
+        req = webob.Request.blank('/')
+        resp = self.controller.index(req)
+        result = resp.data('application/json')['versions']
+        expected = [
+            {
+                'status': 'CURRENT',
+                'updated': '2012-08-01T00:00:00Z',
+                'id': 'v1.0',
+                'links': [{
+                    'href': 'https://example.com:8779/v1.0/',
+                    'rel': 'self'}]
+            }
+        ]
+        self.assertEqual(expected, result)
+
     def test_show_json(self):
         request = Mock()
         request.url_version = '1.0'
@@ -83,6 +106,22 @@ class VersionsControllerTest(trove_testtools.TestCase):
         self.assertEqual('2012-08-01T00:00:00Z', version['updated'],
                          "Version updated was not '2012-08-01T00:00:00Z'")
         self.assertEqual('v1.0', version['id'], "Version id was not 'v1.0'")
+
+    def test_show_json_with_public_endpoint(self):
+        cfg.CONF.set_override('public_endpoint', "https://example.com:8779")
+        req = webob.Request.blank('/')
+        req.url_version = '1.0'
+        resp = self.controller.show(req)
+        result = resp.data('application/json')['version']
+        expected = {
+            'status': 'CURRENT',
+            'updated': '2012-08-01T00:00:00Z',
+            'id': 'v1.0',
+            'links': [{
+                'href': 'https://example.com:8779/',
+                'rel': 'self'}]
+        }
+        self.assertEqual(expected, result)
 
 
 class BaseVersionTestCase(trove_testtools.TestCase):
