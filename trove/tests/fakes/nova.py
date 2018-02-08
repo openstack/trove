@@ -101,7 +101,7 @@ class FakeServer(object):
     next_local_id = 0
 
     def __init__(self, parent, owner, id, name, image_id, flavor_ref,
-                 block_device_mapping, volumes):
+                 volumes):
         self.owner = owner  # This is a context.
         self.id = id
         self.parent = parent
@@ -266,30 +266,13 @@ class FakeServers(object):
                 server.owner.tenant == self.context.tenant)
 
     def create(self, name, image_id, flavor_ref, files=None, userdata=None,
-               block_device_mapping=None, volume=None, security_groups=None,
+               block_device_mapping_v2=None, security_groups=None,
                availability_zone=None, nics=None, config_drive=False,
                scheduler_hints=None):
         id = "FAKE_%s" % uuid.uuid4()
-        if volume:
-            volume = self.volumes.create(volume['size'], volume['name'],
-                                         volume['description'])
-            while volume.status == "BUILD":
-                eventlet.sleep(0.1)
-            if volume.status != "available":
-                LOG.info("volume status = %s", volume.status)
-                raise nova_exceptions.ClientException("Volume was bad!")
-            mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
-            block_device_mapping = {'vdb': mapping}
-            volumes = [volume]
-            LOG.debug("Fake Volume Create %(volumeid)s with "
-                      "status %(volumestatus)s",
-                      {'volumeid': volume.id, 'volumestatus': volume.status})
-        else:
-            volumes = self._get_volumes_from_bdm(block_device_mapping)
-            for volume in volumes:
-                volume.schedule_status('in-use', 1)
+        volumes = self._get_volumes_from_bdm_v2(block_device_mapping_v2)
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
-                            block_device_mapping, volumes)
+                            volumes)
         self.db[id] = server
         if name.endswith('SERVER_ERROR'):
             raise nova_exceptions.ClientException("Fake server create error.")
@@ -308,21 +291,15 @@ class FakeServers(object):
         LOG.info("FAKE_SERVERS_DB : %s", str(FAKE_SERVERS_DB))
         return server
 
-    def _get_volumes_from_bdm(self, block_device_mapping):
+    def _get_volumes_from_bdm_v2(self, block_device_mapping_v2):
         volumes = []
-        if block_device_mapping is not None:
-            # block_device_mapping is a dictionary, where the key is the
-            # device name on the compute instance and the mapping info is a
-            # set of fields in a string, separated by colons.
-            # For each device, find the volume, and record the mapping info
-            # to another fake object and attach it to the volume
-            # so that the fake API can later retrieve this.
-            for device in block_device_mapping:
-                mapping = block_device_mapping[device]
-                (id, _type, size, delete_on_terminate) = mapping.split(":")
-                volume = self.volumes.get(id)
-                volume.mapping = FakeBlockDeviceMappingInfo(
-                    id, device, _type, size, delete_on_terminate)
+        if block_device_mapping_v2 is not None:
+            # block_device_mapping_v2 is an array of dicts. Every dict is
+            # a volume attachment, which contains "uuid", "source_type",
+            # "destination_type", "device_name", "volume_size" and
+            # "delete_on_termination".
+            for bdm in block_device_mapping_v2:
+                volume = self.volumes.get(bdm['uuid'])
                 volumes.append(volume)
         return volumes
 
@@ -336,12 +313,6 @@ class FakeServers(object):
                 return self.db[id]
             else:
                 raise nova_exceptions.NotFound(404, "Bad permissions")
-
-    def get_server_volumes(self, server_id):
-        """Fake method we've added to grab servers from the volume."""
-        return [volume.mapping
-                for volume in self.get(server_id).volumes
-                if volume.mapping is not None]
 
     def list(self):
         return [v for (k, v) in self.db.items() if self.can_see(v.id)]
@@ -388,25 +359,6 @@ class FakeRdServers(object):
     def list(self):
         # Attach the extra Rd Server stuff to the normal server.
         return [FakeRdServer(server) for server in self.servers.list()]
-
-
-class FakeServerVolumes(object):
-
-    def __init__(self, context):
-        self.context = context
-
-    def get_server_volumes(self, server_id):
-        class ServerVolumes(object):
-            def __init__(self, block_device_mapping):
-                LOG.debug("block_device_mapping = %s", block_device_mapping)
-                device = block_device_mapping['vdb']
-                (self.volumeId,
-                    self.type,
-                    self.size,
-                    self.delete_on_terminate) = device.split(":")
-        fake_servers = FakeServers(self.context, FLAVORS)
-        server = fake_servers.get(server_id)
-        return [ServerVolumes(server.block_device_mapping)]
 
 
 class FakeVolume(object):
@@ -845,9 +797,6 @@ class FakeClient(object):
         self.security_groups = FakeSecurityGroups(context)
         self.security_group_rules = FakeSecurityGroupRules(context)
         self.server_groups = FakeServerGroups(context)
-
-    def get_server_volumes(self, server_id):
-        return self.servers.get_server_volumes(server_id)
 
     def rescan_server_volume(self, server, volume_id):
         LOG.info("FAKE rescanning volume.")

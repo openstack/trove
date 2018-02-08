@@ -81,13 +81,14 @@ class fake_Server(object):
         self.files = None
         self.userdata = None
         self.security_groups = None
-        self.block_device_mapping = None
+        self.block_device_mapping_v2 = None
         self.status = 'ACTIVE'
 
 
 class fake_ServerManager(object):
     def create(self, name, image_id, flavor_id, files, userdata,
-               security_groups, block_device_mapping, availability_zone=None,
+               security_groups, block_device_mapping_v2=None,
+               availability_zone=None,
                nics=None, config_drive=False,
                scheduler_hints=None):
         server = fake_Server()
@@ -98,7 +99,7 @@ class fake_ServerManager(object):
         server.files = files
         server.userdata = userdata
         server.security_groups = security_groups
-        server.block_device_mapping = block_device_mapping
+        server.block_device_mapping_v2 = block_device_mapping_v2
         server.availability_zone = availability_zone
         server.nics = nics
         return server
@@ -297,6 +298,25 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         # verify
         self.assertIsNotNone(server)
 
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'hostname',
+                  new_callable=PropertyMock,
+                  return_value='fake-hostname')
+    def test_servers_create_block_device_mapping_v2(self, mock_hostname):
+        mock_nova_client = self.freshinstancetasks.nova_client = Mock()
+        mock_servers_create = mock_nova_client.servers.create
+        self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
+                                               None, 'mysql', None, None,
+                                               None)
+        mock_servers_create.assert_called_with('fake-hostname', 'fake-image',
+                                               'fake-flavor', files={},
+                                               userdata=None,
+                                               security_groups=None,
+                                               block_device_mapping_v2=None,
+                                               availability_zone=None,
+                                               nics=None,
+                                               config_drive=True,
+                                               scheduler_hints=None)
+
     @patch.object(InstanceServiceStatus, 'find_by',
                   return_value=fake_InstanceServiceStatus.find_by())
     @patch.object(DBInstance, 'find_by',
@@ -374,6 +394,62 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             8, 'mysql-image-id', mock_create_secgroup(),
             'mysql', mock_build_volume_info()['block_device'], None,
             None, mock_get_injected_files(), {'group': 'sg-id'})
+
+    @patch.object(BaseInstance, 'update_db')
+    @patch.object(taskmanager_models, 'create_cinder_client')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'device_path',
+                  new_callable=PropertyMock,
+                  return_value='fake-device-path')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'volume_support',
+                  new_callable=PropertyMock,
+                  return_value=True)
+    def test_build_volume_info(self, mock_volume_support, mock_device_path,
+                               mock_create_cinderclient, mock_update_db):
+        cfg.CONF.set_override('block_device_mapping', 'fake-bdm')
+        cfg.CONF.set_override('mount_point', 'fake-mount-point',
+                              group='mysql')
+        mock_cinderclient = mock_create_cinderclient.return_value
+        mock_volume = Mock(name='fake-vol', id='fake-vol-id',
+                           size=2, status='available')
+        mock_cinderclient.volumes.create.return_value = mock_volume
+        mock_cinderclient.volumes.get.return_value = mock_volume
+        volume_info = self.freshinstancetasks._build_volume_info(
+            'mysql', volume_size=2, volume_type='volume_type')
+        expected = {
+            'block_device': [{
+                'uuid': 'fake-vol-id',
+                'source_type': 'volume',
+                'destination_type': 'volume',
+                'device_name': 'fake-bdm',
+                'volume_size': 2,
+                'delete_on_termination': True}],
+            'device_path': 'fake-device-path',
+            'mount_point': 'fake-mount-point'
+        }
+        self.assertEqual(expected, volume_info)
+
+    @patch.object(BaseInstance, 'update_db')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_volume')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'device_path',
+                  new_callable=PropertyMock,
+                  return_value='fake-device-path')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'volume_support',
+                  new_callable=PropertyMock,
+                  return_value=False)
+    def test_build_volume_info_without_volume(self, mock_volume_support,
+                                              mock_device_path,
+                                              mock_create_volume,
+                                              mock_update_db):
+        cfg.CONF.set_override('mount_point', 'fake-mount-point',
+                              group='mysql')
+        volume_info = self.freshinstancetasks._build_volume_info('mysql')
+        self.assertFalse(mock_create_volume.called)
+        expected = {
+            'block_device': None,
+            'device_path': 'fake-device-path',
+            'mount_point': 'fake-mount-point'
+        }
+        self.assertEqual(expected, volume_info)
 
     @patch.object(trove.guestagent.api.API, 'attach_replication_slave')
     @patch.object(rpc, 'get_client')

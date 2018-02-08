@@ -220,9 +220,6 @@ common_opts = [
     cfg.BoolOpt('use_nova_server_config_drive', default=True,
                 help='Use config drive for file injection when booting '
                 'instance.'),
-    cfg.BoolOpt('use_nova_server_volume', default=False,
-                help='Whether to provision a Cinder volume for the '
-                     'Nova instance.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
     cfg.StrOpt('default_datastore', default=None,
