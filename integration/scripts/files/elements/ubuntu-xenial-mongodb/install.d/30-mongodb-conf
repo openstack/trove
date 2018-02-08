@@ -19,7 +19,6 @@ _EOF_
 
 
 cat > /etc/mongos.conf << '_EOF_'
-security.authorization: enabled
 systemLog.destination: file
 systemLog.logAppend: true
 systemLog.path: /var/log/mongodb/mongos.log
