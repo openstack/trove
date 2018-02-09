@@ -129,20 +129,34 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - users: users
-   - password: password
-   - datastore_version: datastore_version
-   - name: name
+   - users.name: user_name1
+   - users.password: user_password
+   - users.host: user_host
+   - users.databases: user_databases
+   - users.databases.name: user_database_name
+   - datastore: datastore1
+   - datastore.type: datastore_type
+   - datastore.version: datastore_version
+   - name: instanceName1
    - flavorRef: flavorRef
-   - characterSet: characterSet
-   - replica_count: replica_count
-   - instance: instance
-   - collate: collate
-   - databases: databases
-   - datastore: datastore
-   - configuration: configuration
-   - type: type
+   - volume: volume
+   - volume.size: volume_size
+   - volume.type: volume_type
+   - modules: modules
+   - modules.id: module_id
+   - restorePoint: restore_point
+   - restorePoint.backupRef: restore_point_backupref
+   - availability_zone: availability_zone
+   - nics: nics
    - replica_of: replica_of
-   - size: size
+   - replica_count: replica_count
+   - locality: locality
+   - region_name: region_name
+   - databases: databases
+   - databases.characterSet: characterSet
+   - databases.collate: collate
+   - instance: instance
+   - configuration: configuration
    - accountId: accountId
 
 
@@ -158,15 +172,53 @@ Response Parameters
 
 .. rest_parameters:: parameters.yaml
 
-   - updated: updated
-   - name: name
-   - created: created
-   - characterSet: characterSet
-   - instance: instance
-   - collate: collate
-   - databases: databases
+   - id: instanceId1
+   - name: instanceName1
+   - status: instance_status
+   - links: instance_links
+   - links.href: instance_link_href
+   - links.rel: instance_link_rel
    - flavor: flavor
-   - users: users
+   - flavor.id: flavorId1
+   - flavor.links: flavor_links
+   - flavor.links.href: flavor_link_href
+   - flavor.links.rel: flavor_link_rel
+   - datastore: datastore2
+   - datastore.type: datastore_type
+   - datastore.version: datastore_version1
+   - region: region_name2
+   - tenant_id: tenant_id
+   - volume: volume
+   - volume.size: volume_size
+   - volume.used: volume_used
+   - hostname: instance_hostname
+   - ip: instance_ip_address
+   - created: created
+   - updated: updated
+   - fault: instance_fault
+   - fault.message: instance_fault_message
+   - fault.created: instance_fault_created
+   - fault.details: instance_fault_details
+   - replicas: instance_replicas
+   - replicas.id: instance_replica_id
+   - replicas.links: instance_replica_links
+   - replicas.links.href: instance_replica_link_href
+   - replicas.links.rel: instance_replica_link_rel
+   - configuration: configuration1
+   - configuration.id: configuration_id
+   - configuration.name: configuration_name
+   - configuration.links: configuration_links
+   - configuration.links.href: configuration_link_href
+   - configuration.links.rel: configuration_link_rel
+   - locality: locality
+   - local_storage_used: local_storage_used
+   - password: root_password
+   - cluster_id: cluster_id
+   - shard_id: shard_id
+   - server_id: server_id
+   - volume_id: volume_id
+   - encrypted_rpc_messaging: encrypted_rpc_messaging
+   - instance: instance
 
 
 Response Example
@@ -351,7 +403,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instance: instance
-   - datastore_version: datastore_version1
+   - datastore_version: datastore_version
    - instanceId: instanceId
    - accountId: accountId
 
