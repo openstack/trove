@@ -483,29 +483,17 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
-        if CONF.use_nova_server_volume:
-            volume_info = self._create_server_volume(
-                flavor['id'],
-                image_id,
-                security_groups,
-                datastore_manager,
-                volume_size,
-                availability_zone,
-                nics,
-                files,
-                scheduler_hints)
-        else:
-            volume_info = self._create_server_volume_individually(
-                flavor['id'],
-                image_id,
-                security_groups,
-                datastore_manager,
-                volume_size,
-                availability_zone,
-                nics,
-                files,
-                cinder_volume_type,
-                scheduler_hints)
+        volume_info = self._create_server_volume(
+            flavor['id'],
+            image_id,
+            security_groups,
+            datastore_manager,
+            volume_size,
+            availability_zone,
+            nics,
+            files,
+            cinder_volume_type,
+            scheduler_hints)
 
         config = self._render_config(flavor)
 
@@ -730,51 +718,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               'srv_msg': server_message})
         return False
 
-    def _create_server_volume(self, flavor_id, image_id, security_groups,
-                              datastore_manager, volume_size,
-                              availability_zone, nics, files,
-                              scheduler_hints):
-        LOG.debug("Begin _create_server_volume for id: %s", self.id)
-        try:
-            userdata = self._prepare_userdata(datastore_manager)
-            name = self.hostname or self.name
-            volume_desc = ("datastore volume for %s" % self.id)
-            volume_name = ("datastore-%s" % self.id)
-            volume_ref = {'size': volume_size, 'name': volume_name,
-                          'description': volume_desc}
-            config_drive = CONF.use_nova_server_config_drive
-            server = self.nova_client.servers.create(
-                name, image_id, flavor_id,
-                files=files, volume=volume_ref,
-                security_groups=security_groups,
-                availability_zone=availability_zone,
-                nics=nics, config_drive=config_drive,
-                userdata=userdata, scheduler_hints=scheduler_hints)
-            server_dict = server._info
-            LOG.debug("Created new compute instance %(server_id)s "
-                      "for id: %(id)s\nServer response: %(response)s",
-                      {'server_id': server.id, 'id': self.id,
-                       'response': server_dict})
-
-            volume_id = None
-            for volume in server_dict.get('os:volumes', []):
-                volume_id = volume.get('id')
-
-            # Record the server ID and volume ID in case something goes wrong.
-            self.update_db(compute_instance_id=server.id, volume_id=volume_id)
-        except Exception as e:
-            log_fmt = "Error creating server and volume for instance %s"
-            exc_fmt = _("Error creating server and volume for instance %s")
-            LOG.debug("End _create_server_volume for id: %s", self.id)
-            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
-            self._log_and_raise(e, log_fmt, exc_fmt, self.id, err)
-
-        device_path = self.device_path
-        mount_point = CONF.get(datastore_manager).mount_point
-        volume_info = {'device_path': device_path, 'mount_point': mount_point}
-        LOG.debug("End _create_server_volume for id: %s", self.id)
-        return volume_info
-
     def _build_sg_rules_mapping(self, rule_ports):
         final = []
         cidr = CONF.trove_security_group_rule_cidr
@@ -785,22 +728,21 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                           'to_': str(to_)})
         return final
 
-    def _create_server_volume_individually(self, flavor_id, image_id,
-                                           security_groups, datastore_manager,
-                                           volume_size, availability_zone,
-                                           nics, files, volume_type,
-                                           scheduler_hints):
-        LOG.debug("Begin _create_server_volume_individually for id: %s",
-                  self.id)
+    def _create_server_volume(self, flavor_id, image_id,
+                              security_groups, datastore_manager,
+                              volume_size, availability_zone,
+                              nics, files, volume_type,
+                              scheduler_hints):
+        LOG.debug("Begin _create_server_volume for id: %s", self.id)
         server = None
         volume_info = self._build_volume_info(datastore_manager,
                                               volume_size=volume_size,
                                               volume_type=volume_type)
-        block_device_mapping = volume_info['block_device']
+        block_device_mapping_v2 = volume_info['block_device']
         try:
             server = self._create_server(flavor_id, image_id, security_groups,
                                          datastore_manager,
-                                         block_device_mapping,
+                                         block_device_mapping_v2,
                                          availability_zone, nics, files,
                                          scheduler_hints)
             server_id = server.id
@@ -811,8 +753,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             exc_fmt = _("Failed to create server for instance %s")
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
             self._log_and_raise(e, log_fmt, exc_fmt, self.id, err)
-        LOG.debug("End _create_server_volume_individually for id: %s",
-                  self.id)
+        LOG.debug("End _create_server_volume for id: %s", self.id)
         return volume_info
 
     def _build_volume_info(self, datastore_manager, volume_size=None,
@@ -842,7 +783,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 'block_device': None,
                 'device_path': device_path,
                 'mount_point': mount_point,
-                'volumes': None,
             }
         return volume_info
 
@@ -887,12 +827,25 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _build_volume(self, v_ref, datastore_manager):
         LOG.debug("Created volume %s", v_ref)
-        # The mapping is in the format:
-        # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
-        # setting the delete_on_terminate instance to true=1
-        mapping = "%s:%s:%s:%s" % (v_ref.id, '', v_ref.size, 1)
+        # TODO(zhaochao): from Liberty, Nova libvirt driver does not honor
+        # user-supplied device name anymore, so we may need find a new
+        # method to make sure the volume is correctly mounted inside the
+        # guest, please refer to the 'intermezzo-problem-with-device-names'
+        # section of Nova user referrence at:
+        # https://docs.openstack.org/nova/latest/user/block-device-mapping.html
         bdm = CONF.block_device_mapping
-        block_device = {bdm: mapping}
+
+        # use Nova block_device_mapping_v2, referrence:
+        # https://developer.openstack.org/api-ref/compute/#create-server
+        # setting the delete_on_terminate instance to true=1
+        block_device_v2 = [{
+            "uuid": v_ref.id,
+            "source_type": "volume",
+            "destination_type": "volume",
+            "device_name": bdm,
+            "volume_size": v_ref.size,
+            "delete_on_termination": True
+        }]
         created_volumes = [{'id': v_ref.id,
                             'size': v_ref.size}]
 
@@ -903,15 +856,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                   "volume = %(volume)s\n"
                   "device_path = %(path)s\n"
                   "mount_point = %(point)s",
-                  {"device": block_device,
+                  {"device": block_device_v2,
                    "volume": created_volumes,
                    "path": device_path,
                    "point": mount_point})
 
-        volume_info = {'block_device': block_device,
+        volume_info = {'block_device': block_device_v2,
                        'device_path': device_path,
-                       'mount_point': mount_point,
-                       'volumes': created_volumes}
+                       'mount_point': mount_point}
         return volume_info
 
     def _prepare_userdata(self, datastore_manager):
@@ -924,17 +876,17 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return userdata
 
     def _create_server(self, flavor_id, image_id, security_groups,
-                       datastore_manager, block_device_mapping,
+                       datastore_manager, block_device_mapping_v2,
                        availability_zone, nics, files={},
                        scheduler_hints=None):
         userdata = self._prepare_userdata(datastore_manager)
         name = self.hostname or self.name
-        bdmap = block_device_mapping
+        bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive
 
         server = self.nova_client.servers.create(
             name, image_id, flavor_id, files=files, userdata=userdata,
-            security_groups=security_groups, block_device_mapping=bdmap,
+            security_groups=security_groups, block_device_mapping_v2=bdmap_v2,
             availability_zone=availability_zone, nics=nics,
             config_drive=config_drive, scheduler_hints=scheduler_hints)
         LOG.debug("Created new compute instance %(server_id)s "

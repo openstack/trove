@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Remove support of creating volume from Nova. The former configuration
+    "use_nova_server_volume" is not used any more, for creating volumes,
+    cinderclient will be always used.
+    Fixes bug #1673408.

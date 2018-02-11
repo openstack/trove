@@ -104,9 +104,6 @@ agent_call_low_timeout = 5
 agent_call_high_timeout = 150
 agent_replication_snapshot_timeout = 36000
 
-# Whether to use nova's contrib api for create server with volume
-use_nova_server_volume = False
-
 # Config option for filtering the IP address that DNS uses
 # For nova-network, set this to the appropriate network label defined in nova
 # For neutron, set this to .* since users can specify custom network labels
