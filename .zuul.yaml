@@ -22,6 +22,8 @@
             voting: false
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
+        - trove-tox-bandit-baseline:
+            voting: false
     gate:
       queue: trove
       jobs:
@@ -331,3 +333,26 @@
     parent: openstack-tox-py27
     vars:
       tox_envlist: apiexamples
+
+- job:
+    name: trove-tox-bandit-baseline
+    parent: openstack-tox
+    timeout: 2400
+    vars:
+        tox_envlist: bandit-baseline
+    required-projects:
+        - openstack/requirements
+    irrelevant-files:
+        - ^.*\.rst$
+        - ^.*\.txt$
+        - ^api-ref/.*$
+        - ^apidocs/.*$
+        - ^contrib/.*$
+        - ^doc/.*$
+        - ^etc/.*$
+        - ^releasenotes/.*$
+        - ^setup.cfg$
+        - ^tools/.*$
+        - ^trove/hacking/.*$
+        - ^trove/tests/scenario/.*$
+        - ^trove/tests/unittests/.*$
