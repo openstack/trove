@@ -31,13 +31,13 @@ datastore_version_id:
   type: string
 flavorId:
   description: |
-    The ID for the flavor.
+    The ID of the flavor.
   in: path
   required: false
   type: string
 instanceId:
   description: |
-    The ID for the database instance.
+    The ID of the database instance.
   in: path
   required: false
   type: string
@@ -55,21 +55,33 @@ user_name:
   required: false
   type: string
 # variables in body
+availability_zone:
+  description: |
+    The availability zone of the instance.
+  in: body
+  required: false
+  type: string
 characterSet:
   description: |
     A set of symbols and encodings. Default is
     ``utf8``.  For information about supported character sets and
     collations, see `Character Sets and Collations in MySQL
-    <http://dev.mysql.com/doc/refman/5.1/en/charset-mysql.html>`_.
+    <https://dev.mysql.com/doc/refman/5.7/en/charset-mysql.html>`_.
   in: body
   required: false
   type: string
+cluster_id:
+   description: |
+     The cluster ID of an instance.
+   in: body
+   required: false
+   type: string
 collate:
   description: |
     A set of rules for comparing characters in a
     character set. Default is ``utf8_general_ci``.  For information
     about supported character sets and collations, see `Character Sets
-    and Collations in MySQL <http://dev.mysql.com/doc/refman/5.1/en
+    and Collations in MySQL <https://dev.mysql.com/doc/refman/5.7/en
     /charset-mysql.html>`_.
   in: body
   required: false
@@ -78,6 +90,42 @@ configuration:
   description: |
     ID of the configuration group that you want to
     attach to the instance.
+  in: body
+  required: true
+  type: string
+configuration1:
+  description: |
+    A ``configuration`` object.
+  in: body
+  required: false
+  type: object
+configuration_id:
+  description: |
+    The ID of a configuration.
+  in: body
+  required: true
+  type: string
+configuration_link_href:
+  description: |
+    The ``href`` attribute of a configuration link.
+  in: body
+  required: true
+  type: string
+configuration_link_rel:
+  description: |
+    The ``rel`` attribute of a configuration link.
+  in: body
+  required: true
+  type: string
+configuration_links:
+  description: |
+    The ``links`` object of a configuration.
+  in: body
+  required: true
+  type: array
+configuration_name:
+  description: |
+    The name of a configuration.
   in: body
   required: true
   type: string
@@ -99,6 +147,12 @@ created:
   in: body
   required: true
   type: string
+database_name:
+  description: |
+    The name of a database.
+  in: body
+  required: true
+  type: string
 databases:
   description: |
     A ``databases`` object.
@@ -112,10 +166,34 @@ datastore:
   in: body
   required: true
   type: string
+datastore1:
+  description: |
+    A ``datastore`` object.
+  in: body
+  required: false
+  type: object
+datastore2:
+  description: |
+    A ``datastore`` object.
+  in: body
+  required: true
+  type: object
+datastore_type:
+   description: |
+     The type of a datastore.
+   in: body
+   required: false
+   type: string
+datastore_type1:
+   description: |
+     The type of a datastore.
+   in: body
+   required: true
+   type: string
 datastore_version:
   description: |
     Name of the datastore version to use when
-    creating the instance.
+    creating/updating the instance.
   in: body
   required: false
   type: string
@@ -123,7 +201,7 @@ datastore_version1:
   description: |
     Name or ID of a datastore version.
   in: body
-  required: false
+  required: true
   type: string
 description:
   description: |
@@ -131,6 +209,13 @@ description:
   in: body
   required: true
   type: string
+encrypted_rpc_messaging:
+  description: |
+    Whether the instance is using encrypted
+    rpm messaging feature or not.
+  in: body
+  required: false
+  type: boolean
 flavor:
   description: |
     A ``flavor`` object, which includes the flavor ID
@@ -138,6 +223,30 @@ flavor:
   in: body
   required: true
   type: object
+flavor_link_href:
+  description: |
+    The ``href`` attribute of a flavor link.
+  in: body
+  required: true
+  type: string
+flavor_link_rel:
+  description: |
+    The ``rel`` attribute of a flavor link.
+  in: body
+  required: true
+  type: string
+flavor_links:
+  description: |
+    The ``links`` object of a flavor.
+  in: body
+  required: true
+  type: array
+flavorId1:
+  description: |
+    The ID of the flavor.
+  in: body
+  required: true
+  type: string
 flavorRef:
   description: |
     Reference (href), which is the actual URI to a
@@ -153,6 +262,61 @@ instance:
   in: body
   required: true
   type: object
+instance_fault:
+  description: |
+    The ``fault`` object of an instance.
+  in: body
+  required: false
+  type: object
+instance_fault_created:
+  description: |
+    The update timestamp of the fault message
+    for an instance.
+  in: body
+  required: true
+  type: string
+instance_fault_details:
+  description: |
+    The detail fault explanation of an instance.
+  in: body
+  required: true
+  type: string
+instance_fault_message:
+  description: |
+    The fault message of an instance.
+  in: body
+  required: true
+  type: string
+instance_hostname:
+  description: |
+    The hostname of an instance.
+  in: body
+  require: false
+  type: string
+instance_ip_address:
+  description: |
+    The IP address of an instance.
+  in: body
+  require: false
+  type: string
+instance_link_href:
+  description: |
+    The ``href`` attribute of an instance link.
+  in: body
+  required: true
+  type: string
+instance_link_rel:
+  description: |
+    The ``rel`` attribute of an instance link.
+  in: body
+  required: true
+  type: string
+instance_links:
+  description: |
+    The ``links`` object of of the instance.
+  in: body
+  required: true
+  type: array
 instance_log:
   description: |
     A ``log`` objects.
@@ -165,9 +329,71 @@ instance_logs:
   in: body
   required: true
   type: array
+instance_replica_id:
+  description:
+    The ID of a replica instance.
+  in: body
+  required: true
+  type: string
+instance_replica_link_href:
+  description: |
+    The ``href`` attribute of a replica instance link.
+  in: body
+  required: true
+  type: string
+instance_replica_link_rel:
+  description: |
+    The ``rel`` attribute of a replica instance link.
+  in: body
+  required: true
+  type: string
+instance_replica_links:
+  description:
+    The ``links`` object of a replica instance.
+  in: body
+  required: true
+  type: array
+instance_replicas:
+  description: |
+    The ``replicas`` object of an instance.
+  in: body
+  required: false
+  type: array
+instance_status:
+  description: |
+    Status of the instance.
+  in: body
+  required: true
+  type: string
+instanceId1:
+  description: |
+    The ID of the database instance.
+  in: body
+  required: true
+  type: string
 instanceName:
   description: |
     Name of the instance.
+  in: body
+  required: false
+  type: string
+instanceName1:
+  description: |
+    Name of the instance.
+  in: body
+  required: true
+  type: string
+local_storage_used:
+  description: |
+    The used space of the ephemeral disk, in gigabytes (GB).
+  in: body
+  required: false
+  type: float
+locality:
+  description: |
+    The scheduler hint when creating underlying
+    Nova instances. Valide values are:
+    ``affinity``, ``anti-affinity``.
   in: body
   required: false
   type: string
@@ -248,18 +474,44 @@ log_type:
   in: body
   required: true
   type: string
+module_id:
+  description: |
+    The ID of a module.
+  in: body
+  required: true
+  type: string
+modules:
+  description: |
+    The ``modules`` object.
+  in: body
+  required: false
+  type: object
 name:
   description: |
     Name of the configuration group you are creating.
   in: body
   required: true
   type: string
-password:
+nics:
   description: |
-    The password for those users on instance
-    creation.
+     Network interfaces when creating underlying Nova
+     instances.
+     ``NOTE:`` this parameter use the same schema when
+     novaclient creating servers.
   in: body
   required: false
+  type: array
+region_name:
+  description: |
+    The region name of an instance.
+  in: body
+  required: false
+  type: string
+region_name2:
+  description: |
+    The region name of an instance.
+  in: body
+  required: true
   type: string
 replica_count:
   description: |
@@ -274,25 +526,48 @@ replica_of:
   in: body
   required: false
   type: string
-size:
+restore_point:
   description: |
-    The volume size, in gigabytes (GB). A valid value
-    is from 1 to 50.
+    The ``restorePoint`` object. Use this paramter
+    to create an instance from a backup.
+  in: body
+  required: false
+  type: object
+restore_point_backupref:
+  description:
+    The backup id used from which a new instance
+    is created.
   in: body
   required: true
-  type: integer
+  type: string
+root_password:
+  description: |
+    The password of the database root user(i.e. the
+    administrative user).
+  in: body
+  required: false
+  type: string
+server_id:
+   description: |
+     The ID of the underlying Nova instance for an instance.
+   in: body
+   required: false
+   type: string
+shard_id:
+   description: |
+     The shard ID of an instance.
+   in: body
+   required: false
+   type: string
 slave_of:
   description: |
     To detach a replica, set ``slave_of`` to null.
   in: body
   required: true
   type: string
-type:
+tenant_id:
   description: |
-    The volume type to use. You can list the
-    available volume types on your system by using the ``cinder type-
-    list`` command.  If you want to specify a volume type, you must
-    also specify a volume size.
+    The ID of a tenant.
   in: body
   required: false
   type: string
@@ -316,11 +591,43 @@ updated:
   in: body
   required: true
   type: string
+user_database_name:
+  description: |
+    The name of a database which the user
+    can access.
+  in: body
+  required: true
+  type: string
+user_databases:
+  description: |
+    The ``databases`` object. This is a list
+    of databases which the user can access.
+  in: body
+  required: false
+  type: array
+user_host:
+  description: |
+    A host allowed for a user.
+  in: body
+  required: false
+  type: string
+user_name1:
+  description: |
+    The name of a user.
+  in: body
+  required: true
+  type: string
+user_password:
+  description: |
+    The password of a user.
+  in: body
+  required: true
+  type: string
 users:
   description: |
     A ``users`` object.
   in: body
-  required: true
+  required: false
   type: array
 values:
   description: |
@@ -329,3 +636,44 @@ values:
   in: body
   required: true
   type: string
+volume:
+  description: |
+    A ``volume`` object.
+  in: body
+  required: false
+  type: object
+volume_id:
+  description: |
+    The ID of a volume.
+  in: body
+  required: false
+  type: string
+volume_size:
+  description: |
+    The volume size, in gigabytes (GB). A valid value
+    is from 1 to 50(this limit is controlled by the
+    configration ``max_accepted_volume_size``).
+  in: body
+  required: true
+  type: integer
+volume_size2:
+  description: |
+    The volume size, in gigabytes (GB).
+  in: body
+  required: true
+  type: integer
+volume_type:
+  description: |
+    The volume type to use. You can list the
+    available volume types on your system by using the ``cinder type-
+    list`` command.  If you want to specify a volume type, you must
+    also specify a volume size.
+  in: body
+  required: false
+  type: string
+volume_used:
+  description: |
+    The used space of the volume, in gigabytes (GB).
+  in: body
+  required: false
+  type: float
