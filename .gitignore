@@ -45,3 +45,6 @@ publish-docs/
 *~
 .*.swp
 .bak
+
+# Policy sample
+etc/trove/policy.yaml.sample
