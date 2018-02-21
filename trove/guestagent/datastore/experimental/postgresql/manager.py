@@ -245,7 +245,7 @@ class Manager(manager.Manager):
         self._admin = PgSqlAdmin(os_admin)
 
         if not cluster_config and self.is_root_enabled(context):
-            self.status.report_root(context, self.app.default_superuser_name)
+            self.status.report_root(context)
 
     def create_backup(self, context, backup_info):
         with EndNotification(context):

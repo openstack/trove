@@ -135,8 +135,13 @@ class Manager(periodic_task.PeriodicTasks):
                 setattr(backup, k, v)
         backup.save()
 
-    def report_root(self, context, instance_id, user):
-        mysql_models.RootHistory.create(context, instance_id, user)
+    # NOTE(zhaochao): the 'user' argument is left here to keep
+    # compatible with existing instances.
+    def report_root(self, context, instance_id, user=None):
+        if user is not None:
+            LOG.debug("calling report_root with a username: %s, "
+                      "is deprecated now!" % user)
+        mysql_models.RootHistory.create(context, instance_id)
 
     def notify_end(self, context, serialized_notification, notification_args):
         notification = SerializableNotification.deserialize(

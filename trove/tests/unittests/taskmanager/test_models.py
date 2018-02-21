@@ -1160,17 +1160,20 @@ class RootReportTest(trove_testtools.TestCase):
         super(RootReportTest, self).tearDown()
 
     def test_report_root_first_time(self):
+        context = Mock()
+        context.user = utils.generate_uuid()
         report = mysql_models.RootHistory.create(
-            None, utils.generate_uuid(), 'root')
+            context, utils.generate_uuid())
         self.assertIsNotNone(report)
 
     def test_report_root_double_create(self):
+        context = Mock()
+        context.user = utils.generate_uuid()
         uuid = utils.generate_uuid()
-        history = mysql_models.RootHistory(uuid, 'root').save()
+        history = mysql_models.RootHistory(uuid, context.user).save()
         with patch.object(mysql_models.RootHistory, 'load',
                           Mock(return_value=history)):
-            report = mysql_models.RootHistory.create(
-                None, uuid, 'root')
+            report = mysql_models.RootHistory.create(context, uuid)
             self.assertTrue(mysql_models.RootHistory.load.called)
             self.assertEqual(history.user, report.user)
             self.assertEqual(history.id, report.id)
@@ -1182,17 +1185,17 @@ class ClusterRootTest(trove_testtools.TestCase):
     @patch.object(common_models.Root, "create")
     def test_cluster_root_create(self, root_create, root_history_create):
         context = Mock()
+        context.user = utils.generate_uuid()
         uuid = utils.generate_uuid()
-        user = "root"
         password = "rootpassword"
         cluster_instances = [utils.generate_uuid(), utils.generate_uuid()]
-        common_models.ClusterRoot.create(context, uuid, user, password,
+        common_models.ClusterRoot.create(context, uuid, password,
                                          cluster_instances)
-        root_create.assert_called_with(context, uuid, user, password,
+        root_create.assert_called_with(context, uuid, password,
                                        cluster_instances_list=None)
         self.assertEqual(2, root_history_create.call_count)
         calls = [
-            call(context, cluster_instances[0], user),
-            call(context, cluster_instances[1], user)
+            call(context, cluster_instances[0]),
+            call(context, cluster_instances[1])
         ]
         root_history_create.assert_has_calls(calls)

@@ -54,7 +54,7 @@ class Root(object):
         return True
 
     @classmethod
-    def create(cls, context, instance_id, user, root_password,
+    def create(cls, context, instance_id, root_password,
                cluster_instances_list=None):
         load_and_verify(context, instance_id)
         if root_password:
@@ -71,7 +71,7 @@ class Root(object):
         # if cluster_instances_list none, then root create is called for
         # single instance, adding an RootHistory entry for the instance_id
         if cluster_instances_list is None:
-            RootHistory.create(context, instance_id, user)
+            RootHistory.create(context, instance_id)
 
         return root_user
 
@@ -84,15 +84,15 @@ class Root(object):
 class ClusterRoot(Root):
 
     @classmethod
-    def create(cls, context, instance_id, user, root_password,
+    def create(cls, context, instance_id, root_password,
                cluster_instances_list=None):
         root_user = super(ClusterRoot, cls).create(context, instance_id,
-                                                   user, root_password,
+                                                   root_password,
                                                    cluster_instances_list=None)
 
         if cluster_instances_list:
             for instance in cluster_instances_list:
-                RootHistory.create(context, instance, user)
+                RootHistory.create(context, instance)
 
         return root_user
 
@@ -119,9 +119,9 @@ class RootHistory(object):
         return history
 
     @classmethod
-    def create(cls, context, instance_id, user):
+    def create(cls, context, instance_id):
         history = cls.load(context, instance_id)
         if history is not None:
             return history
-        history = RootHistory(instance_id, user)
+        history = RootHistory(instance_id, context.user)
         return history.save()

@@ -651,7 +651,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                 create_fmt_content, err)
 
     def report_root_enabled(self):
-        mysql_models.RootHistory.create(self.context, self.id, 'root')
+        mysql_models.RootHistory.create(self.context, self.id)
 
     def update_statuses_on_time_out(self):
 

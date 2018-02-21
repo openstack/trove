@@ -92,14 +92,13 @@ class API(object):
                    sent=sent,
                    **backup_fields)
 
-    def report_root(self, instance_id, user):
+    def report_root(self, instance_id):
         LOG.debug("Making async call to cast report_root for instance: %s",
                   instance_id)
         version = self.API_BASE_VERSION
         cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context, "report_root",
-                   instance_id=instance_id,
-                   user=user)
+                   instance_id=instance_id)
 
     def notify_end(self, **notification_args):
         LOG.debug("Making async call to cast end notification")

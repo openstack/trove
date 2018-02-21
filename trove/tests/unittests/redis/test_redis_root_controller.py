@@ -103,7 +103,7 @@ class TestRedisRootController(trove_testtools.TestCase):
         self.controller.root_create(req, body, tenant_id,
                                     instance_id, is_cluster)
         root_create.assert_called_with(context, instance_id,
-                                       context.user, password)
+                                       password)
 
     @patch.object(instance_models.Instance, "load")
     @patch.object(models.Root, "create")
@@ -124,7 +124,7 @@ class TestRedisRootController(trove_testtools.TestCase):
         self.controller.root_create(req, body, tenant_id,
                                     instance_id, is_cluster)
         root_create.assert_called_with(context, slave_instance_id,
-                                       context.user, password)
+                                       password)
 
     def test_root_create_on_slave(self):
         user = Mock()

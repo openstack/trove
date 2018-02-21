@@ -54,15 +54,13 @@ class RedisRootController(DefaultRootController):
                  instance_id)
         LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        user_name = context.user
 
         original_auth_password = self._get_original_auth_password(
             context, instance_id)
 
         # Do root-enable and roll back once if operation fails.
         try:
-            root = RedisRoot.create(context, instance_id,
-                                    user_name, password)
+            root = RedisRoot.create(context, instance_id, password)
             if not password:
                 password = root.password
         except exception.TroveError:
@@ -77,7 +75,7 @@ class RedisRootController(DefaultRootController):
             try:
                 LOG.info("Enabling authentication for slave instance "
                          "'%s'.", slave_id)
-                RedisRoot.create(context, slave_id, user_name, password)
+                RedisRoot.create(context, slave_id, password)
             except exception.TroveError:
                 failed_slaves.append(slave_id)
 
@@ -125,7 +123,6 @@ class RedisRootController(DefaultRootController):
         LOG.info("Rolling back enable/disable authentication "
                  "for instance '%s'.", instance_id)
         context = req.environ[wsgi.CONTEXT_KEY]
-        user_name = context.user
         try:
             if not original_auth_password:
                 # Instance never did root-enable before.
@@ -133,7 +130,7 @@ class RedisRootController(DefaultRootController):
             else:
                 # Instance has done root-enable successfully before.
                 # So roll back with original password.
-                RedisRoot.create(context, instance_id, user_name,
+                RedisRoot.create(context, instance_id,
                                  original_auth_password)
         except exception.TroveError:
             LOG.exception("Rolling back failed for instance '%s'",

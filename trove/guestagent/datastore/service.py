@@ -379,8 +379,8 @@ class BaseDbStatus(object):
         """
         LOG.debug("No cleanup action specified for this datastore.")
 
-    def report_root(self, context, user):
+    def report_root(self, context):
         """Use conductor to update the root-enable status."""
         LOG.debug("Casting report_root message to conductor.")
-        conductor_api.API(context).report_root(CONF.guest_id, user)
+        conductor_api.API(context).report_root(CONF.guest_id)
         LOG.debug("Successfully cast report_root.")
