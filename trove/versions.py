@@ -16,9 +16,10 @@
 import os
 import routes
 
+from trove.common import cfg
 from trove.common import wsgi
 
-
+CONF = cfg.CONF
 VERSIONS = {
     "1.0": {
         "id": "v1.0",
@@ -56,7 +57,7 @@ class BaseVersion(object):
     def __init__(self, id, status, base_url, updated):
         self.id = id
         self.status = status
-        self.base_url = base_url
+        self.base_url = CONF.public_endpoint or base_url
         self.updated = updated
 
     def data(self):
