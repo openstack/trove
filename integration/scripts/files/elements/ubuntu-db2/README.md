@@ -7,7 +7,7 @@
  New users can either get an IBM ID or click on the "Proceed without an
  IBM ID". User is provided with a registration form which needs to be
  completed in order to proceed further to download the DB2 Express-C
- packages. After accepting the license agreement, user can download the
+ packages. After accepting the license agreement, user can download
  the DB2 Express-C package (.tar.gz file).
 
  There are 2 options for making the DB2 Express-C package accessible to
