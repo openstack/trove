@@ -56,13 +56,18 @@ def read_file(path, codec=IdentityCodec(), as_root=False, decode=True):
     :raises:                :class:`UnprocessableEntity` if codec not given.
     """
     if path and exists(path, is_directory=False, as_root=as_root):
-        if as_root:
-            return _read_file_as_root(path, codec, decode=decode)
+        if decode:
+            open_flag = 'r'
+            convert_func = codec.deserialize
+        else:
+            open_flag = 'rb'
+            convert_func = codec.serialize
 
-        with open(path, 'r') as fp:
-            if decode:
-                return codec.deserialize(fp.read())
-            return codec.serialize(fp.read())
+        if as_root:
+            return _read_file_as_root(path, open_flag, convert_func)
+
+        with open(path, open_flag) as fp:
+            return convert_func(fp.read())
 
     raise exception.UnprocessableEntity(_("File does not exist: %s") % path)
 
@@ -97,24 +102,22 @@ def exists(path, is_directory=False, as_root=False):
     return found
 
 
-def _read_file_as_root(path, codec, decode=True):
+def _read_file_as_root(path, open_flag, convert_func):
     """Read a file as root.
 
     :param path                Path to the written file.
     :type path                 string
 
-    :param codec:              A codec used to transform the data.
-    :type codec:               StreamCodec
+    :param open_flag:          The flag for opening a file
+    :type open_flag:           string
 
-    :param decode:             Should the codec decode the data.
-    :type decode:              boolean
+    :param convert_func:       The function for converting data.
+    :type convert_func:        callable
     """
-    with tempfile.NamedTemporaryFile() as fp:
+    with tempfile.NamedTemporaryFile(open_flag) as fp:
         copy(path, fp.name, force=True, dereference=True, as_root=True)
         chmod(fp.name, FileMode.ADD_READ_ALL(), as_root=True)
-        if decode:
-            return codec.deserialize(fp.read())
-        return codec.serialize(fp.read())
+        return convert_func(fp.read())
 
 
 def write_file(path, data, codec=IdentityCodec(), as_root=False, encode=True):
@@ -141,20 +144,24 @@ def write_file(path, data, codec=IdentityCodec(), as_root=False, encode=True):
     :raises:                   :class:`UnprocessableEntity` if path not given.
     """
     if path:
-        if as_root:
-            _write_file_as_root(path, data, codec, encode=encode)
+        if encode:
+            open_flag = 'w'
+            convert_func = codec.serialize
         else:
-            with open(path, 'w') as fp:
-                if encode:
-                    fp.write(codec.serialize(data))
-                else:
-                    fp.write(codec.deserialize(data))
+            open_flag = 'wb'
+            convert_func = codec.deserialize
+
+        if as_root:
+            _write_file_as_root(path, data, open_flag, convert_func)
+        else:
+            with open(path, open_flag) as fp:
+                fp.write(convert_func(data))
                 fp.flush()
     else:
         raise exception.UnprocessableEntity(_("Invalid path: %s") % path)
 
 
-def _write_file_as_root(path, data, codec, encode=True):
+def _write_file_as_root(path, data, open_flag, convert_func):
     """Write a file as root. Overwrite any existing contents.
 
     :param path                Path to the written file.
@@ -163,19 +170,16 @@ def _write_file_as_root(path, data, codec, encode=True):
     :param data:               An object representing the file contents.
     :type data:                StreamCodec
 
-    :param codec:              A codec used to transform the data.
-    :type codec:               StreamCodec
+    :param open_flag:          The flag for opening a file
+    :type open_flag:           string
 
-    :param encode:             Should the codec encode the data.
-    :type encode:              boolean
+    :param convert_func:       The function for converting data.
+    :type convert_func:        callable
     """
     # The files gets removed automatically once the managing object goes
     # out of scope.
-    with tempfile.NamedTemporaryFile('w', delete=False) as fp:
-        if encode:
-            fp.write(codec.serialize(data))
-        else:
-            fp.write(codec.deserialize(data))
+    with tempfile.NamedTemporaryFile(open_flag, delete=False) as fp:
+        fp.write(convert_func(data))
         fp.flush()
         fp.close()  # Release the resource before proceeding.
         copy(fp.name, path, force=True, as_root=True)

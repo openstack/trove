@@ -18,7 +18,7 @@ import re
 import stat
 import tempfile
 
-from mock import call, patch
+from mock import call, patch, mock_open
 from oslo_concurrency.processutils import UnknownArgumentError
 import six
 from testtools import ExpectedException
@@ -38,8 +38,12 @@ class TestOperatingSystem(trove_testtools.TestCase):
 
     def test_base64_codec(self):
         data = "Line 1\nLine 2\n"
-        self._test_file_codec(data, Base64Codec())
+        # Base64Codec.deserialize returns bytes instead of string.
+        self._test_file_codec(data, Base64Codec(),
+                              expected_data=data.encode('utf-8'))
 
+        # when encoding is reversed for Base64Codec, reading from files
+        # will call Base64Codec.serialize which returns string.
         data = "TGluZSAxCkxpbmUgMgo="
         self._test_file_codec(data, Base64Codec(), reverse_encoding=True)
 
@@ -192,7 +196,7 @@ class TestOperatingSystem(trove_testtools.TestCase):
     @patch.object(operating_system, 'copy')
     def test_write_file_as_root(self, copy_mock):
         target_file = tempfile.NamedTemporaryFile()
-        temp_file = tempfile.NamedTemporaryFile()
+        temp_file = tempfile.NamedTemporaryFile('w')
 
         with patch('tempfile.NamedTemporaryFile', return_value=temp_file):
             operating_system.write_file(
@@ -205,11 +209,170 @@ class TestOperatingSystem(trove_testtools.TestCase):
                   side_effect=Exception("Error while executing 'copy'."))
     def test_write_file_as_root_with_error(self, copy_mock):
         target_file = tempfile.NamedTemporaryFile()
-        temp_file = tempfile.NamedTemporaryFile()
+        temp_file = tempfile.NamedTemporaryFile('w')
         with patch('tempfile.NamedTemporaryFile', return_value=temp_file):
             with ExpectedException(Exception, "Error while executing 'copy'."):
                 operating_system.write_file(target_file.name,
                                             "Lorem Ipsum", as_root=True)
+        self.assertFalse(os.path.exists(temp_file.name))
+
+    @patch.object(operating_system, 'exists', return_value=True)
+    @patch.object(operating_system, 'copy')
+    @patch.object(operating_system, 'chmod')
+    @patch.object(IdentityCodec, 'deserialize')
+    @patch.object(IdentityCodec, 'serialize')
+    @patch.object(operating_system, 'open',
+                  mock_open(read_data='MockingRead'))
+    def test_read_file_with_flags_and_conv_func(self, mock_serialize,
+                                                mock_deserialize,
+                                                mock_chmod, mock_copy,
+                                                *args):
+        test_path = '/path/of/file'
+        test_data = 'MockingRead'
+        # use getattr to avoid pylint 'no-member' warning
+        mock_file = getattr(operating_system, 'open')
+
+        # simple read
+        operating_system.read_file(test_path)
+        mock_file.assert_called_once_with(test_path, 'r')
+        mock_file().read.assert_called_once()
+        mock_deserialize.called_once_with(test_data)
+        mock_file.reset_mock()
+        mock_deserialize.reset_mock()
+
+        # read with decode=False
+        operating_system.read_file(test_path, decode=False)
+        mock_file.assert_called_once_with(test_path, 'rb')
+        mock_file().read.assert_called_once()
+        mock_serialize.called_once_with(test_data)
+        mock_file.reset_mock()
+        mock_serialize.reset_mock()
+
+        # checking _read_file_as_root arguments
+        with patch.object(operating_system,
+                          '_read_file_as_root') as mock_read_file_as_root:
+            # simple read as root,
+            operating_system.read_file(test_path, as_root=True)
+            mock_read_file_as_root.assert_called_once_with(
+                test_path, 'r', mock_deserialize)
+            mock_deserialize.assert_not_called()
+            mock_read_file_as_root.reset_mock()
+
+            # read as root with decode=False,
+            operating_system.read_file(test_path, as_root=True, decode=False)
+            mock_read_file_as_root.assert_called_once_with(
+                test_path, 'rb', mock_serialize)
+            mock_serialize.assert_not_called()
+
+        # simple read as root
+        temp_file = tempfile.NamedTemporaryFile('r')
+        with patch.object(tempfile, 'NamedTemporaryFile',
+                          return_value=temp_file) as mock_temp_file:
+            operating_system.read_file(test_path, as_root=True)
+            mock_temp_file.assert_called_once_with('r')
+            mock_copy.called_once_with(test_path, temp_file.name,
+                                       force=True, dereference=True,
+                                       as_root=True)
+            mock_chmod.called_once_with(temp_file.name,
+                                        FileMode.ADD_READ_ALL(),
+                                        as_root=True)
+            mock_deserialize.assert_called_once_with('')
+        self.assertFalse(os.path.exists(temp_file.name))
+        mock_copy.reset_mock()
+        mock_chmod.reset_mock()
+        mock_deserialize.reset_mock()
+
+        # read as root with decode=False
+        temp_file = tempfile.NamedTemporaryFile('rb')
+        with patch.object(tempfile, 'NamedTemporaryFile',
+                          return_value=temp_file) as mock_temp_file:
+            operating_system.read_file(test_path, as_root=True,
+                                       decode=False)
+            mock_temp_file.assert_called_once_with('rb')
+            mock_copy.called_once_with(test_path, temp_file.name,
+                                       force=True, dereference=True,
+                                       as_root=True)
+            mock_chmod.called_once_with(temp_file.name,
+                                        FileMode.ADD_READ_ALL(),
+                                        as_root=True)
+            mock_serialize.assert_called_once_with(b'')
+        self.assertFalse(os.path.exists(temp_file.name))
+
+    @patch.object(operating_system, 'copy')
+    @patch.object(operating_system, 'chmod')
+    @patch.object(IdentityCodec, 'deserialize',
+                  return_value=b'DeseiralizedData')
+    @patch.object(IdentityCodec, 'serialize',
+                  return_value='SerializedData')
+    @patch.object(operating_system, 'open', mock_open())
+    def test_write_file_with_flags_and_conv_func(self, mock_serialize,
+                                                 mock_deserialize,
+                                                 mock_chmod, mock_copy):
+        test_path = '/path/of/file'
+        test_data = 'MockingWrite'
+        test_serialize = 'SerializedData'
+        test_deserialize = b'DeseiralizedData'
+        mock_file = getattr(operating_system, 'open')
+
+        # simple write
+        operating_system.write_file(test_path, test_data)
+        mock_file.assert_called_once_with(test_path, 'w')
+        mock_serialize.called_once_with(test_data)
+        mock_file().write.assert_called_once_with(test_serialize)
+        mock_file().flush.assert_called_once()
+        mock_file.reset_mock()
+        mock_serialize.reset_mock()
+
+        # write with encode=False
+        operating_system.write_file(test_path, test_data, encode=False)
+        mock_file.assert_called_once_with(test_path, 'wb')
+        mock_deserialize.called_once_with(test_data)
+        mock_file().write.assert_called_once_with(test_deserialize)
+        mock_file().flush.assert_called_once()
+        mock_file.reset_mock()
+        mock_deserialize.reset_mock()
+
+        # checking _write_file_as_root arguments
+        with patch.object(operating_system,
+                          '_write_file_as_root') as mock_write_file_as_root:
+            # simple write as root,
+            operating_system.write_file(test_path, test_data, as_root=True)
+            mock_write_file_as_root.assert_called_once_with(
+                test_path, test_data, 'w', mock_serialize)
+            mock_serialize.assert_not_called()
+            mock_write_file_as_root.reset_mock()
+
+            # read as root with encode=False,
+            operating_system.write_file(test_path, test_data,
+                                        as_root=True, encode=False)
+            mock_write_file_as_root.assert_called_once_with(
+                test_path, test_data, 'wb', mock_deserialize)
+            mock_deserialize.assert_not_called()
+
+        # simple write as root
+        temp_file = tempfile.NamedTemporaryFile('w')
+        with patch.object(tempfile, 'NamedTemporaryFile',
+                          return_value=temp_file) as mock_temp_file:
+            operating_system.write_file(test_path, test_data, as_root=True)
+            mock_temp_file.assert_called_once_with('w', delete=False)
+            mock_serialize.assert_called_once_with(test_data)
+            mock_copy.called_once_with(temp_file.name, test_path,
+                                       force=True, as_root=True)
+        self.assertFalse(os.path.exists(temp_file.name))
+        mock_copy.reset_mock()
+        mock_chmod.reset_mock()
+        mock_serialize.reset_mock()
+
+        # write as root with decode=False
+        temp_file = tempfile.NamedTemporaryFile('wb')
+        with patch.object(tempfile, 'NamedTemporaryFile',
+                          return_value=temp_file) as mock_temp_file:
+            operating_system.write_file(test_path, test_data,
+                                        as_root=True, encode=False)
+            mock_temp_file.assert_called_once_with('wb', delete=False)
+            mock_deserialize.assert_called_once_with(test_data)
+            mock_copy.called_once_with(temp_file.name, test_path,
+                                       force=True, as_root=True)
         self.assertFalse(os.path.exists(temp_file.name))
 
     def test_start_service(self):
