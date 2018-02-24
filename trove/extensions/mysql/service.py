@@ -29,7 +29,6 @@ from trove.common.notification import StartNotification
 from trove.common import pagination
 from trove.common.utils import correct_id_with_req
 from trove.common import wsgi
-from trove.extensions.common.service import DefaultRootController
 from trove.extensions.common.service import ExtensionController
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import populate_validated_databases
@@ -372,12 +371,3 @@ class SchemaController(ExtensionController):
         self.authorize_target_action(
             context, 'database:show', instance_id)
         raise webob.exc.HTTPNotImplemented()
-
-
-class MySQLRootController(DefaultRootController):
-
-    def _find_root_user(self, context, instance_id):
-        user = guest_models.MySQLUser.root()
-        return models.User.load(context, instance_id,
-                                user.name, user.host,
-                                root_user=True)

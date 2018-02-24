@@ -88,6 +88,10 @@ class RedisRootController(DefaultRootController):
         LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
 
+        is_root_enabled = RedisRoot.load(context, instance_id)
+        if not is_root_enabled:
+            raise exception.RootHistoryNotFound()
+
         original_auth_password = self._get_original_auth_password(
             context, instance_id)
 

@@ -588,7 +588,7 @@ mysql_opts = [
                 deprecated_name='backup_incremental_strategy',
                 deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.mysql.service.MySQLRootController',
+               default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for mysql.'),
     cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
                 help='Users to exclude when listing users.',
@@ -921,8 +921,7 @@ cassandra_opts = [
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.cassandra.service'
-               '.CassandraRootController',
+               default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for Cassandra.'),
     cfg.ListOpt('ignore_users', default=['os_admin'],
                 help='Users to exclude when listing users.'),
@@ -1192,8 +1191,7 @@ postgresql_opts = [
     cfg.ListOpt('ignore_users', default=['os_admin', 'postgres', 'root']),
     cfg.ListOpt('ignore_dbs', default=['os_admin', 'postgres']),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.postgresql.service'
-               '.PostgreSQLRootController',
+               default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for postgresql.'),
     cfg.StrOpt('guest_log_exposed_logs', default='general',
                help='List of Guest Logs to expose for publishing.'),
