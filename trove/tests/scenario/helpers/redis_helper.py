@@ -31,6 +31,9 @@ class RedisHelper(TestHelper):
 
         self._ds_client_cache = dict()
 
+    def get_helper_credentials_root(self):
+        return {'name': '-', 'password': 'rootpass'}
+
     def get_client(self, host, *args, **kwargs):
         # We need to cache the Redis client in order to prevent Error 99
         # (Cannot assign requested address) when working with large data sets.
@@ -40,7 +43,23 @@ class RedisHelper(TestHelper):
         # (TIME_WAIT) before the port can be released.
         # This is a feature of the operating system that helps it dealing with
         # packets that arrive after the connection is closed.
-        if host not in self._ds_client_cache:
+        #
+        # NOTE(zhaochao): when connecting to Redis server with a password,
+        # current cached client may not updated to use the same password,
+        # connection_kwargs of the ConnectPool object should be checked,
+        # if the new password is different, A new client instance will be
+        # created.
+        recreate_client = True
+
+        if host in self._ds_client_cache:
+            new_password = kwargs.get('password')
+            cached_password = (self._ds_client_cache[host]
+                               .connection_pool
+                               .connection_kwargs.get('password'))
+            if new_password == cached_password:
+                recreate_client = False
+
+        if recreate_client:
             self._ds_client_cache[host] = (
                 self.create_client(host, *args, **kwargs))
 
@@ -180,6 +199,6 @@ class RedisHelper(TestHelper):
     def ping(self, host, *args, **kwargs):
         try:
             client = self.get_client(host, *args, **kwargs)
-            return client.ping() == 'PONG'
+            return client.ping()
         except Exception:
             return False

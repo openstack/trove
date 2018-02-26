@@ -154,6 +154,9 @@ class RedisApp(object):
         if overrides:
             self.configuration_manager.apply_user_override(overrides)
             # apply requirepass at runtime
+            # TODO(zhaochao): updating 'requirepass' here will be removed
+            # in the future releases, Redis only use enable_root/disable_root
+            # to set this parameter.
             if 'requirepass' in overrides:
                 self.admin.config_set('requirepass', overrides['requirepass'])
                 self._refresh_admin_client()
@@ -178,9 +181,13 @@ class RedisApp(object):
         for prop_name, prop_args in overrides.items():
             args_string = self._join_lists(
                 self._value_converter.to_strings(prop_args), ' ')
-            # requirepass applied at runtime during update_overrides
-            if prop_name != "requirepass":
-                client.config_set(prop_name, args_string)
+            client.config_set(prop_name, args_string)
+            # NOTE(zhaochao): requirepass applied in update_overrides is
+            # only kept for back compatibility. Now requirepass is set
+            # via enable_root/disable_root, Redis admin client should be
+            # refreshed here.
+            if prop_name == "requirepass":
+                client = self._refresh_admin_client()
 
     def _join_lists(self, items, sep):
         """Join list items (including items from sub-lists) into a string.
