@@ -60,7 +60,7 @@ class TestClusterController(trove_testtools.TestCase):
         schema = self.controller.get_schema('create', self.cluster)
         self.assertIsNotNone(schema)
         self.assertIn('cluster', schema['properties'])
-        self.assertTrue('cluster')
+        self.assertIsNotNone(schema['properties']['cluster'])
 
     def test_validate_create(self):
         body = self.cluster
