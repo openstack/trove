@@ -890,8 +890,7 @@
         {
             "name": "log_min_duration_statement",
             "restart_required": false,
-            "min": -1,
-            "type": "integer"
+            "type": "string"
         },
         {
             "name": "backend_flush_after",
