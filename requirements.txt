@@ -45,6 +45,5 @@ oslo.db>=4.27.0 # Apache-2.0
 enum34>=1.0.4;python_version=='2.7' or python_version=='2.6' or python_version=='3.3' # BSD
 xmltodict>=0.10.1 # MIT
 cryptography>=2.1.4  # BSD/Apache-2.0
-pycrypto>=2.6 # Public Domain
 oslo.policy>=1.30.0 # Apache-2.0
 diskimage-builder!=1.6.0,!=1.7.0,!=1.7.1,>=1.1.2 # Apache-2.0

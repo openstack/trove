@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-from Crypto import Random
+import os
 
 from trove.common import stream_codecs
 from trove.tests.unittests import trove_testtools
@@ -29,7 +29,7 @@ class TestStreamCodecs(trove_testtools.TestCase):
         super(TestStreamCodecs, self).tearDown()
 
     def test_serialize_deserialize_base64codec(self):
-        random_data = bytearray(Random.new().read(12))
+        random_data = bytearray(os.urandom(12))
         data = [b'abc',
                 b'numbers01234',
                 b'non-ascii:\xe9\xff',

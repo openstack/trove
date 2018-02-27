@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-import Crypto.Random
+import os
 from proboscis import SkipTest
 import re
 import tempfile
@@ -42,7 +42,7 @@ class ModuleRunner(TestRunner):
         self.MODULE_NEG_CONTENTS = 'contents for negative tests'
         self.MODULE_BINARY_SUFFIX = '_bin_auto'
         self.MODULE_BINARY_SUFFIX2 = self.MODULE_BINARY_SUFFIX + '_2'
-        self.MODULE_BINARY_CONTENTS = Crypto.Random.new().read(20)
+        self.MODULE_BINARY_CONTENTS = os.urandom(20)
         self.MODULE_BINARY_CONTENTS2 = '\x00\xFF\xea\x9c\x11\xfeok\xb1\x8ax'
 
         self.module_name_order = [

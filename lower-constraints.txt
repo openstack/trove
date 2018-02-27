@@ -105,7 +105,6 @@ psycopg2==2.6.2
 ptyprocess==0.5.2
 pycadf==2.7.0
 pycparser==2.18
-pycrypto==2.6
 pyflakes==1.0.0
 Pygments==2.2.0
 pyinotify==0.9.6
