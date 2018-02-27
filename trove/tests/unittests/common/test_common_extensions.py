@@ -111,7 +111,7 @@ class TestRootController(trove_testtools.TestCase):
         root_controller.root_index = Mock(return_value=ret)
         service_load_root_controller.return_value = root_controller
 
-        self.assertTrue(ret, self.controller.index(req, tenant_id, uuid))
+        self.assertEqual(ret, self.controller.index(req, tenant_id, uuid))
         service_get_datastore.assert_called_with(tenant_id, uuid)
         service_load_root_controller.assert_called_with(ds_manager)
         root_controller.root_index.assert_called_with(
@@ -135,7 +135,7 @@ class TestRootController(trove_testtools.TestCase):
         root_controller.root_create = Mock(return_value=ret)
         service_load_root_controller.return_value = root_controller
 
-        self.assertTrue(
+        self.assertEqual(
             ret, self.controller.create(req, tenant_id, uuid, body=body))
         service_get_datastore.assert_called_with(tenant_id, uuid)
         service_load_root_controller.assert_called_with(ds_manager)
@@ -280,8 +280,8 @@ class TestClusterRootController(trove_testtools.TestCase):
         cluster_instances = [db_inst_1, db_inst_2]
         mock_find_all.return_value.all.return_value = cluster_instances
         ret = self.controller._get_cluster_instance_id(tenant_id, cluster_id)
-        self.assertTrue(db_inst_1.id, ret[0])
-        self.assertTrue(cluster_instances, ret[1])
+        self.assertEqual(db_inst_1.id, ret[0])
+        self.assertEqual([db_inst_1.id, db_inst_2.id], ret[1])
 
     @patch.object(models.ClusterRoot, "create")
     def test_instance_root_create(self, mock_cluster_root_create):

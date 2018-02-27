@@ -217,8 +217,8 @@ class AddVolumeFailure(VolumeTest):
                                            snapshot_id=None, name=name,
                                            description=desc)
         self.assertEqual(HUGE_VOLUME, volume["size"])
-        self.assertTrue("creating", volume["status"])
-        self.assertTrue("detached", volume["attach_status"])
+        self.assertEqual("creating", volume["status"])
+        self.assertEqual("detached", volume["attach_status"])
         self.storyFail.volume = volume
         self.storyFail.volume_id = volume["id"]
 
@@ -236,8 +236,8 @@ class AfterVolumeFailureIsAdded(VolumeTest):
         """Wait until the volume is a FAILURE."""
         volume = poll_until(lambda: self.storyFail.get_volume(),
                             lambda volume: volume["status"] != "creating")
-        self.assertEqual(volume["status"], "error")
-        self.assertTrue(volume["attach_status"], "detached")
+        self.assertEqual("error", volume["status"])
+        self.assertEqual("detached", volume["attach_status"])
 
     @time_out(60)
     def test_mgmt_volume_check(self):
@@ -267,8 +267,8 @@ class AddVolume(VolumeTest):
                                        snapshot_id=None, name=name,
                                        description=desc)
         self.assert_volume_as_expected(volume)
-        self.assertTrue("creating", volume["status"])
-        self.assertTrue("detached", volume["attach_status"])
+        self.assertEqual("creating", volume["status"])
+        self.assertEqual("detached", volume["attach_status"])
         self.story.volume = volume
         self.story.volume_id = volume["id"]
 
@@ -286,9 +286,9 @@ class AfterVolumeIsAdded(VolumeTest):
         """Wait until the volume is finished provisioning."""
         volume = poll_until(lambda: self.story.get_volume(),
                             lambda volume: volume["status"] != "creating")
-        self.assertEqual(volume["status"], "available")
+        self.assertEqual("available", volume["status"])
         self.assert_volume_as_expected(volume)
-        self.assertTrue(volume["attach_status"], "detached")
+        self.assertEqual("detached", volume["attach_status"])
 
     @time_out(60)
     def test_mgmt_volume_check(self):
@@ -404,9 +404,9 @@ class ResizeVolume(VolumeTest):
 
         volume = poll_until(lambda: self.story.get_volume(),
                             lambda volume: volume["status"] == "resized")
-        self.assertEqual(volume["status"], "resized")
-        self.assertTrue(volume["attach_status"], "attached")
-        self.assertTrue(volume['size'], self.story.resize_volume_size)
+        self.assertEqual("resized", volume["status"])
+        self.assertEqual("attached", volume["attach_status"])
+        self.assertEqual(self.story.resize_volume_size, volume['size'])
 
     @time_out(300)
     def test_resizefs_rescan(self):
