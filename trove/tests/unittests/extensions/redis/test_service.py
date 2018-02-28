@@ -20,6 +20,7 @@ from mock import Mock, patch
 from trove.common import exception
 from trove.datastore import models as datastore_models
 from trove.extensions.common import models
+from trove.extensions.redis.models import RedisRoot
 from trove.extensions.redis.service import RedisRootController
 from trove.instance import models as instance_models
 from trove.instance.models import DBInstance
@@ -155,8 +156,11 @@ class TestRedisRootController(trove_testtools.TestCase):
             req, body, tenant_id, instance_id, is_cluster)
 
     @patch.object(instance_models.Instance, "load")
+    @patch.object(RedisRoot, "get_auth_password")
     @patch.object(models.Root, "delete")
-    def test_root_delete_on_single_instance(self, root_delete, *args):
+    @patch.object(models.Root, "load")
+    def test_root_delete_on_single_instance(self, root_load,
+                                            root_delete, *args):
         context = Mock()
         req = Mock()
         req.environ = Mock()
@@ -164,12 +168,17 @@ class TestRedisRootController(trove_testtools.TestCase):
         tenant_id = self.tenant_id
         instance_id = self.single_db_info.id
         is_cluster = False
+        root_load.return_value = True
         self.controller.root_delete(req, tenant_id, instance_id, is_cluster)
+        root_load.assert_called_with(context, instance_id)
         root_delete.assert_called_with(context, instance_id)
 
     @patch.object(instance_models.Instance, "load")
+    @patch.object(RedisRoot, "get_auth_password")
     @patch.object(models.Root, "delete")
-    def test_root_delete_on_master_instance(self, root_delete, *args):
+    @patch.object(models.Root, "load")
+    def test_root_delete_on_master_instance(self, root_load,
+                                            root_delete, *args):
         context = Mock()
         req = Mock()
         req.environ = Mock()
@@ -178,7 +187,9 @@ class TestRedisRootController(trove_testtools.TestCase):
         instance_id = self.master_db_info.id
         slave_instance_id = self.slave_db_info.id
         is_cluster = False
+        root_load.return_value = True
         self.controller.root_delete(req, tenant_id, instance_id, is_cluster)
+        root_load.assert_called_with(context, instance_id)
         root_delete.assert_called_with(context, slave_instance_id)
 
     def test_root_delete_on_slave(self):
@@ -203,3 +214,23 @@ class TestRedisRootController(trove_testtools.TestCase):
             exception.ClusterOperationNotSupported,
             self.controller.root_delete,
             req, tenant_id, instance_id, is_cluster)
+
+    @patch.object(instance_models.Instance, "load")
+    @patch.object(models.Root, "delete")
+    @patch.object(models.Root, "load")
+    def test_root_delete_without_root_enabled(self, root_load,
+                                              root_delete, *args):
+        context = Mock()
+        req = Mock()
+        req.environ = Mock()
+        req.environ.__getitem__ = Mock(return_value=context)
+        tenant_id = self.tenant_id
+        instance_id = self.single_db_info.id
+        is_cluster = False
+        root_load.return_value = False
+        self.assertRaises(
+            exception.RootHistoryNotFound,
+            self.controller.root_delete,
+            req, tenant_id, instance_id, is_cluster)
+        root_load.assert_called_with(context, instance_id)
+        root_delete.assert_not_called()

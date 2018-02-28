@@ -13,7 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from mock import Mock, patch
 from testtools.matchers import Equals, Is, Not
+import webob.exc
+
+from trove.common import base_wsgi
+from trove.common import exception
 from trove.common import wsgi
 from trove.tests.unittests import trove_testtools
 import webob
@@ -40,3 +45,18 @@ class TestWsgi(trove_testtools.TestCase):
         self.assertThat(ctx.user, Equals(user_id))
         self.assertThat(ctx.auth_token, Equals(token))
         self.assertEqual(0, len(ctx.service_catalog))
+
+
+class TestController(trove_testtools.TestCase):
+
+    @patch.object(base_wsgi.Resource, 'execute_action',
+                  side_effect=exception.RootHistoryNotFound())
+    @patch.object(wsgi.Controller, 'delete', create=True)
+    @patch.object(wsgi.Controller, 'validate_request')
+    def test_exception_root_history_notfound(self, *args):
+        controller = wsgi.Controller()
+        resource = controller.create_resource()
+        req = Mock()
+        result = resource.execute_action('delete', req)
+        self.assertIsInstance(result.wrapped_exc,
+                              webob.exc.HTTPNotFound)

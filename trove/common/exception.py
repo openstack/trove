@@ -86,6 +86,11 @@ class UserNotFound(NotFound):
     message = _("User %(uuid)s cannot be found on the instance.")
 
 
+class RootHistoryNotFound(NotFound):
+
+    message = _("Root user has never been enabled on the instance.")
+
+
 class DatabaseNotFound(NotFound):
 
     message = _("Database %(uuid)s cannot be found on the instance.")

@@ -347,6 +347,7 @@ class Controller(object):
             exception.DatastoreNotFound,
             exception.SwiftNotFound,
             exception.ModuleTypeNotFound,
+            exception.RootHistoryNotFound,
         ],
         webob.exc.HTTPConflict: [
             exception.BackupNotCompleteError,

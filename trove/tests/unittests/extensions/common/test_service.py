@@ -86,6 +86,49 @@ class TestDefaultRootController(trove_testtools.TestCase):
             self.controller.root_create,
             req, body, tenant_id, uuid, is_cluster)
 
+    @patch.object(models.Root, "delete")
+    @patch.object(models.Root, "load")
+    def test_root_delete(self, root_load, root_delete):
+        context = Mock()
+        req = Mock()
+        req.environ = Mock()
+        req.environ.__getitem__ = Mock(return_value=context)
+        tenant_id = Mock()
+        instance_id = utils.generate_uuid()
+        is_cluster = False
+        root_load.return_value = True
+        self.controller.root_delete(req, tenant_id, instance_id, is_cluster)
+        root_load.assert_called_with(context, instance_id)
+        root_delete.assert_called_with(context, instance_id)
+
+    @patch.object(models.Root, "delete")
+    @patch.object(models.Root, "load")
+    def test_root_delete_without_root_enabled(self, root_load, root_delete):
+        context = Mock()
+        req = Mock()
+        req.environ = Mock()
+        req.environ.__getitem__ = Mock(return_value=context)
+        tenant_id = Mock()
+        instance_id = utils.generate_uuid()
+        is_cluster = False
+        root_load.return_value = False
+        self.assertRaises(
+            exception.RootHistoryNotFound,
+            self.controller.root_delete,
+            req, tenant_id, instance_id, is_cluster)
+        root_load.assert_called_with(context, instance_id)
+        root_delete.assert_not_called()
+
+    def test_root_delete_with_cluster(self):
+        req = Mock()
+        tenant_id = Mock()
+        instance_id = utils.generate_uuid()
+        is_cluster = True
+        self.assertRaises(
+            exception.ClusterOperationNotSupported,
+            self.controller.root_delete,
+            req, tenant_id, instance_id, is_cluster)
+
 
 class TestRootController(trove_testtools.TestCase):
 
@@ -163,6 +206,53 @@ class TestRootController(trove_testtools.TestCase):
             NoSuchOptError,
             self.controller.create,
             req, tenant_id, uuid, body=body)
+        service_get_datastore.assert_called_with(tenant_id, uuid)
+        service_load_root_controller.assert_called_with(ds_manager)
+
+    @patch.object(instance_models.Instance, "load")
+    @patch.object(RootController, "load_root_controller")
+    @patch.object(RootController, "_get_datastore")
+    def test_delete(self, service_get_datastore, service_load_root_controller,
+                    service_load_instance):
+        req = Mock()
+        req.environ = {'trove.context': self.context}
+        tenant_id = Mock()
+        uuid = utils.generate_uuid()
+        ds_manager = Mock()
+        is_cluster = False
+        service_get_datastore.return_value = (ds_manager, is_cluster)
+        root_controller = Mock()
+        ret = Mock()
+        root_controller.root_delete = Mock(return_value=ret)
+        service_load_root_controller.return_value = root_controller
+
+        self.assertEqual(
+            ret, self.controller.delete(req, tenant_id, uuid))
+        service_get_datastore.assert_called_with(tenant_id, uuid)
+        service_load_root_controller.assert_called_with(ds_manager)
+        root_controller.root_delete.assert_called_with(
+            req, tenant_id, uuid, is_cluster)
+
+    @patch.object(instance_models.Instance, "load")
+    @patch.object(RootController, "load_root_controller")
+    @patch.object(RootController, "_get_datastore")
+    def test_delete_with_no_root_controller(self,
+                                            service_get_datastore,
+                                            service_load_root_controller,
+                                            service_load_instance):
+        req = Mock()
+        req.environ = {'trove.context': self.context}
+        tenant_id = Mock()
+        uuid = utils.generate_uuid()
+        ds_manager = Mock()
+        is_cluster = False
+        service_get_datastore.return_value = (ds_manager, is_cluster)
+        service_load_root_controller.return_value = None
+
+        self.assertRaises(
+            NoSuchOptError,
+            self.controller.delete,
+            req, tenant_id, uuid)
         service_get_datastore.assert_called_with(tenant_id, uuid)
         service_load_root_controller.assert_called_with(ds_manager)
 

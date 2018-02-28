@@ -116,12 +116,9 @@ class DefaultRootController(BaseDatastoreRootController):
         LOG.info("Disabling root for instance '%s'.", instance_id)
         LOG.info("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            found_user = self._find_root_user(context, instance_id)
-        except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(message=str(e))
-        if not found_user:
-            raise exception.UserNotFound(uuid="root")
+        is_root_enabled = models.Root.load(context, instance_id)
+        if not is_root_enabled:
+            raise exception.RootHistoryNotFound()
         models.Root.delete(context, instance_id)
         return wsgi.Result(None, 200)
 
@@ -238,7 +235,8 @@ class RootController(ExtensionController):
             return root_controller.root_delete(req, tenant_id,
                                                instance_id, is_cluster)
         else:
-            raise NoSuchOptError
+            opt = 'root_controller'
+            raise NoSuchOptError(opt, group='datastore_manager')
 
     def _get_datastore(self, tenant_id, instance_or_cluster_id):
         """
