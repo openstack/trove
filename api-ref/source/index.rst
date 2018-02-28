@@ -15,3 +15,4 @@
 .. include:: flavors.inc
 .. include:: datastores.inc
 .. include:: configurations.inc
+.. include:: backups.inc
