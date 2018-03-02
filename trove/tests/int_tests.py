@@ -400,12 +400,18 @@ register(
     #        cluster_root_actions_groups, ]
 )
 
+# Redis instances does not support inherit root state from backups,
+# so a customized root actions group is created, instance backuping
+# and restoring tests will not be included.
+redis_root_actions_groups = list(instance_create_groups)
+redis_root_actions_groups.extend([groups.ROOT_ACTION_ENABLE,
+                                  groups.ROOT_ACTION_DISABLE])
 register(
     ["redis_supported"],
     single=[common_groups,
             backup_groups,
             configuration_groups,
-            root_actions_groups, ],
+            redis_root_actions_groups, ],
     multi=[replication_promote_groups, ]
     # multi=[cluster_actions_groups,
     #        cluster_negative_actions_groups,
