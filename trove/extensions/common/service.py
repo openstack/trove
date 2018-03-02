@@ -120,7 +120,7 @@ class DefaultRootController(BaseDatastoreRootController):
         if not is_root_enabled:
             raise exception.RootHistoryNotFound()
         models.Root.delete(context, instance_id)
-        return wsgi.Result(None, 200)
+        return wsgi.Result(None, 204)
 
 
 class ClusterRootController(DefaultRootController):

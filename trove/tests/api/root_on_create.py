@@ -124,7 +124,7 @@ class TestRootOnCreate(object):
         is still enabled.
         """
         self.dbaas.root.delete(self.instance_id)
-        assert_equal(200, self.dbaas.last_http_code)
+        assert_equal(204, self.dbaas.last_http_code)
 
         enabled = self.enabled(self.instance_id).rootEnabled
         assert_equal(200, self.dbaas.last_http_code)
