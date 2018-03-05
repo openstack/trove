@@ -90,8 +90,7 @@ XTRA_BACKUP_INCR = ('sudo innobackupex --stream=xbstream'
                     ' /var/lib/mysql/data'
                     ' 2>/tmp/innobackupex.log')
 SQLDUMP_BACKUP_RAW = ("mysqldump --all-databases %(extra_opts)s "
-                      "--opt --password=password -u os_admin"
-                      " 2>/tmp/mysqldump.log")
+                      "--opt --password=password -u os_admin")
 SQLDUMP_BACKUP = SQLDUMP_BACKUP_RAW % {'extra_opts': ''}
 SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
                              {'extra_opts': '--events --routines --triggers'})
