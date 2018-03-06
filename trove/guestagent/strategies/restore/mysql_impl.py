@@ -180,7 +180,8 @@ class MySQLDump(base.RestoreRunner, MySQLRestoreMixin):
 class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
     """Implementation of Restore Strategy for InnoBackupEx."""
     __strategy_name__ = 'innobackupex'
-    base_restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
+    base_restore_cmd = ('sudo xbstream -x -C %(restore_location)s'
+                        ' 2>/tmp/xbstream_extract.log')
     base_prepare_cmd = ('sudo innobackupex'
                         ' --defaults-file=%(restore_location)s/backup-my.cnf'
                         ' --ibbackup=xtrabackup'
@@ -228,6 +229,43 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         files = glob.glob(os.path.join(self.restore_location, "ib_logfile*"))
         for f in files:
             os.unlink(f)
+
+    def check_process(self):
+        """Check whether xbstream restore is successful."""
+        # We first check the restore process exits with 0, however
+        # xbstream has a bug for creating new files:
+        # https://jira.percona.com/browse/PXB-1542
+        # So we also check the stderr with ignorance of some known
+        # non-error log lines. Currently we only need to ignore:
+        # "encryption: using gcrypt x.x.x"
+        # After PXB-1542 is fixed, we could just check the exit status.
+        LOG.debug('Checking return code of xbstream restore process.')
+        return_code = self.process.wait()
+        if return_code != 0:
+            LOG.erro('xbstream exited with %s', return_code)
+            return False
+
+        LOG.debug('Checking xbstream restore process stderr output.')
+        IGNORE_LINES = [
+            'encryption: using gcrypt ',
+        ]
+        with open('/tmp/xbstream_extract.log', 'r') as xbstream_log:
+            for line in xbstream_log:
+                # Ignore empty lines
+                if not line.strip():
+                    continue
+
+                # Ignore known non-error log lines
+                check_ignorance = [line.startswith(non_err)
+                                   for non_err in IGNORE_LINES]
+                if any(check_ignorance):
+                    continue
+                else:
+                    LOG.error('xbstream restore failed with: %s',
+                              line.rstrip('\n'))
+                    return False
+
+        return True
 
 
 class InnoBackupExIncremental(InnoBackupEx):

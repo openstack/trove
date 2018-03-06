@@ -53,6 +53,7 @@ class RestoreRunner(Strategy):
 
     def __init__(self, storage, **kwargs):
         self.storage = storage
+        self.process = None
         self.location = kwargs.pop('location')
         self.checksum = kwargs.pop('checksum')
         self.restore_location = kwargs.get('restore_location')
@@ -80,15 +81,17 @@ class RestoreRunner(Strategy):
 
     def _unpack(self, location, checksum, command):
         stream = self.storage.load(location, checksum)
-        process = subprocess.Popen(command, shell=True,
-                                   stdin=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+        self.process = subprocess.Popen(command, shell=True,
+                                        stdin=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
         content_length = 0
         for chunk in stream:
-            process.stdin.write(chunk)
+            self.process.stdin.write(chunk)
             content_length += len(chunk)
-        process.stdin.close()
-        utils.raise_if_process_errored(process, RestoreError)
+        self.process.stdin.close()
+        utils.raise_if_process_errored(self.process, RestoreError)
+        if not self.check_process():
+            raise RestoreError
         LOG.debug("Restored %s bytes from stream.", content_length)
 
         return content_length
@@ -104,3 +107,7 @@ class RestoreRunner(Strategy):
     @property
     def unzip_cmd(self):
         return 'gzip -d -c | ' if self.is_zipped else ''
+
+    def check_process(self):
+        """Hook for subclasses to check the restore process for errors."""
+        return True

@@ -21,6 +21,7 @@ from eventlet import greenthread
 from eventlet.timeout import Timeout
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
+from oslo_utils import netutils
 from swiftclient.client import ClientException
 
 from trove.backup import models as bkup_models
@@ -1218,31 +1219,46 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     def _get_floating_ips(self):
         """Returns floating ips as a dict indexed by the ip."""
         floating_ips = {}
-        neutron_client = remote.create_neutron_client(self.context)
-        network_floating_ips = neutron_client.list_floatingips()
+        network_floating_ips = self.neutron_client.list_floatingips()
         for ip in network_floating_ips.get('floatingips'):
-            floating_ips.update({ip.get('floating_ip_address'): ip})
+            floating_ips.update(
+                {ip.get('floating_ip_address'): ip.get('id')})
         LOG.debug("In _get_floating_ips(), returning %s", floating_ips)
         return floating_ips
 
     def detach_public_ips(self):
         LOG.debug("Begin detach_public_ips for instance %s", self.id)
         removed_ips = []
-        server_id = self.db_info.compute_instance_id
-        nova_instance = self.nova_client.servers.get(server_id)
         floating_ips = self._get_floating_ips()
         for ip in self.get_visible_ip_addresses():
             if ip in floating_ips:
-                nova_instance.remove_floating_ip(ip)
-                removed_ips.append(ip)
+                fip_id = floating_ips[ip]
+                self.neutron_client.update_floatingip(
+                    fip_id, {'floatingip': {'port_id': None}})
+                removed_ips.append(fip_id)
         return removed_ips
 
     def attach_public_ips(self, ips):
         LOG.debug("Begin attach_public_ips for instance %s", self.id)
         server_id = self.db_info.compute_instance_id
-        nova_instance = self.nova_client.servers.get(server_id)
-        for ip in ips:
-            nova_instance.add_floating_ip(ip)
+
+        # NOTE(zhaochao): in Nova's addFloatingIp, the new floating ip will
+        # always be associated with the first IPv4 fixed address of the Nova
+        # instance, we're doing the same thing here, after add_floating_ip is
+        # removed from novaclient.
+        server_ports = (self.neutron_client.list_ports(device_id=server_id)
+                        .get('ports'))
+        fixed_address, port_id = next(
+            (fixed_ip['ip_address'], port['id'])
+            for port in server_ports
+            for fixed_ip in port.get('fixed_ips')
+            if netutils.is_valid_ipv4(fixed_ip['ip_address']))
+
+        for fip_id in ips:
+            self.neutron_client.update_floatingip(
+                fip_id, {'floatingip': {
+                    'port_id': port_id,
+                    'fixed_ip_address': fixed_address}})
 
     def enable_as_master(self):
         LOG.debug("Calling enable_as_master on %s", self.id)
