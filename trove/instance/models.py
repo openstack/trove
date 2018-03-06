@@ -36,6 +36,7 @@ from trove.common.notification import StartNotification
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
+from trove.common.remote import create_neutron_client
 from trove.common.remote import create_nova_client
 from trove.common import server_group as srv_grp
 from trove.common import template
@@ -616,6 +617,7 @@ class BaseInstance(SimpleInstance):
         self._guest = None
         self._nova_client = None
         self._volume_client = None
+        self._neutron_client = None
         self._server_group = None
         self._server_group_loaded = False
 
@@ -708,6 +710,13 @@ class BaseInstance(SimpleInstance):
             self._volume_client = create_cinder_client(
                 self.context, region_name=self.db_info.region_id)
         return self._volume_client
+
+    @property
+    def neutron_client(self):
+        if not self._neutron_client:
+            self._neutron_client = create_neutron_client(
+                self.context, region_name=self.db_info.region_id)
+        return self._neutron_client
 
     def reset_task_status(self):
         LOG.info("Resetting task status to NONE on instance %s.",

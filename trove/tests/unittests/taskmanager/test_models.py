@@ -19,6 +19,7 @@ from cinderclient import exceptions as cinder_exceptions
 import cinderclient.v2.client as cinderclient
 from cinderclient.v2 import volumes as cinderclient_volumes
 from mock import Mock, MagicMock, patch, PropertyMock, call
+import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
 import novaclient.v2.servers
@@ -57,11 +58,6 @@ from trove.tests.unittests.util import util
 
 INST_ID = 'dbinst-id-1'
 VOLUME_ID = 'volume-id-1'
-
-
-class _fake_neutron_client(object):
-    def list_floatingips(self):
-        return {'floatingips': [{'floating_ip_address': '192.168.10.1'}]}
 
 
 class FakeOptGroup(object):
@@ -693,6 +689,19 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         stub_volume_mgr.get = MagicMock(return_value=stub_new_volume)
         stub_volume_mgr.attach = MagicMock(return_value=None)
 
+    def _stub_neutron_client(self):
+        stub_neutron_client = self.instance_task._neutron_client = MagicMock(
+            spec=neutronclient.Client)
+        stub_neutron_client.list_floatingips = MagicMock(
+            return_value={'floatingips': [{
+                'floating_ip_address': '192.168.10.1',
+                'id': 'fake-floatingip-id'}]})
+        stub_neutron_client.list_ports = MagicMock(
+            return_value={'ports': [{
+                'fixed_ips': [{'ip_address': '10.0.0.1'},
+                              {'ip_address': 'fd4a:7bef:d1ed:1::1'}],
+                'id': 'fake-port-id'}]})
+
     def setUp(self):
         super(BuiltInstanceTasksTest, self).setUp()
         self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
@@ -801,6 +810,10 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
 
         if 'volume' in self._testMethodName:
             self._stub_volume_client()
+
+        if ('floating_ips' in self._testMethodName or
+                'public_ips' in self._testMethodName):
+            self._stub_neutron_client()
 
     def tearDown(self):
         super(BuiltInstanceTasksTest, self).tearDown()
@@ -932,25 +945,32 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                               Mock())
 
     def test_get_floating_ips(self):
-        with patch.object(remote, 'create_neutron_client',
-                          return_value=_fake_neutron_client()):
-            floating_ips = self.instance_task._get_floating_ips()
-            self.assertEqual('192.168.10.1',
-                             floating_ips['192.168.10.1'].get(
-                                 'floating_ip_address'))
+        floating_ips = self.instance_task._get_floating_ips()
+        self.assertEqual({'192.168.10.1': 'fake-floatingip-id'},
+                         floating_ips)
 
     @patch.object(BaseInstance, 'get_visible_ip_addresses',
                   return_value=['192.168.10.1'])
     def test_detach_public_ips(self, mock_address):
-        with patch.object(remote, 'create_neutron_client',
-                          return_value=_fake_neutron_client()):
-            removed_ips = self.instance_task.detach_public_ips()
-            self.assertEqual(['192.168.10.1'], removed_ips)
+        removed_ips = self.instance_task.detach_public_ips()
+        self.assertEqual(['fake-floatingip-id'], removed_ips)
+        mock_update_floatingip = (self.instance_task.neutron_client
+                                  .update_floatingip)
+        mock_update_floatingip.assert_called_once_with(
+            removed_ips[0], {'floatingip': {'port_id': None}})
 
     def test_attach_public_ips(self):
-        self.instance_task.attach_public_ips(['192.168.10.1'])
-        self.stub_verifying_server.add_floating_ip.assert_called_with(
-            '192.168.10.1')
+        self.instance_task.attach_public_ips(['fake-floatingip-id'])
+        mock_list_ports = (self.instance_task.neutron_client
+                           .list_ports)
+        mock_list_ports.assert_called_once_with(device_id='computeinst-id-1')
+
+        mock_update_floatingip = (self.instance_task.neutron_client
+                                  .update_floatingip)
+        mock_update_floatingip.assert_called_once_with(
+            'fake-floatingip-id',
+            {'floatingip': {'port_id': 'fake-port-id',
+                            'fixed_ip_address': '10.0.0.1'}})
 
     @patch.object(BaseInstance, 'update_db')
     def test_enable_as_master(self, mock_update_db):
