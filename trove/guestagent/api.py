@@ -143,7 +143,7 @@ class API(object):
         self._cast("create_user", version=version, users=users)
 
     def get_user(self, username, hostname):
-        """Make an asynchronous call to get a single database user."""
+        """Make a synchronous call to get a single database user."""
         LOG.debug("Getting a user %(username)s on instance %(id)s.",
                   {'username': username, 'id': self.id})
         version = self.API_BASE_VERSION
@@ -189,7 +189,7 @@ class API(object):
                           database=database)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
-        """Make an asynchronous call to list database users."""
+        """Make a synchronous call to list database users."""
         LOG.debug("Listing Users for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
@@ -217,7 +217,7 @@ class API(object):
                    databases=databases)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
-        """Make an asynchronous call to list databases."""
+        """Make a synchronous call to list databases."""
         LOG.debug("Listing databases for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
