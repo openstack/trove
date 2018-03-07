@@ -214,6 +214,23 @@ class MongoDBClusterTest(trove_testtools.TestCase):
         self.assertEqual(7, mock_ins_create.call_count)
 
     @mock.patch.object(task_api, 'load')
+    @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(models, 'validate_instance_nics')
+    @mock.patch.object(QUOTAS, 'check_quotas')
+    @mock.patch.object(models, 'validate_instance_flavors')
+    @mock.patch.object(inst_models.Instance, 'create')
+    def test_create_with_correct_nics(self, mock_ins_create, *args):
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            self.instances, {}, None, None)
+        nics = [{"net-id": "foo-bar"}]
+        nics_count = [kw.get('nics') for _, kw in
+                      mock_ins_create.call_args_list].count(nics)
+        self.assertEqual(7, nics_count)
+
+    @mock.patch.object(task_api, 'load')
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
