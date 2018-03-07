@@ -92,7 +92,7 @@ Disable root user
 
 Disables the root user.
 
-Normal response codes: 202
+Normal response codes: 204
 
 Error response codes: badRequest(400), unauthorized(401), forbidden(403),
 itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),

@@ -508,7 +508,7 @@ class Root(Example):
         self.snippet(
             "disable_root_user",
             "/instances/%s/root" % json_instance.id,
-            "DELETE", 200, "OK",
+            "DELETE", 204, "No Content",
             lambda client: client.root.delete(json_instance.id))
 
         # restore root for subsequent tests

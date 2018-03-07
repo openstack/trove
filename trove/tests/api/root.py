@@ -184,5 +184,5 @@ class TestRoot(object):
         reh = self.dbaas_admin.management.root_enabled_history
         self.root_enabled_timestamp = reh(instance_info.id).enabled
         self.dbaas.root.delete(instance_info.id)
-        assert_equal(200, self.dbaas.last_http_code)
+        assert_equal(204, self.dbaas.last_http_code)
         self._verify_root_timestamp(instance_info.id)

@@ -120,7 +120,7 @@ class RootActionsRunner(TestRunner):
             raise SkipTest("No valid root password defined in %s."
                            % self.test_helper.get_class_name())
 
-    def run_disable_root(self, expected_http_code=200):
+    def run_disable_root(self, expected_http_code=204):
         self.restored_root_creds2 = list(self.current_root_creds)
         self.assert_root_disable(self.instance_info.id, expected_http_code)
 
