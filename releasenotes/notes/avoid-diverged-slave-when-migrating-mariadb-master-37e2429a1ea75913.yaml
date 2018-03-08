@@ -1,0 +1,12 @@
+---
+fixes:
+  - |
+    MariaDB allows an server to be a master and a slave simutaneously, so when
+    migrating masters, if the old master is reactivated before attaching the
+    other replicas to the new master, new unexpected GTIDs may be created on
+    the old master and synced to some of the other replicas by chance, as the
+    other replicas are still connecting to the old one by the time. After that
+    these diverged slave will fail changing to the new master. This will be
+    fixed by first attaching the other replicas to the new master, and then
+    dealing with old master.
+    Fixes #1754539
