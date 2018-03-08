@@ -94,7 +94,7 @@ class MongoDbCluster(models.Cluster):
         volume_size = instances[0].get('volume_size', None)
         volume_type = instances[0].get('volume_type', None)
 
-        nics = [instance.get('nics', None) for instance in instances]
+        nics = instances[0].get('nics', None)
 
         azs = [instance.get('availability_zone', None)
                for instance in instances]
@@ -135,7 +135,7 @@ class MongoDbCluster(models.Cluster):
                                         datastore_version,
                                         volume_size, None,
                                         availability_zone=azs[i],
-                                        nics=nics[i],
+                                        nics=nics,
                                         configuration_id=None,
                                         cluster_config=member_config,
                                         volume_type=volume_type,
@@ -152,7 +152,7 @@ class MongoDbCluster(models.Cluster):
                                         datastore_version,
                                         volume_size, None,
                                         availability_zone=None,
-                                        nics=None,
+                                        nics=nics,
                                         configuration_id=None,
                                         cluster_config=configsvr_config,
                                         volume_type=volume_type,
@@ -169,7 +169,7 @@ class MongoDbCluster(models.Cluster):
                                         datastore_version,
                                         volume_size, None,
                                         availability_zone=None,
-                                        nics=None,
+                                        nics=nics,
                                         configuration_id=None,
                                         cluster_config=mongos_config,
                                         volume_type=volume_type,
