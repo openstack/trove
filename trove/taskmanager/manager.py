@@ -99,6 +99,26 @@ class Manager(periodic_task.PeriodicTasks):
                                        replica_models):
             # First, we transition from the old master to new as quickly as
             # possible to minimize the scope of unrecoverable error
+
+            # NOTE(zhaochao): we cannot reattach the old master to the new
+            # one immediately after the new master is up, because for MariaDB
+            # the other replicas are still connecting to the old master, and
+            # during reattaching the old master as a slave, new GTID may be
+            # created and synced to the replicas. After that, when attaching
+            # the replicas to the new master, 'START SLAVE' will fail by
+            # 'fatal error 1236' if the binlog of the replica diverged from
+            # the new master. So the proper order should be:
+            # -1. make the old master read only (and detach floating ips)
+            # -2. make sure the new master is up-to-date
+            # -3. detach the new master from the old one
+            # -4. enable the new master (and attach floating ips)
+            # -5. attach the other replicas to the new master
+            # -6. attach the old master to the new one
+            #     (and attach floating ips)
+            # -7. demote the old master
+            # What we changed here is the order of the 6th step, previously
+            # this step took place right after step 4, which causes failures
+            # with MariaDB replications.
             old_master.make_read_only(True)
             master_ips = old_master.detach_public_ips()
             slave_ips = master_candidate.detach_public_ips()
@@ -106,10 +126,8 @@ class Manager(periodic_task.PeriodicTasks):
             master_candidate.wait_for_txn(latest_txn_id)
             master_candidate.detach_replica(old_master, for_failover=True)
             master_candidate.enable_as_master()
-            old_master.attach_replica(master_candidate)
             master_candidate.attach_public_ips(master_ips)
             master_candidate.make_read_only(False)
-            old_master.attach_public_ips(slave_ips)
 
             # At this point, should something go wrong, there
             # should be a working master with some number of working slaves,
@@ -138,6 +156,10 @@ class Manager(periodic_task.PeriodicTasks):
                     error_messages += "%s (%s)\n" % (
                         exc_fmt % msg_content, ex)
 
+            # dealing with the old master after all the other replicas
+            # has been migrated.
+            old_master.attach_replica(master_candidate)
+            old_master.attach_public_ips(slave_ips)
             try:
                 old_master.demote_replication_master()
             except Exception as ex:
