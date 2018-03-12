@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mox3 import mox
+import mock
 from novaclient.v2.servers import Server
 from proboscis import after_class
 from proboscis.asserts import assert_equal
@@ -42,7 +42,6 @@ GROUP = "dbaas.api.mgmt.action.reset-task-status"
 class MgmtInstanceBase(object):
 
     def setUp(self):
-        self.mock = mox.Mox()
         self._create_instance()
         self.controller = MgmtInstanceController()
 
@@ -60,7 +59,7 @@ class MgmtInstanceBase(object):
             tenant_id=self.tenant_id,
             volume_size=None,
             task_status=InstanceTasks.NONE)
-        self.server = self.mock.CreateMock(Server)
+        self.server = mock.MagicMock(spec=Server)
         self.instance = imodels.Instance(
             self.context,
             self.db_info,
@@ -103,18 +102,15 @@ class RestartTaskStatusTests(MgmtInstanceBase):
         return req, body
 
     def reset_task_status(self):
-        self.mock.StubOutWithMock(MgmtInstance, 'load')
-        MgmtInstance.load(context=self.context,
-                          id=self.db_info.id).AndReturn(self.instance)
-        self.mock.ReplayAll()
+        with mock.patch.object(MgmtInstance, 'load') as mock_load:
+            mock_load.return_value = self.instance
+            req, body = self._make_request(context=self.context)
+            self.controller = MgmtInstanceController()
+            resp = self.controller.action(req, body, self.tenant_id,
+                                          self.db_info.id)
 
-        req, body = self._make_request(context=self.context)
-        self.controller = MgmtInstanceController()
-        resp = self.controller.action(req, body, self.tenant_id,
-                                      self.db_info.id)
-
-        self.mock.UnsetStubs()
-        self.mock.VerifyAll()
+            mock_load.assert_called_once_with(context=self.context,
+                                              id=self.db_info.id)
         return resp
 
     @test
