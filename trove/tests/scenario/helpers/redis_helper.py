@@ -51,12 +51,22 @@ class RedisHelper(TestHelper):
         # created.
         recreate_client = True
 
-        if host in self._ds_client_cache:
-            new_password = kwargs.get('password')
+        # NOTE(zhaochao): Another problem about caching clients is,  when
+        # the 'requirepass' paramter of Redis server is changed, already
+        # connected client can still issue commands. If we want to make sure
+        # old passwords cannot be used to connect to the server, cached
+        # clients shouldn't be used, a new one should be created instead.
+        # We cannot easily tell whether the 'requirepass' paramter is changed.
+        # So we have to always recreate a client when a password is explicitly
+        # specified. The cached client is only used when no password
+        # specified(i.e. we're going to use the default password) and the
+        # cached password is same as the default one.
+        if (host in self._ds_client_cache and 'password' not in kwargs):
+            default_password = self.get_helper_credentials()['password']
             cached_password = (self._ds_client_cache[host]
                                .connection_pool
                                .connection_kwargs.get('password'))
-            if new_password == cached_password:
+            if cached_password == default_password:
                 recreate_client = False
 
         if recreate_client:
