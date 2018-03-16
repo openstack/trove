@@ -78,6 +78,7 @@ class RootActionsEnableGroup(TestGroup):
     @test(depends_on=[check_root_enabled])
     def backup_root_enabled_instance(self):
         """Backup the root-enabled instance."""
+        self.test_runner.check_inherit_root_state_supported()
         self.backup_runner.run_backup_create()
         self.backup_runner.run_backup_create_completed()
 
@@ -126,6 +127,7 @@ class RootActionsDisableGroup(TestGroup):
     def backup_root_disabled_instance(self):
         """Backup the root-disabled instance."""
         self.test_runner.check_root_disable_supported()
+        self.test_runner.check_inherit_root_state_supported()
         self.backup_runner2.run_backup_create()
         self.backup_runner2.run_backup_create_completed()
 

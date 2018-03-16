@@ -177,6 +177,10 @@ class RootActionsRunner(TestRunner):
         """Throw SkipTest if root-disable is not supported."""
         pass
 
+    def check_inherit_root_state_supported(self):
+        """Throw SkipTest if inherting root state is not supported."""
+        pass
+
 
 class PerconaRootActionsRunner(RootActionsRunner):
 
@@ -231,3 +235,10 @@ class CouchbaseRootActionsRunner(RootActionsRunner):
 
     def run_delete_root(self):
         raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)
+
+
+class RedisRootActionsRunner(RootActionsRunner):
+
+    def check_inherit_root_state_supported(self):
+        raise SkipTest("Redis instances does not inherit root state "
+                       "from backups.")
