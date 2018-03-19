@@ -29,7 +29,6 @@ class ReplicationRunner(TestRunner):
 
         self.master_id = self.instance_info.id
         self.replica_1_id = 0
-        self.replica_2_id = 0
         self.master_host = self.get_instance_host(self.master_id)
         self.replica_1_host = None
         self.master_backup_count = None
@@ -78,12 +77,16 @@ class ReplicationRunner(TestRunner):
         self.master_backup_count = len(
             self.auth_client.instances.backups(self.master_id))
         self.replica_1_id = self.assert_replica_create(
-            self.master_id, 'replica1', 1, expected_http_code)
+            self.master_id, 'replica1', 1, expected_http_code)[0]
 
     def assert_replica_create(
             self, master_id, replica_name, replica_count, expected_http_code):
+        # When creating multiple replicas, only one replica info will be
+        # returned, so we should compare the replica set members before and
+        # after the creation to get the correct new replica ids.
+        original_replicas = self._get_replica_set(master_id)
         client = self.auth_client
-        replica = client.instances.create(
+        client.instances.create(
             self.instance_info.name + '_' + replica_name,
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume, replica_of=master_id,
@@ -92,8 +95,9 @@ class ReplicationRunner(TestRunner):
             nics=self.instance_info.nics,
             replica_count=replica_count)
         self.assert_client_code(client, expected_http_code)
-        self.register_debug_inst_ids(replica.id)
-        return replica.id
+        new_replicas = self._get_replica_set(master_id) - original_replicas
+        self.register_debug_inst_ids(new_replicas)
+        return list(new_replicas)
 
     def run_wait_for_single_replica(self, expected_states=['BUILD', 'ACTIVE']):
         self.assert_instance_action(self.replica_1_id, expected_states)
@@ -113,7 +117,9 @@ class ReplicationRunner(TestRunner):
 
     def _get_replica_set(self, master_id):
         instance = self.get_instance(master_id)
-        return set([replica['id'] for replica in instance._info['replicas']])
+        # Return an empty set before the first replia is created
+        return set([replica['id']
+                    for replica in instance._info.get('replicas', [])])
 
     def _assert_is_replica(self, instance_id, master_id):
         client = self.admin_client
@@ -158,8 +164,8 @@ class ReplicationRunner(TestRunner):
         self.register_debug_inst_ids(self.non_affinity_repl_id)
 
     def run_create_multiple_replicas(self, expected_http_code=200):
-        self.replica_2_id = self.assert_replica_create(
-            self.master_id, 'replica2', 2, expected_http_code)
+        self.assert_replica_create(self.master_id,
+                                   'replica2', 2, expected_http_code)
 
     def run_wait_for_multiple_replicas(
             self, expected_states=['BUILD', 'ACTIVE']):
