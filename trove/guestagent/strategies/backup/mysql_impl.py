@@ -34,7 +34,8 @@ class MySQLDump(base.BackupRunner):
     @property
     def cmd(self):
         user_and_pass = (
-            ' --password=%(password)s -u %(user)s' %
+            ' --password=%(password)s -u %(user)s '
+            '2>/tmp/mysqldump.log' %
             {'password': MySqlApp.get_auth_password(),
              'user': ADMIN_USER_NAME})
         cmd = ('mysqldump'

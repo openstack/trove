@@ -213,6 +213,7 @@ class BackupAgentTest(trove_testtools.TestCase):
                               ' --opt'
                               ' --password=123'
                               ' -u os_admin'
+                              ' 2>/tmp/mysqldump.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
                               '-pass pass:default_aes_cbc_key')
