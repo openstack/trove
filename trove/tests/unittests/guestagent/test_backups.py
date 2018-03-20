@@ -796,7 +796,8 @@ class MongodbRestoreTests(trove_testtools.TestCase):
     def setUp(self, _):
         super(MongodbRestoreTests, self).setUp()
 
-        self.patch_ope = patch('os.path.expanduser')
+        self.patch_ope = patch('os.path.expanduser',
+                               return_value='/tmp/mongo')
         self.mock_ope = self.patch_ope.start()
         self.addCleanup(self.patch_ope.stop)
         self.restore_runner = utils.import_class(

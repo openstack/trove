@@ -34,7 +34,8 @@ class RedisGuestAgentManagerTest(DatastoreManagerTest):
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, *args, **kwargs):
         super(RedisGuestAgentManagerTest, self).setUp('redis')
-        self.patch_ope = patch('os.path.expanduser')
+        self.patch_ope = patch('os.path.expanduser',
+                               return_value='/tmp/redis')
         self.mock_ope = self.patch_ope.start()
         self.addCleanup(self.patch_ope.stop)
         self.replication_strategy = 'RedisSyncReplication'
