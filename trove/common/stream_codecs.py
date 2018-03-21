@@ -15,7 +15,6 @@
 
 import abc
 import ast
-import base64
 import csv
 import json
 import re
@@ -25,6 +24,8 @@ import six
 from six.moves import configparser
 import xmltodict
 import yaml
+
+from oslo_serialization import base64
 
 from trove.common import utils as trove_utils
 
@@ -324,9 +325,14 @@ class PropertiesCodec(StreamCodec):
                 key = row[0].strip()
                 # Ignore comment lines.
                 if not key.strip().startswith(self._comment_markers):
-                    items = self._string_converter.to_objects(
+                    # NOTE(zhaochao): a list object is expected for
+                    # trove_utils.unpack_singleton, however in python3
+                    # map objects won't be treated as lists, so we
+                    # convert the result of StringConverter.to_objects
+                    # to a list explicitly.
+                    items = list(self._string_converter.to_objects(
                         [v if v else None for v in
-                         map(self._strip_comments, row[1:])])
+                         map(self._strip_comments, row[1:])]))
                     current = data_dict.get(key)
                     if current is not None:
                         current.append(trove_utils.unpack_singleton(items)
@@ -360,9 +366,14 @@ class PropertiesCodec(StreamCodec):
                     header, self._string_converter.to_strings(items)))
         else:
             # This is a single-row property with only one argument.
+            # Note(zhaochao): csv.writerows expects a list object before
+            # python 3.5, but map objects won't be treated as lists in
+            # python 3, so we explicitly convert the result of
+            # StringConverter.to_strings to a list here to support py34
+            # unittests.
             rows.append(
-                self._string_converter.to_strings(
-                    self._to_list(header, items)))
+                list(self._string_converter.to_strings(
+                    self._to_list(header, items))))
 
         return rows
 
@@ -434,7 +445,14 @@ class KeyValueCodec(StreamCodec):
         return self._line_terminator.join(lines)
 
     def deserialize(self, stream):
-        lines = stream.split(self._line_terminator)
+        # Note(zhaochao): In Python 3, when files are opened in text mode,
+        # newlines will be translated to '\n' by default, so we just split
+        # the stream by '\n'.
+        if sys.version_info[0] >= 3:
+            lines = stream.split('\n')
+        else:
+            lines = stream.split(self._line_terminator)
+
         result = {}
         for line in lines:
             line = line.lstrip().rstrip()
@@ -500,22 +518,14 @@ class Base64Codec(StreamCodec):
     binary data before writing to a file as well.
     """
 
-    def serialize(self, data):
+    # NOTE(zhaochao): migrate to oslo_serialization.base64 to serialize(return
+    # a text object) and deserialize(return a bytes object) data.
 
-        try:
-            # py27str - if we've got text data, this should encode it
-            # py27aa/py34aa - if we've got a bytearray, this should work too
-            encoded = str(base64.b64encode(data).decode('utf-8'))
-        except TypeError:
-            # py34str - convert to bytes first, then we can encode
-            data_bytes = bytes([ord(item) for item in data])
-            encoded = base64.b64encode(data_bytes).decode('utf-8')
-        return encoded
+    def serialize(self, data):
+        return base64.encode_as_text(data)
 
     def deserialize(self, stream):
-
-        # py27 & py34 seem to understand bytearray the same
-        return bytearray([item for item in base64.b64decode(stream)])
+        return base64.decode_as_bytes(stream)
 
 
 class XmlCodec(StreamCodec):

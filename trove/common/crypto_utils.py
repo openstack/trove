@@ -31,8 +31,9 @@ IV_BIT_COUNT = 16
 
 
 def encode_data(data):
-    if isinstance(data, six.text_type):
-        data = data.encode('utf-8')
+    # NOTE(zhaochao) No need to encoding string object any more,
+    # as Base64Codec is now using oslo_serialization.base64 which
+    # could take care of this.
     return stream_codecs.Base64Codec().serialize(data)
 
 
