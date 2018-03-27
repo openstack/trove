@@ -394,7 +394,7 @@ def to_mb(bytes):
 def req_to_text(req):
     """
     We do a lot request logging for debug, but if the value of one
-    requst header is encoded in utf-8, an UnicodeEncodeError will
+    request header is encoded in utf-8, an UnicodeEncodeError will
     be raised. So we should carefully encode request headers.
 
     To be consitent with webob, main procedures are copied from
