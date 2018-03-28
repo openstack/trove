@@ -24,6 +24,7 @@
         - trove-tox-apiexamples
         - trove-tox-bandit-baseline:
             voting: false
+        - openstack-tox-lower-constraints
     gate:
       queue: trove
       jobs:
@@ -32,6 +33,7 @@
         - trove-scenario-mysql-multi
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
+        - openstack-tox-lower-constraints
     experimental:
       jobs:
         - trove-grenade
