@@ -13,8 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock
-from mox3 import mox
+import mock
 from novaclient.exceptions import BadRequest
 from novaclient.v2.servers import Server
 from oslo_messaging._drivers.common import RPCException
@@ -22,6 +21,7 @@ from proboscis import test
 from testtools import TestCase
 
 from trove.common.exception import PollTimeOut
+from trove.common.exception import TroveError
 from trove.common import instance as rd_instance
 from trove.common import template
 from trove.common import utils
@@ -46,7 +46,6 @@ NEW_FLAVOR = nova.FLAVORS.get(NEW_FLAVOR_ID)
 class ResizeTestBase(TestCase):
 
     def _init(self):
-        self.mock = mox.Mox()
         self.instance_id = 500
         context = trove_testtools.TroveTestContext(self)
         self.db_info = DBInstance.create(
@@ -56,7 +55,7 @@ class ResizeTestBase(TestCase):
             volume_size=None,
             datastore_version_id=test_config.dbaas_datastore_version_id,
             task_status=InstanceTasks.RESIZING)
-        self.server = self.mock.CreateMock(Server)
+        self.server = mock.MagicMock(spec=Server)
         self.instance = models.BuiltInstanceTasks(
             context,
             self.db_info,
@@ -65,47 +64,34 @@ class ResizeTestBase(TestCase):
                 instance_id=self.db_info.id,
                 status=rd_instance.ServiceStatuses.RUNNING))
         self.instance.server.flavor = {'id': OLD_FLAVOR_ID}
-        self.guest = self.mock.CreateMock(guest.API)
+        self.guest = mock.MagicMock(spec=guest.API)
         self.instance._guest = self.guest
         self.instance.refresh_compute_server_info = lambda: None
         self.instance._refresh_datastore_status = lambda: None
-        self.mock.StubOutWithMock(self.instance, 'update_db')
-        self.mock.StubOutWithMock(self.instance,
-                                  'set_datastore_status_to_paused')
-        self.poll_until_mocked = False
+        self.instance.update_db = mock.Mock()
+        self.instance.set_datastore_status_to_paused = mock.Mock()
+        self.poll_until_side_effects = []
         self.action = None
 
     def tearDown(self):
         super(ResizeTestBase, self).tearDown()
-        self.mock.UnsetStubs()
         self.db_info.delete()
 
-    def _execute_action(self):
-        self.instance.update_db(task_status=InstanceTasks.NONE)
-        self.mock.ReplayAll()
-        excs = (Exception)
-        self.assertRaises(excs, self.action.execute)
-        self.mock.VerifyAll()
+    def _poll_until(self, *args, **kwargs):
+        try:
+            effect = self.poll_until_side_effects.pop(0)
+        except IndexError:
+            effect = None
 
-    def _stop_db(self, reboot=True):
-        self.guest.stop_db(do_not_start_on_reboot=reboot)
-        self.instance.datastore_status.status = (
-            rd_instance.ServiceStatuses.SHUTDOWN)
-
-    def _server_changes_to(self, new_status, new_flavor_id):
-        def change():
+        if isinstance(effect, Exception):
+            raise effect
+        elif effect is not None:
+            new_status, new_flavor_id = effect
             self.server.status = new_status
             self.instance.server.flavor['id'] = new_flavor_id
 
-        if not self.poll_until_mocked:
-            self.mock.StubOutWithMock(utils, "poll_until")
-            self.poll_until_mocked = True
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
-            .WithSideEffects(lambda ignore, sleep_time, time_out: change())
-
-    def _nova_resizes_successfully(self):
-        self.server.resize(NEW_FLAVOR_ID)
-        self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
+    def _datastore_changes_to(self, new_status):
+        self.instance.datastore_status.status = new_status
 
 
 @test(groups=[GROUP, GROUP + '.resize'])
@@ -121,7 +107,7 @@ class ResizeTests(ResizeTestBase):
                                           NEW_FLAVOR.__dict__)
 
     def _start_mysql(self):
-        datastore = Mock(spec=DatastoreVersion)
+        datastore = mock.Mock(spec=DatastoreVersion)
         datastore.datastore_name = 'mysql'
         datastore.name = 'mysql-5.7'
         datastore.manager = 'mysql'
@@ -130,110 +116,249 @@ class ResizeTests(ResizeTestBase):
         self.instance.guest.start_db_with_conf_changes(config.render())
 
     def test_guest_wont_stop_mysql(self):
-        self.guest.stop_db(do_not_start_on_reboot=True)\
-            .AndRaise(RPCException("Could not stop MySQL!"))
+        self.guest.stop_db.side_effect = RPCException("Could not stop MySQL!")
+        self.assertRaises(RPCException, self.action.execute)
+        self.guest.stop_db.assert_called_once_with(do_not_start_on_reboot=True)
+        self.instance.update_db.assert_called_once_with(
+            task_status=InstanceTasks.NONE)
 
     def test_nova_wont_resize(self):
-        self._stop_db()
-        self.server.resize(NEW_FLAVOR_ID).AndRaise(BadRequest)
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self.server.resize.side_effect = BadRequest(400)
         self.server.status = "ACTIVE"
-        self.guest.restart()
-        self._execute_action()
+        self.assertRaises(BadRequest, self.action.execute)
+        self.guest.stop_db.assert_called_once_with(do_not_start_on_reboot=True)
+        self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+        self.guest.restart.assert_called_once()
+        self.instance.update_db.assert_called_once_with(
+            task_status=InstanceTasks.NONE)
 
     def test_nova_resize_timeout(self):
-        self._stop_db()
-        self.server.resize(NEW_FLAVOR_ID)
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self.server.status = "ACTIVE"
 
-        self.mock.StubOutWithMock(utils, 'poll_until')
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
-            .AndRaise(PollTimeOut)
-        self._execute_action()
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            mock_poll_until.side_effect = [None, PollTimeOut()]
+            self.assertRaises(PollTimeOut, self.action.execute)
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 2
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_nova_doesnt_change_flavor(self):
-        self._stop_db()
-        self.server.resize(NEW_FLAVOR_ID)
-        self._server_changes_to("VERIFY_RESIZE", OLD_FLAVOR_ID)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.guest.reset_configuration(mox.IgnoreArg())
-        self.instance.server.revert_resize()
-        self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
-        self.guest.restart()
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                ("VERIFY_RESIZE", OLD_FLAVOR_ID),
+                None,
+                ("ACTIVE", OLD_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.assertRaisesRegex(TroveError,
+                                   "flavor_id=.* and not .*",
+                                   self.action.execute)
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 3
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.guest.reset_configuration.assert_called_once_with(
+                mock.ANY)
+            self.instance.server.revert_resize.assert_called_once()
+            self.guest.restart.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_nova_resize_fails(self):
-        self._stop_db()
-        self.server.resize(NEW_FLAVOR_ID)
-        self._server_changes_to("ERROR", OLD_FLAVOR_ID)
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("ERROR", OLD_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.assertRaisesRegex(TroveError,
+                                   "status=ERROR and not VERIFY_RESIZE",
+                                   self.action.execute)
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 2
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_nova_resizes_in_weird_state(self):
-        self._stop_db()
-        self.server.resize(NEW_FLAVOR_ID)
-        self._server_changes_to("ACTIVE", NEW_FLAVOR_ID)
-        self.guest.restart()
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("ACTIVE", NEW_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.assertRaisesRegex(TroveError,
+                                   "status=ACTIVE and not VERIFY_RESIZE",
+                                   self.action.execute)
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 2
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.guest.restart.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_guest_is_not_okay(self):
-        self._stop_db()
-        self._nova_resizes_successfully()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.set_datastore_status_to_paused()
-        self.instance.datastore_status.status = (
-            rd_instance.ServiceStatuses.PAUSED)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
-            .AndRaise(PollTimeOut)
-        self.instance.guest.reset_configuration(mox.IgnoreArg())
-        self.instance.server.revert_resize()
-        self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
-        self.guest.restart()
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("VERIFY_RESIZE", NEW_FLAVOR_ID),
+                None,
+                PollTimeOut(),
+                ("ACTIVE", OLD_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.instance.set_datastore_status_to_paused.side_effect = (
+                lambda: self._datastore_changes_to(
+                    rd_instance.ServiceStatuses.PAUSED))
+
+            self.assertRaises(PollTimeOut, self.action.execute)
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 5
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.set_datastore_status_to_paused.assert_called_once()
+            self.instance.guest.reset_configuration.assert_called_once_with(
+                mock.ANY)
+            self.instance.server.revert_resize.assert_called_once()
+            self.guest.restart.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_mysql_is_not_okay(self):
-        self._stop_db()
-        self._nova_resizes_successfully()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.set_datastore_status_to_paused()
-        self.instance.datastore_status.status = (
-            rd_instance.ServiceStatuses.SHUTDOWN)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self._start_mysql()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2,
-                         time_out=120).AndRaise(PollTimeOut)
-        self.instance.guest.reset_configuration(mox.IgnoreArg())
-        self.instance.server.revert_resize()
-        self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
-        self.guest.restart()
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("VERIFY_RESIZE", NEW_FLAVOR_ID),
+                PollTimeOut(),
+                ("ACTIVE", OLD_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.instance.set_datastore_status_to_paused.side_effect = (
+                lambda: self._datastore_changes_to(
+                    rd_instance.ServiceStatuses.SHUTDOWN))
+
+            self._start_mysql()
+            self.assertRaises(PollTimeOut, self.action.execute)
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 4
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.set_datastore_status_to_paused.assert_called_once()
+            self.instance.guest.reset_configuration.assert_called_once_with(
+                mock.ANY)
+            self.instance.server.revert_resize.assert_called_once()
+            self.guest.restart.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_confirm_resize_fails(self):
-        self._stop_db()
-        self._nova_resizes_successfully()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.set_datastore_status_to_paused()
-        self.instance.datastore_status.status = (
-            rd_instance.ServiceStatuses.RUNNING)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self._start_mysql()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.server.status = "SHUTDOWN"
-        self.instance.server.confirm_resize()
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("VERIFY_RESIZE", NEW_FLAVOR_ID),
+                None,
+                None,
+                ("SHUTDOWN", NEW_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.instance.set_datastore_status_to_paused.side_effect = (
+                lambda: self._datastore_changes_to(
+                    rd_instance.ServiceStatuses.RUNNING))
+            self.server.confirm_resize.side_effect = BadRequest(400)
+
+            self._start_mysql()
+            self.assertRaises(BadRequest, self.action.execute)
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 5
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.set_datastore_status_to_paused.assert_called_once()
+            self.instance.server.confirm_resize.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
     def test_revert_nova_fails(self):
-        self._stop_db()
-        self._nova_resizes_successfully()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.set_datastore_status_to_paused()
-        self.instance.datastore_status.status = (
-            rd_instance.ServiceStatuses.PAUSED)
-        utils.poll_until(mox.IgnoreArg(),
-                         sleep_time=2,
-                         time_out=120).AndRaise(PollTimeOut)
-        self.instance.guest.reset_configuration(mox.IgnoreArg())
-        self.instance.server.revert_resize()
-        self._server_changes_to("ERROR", OLD_FLAVOR_ID)
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("VERIFY_RESIZE", NEW_FLAVOR_ID),
+                None,
+                PollTimeOut(),
+                ("ERROR", OLD_FLAVOR_ID)])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.instance.set_datastore_status_to_paused.side_effect = (
+                lambda: self._datastore_changes_to(
+                    rd_instance.ServiceStatuses.PAUSED))
+
+            self.assertRaises(PollTimeOut, self.action.execute)
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 5
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
+            self.instance.set_datastore_status_to_paused.assert_called_once()
+            self.instance.guest.reset_configuration.assert_called_once_with(
+                mock.ANY)
+            self.instance.server.revert_resize.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
 
 
 @test(groups=[GROUP, GROUP + '.migrate'])
@@ -244,26 +369,32 @@ class MigrateTests(ResizeTestBase):
         self._init()
         self.action = models.MigrateAction(self.instance)
 
-    def _execute_action(self):
-        self.instance.update_db(task_status=InstanceTasks.NONE)
-        self.mock.ReplayAll()
-        self.assertIsNone(self.action.execute())
-        self.mock.VerifyAll()
-
-    def _start_mysql(self):
-        self.guest.restart()
-
     def test_successful_migrate(self):
-        self.mock.StubOutWithMock(self.instance.server, 'migrate')
-        self._stop_db()
-        self.server.migrate(force_host=None)
-        self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.set_datastore_status_to_paused()
-        self.instance.datastore_status.status = (
-            rd_instance.ServiceStatuses.RUNNING)
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self._start_mysql()
-        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
-        self.instance.server.confirm_resize()
-        self._execute_action()
+        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        with mock.patch.object(utils, 'poll_until') as mock_poll_until:
+            self.poll_until_side_effects.extend([
+                None,
+                ("VERIFY_RESIZE", NEW_FLAVOR_ID),
+                None,
+                None])
+            mock_poll_until.side_effect = self._poll_until
+
+            self.instance.set_datastore_status_to_paused.side_effect = (
+                lambda: self._datastore_changes_to(
+                    rd_instance.ServiceStatuses.RUNNING))
+
+            self.action.execute()
+
+            expected_calls = [
+                mock.call(mock.ANY, sleep_time=2, time_out=120)] * 4
+            self.assertEqual(expected_calls, mock_poll_until.call_args_list)
+            # Make sure self.poll_until_side_effects is empty
+            self.assertFalse(self.poll_until_side_effects)
+            self.guest.stop_db.assert_called_once_with(
+                do_not_start_on_reboot=True)
+            self.server.migrate.assert_called_once_with(force_host=None)
+            self.instance.set_datastore_status_to_paused.assert_called_once()
+            self.instance.server.confirm_resize.assert_called_once()
+            self.instance.update_db.assert_called_once_with(
+                task_status=InstanceTasks.NONE)
