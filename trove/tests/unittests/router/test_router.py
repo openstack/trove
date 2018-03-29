@@ -18,7 +18,7 @@ from trove.common.wsgi import Router, Fault
 from trove.tests.unittests import trove_testtools
 
 
-class FakeRequst(object):
+class FakeRequest(object):
     """A fake webob request object designed to cause 404.
 
     The dispatcher actually checks if the given request is a dict and throws
@@ -44,7 +44,7 @@ class TestRouter(trove_testtools.TestCase):
     def test_404_is_fault(self):
         """Test that the dispatcher wraps 404's in a `Fault`."""
 
-        fake_request = FakeRequst()
+        fake_request = FakeRequest()
 
         response = Router._dispatch(fake_request)
 
