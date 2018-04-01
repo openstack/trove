@@ -13,19 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
 import os
-import time
-import socket
-
-from nose.plugins.skip import SkipTest
 
 from proboscis import test
 from proboscis.asserts import fail
-from proboscis.decorators import time_out
 from tests.util.services import Service
-from tests.util.services import start_proc
-from tests.util.services import WebService
 from trove.tests.config import CONFIG
 
 

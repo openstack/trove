@@ -18,14 +18,11 @@ If you define the environment variable ADD_DOMAINS=True when running the tests,
 they will create the domain if its not found (see below for details).
 
 """
-import os
 import time
-import unittest
 from proboscis import test
 from proboscis import before_class
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
-from proboscis.decorators import expect_exception
 from proboscis.decorators import time_out
 
 from trove.tests.config import CONFIG

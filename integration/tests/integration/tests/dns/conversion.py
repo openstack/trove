@@ -15,10 +15,8 @@
 """Tests classes which convert RS style-entries to Nova DNS entries."""
 
 import hashlib
-import re
 import unittest
 from proboscis import test
-from proboscis.decorators import expect_exception
 
 from trove.tests.config import CONFIG
 
