@@ -14,8 +14,8 @@
 #    under the License.
 #
 
-from Crypto import Random
 import mock
+import os
 import six
 
 from trove.common import crypto_utils
@@ -31,7 +31,7 @@ class TestEncryptUtils(trove_testtools.TestCase):
         super(TestEncryptUtils, self).tearDown()
 
     def test_encode_decode_string(self):
-        random_data = bytearray(Random.new().read(12))
+        random_data = bytearray(os.urandom(12))
         data = [b'abc', b'numbers01234', b'\x00\xFF\x00\xFF\xFF\x00',
                 random_data, u'Unicode:\u20ac']
 
@@ -47,8 +47,8 @@ class TestEncryptUtils(trove_testtools.TestCase):
         for size in range(1, 100):
             data_str = b'a' * size
             padded_str = crypto_utils.pad_for_encryption(
-                data_str, crypto_utils.IV_BIT_COUNT)
-            self.assertEqual(0, len(padded_str) % crypto_utils.IV_BIT_COUNT,
+                data_str, crypto_utils.IV_BYTE_COUNT)
+            self.assertEqual(0, len(padded_str) % crypto_utils.IV_BYTE_COUNT,
                              "Padding not successful")
             unpadded_str = crypto_utils.unpad_after_decryption(padded_str)
             self.assertEqual(data_str, unpadded_str,
@@ -57,7 +57,7 @@ class TestEncryptUtils(trove_testtools.TestCase):
     def test_encryp_decrypt(self):
         key = 'my_secure_key'
         for size in range(1, 100):
-            orig_data = Random.new().read(size)
+            orig_data = os.urandom(size)
             orig_encoded = crypto_utils.encode_data(orig_data)
             encrypted = crypto_utils.encrypt_data(orig_encoded, key)
             encoded = crypto_utils.encode_data(encrypted)
@@ -71,11 +71,9 @@ class TestEncryptUtils(trove_testtools.TestCase):
     def test_encrypt(self):
         # test encrypt() with an hardcoded IV
         key = 'my_secure_key'
-        salt = b'x' * crypto_utils.IV_BIT_COUNT
+        salt = b'x' * crypto_utils.IV_BYTE_COUNT
 
-        with mock.patch('Crypto.Random.new') as mock_random:
-            mock_random.return_value.read.return_value = salt
-
+        with mock.patch('os.urandom', return_value=salt):
             for orig_data, expected in (
                 # byte string
                 (b'Hello World!',

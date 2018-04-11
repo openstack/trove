@@ -16,18 +16,41 @@
 
 # Encryption/decryption handling
 
-from Crypto.Cipher import AES
-from Crypto import Random
 import hashlib
+import os
 from oslo_utils import encodeutils
 import random
 import six
 import string
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import algorithms
+from cryptography.hazmat.primitives.ciphers import Cipher
+from cryptography.hazmat.primitives.ciphers import modes
 from trove.common import stream_codecs
 
 
-IV_BIT_COUNT = 16
+IV_BYTE_COUNT = 16
+_CRYPT_BACKEND = None
+
+
+def _get_cipher(key, iv):
+    global _CRYPT_BACKEND
+    if not _CRYPT_BACKEND:
+        _CRYPT_BACKEND = default_backend()
+
+    return Cipher(algorithms.AES(key), modes.CBC(iv),
+                  backend=_CRYPT_BACKEND)
+
+
+def _encrypt(key, iv, data):
+    encryptor = _get_cipher(key, iv).encryptor()
+    return encryptor.update(data) + encryptor.finalize()
+
+
+def _decrypt(key, iv, data):
+    decryptor = _get_cipher(key, iv).decryptor()
+    return decryptor.update(data) + decryptor.finalize()
 
 
 def encode_data(data):
@@ -42,7 +65,7 @@ def decode_data(data):
 
 
 # Pad the data string to an multiple of pad_size
-def pad_for_encryption(data, pad_size=IV_BIT_COUNT):
+def pad_for_encryption(data, pad_size=IV_BYTE_COUNT):
     pad_count = pad_size - (len(data) % pad_size)
     return data + six.int2byte(pad_count) * pad_count
 
@@ -52,24 +75,22 @@ def unpad_after_decryption(data):
     return data[:len(data) - six.indexbytes(data, -1)]
 
 
-def encrypt_data(data, key, iv_bit_count=IV_BIT_COUNT):
+def encrypt_data(data, key, iv_byte_count=IV_BYTE_COUNT):
     data = encodeutils.to_utf8(data)
     key = encodeutils.to_utf8(key)
-    md5_key = hashlib.md5(key).hexdigest()
-    iv = Random.new().read(iv_bit_count)
-    iv = iv[:iv_bit_count]
-    aes = AES.new(md5_key, AES.MODE_CBC, iv)
-    data = pad_for_encryption(data, iv_bit_count)
-    encrypted = aes.encrypt(data)
+    md5_key = encodeutils.safe_encode(hashlib.md5(key).hexdigest())
+    iv = os.urandom(iv_byte_count)
+    iv = iv[:iv_byte_count]
+    data = pad_for_encryption(data, iv_byte_count)
+    encrypted = _encrypt(md5_key, bytes(iv), data)
     return iv + encrypted
 
 
-def decrypt_data(data, key, iv_bit_count=IV_BIT_COUNT):
+def decrypt_data(data, key, iv_byte_count=IV_BYTE_COUNT):
     key = encodeutils.to_utf8(key)
-    md5_key = hashlib.md5(key).hexdigest()
-    iv = data[:iv_bit_count]
-    aes = AES.new(md5_key, AES.MODE_CBC, bytes(iv))
-    decrypted = aes.decrypt(bytes(data[iv_bit_count:]))
+    md5_key = encodeutils.safe_encode(hashlib.md5(key).hexdigest())
+    iv = data[:iv_byte_count]
+    decrypted = _decrypt(md5_key, bytes(iv), bytes(data[iv_byte_count:]))
     return unpad_after_decryption(decrypted)
 
 

@@ -26,5 +26,6 @@ oslo.utils>=1.1.0
 osprofiler>=0.3.0
 oslo.concurrency>=0.3.0
 enum34;python_version=='2.7' or python_version=='2.6' or python_version=='3.3'  # BSD
+cryptography>=2.1.4  # BSD/Apache-2.0
 pycrypto>=2.6  # Public Domain
 xmltodict>=0.10.1  # MIT
