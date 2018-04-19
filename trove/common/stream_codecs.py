@@ -342,7 +342,14 @@ class PropertiesCodec(StreamCodec):
 
         if self._unpack_singletons:
             # Unpack singleton values.
-            for k, v in data_dict.items():
+            # NOTE(zhaochao): In Python 3.x, dict.items() returns a view
+            # object, which will reflect the changes of the dict itself:
+            # https://docs.python.org/3/library/stdtypes.html#dict-views
+            # This means as we're changing the dict, dict.items() cannot
+            # guarantee we're safely iterating all entries in the dict.
+            # Manually converting the result of dict.items() to a list will
+            # fix.
+            for k, v in list(data_dict.items()):
                 data_dict.update({k: trove_utils.unpack_singleton(v)})
 
         return data_dict
