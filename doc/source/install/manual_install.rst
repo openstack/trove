@@ -78,17 +78,17 @@ Python settings
 
 To find out which setuptools version is latest please check out the `setuptools repo`_.
 
-.. _setuptools repo: https://pypi.python.org/pypi/setuptools/
+.. _setuptools repo: https://pypi.org/project/setuptools/
 
 To find out which pip version is latest please visit the `pip repo`_.
 
-.. _pip repo: https://pypi.python.org/pypi/pip/
+.. _pip repo: https://pypi.org/project/pip/
 
 Some packages in Ubuntu repositories are outdated. Please make sure to update to the latest versions from the appropriate sources.
 
 Use latest setuptools:
 
-Go https://pypi.python.org/pypi/setuptools, download the latest source setuptools, and move it under ~
+Go https://pypi.org/project/setuptools, download the latest source setuptools, and move it under ~
 
 .. code-block:: bash
 
@@ -99,7 +99,7 @@ Go https://pypi.python.org/pypi/setuptools, download the latest source setuptool
 
 Use latest pip:
 
-Go https://pypi.python.org/pypi/pip, download the latest source pip, and move it under ~
+Go https://pypi.org/project/pip, download the latest source pip, and move it under ~
 
 .. code-block:: bash
 
