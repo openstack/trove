@@ -1,0 +1,8 @@
+Trove devstack
+
+** Role Variables **
+
+.. zuul:rolevar:: trove_test_group
+   :default: mysql
+
+   The test group for running trovestack.
