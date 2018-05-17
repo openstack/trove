@@ -27,7 +27,7 @@ class MongoDBSchema(models.DatastoreSchema):
     def _is_valid_schema_name(self, value):
         # check against the invalid character set from
         # http://docs.mongodb.org/manual/reference/limits
-        return not any(c in value for c in '/\. "$')
+        return not any(c in value for c in r'/\. "$')
 
 
 class MongoDBUser(models.DatastoreUser):

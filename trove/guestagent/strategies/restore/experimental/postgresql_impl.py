@@ -37,7 +37,7 @@ class PgDump(base.RestoreRunner):
     base_restore_cmd = 'psql -U os_admin'
 
     IGNORED_ERROR_PATTERNS = [
-        re.compile("ERROR:\s*role \"postgres\" already exists"),
+        re.compile(r'ERROR:\s*role "postgres" already exists'),
     ]
 
     def restore(self):
@@ -96,7 +96,7 @@ class PgBaseBackup(base.RestoreRunner):
     base_restore_cmd = ''
 
     IGNORED_ERROR_PATTERNS = [
-        re.compile("ERROR:\s*role \"postgres\" already exists"),
+        re.compile(r'ERROR:\s*role "postgres" already exists'),
     ]
 
     def __init__(self, *args, **kwargs):

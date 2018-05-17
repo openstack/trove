@@ -61,11 +61,11 @@ RESTORE_OFFLINE_DB = (
     "db2 restore database %(dbname)s from " + DB2_BACKUP_DIR)
 GET_DB_SIZE = (
     "db2 +o connect to %(dbname)s;"
-    "db2 call get_dbsize_info\(?, ?, ?, -1\) | "
+    r"db2 call get_dbsize_info\(?, ?, ?, -1\) | "
     "grep -A1 'DATABASESIZE' | grep 'Parameter Value' | sed 's/.*[:]//' |"
     " tr -d '\n'; db2 +o connect reset")
 GET_DB_NAMES = ("find /home/db2inst1/db2inst1/backup/ -type f -name '*.001' |"
-                " grep -Po \"(?<=backup/)[^.']*(?=\.)\"")
+                " grep -Po \"(?<=backup/)[^.']*(?=\\.)\"")
 GET_DBM_CONFIGURATION = "db2 get dbm configuration > %(dbm_config)s"
 UPDATE_DBM_CONFIGURATION = ("db2 update database manager configuration using "
                             "%(parameter)s %(value)s")

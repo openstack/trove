@@ -295,7 +295,7 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
     within their set got applied.
     """
 
-    FILE_NAME_PATTERN = '%s-([0-9]+)-%s\.%s$'
+    FILE_NAME_PATTERN = r'%s-([0-9]+)-%s\.%s$'
 
     def __init__(self, revision_dir, revision_ext):
         """

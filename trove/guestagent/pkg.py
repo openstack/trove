@@ -202,7 +202,7 @@ class RedhatPackagerMixin(RPMPackagerMixin):
 
         """
         cmd = "sudo yum --color=never -y install %s" % " ".join(packages)
-        output_expects = ['\[sudo\] password for .*:',
+        output_expects = [r'\[sudo\] password for .*:',
                           'No package (.*) available.',
                           ('file .* from install of .* conflicts with file'
                            ' from package (.*?)\r\n'),
@@ -243,7 +243,7 @@ class RedhatPackagerMixin(RPMPackagerMixin):
         """
         cmd = "sudo yum --color=never -y remove %s" % package_name
         LOG.debug("Running package remove command: %s", cmd)
-        output_expects = ['\[sudo\] password for .*:',
+        output_expects = [r'\[sudo\] password for .*:',
                           'No Packages marked for removal',
                           'Removed:']
         i, match = self.pexpect_run(cmd, output_expects, time_out)
@@ -395,7 +395,7 @@ class DebianPackagerMixin(BasePackagerMixin):
     def pkg_version(self, package_name):
         std_out = getoutput("apt-cache", "policy", package_name)
         for line in std_out.split("\n"):
-            m = re.match("\s+Installed: (.*)", line)
+            m = re.match(r"\s+Installed: (.*)", line)
             if m:
                 version = m.group(1)
                 if version == "(none)":

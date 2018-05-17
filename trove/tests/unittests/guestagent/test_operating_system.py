@@ -1146,35 +1146,35 @@ class TestOperatingSystem(trove_testtools.TestCase):
 
             # Only '*.txt' in the top directory.
             self._assert_list_files(
-                root_path, False, '.*\.txt$', False, all_paths, 3)
+                root_path, False, r'.*\.txt$', False, all_paths, 3)
 
             # Only '*.txt' (including directories) in the top directory.
             self._assert_list_files(
-                root_path, False, '.*\.txt$', True, all_paths, 3)
+                root_path, False, r'.*\.txt$', True, all_paths, 3)
 
             # Only '*.txt' recursive.
             self._assert_list_files(
-                root_path, True, '.*\.txt$', True, all_paths, 9)
+                root_path, True, r'.*\.txt$', True, all_paths, 9)
 
             # Only '*.txt' (including directories) recursive.
             self._assert_list_files(
-                root_path, True, '.*\.txt$', False, all_paths, 9)
+                root_path, True, r'.*\.txt$', False, all_paths, 9)
 
             # Only extension-less files in the top directory.
             self._assert_list_files(
-                root_path, False, '[^\.]*$', False, all_paths, 3)
+                root_path, False, r'[^\.]*$', False, all_paths, 3)
 
             # Only extension-less files recursive.
             self._assert_list_files(
-                root_path, True, '[^\.]*$', False, all_paths, 9)
+                root_path, True, r'[^\.]*$', False, all_paths, 9)
 
             # Non-existing extension in the top directory.
             self._assert_list_files(
-                root_path, False, '.*\.bak$', False, all_paths, 0)
+                root_path, False, r'.*\.bak$', False, all_paths, 0)
 
             # Non-existing extension recursive.
             self._assert_list_files(
-                root_path, True, '.*\.bak$', False, all_paths, 0)
+                root_path, True, r'.*\.bak$', False, all_paths, 0)
         finally:
             try:
                 os.remove(root_path)

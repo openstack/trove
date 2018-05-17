@@ -125,8 +125,8 @@ class PgBaseBackup(base.BackupRunner, PgBaseBackupUtil):
         operating_system.chmod(
             metadata_file, FileMode(add=[stat.S_IROTH]), as_root=True)
 
-        start_re = re.compile("START WAL LOCATION: (.*) \(file (.*)\)")
-        stop_re = re.compile("STOP WAL LOCATION: (.*) \(file (.*)\)")
+        start_re = re.compile(r"START WAL LOCATION: (.*) \(file (.*)\)")
+        stop_re = re.compile(r"STOP WAL LOCATION: (.*) \(file (.*)\)")
         checkpt_re = re.compile("CHECKPOINT LOCATION: (.*)")
         label_re = re.compile("LABEL: (.*)")
 

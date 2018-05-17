@@ -102,8 +102,8 @@ class NodetoolSnapshot(base.BackupRunner):
                   snapshot_name)
         snapshot_files = operating_system.list_files_in_directory(
             data_dir, recursive=True, include_dirs=False,
-            pattern='.*/snapshots/%s/.*\.%s' % (snapshot_name,
-                                                self._SNAPSHOT_EXTENSION),
+            pattern=r'.*/snapshots/%s/.*\.%s' % (snapshot_name,
+                                                 self._SNAPSHOT_EXTENSION),
             as_root=True)
         num_snapshot_files = len(snapshot_files)
         LOG.debug('Found %(num)d snapshot (*.%(ext)s) files.',

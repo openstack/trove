@@ -43,8 +43,8 @@ cmd_update_sysctl_conf = ('echo "vm.swappiness = 0" | sudo tee -a '
                           '/etc/sysctl.conf')
 cmd_reset_pwd = 'sudo /opt/couchbase/bin/cbreset_password %(IP)s:8091'
 pwd_file = COUCHBASE_CONF_DIR + SECRET_KEY
-cmd_get_password_from_config = """sudo /opt/couchbase/bin/erl -noinput -eval \
-'case file:read_file("/opt/couchbase/var/lib/couchbase/config/config.dat") \
-of {ok, B} -> io:format("~p~n", [binary_to_term(B)]) end.' \
--run init stop | grep '\[{"root",\[{password,' | awk -F\\" '{print $4}'
-"""
+cmd_get_password_from_config = (
+    r"""sudo /opt/couchbase/bin/erl -noinput -eval 'case file:read_file("""
+    r""""/opt/couchbase/var/lib/couchbase/config/config.dat") of {ok, B} ->"""
+    r"""io:format("~p~n", [binary_to_term(B)]) end.' -run init stop"""
+    r""" | grep '\[{"root",\[{password,' | awk -F\" '{print $4}'""")

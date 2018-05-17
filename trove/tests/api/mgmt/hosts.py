@@ -67,7 +67,7 @@ class HostsBeforeInstanceCreation(object):
 
     @test(depends_on=[test_empty_index_host_list])
     def test_empty_index_host_list_single(self):
-        self.host.name = self.host.name.replace(".", "\.")
+        self.host.name = self.host.name.replace(".", r"\.")
         result = self.client.hosts.get(self.host)
         assert_not_equal(result, None,
                          "Get host should not be empty for: %s" % self.host)
@@ -126,7 +126,7 @@ class HostsMgmtCommands(object):
 
     @test(depends_on=[test_index_host_list])
     def test_index_host_list_single(self):
-        self.host.name = self.host.name.replace(".", "\.")
+        self.host.name = self.host.name.replace(".", r"\.")
         result = self.client.hosts.get(self.host)
         assert_not_equal(result, None,
                          "list hosts should not be empty: %s" % str(result))
