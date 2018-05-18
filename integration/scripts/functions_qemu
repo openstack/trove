@@ -34,7 +34,7 @@ function build_vm() {
     ARCH=amd64
     if [ $DISTRO == 'ubuntu' ]; then
         export DIB_RELEASE=$RELEASE
-        export DIB_CLOUD_IMAGES=cloud-images.ubuntu.com
+        export DIB_CLOUD_IMAGES=cloud-images.ubuntu.com/$DIB_RELEASE/current
         export DIB_USE_HWE_KERNEL
         ARCH=$(dpkg --print-architecture)
     elif [ $DISTRO == 'fedora' ]; then

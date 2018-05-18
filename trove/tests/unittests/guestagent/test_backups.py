@@ -95,7 +95,8 @@ SQLDUMP_BACKUP_RAW = ("mysqldump --all-databases %(extra_opts)s "
 SQLDUMP_BACKUP = SQLDUMP_BACKUP_RAW % {'extra_opts': ''}
 SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
                              {'extra_opts': '--events --routines --triggers'})
-XTRA_RESTORE_RAW = "sudo xbstream -x -C %(restore_location)s"
+XTRA_RESTORE_RAW = ("sudo xbstream -x -C %(restore_location)s"
+                    " 2>/tmp/xbstream_extract.log")
 XTRA_RESTORE = XTRA_RESTORE_RAW % {'restore_location': '/var/lib/mysql/data'}
 XTRA_INCR_PREPARE = ("sudo innobackupex"
                      " --defaults-file=/var/lib/mysql/data/backup-my.cnf"
@@ -1134,4 +1135,37 @@ class CouchDBRestoreTests(trove_testtools.TestCase):
             side_effect=exception.ProcessExecutionError('Error'))
         self.restore_runner.post_restore = mock.Mock()
         self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+
+class MySQLRestoreTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(MySQLRestoreTests, self).setUp()
+
+        self.restore_runner = utils.import_class(
+            RESTORE_XTRA_CLS)(
+                'swift', location='http://some.where',
+                checksum='True_checksum',
+                restore_location='/tmp/somewhere')
+
+    def tearDown(self):
+        super(MySQLRestoreTests, self).tearDown()
+
+    def test_restore_success(self):
+        expected_content_length = 123
+        self.restore_runner._run_restore = mock.Mock(
+            return_value=expected_content_length)
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner.post_restore = mock.Mock()
+        actual_content_length = self.restore_runner.restore()
+        self.assertEqual(
+            expected_content_length, actual_content_length)
+
+    def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner._run_restore = mock.Mock(
+            side_effect=restoreBase.RestoreError('Error'))
+        self.restore_runner.post_restore = mock.Mock()
+        self.assertRaises(restoreBase.RestoreError,
                           self.restore_runner.restore)
