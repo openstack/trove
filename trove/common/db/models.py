@@ -14,6 +14,7 @@
 #    under the License.
 
 import abc
+import six
 
 from trove.common import cfg
 from trove.common.i18n import _
@@ -84,8 +85,7 @@ class DatastoreModelsBase(object):
         :param desc:         Description for exception message.
         :raises:             ValueError if not a string/unicode.
         """
-        if not (isinstance(value, str) or
-                isinstance(value, unicode)):
+        if not isinstance(value, six.string_types):
             raise ValueError(_("%(desc)s is not a string. Type = %(t)s.")
                              % {'desc': desc, 't': type(value)})
 

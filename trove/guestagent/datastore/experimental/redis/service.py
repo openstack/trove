@@ -362,8 +362,10 @@ class RedisApp(object):
 
     def cluster_addslots(self, first_slot, last_slot):
         try:
-            slots = map(str, range(first_slot, last_slot + 1))
             group_size = 200
+            # Create list of slots represented in strings
+            # eg. ['10', '11', '12', '13']
+            slots = list(map(str, range(first_slot, last_slot + 1)))
             while slots:
                 cmd = (['redis-cli', 'cluster', 'addslots']
                        + slots[0:group_size])

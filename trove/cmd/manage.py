@@ -147,9 +147,9 @@ class Commands(object):
                 datastore_name, datastore_version_name)
             if vtlist.count() > 0:
                 for volume_type in vtlist:
-                    print ("Datastore: %s, Version: %s, Volume Type: %s" %
-                           (datastore_name, datastore_version_name,
-                            volume_type.value))
+                    print("Datastore: %s, Version: %s, Volume Type: %s" %
+                          (datastore_name, datastore_version_name,
+                           volume_type.value))
             else:
                 print("No Volume Type Associations found for Datastore: %s, "
                       "Version: %s." %

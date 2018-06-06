@@ -107,7 +107,7 @@ class VerticaApp(object):
     def _reset_config(self, config):
         try:
             db_password = self._get_database_password()
-            for k, v in config.iteritems():
+            for k, v in config.items():
                 alter_db_cmd = system.ALTER_DB_RESET_CFG % (DB_NAME, str(k))
                 out, err = system.exec_vsql_command(db_password, alter_db_cmd)
                 if err:
@@ -125,7 +125,7 @@ class VerticaApp(object):
     def _apply_config(self, config):
         try:
             db_password = self._get_database_password()
-            for k, v in config.iteritems():
+            for k, v in config.items():
                 alter_db_cmd = system.ALTER_DB_CFG % (DB_NAME, str(k), str(v))
                 out, err = system.exec_vsql_command(db_password, alter_db_cmd)
                 if err:

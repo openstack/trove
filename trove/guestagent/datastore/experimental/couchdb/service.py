@@ -231,7 +231,6 @@ class CouchDBAdmin(object):
                         shell=True)
                 except exception.ProcessExecutionError as pe:
                     LOG.exception("Error creating user: %s.", user.name)
-                    pass
 
                 for database in user.databases:
                     mydb = models.CouchDBSchema.deserialize(database)
@@ -251,11 +250,8 @@ class CouchDBAdmin(object):
                                   "database: %(db)s.",
                                   {'user': user.name, 'db': mydb.name})
                         LOG.debug(pe)
-                        pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception("An error occurred creating users: %s.",
-                          pe.message)
-            pass
+            LOG.exception("An error occurred creating users: %s.", str(pe))
 
     def delete_user(self, user):
         LOG.debug("Delete a given CouchDB user.")

@@ -233,7 +233,7 @@ class ConfigurationRunner(TestRunner):
 
         with CollectionCheck("configuration_values", result.values) as check:
             # check each item has the correct type according to the rules
-            for (item_key, item_val) in result.values.iteritems():
+            for (item_key, item_val) in result.values.items():
                 print("item_key: %s" % item_key)
                 print("item_val: %s" % item_val)
                 param = (

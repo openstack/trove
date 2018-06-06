@@ -280,7 +280,7 @@ class DB2App(object):
 
     def _reset_config(self, config):
         try:
-            for k, v in config.iteritems():
+            for k, v in config.items():
                 default_cfg_value = self.dbm_default_config[k]
                 self._update_dbm_config(k, default_cfg_value)
         except Exception:
@@ -356,7 +356,6 @@ class DB2Admin(object):
                 LOG.exception(
                     "There was an error creating database: %s.", dbName)
                 db_create_failed.append(dbName)
-                pass
 
             '''
             Configure each database to do archive logging for online
@@ -438,7 +437,6 @@ class DB2Admin(object):
             err_msg = encodeutils.exception_to_unicode(pe)
             LOG.exception("An error occurred listing databases: %s.",
                           err_msg)
-            pass
         return databases, next_marker
 
     def create_user(self, users):
@@ -470,11 +468,8 @@ class DB2Admin(object):
                                   "database: %(db)s.",
                                   {'user': user.name, 'db': mydb.name})
                         LOG.debug(pe)
-                        pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception("An error occurred creating users: %s.",
-                          pe.message)
-            pass
+            LOG.exception("An error occurred creating users: %s.", str(pe))
 
     def delete_user(self, user):
         LOG.debug("Delete a given user.")
@@ -503,7 +498,6 @@ class DB2Admin(object):
             except exception.ProcessExecutionError as pe:
                 LOG.debug("Error occurred while revoking access to %s.",
                           mydb.name)
-                pass
             try:
                 utils.execute_with_timeout(system.DELETE_USER_COMMAND % {
                     'login': db2_user.name.lower()}, shell=True)

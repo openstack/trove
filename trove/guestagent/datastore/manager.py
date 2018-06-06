@@ -111,7 +111,7 @@ class Manager(periodic_task.PeriodicTasks):
             return repl_strategy.get_instance(self.manager)
         except Exception as ex:
             LOG.debug("Cannot get replication instance for '%(manager)s': "
-                      "%(msg)s", {'manager': self.manager, 'msg': ex.message})
+                      "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
 
         return None
 
@@ -122,7 +122,7 @@ class Manager(periodic_task.PeriodicTasks):
             return repl_strategy.get_strategy(self.manager)
         except Exception as ex:
             LOG.debug("Cannot get replication strategy for '%(manager)s': "
-                      "%(msg)s", {'manager': self.manager, 'msg': ex.message})
+                      "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
 
         return None
 
@@ -313,7 +313,7 @@ class Manager(periodic_task.PeriodicTasks):
                 LOG.info('Module apply completed.')
         except Exception as ex:
             LOG.exception("An error occurred applying modules: "
-                          "%s", ex.message)
+                          "%s", str(ex))
         # The following block performs single-instance initialization.
         # Failures will be recorded, but won't stop the provisioning
         # or change the instance state.
@@ -325,7 +325,7 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info('Databases created successfully.')
             except Exception as ex:
                 LOG.exception("An error occurred creating databases: "
-                              "%s", ex.message)
+                              "%s", str(ex))
             try:
                 if users:
                     LOG.info("Creating users (called from 'prepare')")
@@ -333,7 +333,7 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info('Users created successfully.')
             except Exception as ex:
                 LOG.exception("An error occurred creating users: "
-                              "%s", ex.message)
+                              "%s", str(ex))
 
             # We only enable-root automatically if not restoring a backup
             # that may already have root enabled in which case we keep it
@@ -345,7 +345,7 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info('Root enabled successfully.')
                 except Exception as ex:
                     LOG.exception("An error occurred enabling root user: "
-                                  "%s", ex.message)
+                                  "%s", str(ex))
 
         try:
             LOG.info("Calling post_prepare for '%s' datastore.",
@@ -358,7 +358,7 @@ class Manager(periodic_task.PeriodicTasks):
                      self.manager)
         except Exception as ex:
             LOG.exception("An error occurred in post prepare: %s",
-                          ex.message)
+                          str(ex))
             raise
 
     def apply_overrides_on_prepare(self, context, overrides):

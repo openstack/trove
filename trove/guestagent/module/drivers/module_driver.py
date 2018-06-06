@@ -196,7 +196,7 @@ def output(log_message=None, success_message=None,
                 LOG.exception(message)
             except Exception as ex:
                 message = ("%(msg)s: %(err)s" %
-                           {'msg': fail_msg, 'err': ex.message})
+                           {'msg': fail_msg, 'err': str(ex)})
                 LOG.exception(message)
             return success, message
 

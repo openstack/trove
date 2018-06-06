@@ -573,7 +573,7 @@ class BaseKeepAliveConnection(interfaces.PoolListener):
         # way than MySQL and PXC, which manifests itself as
         # an invalid packet sequence.  Handle it as well.
         except pymysql_err.InternalError as ex:
-            if "Packet sequence number wrong" in ex.message:
+            if "Packet sequence number wrong" in str(ex):
                 raise exc.DisconnectionError()
             else:
                 raise

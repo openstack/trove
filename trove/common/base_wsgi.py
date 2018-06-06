@@ -455,8 +455,7 @@ class JSONDictSerializer(DictSerializer):
                 _dtime = obj - datetime.timedelta(microseconds=obj.microsecond)
                 return _dtime.isoformat()
             return obj
-#            return six.text_type(obj)
-        return jsonutils.dumps(data, default=sanitizer)
+        return jsonutils.dump_as_bytes(data, default=sanitizer)
 
 
 class XMLDictSerializer(DictSerializer):

@@ -63,10 +63,10 @@ import six
 import sys
 import time
 
-if six.PY2:
-    gettext.install('nova', unicode=1)
-else:
+if six.PY3:
     gettext.install('nova')
+else:
+    gettext.install('nova', unicode=True)
 
 from nose import config
 from nose import core

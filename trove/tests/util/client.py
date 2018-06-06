@@ -99,4 +99,8 @@ class TestClient(object):
         return flavor, flavor_href
 
     def __getattr__(self, item):
-        return getattr(self.real_client, item)
+        if item == "__setstate__":
+            raise AttributeError(item)
+        if hasattr(self.real_client, item):
+            return getattr(self.real_client, item)
+        raise AttributeError(item)

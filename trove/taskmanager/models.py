@@ -1396,9 +1396,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 sleep_time=2, time_out=600)
             if not self.server_status_matches(['ACTIVE']):
                 raise TroveError(_("Instance %(instance)s failed to "
-                                   "upgrade to %(datastore_version)s") %
-                                 {'instance': self,
-                                  'datastore_version': datastore_version})
+                                   "upgrade to %(datastore_version)s"),
+                                 instance=self,
+                                 datastore_version=datastore_version)
 
             self.guest.post_upgrade(upgrade_info)
 

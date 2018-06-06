@@ -17,6 +17,7 @@
 #
 
 from collections import deque
+import six
 
 from proboscis import after_class
 from proboscis import asserts
@@ -68,10 +69,14 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s,"
                                  " exception %s" % (httpCode, e))
-            databases = "u'foo'"
-            users = "u'bar'"
+            if six.PY3:
+                databases = "'%s'" % databases
+                users = "'%s'" % users
+            else:
+                databases = "u'%s'" % databases
+                users = "u'%s'" % users
             assert_contains(
-                e.message,
+                str(e),
                 ["Validation error:",
                  "instance['databases'] %s is not of type 'array'" % databases,
                  "instance['users'] %s is not of type 'array'" % users,
@@ -88,11 +93,15 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create database failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            _bad_db_data = "u'{foo}'"
-            asserts.assert_equal(e.message,
-                                 "Validation error: "
-                                 "databases %s is not of type 'array'" %
-                                 _bad_db_data)
+            if six.PY3:
+                _bad_db_data = "'%s'" % _bad_db_data
+            else:
+                _bad_db_data = "u'%s'" % _bad_db_data
+            asserts.assert_equal(
+                str(e),
+                "Validation error: "
+                "databases %s is not of type 'array' (HTTP 400)" %
+                _bad_db_data)
 
     @test
     def test_bad_user_data(self):
@@ -117,7 +126,7 @@ class MalformedJson(object):
                                  "exception %s" % (httpCode, e))
             err_1 = format_path(deque(('users', 0)))
             assert_contains(
-                e.message,
+                str(e),
                 ["Validation error:",
                  "%(err_1)s 'name' is a required property" % {'err_1': err_1},
                  "%(err_1)s 'password' is a required property"
@@ -161,9 +170,12 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Resize instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            data = "u'bad data'"
+            if six.PY3:
+                data = "'bad data'"
+            else:
+                data = "u'bad data'"
             assert_contains(
-                e.message,
+                str(e),
                 ["Validation error:",
                  "resize['volume']['size'] %s is not valid under "
                  "any of the given schemas" % data,
@@ -191,9 +203,12 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Change usr/passwd failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            password = "u''"
+            if six.PY3:
+                password = "'%s'" % password
+            else:
+                password = "u'%s'" % password
             assert_contains(
-                e.message,
+                str(e),
                 ["Validation error: users[0] 'password' "
                  "is a required property",
                  "users[0]['name'] %s is too short" % password,
@@ -241,7 +256,8 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 404,
                                  "Revoke user access failed w/code %s, "
                                  "exception %s" % (httpCode, e))
-            asserts.assert_equal(e.message, "The resource could not be found.")
+            asserts.assert_equal(str(e), "The resource could not be found."
+                                         " (HTTP 404)")
 
     @test
     def test_bad_body_flavorid_create_instance(self):
@@ -259,7 +275,7 @@ class MalformedJson(object):
                                  "exception %s" % (httpCode, e))
             flavorId = [u'?']
             assert_contains(
-                e.message,
+                str(e),
                 ["Validation error:",
                  "instance['flavorRef'] %s is not valid "
                  "under any of the given schemas" % flavorId,
@@ -284,13 +300,19 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
+            if six.PY3:
+                datastore = "'%s'" % datastore
+                datastore_version = "'%s'" % datastore_version
+            else:
+                datastore = "u'%s'" % datastore
+                datastore_version = "u'%s'" % datastore_version
             assert_contains(
-                e.message,
+                str(e),
                 ["Validation error:",
                  "instance['datastore']['type']"
-                 " u'%s' does not match"
+                 " %s does not match"
                  " '^.*[0-9a-zA-Z]+.*$'" % datastore,
-                 "instance['datastore']['version'] u'%s' "
+                 "instance['datastore']['version'] %s "
                  "does not match '^.*[0-9a-zA-Z]+.*$'" % datastore_version])
 
     @test
@@ -306,8 +328,12 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            volsize = "u'h3ll0'"
-            asserts.assert_equal(e.message,
+            if six.PY3:
+                volsize = "'%s'" % volsize
+            else:
+                volsize = "u'%s'" % volsize
+            print("DEBUG DEV: %s" % str(e))
+            asserts.assert_equal(str(e),
                                  "Validation error: "
                                  "instance['volume'] %s is not of "
-                                 "type 'object'" % volsize)
+                                 "type 'object' (HTTP 400)" % volsize)

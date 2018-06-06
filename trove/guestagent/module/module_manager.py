@@ -68,7 +68,7 @@ class ModuleManager(object):
         except Exception as ex:
             LOG.exception("Could not apply module '%s'", name)
             applied = False
-            message = ex.message
+            message = str(ex)
         finally:
             status = 'OK' if applied else 'ERROR'
             result['removed'] = None

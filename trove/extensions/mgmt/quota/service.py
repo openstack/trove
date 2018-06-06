@@ -37,8 +37,8 @@ class QuotaController(wsgi.Controller):
 
         usages = quota_engine.get_all_quota_usages_by_tenant(id)
         limits = quota_engine.get_all_quotas_by_tenant(id)
-        map(lambda r: setattr(usages[r], "limit", limits[r].hard_limit),
-            usages.keys())
+        for key in usages.keys():
+            setattr(usages[key], "limit", limits[key].hard_limit)
         return wsgi.Result(views.QuotaUsageView(usages).data(), 200)
 
     @admin_context

@@ -192,7 +192,7 @@ class CreateConfigurations(ConfigurationsTestBase):
             instance_info.dbaas_datastore_version)
         resp, body = instance_info.dbaas.client.last_response
         attrcheck = AttrCheck()
-        config_parameters_dict = json.loads(body)
+        config_parameters_dict = json.loads(body.decode())
         attrcheck.contains_allowed_attrs(
             config_parameters_dict, allowed_attrs,
             msg="Configurations parameters")
@@ -226,7 +226,7 @@ class CreateConfigurations(ConfigurationsTestBase):
         print("resp: %s" % resp)
         print("body: %s" % body)
         attrcheck = AttrCheck()
-        config_parameter_dict = json.loads(body)
+        config_parameter_dict = json.loads(body.decode())
         print("config_parameter_dict: %s" % config_parameter_dict)
         attrcheck.contains_allowed_attrs(
             config_parameter_dict,
@@ -659,7 +659,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
         resp, body = instance_info.dbaas.client.last_response
         print(resp)
         print(body)
-        self.config_parameter_dict = json.loads(body)
+        self.config_parameter_dict = json.loads(body.decode())
 
     @after_class(always_run=True)
     def tearDown(self):

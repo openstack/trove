@@ -509,7 +509,7 @@ class Fault(webob.exc.HTTPException):
 
         content_type = req.best_match_content_type()
         serializer = {
-            'application/json': base_wsgi.JSONDictSerializer(),
+            'application/json': JSONDictSerializer(),
         }[content_type]
 
         self.wrapped_exc.body = serializer.serialize(fault_data, content_type)
@@ -657,10 +657,3 @@ class DictSerializer(ActionDispatcher):
 
     def default(self, data):
         return ""
-
-
-class JSONDictSerializer(DictSerializer):
-    """Default JSON request body serialization."""
-
-    def default(self, data):
-        return jsonutils.dump_as_bytes(data)

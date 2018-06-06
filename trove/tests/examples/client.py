@@ -288,6 +288,6 @@ class JsonClient(TroveHTTPClient):
         self.pretty_log(args, kwargs, resp, body)
 
         def write_snippet():
-            return write_to_snippet(self, args, kwargs, resp, body)
+            return write_to_snippet(self, args, kwargs, resp, body.decode())
 
         self.write_snippet = write_snippet
