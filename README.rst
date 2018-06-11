@@ -12,24 +12,42 @@ Getting Started
 
 If you'd like to run from the master branch, you can clone the git repo:
 
-    git clone https://github.com/openstack/trove
+    git clone https://git.openstack.org/cgit/openstack/trove
 
+For information on how to contribute to trove, please see
+CONTRIBUTING.rst_ and HACKING.rst_
 
-* Wiki: https://wiki.openstack.org/wiki/Trove
-* Developer Docs: https://docs.openstack.org/trove/latest/
+.. _CONTRIBUTING.rst: https://git.openstack.org/cgit/openstack/trove/plain/CONTRIBUTING.rst
+.. _HACKING.rst: https://git.openstack.org/cgit/openstack/trove/plain/HACKING.rst>
 
-You can raise bugs here: https://bugs.launchpad.net/trove
+* `Wiki <https://wiki.openstack.org/wiki/Trove>`_
+* `Developer Docs <https://docs.openstack.org/trove/latest/>`_
+
+You can raise bugs here:
+`Bug Tracker <https://bugs.launchpad.net/trove>`_
+
+The plan for trove can be found at
+`Trove Specs <https://specs.openstack.org/openstack/trove-specs/>`_
 
 Python client
 -------------
-https://git.openstack.org/cgit/openstack/python-troveclient
+Python-troveclient_ is a client for Trove.
+
+.. _Python-troveclient: https://git.openstack.org/cgit/openstack/python-troveclient
+
+Dashboard plugin
+----------------
+Trove-dashboard_ is OpenStack dashbaord plugin for Trove.
+
+.. _Trove-dashboard: https://git.openstack.org/cgit/openstack/trove-dashboard
 
 References
 ----------
 
-* Installation docs:
-  https://docs.openstack.org/trove/latest/install/install.html
-* Manual installation docs:
-  https://docs.openstack.org/trove/latest/install/manual_install.html
-* Build guest image:
-  https://docs.openstack.org/trove/latest/admin/building_guest_images.html
+* `Installation docs`_
+* `Manual installation docs`_
+* `Build guest image`_
+
+.. _Installation docs: https://docs.openstack.org/trove/latest/install/install.html
+.. _Manual installation docs: https://docs.openstack.org/trove/latest/install/manual_install.html
+.. _Build guest image: https://docs.openstack.org/trove/latest/admin/building_guest_images.html
