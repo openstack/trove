@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    [`bug 1776229 <https://bugs.launchpad.net/trove/+bug/1776229>`_]
+    endpoint_type is now working with single tenant which gives the possibility
+    to override the publicURL value.

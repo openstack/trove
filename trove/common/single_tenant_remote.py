@@ -91,7 +91,8 @@ def nova_client_trove_admin(context, region_name=None, password=None):
         session=ks_session,
         service_type=CONF.nova_compute_service_type,
         region_name=region_name or CONF.os_region_name,
-        insecure=CONF.nova_api_insecure)
+        insecure=CONF.nova_api_insecure,
+        endpoint_type=CONF.nova_compute_endpoint_type)
 
     if CONF.nova_compute_url and CONF.nova_proxy_admin_tenant_id:
         client.client.endpoint_override = "%s/%s/" % (
@@ -113,7 +114,8 @@ def cinder_client_trove_admin(context, region_name=None):
         session=ks_session,
         service_type=CONF.cinder_service_type,
         region_name=region_name or CONF.os_region_name,
-        insecure=CONF.cinder_api_insecure)
+        insecure=CONF.cinder_api_insecure,
+        endpoint_type=CONF.cinder_endpoint_type)
 
     if CONF.cinder_url and CONF.nova_proxy_admin_tenant_id:
         client.client.management_url = "%s/%s/" % (
@@ -134,7 +136,8 @@ def neutron_client_trove_admin(context, region_name=None):
         session=ks_session,
         service_type=CONF.neutron_service_type,
         region_name=region_name or CONF.os_region_name,
-        insecure=CONF.neutron_api_insecure)
+        insecure=CONF.neutron_api_insecure,
+        endpoint_type=CONF.neutron_endpoint_type)
 
     if CONF.neutron_url:
         client.management_url = CONF.neutron_url
