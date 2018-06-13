@@ -1363,6 +1363,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 volume = self.volume_client.volumes.get(self.volume_id)
                 volume_device = self._fix_device_path(
                     volume.attachments[0]['device'])
+                if volume:
+                    upgrade_info['device'] = volume_device
 
             # BUG(1650518): Cleanup in the Pike release some instances
             # that we will be upgrading will be pre secureserialier
@@ -1394,12 +1396,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 sleep_time=2, time_out=600)
             if not self.server_status_matches(['ACTIVE']):
                 raise TroveError(_("Instance %(instance)s failed to "
-                                   "upgrade to %(datastore_version)s"),
+                                   "upgrade to %(datastore_version)s") %
                                  {'instance': self,
                                   'datastore_version': datastore_version})
-
-            if volume:
-                upgrade_info['device'] = volume_device
 
             self.guest.post_upgrade(upgrade_info)
 

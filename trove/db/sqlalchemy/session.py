@@ -132,10 +132,10 @@ def clean_db():
     meta.bind = engine
     meta.reflect()
     with contextlib.closing(engine.connect()) as con:
-        trans = con.begin()
+        trans = con.begin()  # pylint: disable=E1101
         for table in reversed(meta.sorted_tables):
             if table.name != "migrate_version":
-                con.execute(table.delete())
+                con.execute(table.delete())  # pylint: disable=E1101
         trans.commit()
 
 

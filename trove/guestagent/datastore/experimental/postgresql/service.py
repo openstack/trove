@@ -838,10 +838,10 @@ class PgSqlAdmin(object):
         :type user:               PostgreSQLUser
         """
         # Postgresql requires that you revoke grants before dropping the user
-        dbs = self.list_access(context, user.name, None)
-        for d in dbs:
-            db = models.PostgreSQLSchema.deserialize(d)
-            self.revoke_access(context, user.name, None, db.name)
+        databases = list(self.list_access(context, user.name, None))
+        for db in databases:
+            db_schema = models.PostgreSQLSchema.deserialize(db)
+            self.revoke_access(context, user.name, None, db_schema.name)
 
         LOG.info(
             "{guest_id}: Dropping user {name}.".format(

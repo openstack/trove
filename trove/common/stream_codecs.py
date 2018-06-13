@@ -207,10 +207,7 @@ class IniCodec(StreamCodec):
 
     def deserialize(self, stream):
         parser = self._init_config_parser()
-        if sys.version_info >= (3, 2):
-            parser.read_file(self._pre_parse(stream))
-        else:
-            parser.readfp(self._pre_parse(stream))
+        parser.readfp(self._pre_parse(stream))
 
         return {s: {k:
                     StringConverter({None: self._default_value}).to_objects(v)

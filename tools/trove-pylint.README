@@ -161,10 +161,7 @@ and astroid. In testing, I've found that if the version of either of
 these changes, you could either have a failure of the tool (exceptions
 thrown, ...) or a different set of errors reported.
 
-Currently, test-requirements.txt sets these versions in this way.
-
-astroid<1.4.0  # LGPLv2.1 # breaks pylint 1.4.4
-pylint==1.4.5  # GPLv2
+Refer to test-requirements.txt to see the versions currently being used.
 
 If you run the tool on your machine and find that there are no errors,
 but find that either the CI generates errors, or that the tool run
