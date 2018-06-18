@@ -13,13 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import gettext
 import inspect
 import sys
-
-
-gettext.install('trove', unicode=1)
-
 
 from oslo_log import log as logging
 

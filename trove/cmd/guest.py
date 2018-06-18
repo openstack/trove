@@ -13,9 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import gettext
-gettext.install('trove', unicode=1)
-
 import sys
 
 from oslo_config import cfg as openstack_cfg
