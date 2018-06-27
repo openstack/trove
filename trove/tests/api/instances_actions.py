@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import time
 
 from proboscis import after_class
@@ -26,6 +27,7 @@ from sqlalchemy.sql.expression import text
 from troveclient.compat.exceptions import BadRequest
 from troveclient.compat.exceptions import HTTPNotImplemented
 
+from trove.common import cfg
 from trove.common.utils import poll_until
 from trove import tests
 from trove.tests.api.instances import assert_unprocessable
@@ -86,7 +88,17 @@ class MySqlConnection(object):
             raise ex
 
 
-TIME_OUT_TIME = 15 * 60
+# Use default value from trove.common.cfg, and it could be overridden by
+# a environment variable when the tests run.
+def get_resize_timeout():
+    value_from_env = os.environ.get("TROVE_RESIZE_TIME_OUT", None)
+    if value_from_env:
+        return int(value_from_env)
+
+    return cfg.CONF.resize_time_out
+
+
+TIME_OUT_TIME = get_resize_timeout()
 USER_WAS_DELETED = False
 
 
