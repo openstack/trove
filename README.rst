@@ -29,6 +29,9 @@ You can raise bugs here:
 The plan for trove can be found at
 `Trove Specs <https://specs.openstack.org/openstack/trove-specs/>`_
 
+Release notes for the project can be found at:
+  https://docs.openstack.org/releasenotes/trove
+
 Python client
 -------------
 Python-troveclient_ is a client for Trove.
