@@ -136,13 +136,14 @@ class Config(object):
                 [filename, codename] in self.config['ignored_file_codes']):
             return True
 
-        fcm_ignore1 = [filename, code, message]
-        fcm_ignore2 = [filename, codename, message]
         for fcm in self.config['ignored_file_code_messages']:
-            if fcm_ignore1 == [fcm[0], fcm[1], fcm[2]]:
-                return True
-
-            if fcm_ignore2 == [fcm[0], fcm[1], fcm[2]]:
+            if filename != fcm[0]:
+                # This ignore rule is for a different file.
+                continue
+            if fcm[1] not in (code, codename):
+                # This ignore rule is for a different code or codename.
+                continue
+            if message.startswith(fcm[2]):
                 return True
 
         return False
