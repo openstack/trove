@@ -66,7 +66,7 @@ class FakeGuest(object):
         self.version += 1
 
     def _check_username(self, username):
-        unsupported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
+        unsupported_chars = re.compile(r"""^\s|\s$|'|"|;|`|,|/|\\""")
         if (not username or
                 unsupported_chars.search(username) or
                 ("%r" % username).find("\\") != -1):

@@ -174,12 +174,12 @@ class ExampleClient(object):
     def _indent_xml(self, my_string):
         my_string = my_string.encode("utf-8")
         # convert to plain string without indents and spaces
-        my_re = re.compile('>\s+([^\s])', re.DOTALL)
-        my_string = myre.sub('>\g<1>', my_string)
+        my_re = re.compile(r'>\s+([^\s])', re.DOTALL)
+        my_string = myre.sub(r'>\g<1>', my_string)
         my_string = xml.dom.minidom.parseString(my_string).toprettyxml()
         # remove line breaks
-        my_re = re.compile('>\n\s+([^<>\s].*?)\n\s+</', re.DOTALL)
-        my_string = my_re.sub('>\g<1></', my_string)
+        my_re = re.compile(r'>\n\s+([^<>\s].*?)\n\s+</', re.DOTALL)
+        my_string = my_re.sub(r'>\g<1></', my_string)
         return my_string
 
     def output_request(self, url, output_headers, body, content_type, method,

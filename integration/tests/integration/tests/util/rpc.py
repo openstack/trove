@@ -54,7 +54,7 @@ if CONFIG.values.get('rabbit_runs_locally', False) == True:
                               shell=False)
             for line in iter(proc.stdout.readline, ""):
                 print("LIST QUEUES:" + line)
-                m = re.search("""%s\s+([0-9]+)""" % queue_name, line)
+                m = re.search(r"%s\s+([0-9]+)" % queue_name, line)
                 if m:
                     return int(m.group(1))
             return None

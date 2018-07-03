@@ -31,7 +31,7 @@ class MySQLSchema(models.DatastoreSchema):
     # Defaults
     __charset__ = "utf8"
     __collation__ = "utf8_general_ci"
-    dbname = re.compile("^[A-Za-z0-9_-]+[\s\?\#\@]*[A-Za-z0-9_-]+$")
+    dbname = re.compile(r"^[A-Za-z0-9_-]+[\s\?\#\@]*[A-Za-z0-9_-]+$")
 
     # Complete list of acceptable values
     collation = mysql_settings.collation
@@ -121,7 +121,7 @@ class MySQLSchema(models.DatastoreSchema):
 class MySQLUser(models.DatastoreUser):
     """Represents a MySQL User and its associated properties."""
 
-    not_supported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
+    not_supported_chars = re.compile(r"""^\s|\s$|'|"|;|`|,|/|\\""")
 
     def _is_valid_string(self, value):
         if (not value or

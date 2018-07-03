@@ -120,9 +120,9 @@ class Service(object):
         proc = start_proc(["/usr/bin/pmap", "-d", str(pid)],
                           shell=False)
         for line in iter(proc.stdout.readline, ""):
-            m = re.search("""mapped\:\s([0-9]+)K\s+"""
-                          """writeable/private:\s([0-9]+)K\s+"""
-                          """shared:\s+([0-9]+)K""", line)
+            m = re.search(r"mapped\:\s([0-9]+)K\s+"
+                          r"writeable/private:\s([0-9]+)K\s+"
+                          r"shared:\s+([0-9]+)K", line)
             if m:
                 return MemoryInfo(int(m.group(1)), int(m.group(2)),
                                   int(m.group(3)))

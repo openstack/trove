@@ -100,7 +100,7 @@ class VSqlError(object):
         stderr looks like: "ERROR 3117: Division by zero"
         :param stderr:  string from executing statement via vsql
         """
-        parse = re.match("^(ERROR|WARNING) (\d+): (.+)$", stderr)
+        parse = re.match(r"^(ERROR|WARNING) (\d+): (.+)$", stderr)
         if not parse:
             raise ValueError(_("VSql stderr %(msg)s not recognized.")
                              % {'msg': stderr})

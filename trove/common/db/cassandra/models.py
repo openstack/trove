@@ -28,7 +28,7 @@ class CassandraSchema(models.DatastoreSchema):
         return 32
 
     def _is_valid_schema_name(self, value):
-        return not any(c in value for c in '/\. "$')
+        return not any(c in value for c in r'/\. "$')
 
 
 class CassandraUser(models.DatastoreUser):

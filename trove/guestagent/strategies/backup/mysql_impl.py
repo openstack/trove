@@ -85,7 +85,8 @@ class InnoBackupEx(base.BackupRunner):
     def metadata(self):
         LOG.debug('Getting metadata from backup.')
         meta = {}
-        lsn = re.compile("The latest check point \(for incremental\): '(\d+)'")
+        lsn = re.compile(r"The latest check point \(for incremental\): "
+                         r"'(\d+)'")
         with open('/tmp/innobackupex.log', 'r') as backup_log:
             output = backup_log.read()
             match = lsn.search(output)

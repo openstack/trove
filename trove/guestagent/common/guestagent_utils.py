@@ -108,7 +108,7 @@ def to_bytes(value):
     """Convert numbers with a byte suffix to bytes.
     """
     if isinstance(value, six.string_types):
-        pattern = re.compile('^(\d+)([K,M,G]{1})$')
+        pattern = re.compile(r'^(\d+)([K,M,G]{1})$')
         match = pattern.match(value)
         if match:
             value = match.group(1)

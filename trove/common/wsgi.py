@@ -197,16 +197,16 @@ class Request(base_wsgi.Request):
     @utils.cached_property
     def accept_version(self):
         accept_header = self.headers.get('ACCEPT', "")
-        accept_version_re = re.compile(".*?application/vnd.openstack.trove"
-                                       "(\+.+?)?;"
-                                       "version=(?P<version_no>\d+\.?\d*)")
+        accept_version_re = re.compile(r".*?application/vnd.openstack.trove"
+                                       r"(\+.+?)?;"
+                                       r"version=(?P<version_no>\d+\.?\d*)")
 
         match = accept_version_re.search(accept_header)
         return match.group("version_no") if match else None
 
     @utils.cached_property
     def url_version(self):
-        versioned_url_re = re.compile("/v(?P<version_no>\d+\.?\d*)")
+        versioned_url_re = re.compile(r"/v(?P<version_no>\d+\.?\d*)")
         match = versioned_url_re.search(self.path)
         return match.group("version_no") if match else None
 

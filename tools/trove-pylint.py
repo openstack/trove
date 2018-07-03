@@ -206,7 +206,8 @@ class LintRunner(object):
     def __init__(self):
         self.config = Config()
         self.idline = re.compile("^[*]* Module .*")
-        self.detail = re.compile("(\S+):(\d+): \[(\S+)\((\S+)\), (\S+)?] (.*)")
+        self.detail = re.compile(r"(\S+):(\d+): \[(\S+)\((\S+)\),"
+                                 r" (\S+)?] (.*)")
 
     def dolint(self, filename):
         exceptions = set()

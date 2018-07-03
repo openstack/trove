@@ -445,7 +445,7 @@ class PgSqlApp(object):
         """
         r = operating_system.read_file(self.pgsql_recovery_config,
                                        as_root=True)
-        regexp = re.compile("host=(\d+.\d+.\d+.\d+) ")
+        regexp = re.compile(r"host=(\d+.\d+.\d+.\d+) ")
         m = regexp.search(r)
         return m.group(1)
 

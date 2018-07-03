@@ -79,7 +79,7 @@ def check_dependencies():
             print('Installing virtualenv via easy_install...'),
             if not (run_command(['which', 'easy_install']) and
                     run_command(['easy_install', 'virtualenv'])):
-                die('ERROR: virtualenv not found.\n\Trove development'
+                die('ERROR: virtualenv not found.\nTrove development'
                     ' requires virtualenv, please install it using your'
                     ' favorite package management tool')
             print('done.')
