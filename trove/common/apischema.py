@@ -102,7 +102,7 @@ volume = {
     "required": ["size"],
     "properties": {
         "size": volume_size,
-        "required": True
+        "type": non_empty_string
     }
 }
 
