@@ -30,6 +30,7 @@
           cat << 'EOF' >>"/tmp/dg-local.conf"
           [[local|localrc]]
           enable_plugin trove git://git.openstack.org/openstack/trove
+          TROVE_RESIZE_TIME_OUT=1800
 
           EOF
         executable: /bin/bash
@@ -56,6 +57,7 @@
               export DEST=$BASE/new
               export PATH_DEVSTACK_SRC=$DEST/devstack
               cd /opt/stack/new/trove/integration/scripts
+              export TROVE_RESIZE_TIME_OUT=1800
               ./trovestack dsvm-gate-tests mysql
           }
           export -f post_test_hook
