@@ -45,6 +45,7 @@ import logging
 import os
 import time
 import unittest
+import six
 import sys
 import proboscis
 
@@ -73,7 +74,10 @@ def add_support_for_localization():
     if os.path.exists(os.path.join(possible_topdir, 'nova', '__init__.py')):
         sys.path.insert(0, possible_topdir)
 
-    gettext.install('nova', unicode=1)
+    if six.PY2:
+        gettext.install('nova', unicode=1)
+    else:
+        gettext.install('nova')
 
 
 MAIN_RUNNER = None

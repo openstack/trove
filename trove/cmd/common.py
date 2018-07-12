@@ -15,10 +15,6 @@
 
 
 def initialize(extra_opts=None, pre_logging=None):
-    # Initialize localization support (the underscore character).
-    import gettext
-    gettext.install('trove', unicode=1)
-
     # Import only the modules necessary to initialize logging and determine if
     # debug_utils are enabled.
     import sys
