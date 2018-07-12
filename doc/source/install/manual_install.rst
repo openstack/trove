@@ -429,13 +429,7 @@ To decide which network would you like to attach a Trove instance to, run the fo
 
 .. code-block:: bash
 
-   $ nova net-list
-
-or
-
-.. code-block:: bash
-
-   $ neutron net-list
+   $ openstack network list
 
 One possible way to find the network name is to execute the 'nova list' command. The output will list all OpenStack instances for the tenant, including network information. Look for ::
 
