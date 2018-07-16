@@ -29,7 +29,8 @@ class Quota(dbmodels.DatabaseModelBase):
     """Defines the base model class for a quota."""
 
     _data_fields = ['created', 'updated', 'tenant_id', 'resource',
-                    'hard_limit', 'id']
+                    'hard_limit']
+    _table_name = 'quotas'
 
     def __init__(self, tenant_id, resource, hard_limit,
                  id=utils.generate_uuid(), created=timeutils.utcnow(),
@@ -45,15 +46,16 @@ class Quota(dbmodels.DatabaseModelBase):
 class QuotaUsage(dbmodels.DatabaseModelBase):
     """Defines the quota usage for a tenant."""
 
-    _data_fields = ['created', 'updated', 'tenant_id', 'resource',
-                    'in_use', 'reserved', 'id']
+    _data_fields = ['created', 'updated', 'tenant_id',
+                    'in_use', 'reserved', 'resource']
+    _table_name = 'quota_usages'
 
 
 class Reservation(dbmodels.DatabaseModelBase):
     """Defines the reservation for a quota."""
 
-    _data_fields = ['created', 'updated', 'usage_id',
-                    'id', 'delta', 'status']
+    _data_fields = ['created', 'updated', 'usage_id', 'delta', 'status']
+    _table_name = 'reservations'
 
     Statuses = enum(NEW='New',
                     RESERVED='Reserved',

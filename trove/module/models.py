@@ -446,17 +446,19 @@ class InstanceModule(object):
 
 class DBInstanceModule(models.DatabaseModelBase):
     _data_fields = [
-        'id', 'instance_id', 'module_id', 'md5', 'created',
+        'instance_id', 'module_id', 'md5', 'created',
         'updated', 'deleted', 'deleted_at']
+    _table_name = 'instance_modules'
 
 
 class DBModule(models.DatabaseModelBase):
     _data_fields = [
-        'id', 'name', 'type', 'contents', 'description',
+        'name', 'type', 'contents', 'description',
         'tenant_id', 'datastore_id', 'datastore_version_id',
         'auto_apply', 'visible', 'live_update',
-        'priority_apply', 'apply_order', 'is_admin',
-        'md5', 'created', 'updated', 'deleted', 'deleted_at']
+        'md5', 'created', 'updated', 'deleted', 'deleted_at',
+        'priority_apply', 'apply_order', 'is_admin']
+    _table_name = 'modules'
 
 
 def persisted_models():

@@ -35,9 +35,9 @@ db_api = get_db_api()
 
 def persisted_models():
     return {
-        'datastore': DBDatastore,
+        'datastores': DBDatastore,
         'capabilities': DBCapabilities,
-        'datastore_version': DBDatastoreVersion,
+        'datastore_versions': DBDatastoreVersion,
         'capability_overrides': DBCapabilityOverrides,
         'datastore_version_metadata': DBDatastoreVersionMetadata
     }
@@ -45,30 +45,34 @@ def persisted_models():
 
 class DBDatastore(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'name', 'default_version_id']
+    _data_fields = ['name', 'default_version_id']
+    _table_name = 'datastores'
 
 
 class DBCapabilities(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'name', 'description', 'enabled']
+    _data_fields = ['name', 'description', 'enabled']
+    _table_name = 'capabilities'
 
 
 class DBCapabilityOverrides(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'capability_id', 'datastore_version_id', 'enabled']
+    _data_fields = ['capability_id', 'datastore_version_id', 'enabled']
+    _table_name = 'capability_overrides'
 
 
 class DBDatastoreVersion(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'datastore_id', 'name', 'manager', 'image_id',
-                    'packages', 'active']
+    _data_fields = ['datastore_id', 'name', 'image_id', 'packages',
+                    'active', 'manager']
+    _table_name = 'datastore_versions'
 
 
 class DBDatastoreVersionMetadata(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'datastore_version_id', 'key', 'value',
+    _data_fields = ['datastore_version_id', 'key', 'value',
                     'created', 'deleted', 'deleted_at', 'updated_at']
-    preserve_on_delete = True
+    _table_name = 'datastore_version_metadata'
 
 
 class Capabilities(object):

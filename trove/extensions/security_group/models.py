@@ -32,16 +32,17 @@ LOG = logging.getLogger(__name__)
 
 def persisted_models():
     return {
-        'security_group': SecurityGroup,
-        'security_group_rule': SecurityGroupRule,
-        'security_group_instance_association':
+        'security_groups': SecurityGroup,
+        'security_group_rules': SecurityGroupRule,
+        'security_group_instance_associations':
         SecurityGroupInstanceAssociation,
     }
 
 
 class SecurityGroup(DatabaseModelBase):
-    _data_fields = ['id', 'name', 'description', 'user', 'tenant_id',
+    _data_fields = ['name', 'description', 'user', 'tenant_id',
                     'created', 'updated', 'deleted', 'deleted_at']
+    _table_name = 'security_groups'
 
     @property
     def instance_id(self):
@@ -134,9 +135,10 @@ class SecurityGroup(DatabaseModelBase):
 
 
 class SecurityGroupRule(DatabaseModelBase):
-    _data_fields = ['id', 'parent_group_id', 'protocol', 'from_port',
-                    'to_port', 'cidr', 'group_id', 'created', 'updated',
-                    'deleted', 'deleted_at']
+    _data_fields = ['group_id', 'parent_group_id', 'protocol',
+                    'from_port', 'to_port', 'cidr', 'created',
+                    'updated', 'deleted', 'deleted_at']
+    _table_name = 'security_group_rules'
 
     @classmethod
     def create_sec_group_rule(cls, sec_group, protocol, from_port,
@@ -185,8 +187,9 @@ class SecurityGroupRule(DatabaseModelBase):
 
 
 class SecurityGroupInstanceAssociation(DatabaseModelBase):
-    _data_fields = ['id', 'security_group_id', 'instance_id',
-                    'created', 'updated', 'deleted', 'deleted_at']
+    _data_fields = ['security_group_id', 'instance_id', 'created',
+                    'updated', 'deleted', 'deleted_at']
+    _table_name = 'security_group_instance_associations'
 
     def get_security_group(self):
         return SecurityGroup.find_by(id=self.security_group_id,

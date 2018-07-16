@@ -228,6 +228,7 @@ class Configuration(object):
 class DBConfiguration(dbmodels.DatabaseModelBase):
     _data_fields = ['name', 'description', 'tenant_id', 'datastore_version_id',
                     'deleted', 'deleted_at', 'created', 'updated']
+    _table_name = 'configurations'
 
     @property
     def datastore(self):
@@ -245,9 +246,11 @@ class DBConfiguration(dbmodels.DatabaseModelBase):
 
 
 class DBConfigurationParameter(dbmodels.DatabaseModelBase):
+    _auto_generated_attrs = []
     _data_fields = ['configuration_id', 'configuration_key',
                     'configuration_value', 'deleted',
                     'deleted_at']
+    _table_name = 'configuration_parameters'
 
     def __hash__(self):
         return self.configuration_key.__hash__()
@@ -255,7 +258,6 @@ class DBConfigurationParameter(dbmodels.DatabaseModelBase):
 
 class DBDatastoreConfigurationParameters(dbmodels.DatabaseModelBase):
     """Model for storing the configuration parameters on a datastore."""
-    _auto_generated_attrs = ['id']
     _data_fields = [
         'name',
         'datastore_version_id',
@@ -267,7 +269,6 @@ class DBDatastoreConfigurationParameters(dbmodels.DatabaseModelBase):
         'deleted_at',
     ]
     _table_name = "datastore_configuration_parameters"
-    preserve_on_delete = True
 
 
 class DatastoreConfigurationParameters(object):
