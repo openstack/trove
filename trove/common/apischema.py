@@ -77,6 +77,15 @@ volume_size = {
         configuration_positive_integer]
 }
 
+number_of_nodes = {
+    "oneOf": [
+        {
+            "type": "integer",
+            "minimum": 1
+        },
+        configuration_positive_integer]
+}
+
 host_string = {
     "type": "string",
     "minLength": 1,
@@ -254,7 +263,19 @@ cluster = {
                             }
                         }
                     },
-                    "locality": non_empty_string
+                    "locality": non_empty_string,
+                    "extended_properties": {
+                        "type": "object",
+                        "additionalProperties": True,
+                        "properties": {
+                            "num_configsvr": number_of_nodes,
+                            "num_mongos": number_of_nodes,
+                            "configsvr_volume_size": volume_size,
+                            "configsvr_volume_type": non_empty_string,
+                            "mongos_volume_size": volume_size,
+                            "mongos_volume_type": non_empty_string
+                        }
+                    }
                 }
             }
         }

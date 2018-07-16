@@ -81,7 +81,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           [],
-                          None, None, None)
+                          {}, None, None)
 
     @patch.object(remote, 'create_nova_client')
     def test_create_unequal_flavors(self, mock_client):
@@ -94,7 +94,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None, None)
+                          {}, None, None)
 
     @patch.object(remote, 'create_nova_client')
     def test_create_unequal_volumes(self,
@@ -110,7 +110,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None, None)
+                          {}, None, None)
 
     @patch.object(remote, 'create_nova_client')
     def test_create_storage_not_specified(self,
@@ -139,7 +139,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None, None, None)
+                          {}, None, None)
 
     @patch('trove.cluster.models.LOG')
     def test_delete_bad_task_status(self, mock_logging):

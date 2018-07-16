@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    User can specify the number and volume of mongos/configserver with
+    extended_properties argument when creating mongodb cluster. Currently,
+    the supported parameters are, num_configsvr, num_mongos,
+    configsvr_volume_size, configsvr_volume_type, mongos_volume_size
+    and mongos_volume_type.

@@ -170,7 +170,6 @@ class ClusterController(wsgi.Controller):
         datastore, datastore_version = (
             datastore_models.get_datastore_version(**datastore_args))
 
-        # TODO(saurabhs): add extended_properties to apischema
         extended_properties = body['cluster'].get('extended_properties', {})
 
         try:

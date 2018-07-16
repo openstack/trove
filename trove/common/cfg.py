@@ -1080,6 +1080,10 @@ mongodb_opts = [
     cfg.IntOpt('num_query_routers_per_cluster', default=1,
                help='The number of query routers (mongos) to create '
                     'per cluster.'),
+    cfg.IntOpt('query_routers_volume_size', default=10,
+               help='Default volume_size (in GB) for query routers (mongos).'),
+    cfg.IntOpt('config_servers_volume_size', default=10,
+               help='Default volume_size (in GB) for config_servers.'),
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
     cfg.BoolOpt('cluster_secure', default=True,
