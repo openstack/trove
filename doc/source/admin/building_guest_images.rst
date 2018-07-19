@@ -112,7 +112,7 @@ images using the 'Disk Image Builder' (DIB) tool, and we focus on
 building qemu images [1]_. DIB is an OpenStack tool and is available for
 download at
 https://git.openstack.org/cgit/openstack/diskimage-builder/tree/ or
-https://pypi.python.org/pypi/diskimage-builder/0.1.38.
+https://pypi.org/project/diskimage-builder/0.1.38.
 
 DIB uses a chroot'ed environment to construct the image. The goal is
 to build a bare machine that has all the components required for
