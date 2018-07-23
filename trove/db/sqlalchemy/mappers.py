@@ -22,17 +22,17 @@ from sqlalchemy import Table
 def map(engine, models):
     meta = MetaData()
     meta.bind = engine
-    if mapping_exists(models['instance']):
+    if mapping_exists(models['instances']):
         return
 
-    orm.mapper(models['instance'], Table('instances', meta, autoload=True))
+    orm.mapper(models['instances'], Table('instances', meta, autoload=True))
     orm.mapper(models['instance_faults'],
                Table('instance_faults', meta, autoload=True))
     orm.mapper(models['root_enabled_history'],
                Table('root_enabled_history', meta, autoload=True))
-    orm.mapper(models['datastore'],
+    orm.mapper(models['datastores'],
                Table('datastores', meta, autoload=True))
-    orm.mapper(models['datastore_version'],
+    orm.mapper(models['datastore_versions'],
                Table('datastore_versions', meta, autoload=True))
     orm.mapper(models['datastore_version_metadata'],
                Table('datastore_version_metadata', meta, autoload=True))
@@ -54,11 +54,11 @@ def map(engine, models):
                Table('reservations', meta, autoload=True))
     orm.mapper(models['backups'],
                Table('backups', meta, autoload=True))
-    orm.mapper(models['security_group'],
+    orm.mapper(models['security_groups'],
                Table('security_groups', meta, autoload=True))
-    orm.mapper(models['security_group_rule'],
+    orm.mapper(models['security_group_rules'],
                Table('security_group_rules', meta, autoload=True))
-    orm.mapper(models['security_group_instance_association'],
+    orm.mapper(models['security_group_instance_associations'],
                Table('security_group_instance_associations', meta,
                      autoload=True))
     orm.mapper(models['configurations'],

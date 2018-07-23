@@ -299,12 +299,12 @@ def persisted_models():
 
 class DBBackup(DatabaseModelBase):
     """A table for Backup records."""
-    _data_fields = ['id', 'name', 'description', 'location', 'backup_type',
+    _data_fields = ['name', 'description', 'location', 'backup_type',
                     'size', 'tenant_id', 'state', 'instance_id',
                     'checksum', 'backup_timestamp', 'deleted', 'created',
                     'updated', 'deleted_at', 'parent_id',
                     'datastore_version_id']
-    preserve_on_delete = True
+    _table_name = 'backups'
 
     @property
     def is_running(self):

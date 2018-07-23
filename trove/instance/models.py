@@ -1583,12 +1583,14 @@ class Instances(object):
 
 class DBInstance(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['name', 'created', 'compute_instance_id',
-                    'task_id', 'task_description', 'task_start_time',
-                    'volume_id', 'deleted', 'tenant_id',
-                    'datastore_version_id', 'configuration_id', 'slave_of_id',
-                    'cluster_id', 'shard_id', 'type', 'region_id',
-                    'encrypted_key']
+    _data_fields = ['created', 'updated', 'name', 'hostname',
+                    'compute_instance_id', 'task_id', 'task_description',
+                    'task_start_time', 'volume_id', 'flavor_id',
+                    'volume_size', 'tenant_id', 'server_status',
+                    'deleted', 'deleted_at', 'datastore_version_id',
+                    'configuration_id', 'slave_of_id', 'cluster_id',
+                    'shard_id', 'type', 'region_id', 'encrypted_key']
+    _table_name = 'instances'
 
     def __init__(self, task_status, **kwargs):
         """
@@ -1772,6 +1774,7 @@ def save_instance_fault(instance_id, message, details, skip_delta=None):
 class DBInstanceFault(dbmodels.DatabaseModelBase):
     _data_fields = ['instance_id', 'message', 'details',
                     'created', 'updated', 'deleted', 'deleted_at']
+    _table_name = 'instance_faults'
 
     def __init__(self, **kwargs):
         super(DBInstanceFault, self).__init__(**kwargs)
@@ -1784,6 +1787,7 @@ class DBInstanceFault(dbmodels.DatabaseModelBase):
 class InstanceServiceStatus(dbmodels.DatabaseModelBase):
     _data_fields = ['instance_id', 'status_id', 'status_description',
                     'updated_at']
+    _table_name = 'service_statuses'
 
     def __init__(self, status, **kwargs):
         kwargs["status_id"] = status.code
@@ -1825,7 +1829,7 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
 
 def persisted_models():
     return {
-        'instance': DBInstance,
+        'instances': DBInstance,
         'instance_faults': DBInstanceFault,
         'service_statuses': InstanceServiceStatus,
     }
