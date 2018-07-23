@@ -1,0 +1,4 @@
+devstack_base_dir: /opt/stack
+trove_test_datastore: 'mysql'
+trove_test_group: ''
+trove_resize_time_out: ''

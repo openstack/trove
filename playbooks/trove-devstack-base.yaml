@@ -1,0 +1,4 @@
+- hosts: all
+  roles:
+    - run-devstack
+    - trove-devstack

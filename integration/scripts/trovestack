@@ -1293,7 +1293,7 @@ function cmd_kick_start() {
     cmd_build_and_upload_image "${DATASTORE_TYPE}" "${RESTART_TROVE}"
 }
 
-function cmd_dsvm_gate_tests() {
+function cmd_gate_tests() {
     ACTUAL_HOSTNAME=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1)
 
     local DATASTORE_TYPE=${1:-'mysql'}
@@ -1301,9 +1301,12 @@ function cmd_dsvm_gate_tests() {
     local HOST_SCP_USERNAME=${3:-$USER}
     local GUEST_USERNAME=${4:-'ubuntu'}
     local CONTROLLER_IP=${5:-$ACTUAL_HOSTNAME}
-    local ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
+    # We're not using devstack-gate in Zuul v3 job
+    if [[ $GATE_JOB_VER == "v2" ]]; then
+        local ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
+    fi
 
-    exclaim "Running cmd_dsvm_gate_tests ..."
+    exclaim "Running cmd_gate_tests ..."
 
     # Sometimes in the gate the ACTUAL_HOSTNAME is blank - this code attempts to debug it
     if [[ -z "${CONTROLLER_IP// }" ]]; then
@@ -1333,8 +1336,8 @@ function cmd_dsvm_gate_tests() {
         echo "*** CONTROLLER_IP was blank (CONTROLLER_IP now set to '$CONTROLLER_IP')"
     fi
 
-    export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/dsvm-report/}
-    export TROVE_REPORT_DIR=$HOME/dsvm-report/
+    export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/gate-tests-report/}
+    export TROVE_REPORT_DIR=$HOME/gate-tests-report/
     TROVESTACK_DUMP_ENV=true
 
     # Devstack vm-gate runs as a non-ubuntu user, but needs to connect to the guest image as ubuntu
@@ -1352,12 +1355,17 @@ function cmd_dsvm_gate_tests() {
     local RESTART_TROVE=false
     cmd_kick_start "${DATASTORE_TYPE}" "${RESTART_TROVE}"
 
-    # Update the local swift endpoint in the catalog to use the CONTROLLER_IP instead of 127.0.0.1
-    SWIFT_ENDPOINTS=$(openstack $CLOUD_ADMIN_ARG endpoint list --service swift -c ID -f value)
-    openstack $CLOUD_ADMIN_ARG endpoint create swift public 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
-    openstack $CLOUD_ADMIN_ARG endpoint create swift internal 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
-    openstack $CLOUD_ADMIN_ARG endpoint create swift admin 'http://'$CONTROLLER_IP':8080' --region RegionOne
-    echo $SWIFT_ENDPOINTS | xargs -n 1 openstack $CLOUD_ADMIN_ARG endpoint delete
+    # TODO(zhaochao): in fact, devstack also use CONTROLLER_IP to construct the endpoint urls
+    # so we could safely remove the following lines in the future(they're kept now for not
+    # introducing too many changes.
+    if [[ $GATE_JOB_VER == "v2" ]]; then
+        # Update the local swift endpoint in the catalog to use the CONTROLLER_IP instead of 127.0.0.1
+        SWIFT_ENDPOINTS=$(openstack $CLOUD_ADMIN_ARG endpoint list --service swift -c ID -f value)
+        openstack $CLOUD_ADMIN_ARG endpoint create swift public 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
+        openstack $CLOUD_ADMIN_ARG endpoint create swift internal 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
+        openstack $CLOUD_ADMIN_ARG endpoint create swift admin 'http://'$CONTROLLER_IP':8080' --region RegionOne
+        echo $SWIFT_ENDPOINTS | xargs -n 1 openstack $CLOUD_ADMIN_ARG endpoint delete
+    fi
 
     cmd_int_tests --group=$TEST_GROUP
 }
@@ -1470,7 +1478,8 @@ function print_usage() {
                               Run single Redis scenario tests: ./trovestack int-tests --group=redis-supported-single
                               Run specific functional tests:   ./trovestack int-tests --group=module-create --group=configuration-create
           simple-tests    - Runs the simple integration tests (requires all daemons).
-          dsvm-gate-tests - Configures and runs the int-tests in a devstack vm-gate environment.
+          dsvm-gate-tests - Configures and runs the int-tests in a devstack vm-gate environment(legacy Zuul v2 jobs only).
+          gate-tests      - Configures and runs the int-tests in a devstack vm-gate environment.
 
         --tools--
           debug           - Debug this script (shows all commands).
@@ -1520,7 +1529,9 @@ function run_command() {
         "clean" ) shift; cmd_clean $@;;
         "run" ) shift; cmd_run $@;;
         "kick-start" ) shift; cmd_kick_start $@;;
-        "dsvm-gate-tests" ) shift; cmd_dsvm_gate_tests $@;;
+        "dsvm-gate-tests" ) shift; export GATE_JOB_VER=v2; \
+                            cmd_gate_tests $@;;
+        "gate-tests" ) shift; cmd_gate_tests $@;;
         "run-fake" ) shift; cmd_run_fake $@;;
         "start-fake" ) shift; cmd_start_fake $@;;
         "update-projects" ) cmd_clone_projects force_update \
