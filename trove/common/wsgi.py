@@ -80,7 +80,7 @@ def launch(app_name, port, paste_config_file, data={},
     app = pastedeploy.paste_deploy_app(paste_config_file, app_name, data)
     server = base_wsgi.Service(app, port, host=host,
                                backlog=backlog, threads=threads)
-    return service.launch(CONF, server, workers)
+    return service.launch(CONF, server, workers, restart_method='mutate')
 
 
 # Note: taken from Nova

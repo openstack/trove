@@ -48,7 +48,7 @@ class ConductorConfTests(trove_testtools.TestCase):
         super(ConductorConfTests, self).tearDown()
 
     def _test_manager(self, conf, rt_mgr_name):
-        def mock_launch(conf, server, workers):
+        def mock_launch(conf, server, workers, restart_method):
             qualified_mgr = "%s.%s" % (server.manager_impl.__module__,
                                        server.manager_impl.__class__.__name__)
             self.assertEqual(rt_mgr_name, qualified_mgr, "Invalid manager")

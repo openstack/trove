@@ -66,5 +66,5 @@ def main():
         manager=manager, host=CONF.guest_id,
         rpc_api_version=guest_api.API.API_LATEST_VERSION)
 
-    launcher = openstack_service.launch(CONF, server)
+    launcher = openstack_service.launch(CONF, server, restart_method='mutate')
     launcher.wait()
