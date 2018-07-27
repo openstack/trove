@@ -15,6 +15,7 @@
 """Model classes that form the core of snapshots functionality."""
 
 from oslo_log import log as logging
+from requests.exceptions import ConnectionError
 from sqlalchemy import desc
 from swiftclient.client import ClientException
 
@@ -28,7 +29,6 @@ from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api
-
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -291,6 +291,8 @@ class Backup(object):
             raise exception.SwiftAuthError(tenant_id=context.tenant)
         except exception.NoServiceEndpoint:
             raise exception.SwiftNotFound(tenant_id=context.tenant)
+        except ConnectionError:
+            raise exception.SwiftConnectionError()
 
 
 def persisted_models():

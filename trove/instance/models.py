@@ -923,6 +923,8 @@ class Instance(BuiltInstance):
                 target_size = flavor.ephemeral  # ephemeral_Storage
 
         if backup_id:
+            Backup.verify_swift_auth_token(context)
+
             call_args['backup_id'] = backup_id
             backup_info = Backup.get_by_id(context, backup_id)
             if not backup_info.is_done_successfuly:
@@ -946,6 +948,8 @@ class Instance(BuiltInstance):
                     datastore2=datastore.name)
 
         if slave_of_id:
+            Backup.verify_swift_auth_token(context)
+
             if databases or users:
                 raise exception.ReplicaCreateWithUsersDatabasesError()
             call_args['replica_of'] = slave_of_id

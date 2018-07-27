@@ -361,6 +361,7 @@ class Controller(object):
         webob.exc.HTTPServerError: [
             exception.VolumeCreationFailure,
             exception.UpdateGuestError,
+            exception.SwiftConnectionError,
         ],
         webob.exc.HTTPNotImplemented: [
             exception.VolumeNotSupported,

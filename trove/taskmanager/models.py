@@ -625,6 +625,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 'replica': self.id
             }
             err = inst_models.InstanceTasks.BUILDING_ERROR_REPLICA
+            e_create_fault = create_log_fmt % create_fmt_content
+            e_create_stack = traceback.format_exc()
+            # we persist fault details to source instance
+            inst_models.save_instance_fault(slave_of_id, e_create_fault,
+                                            e_create_stack)
+
             # if the delete of the 'bad' backup fails, it'll mask the
             # create exception, so we trap it here
             try:

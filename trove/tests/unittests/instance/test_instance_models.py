@@ -196,6 +196,12 @@ class CreateInstanceTest(trove_testtools.TestCase):
         backup_models.DBBackup.check_swift_object_exist = Mock(
             return_value=True)
         self.locality = 'affinity'
+
+        self.swift_verify_patch = patch.object(models.Backup,
+                                               'verify_swift_auth_token')
+        self.addCleanup(self.swift_verify_patch.stop)
+        self.swift_verify_patch.start()
+
         super(CreateInstanceTest, self).setUp()
 
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
@@ -363,6 +369,12 @@ class TestReplication(trove_testtools.TestCase):
 
         self.safe_nova_client = models.create_nova_client
         models.create_nova_client = nova.fake_create_nova_client
+
+        self.swift_verify_patch = patch.object(models.Backup,
+                                               'verify_swift_auth_token')
+        self.addCleanup(self.swift_verify_patch.stop)
+        self.swift_verify_patch.start()
+
         super(TestReplication, self).setUp()
 
     def tearDown(self):

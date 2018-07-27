@@ -461,6 +461,10 @@ class SwiftNotFound(TroveError):
     message = _("Swift is disabled for tenant %(tenant_id)s.")
 
 
+class SwiftConnectionError(TroveError):
+    message = _("Cannot connect to Swift.")
+
+
 class DatabaseForUserNotInDatabaseListError(TroveError):
     message = _("The request indicates that user %(user)s should have access "
                 "to database %(database)s, but database %(database)s is not "
