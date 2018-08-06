@@ -96,9 +96,6 @@
 
       rabbit_host = controller
       rabbit_password = RABBIT_PASS
-      nova_proxy_admin_user = admin
-      nova_proxy_admin_pass = ADMIN_PASS
-      nova_proxy_admin_tenant_name = service
       trove_auth_url = http://controller/identity_admin/v2.0
 
 7. Populate the trove database you created earlier in this procedure:

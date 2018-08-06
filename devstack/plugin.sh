@@ -272,9 +272,6 @@ function configure_trove {
         iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
 
         iniset $TROVE_CONDUCTOR_CONF database connection `database_connection_url trove`
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT nova_proxy_admin_user radmin
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT nova_proxy_admin_tenant_name trove
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT nova_proxy_admin_pass $RADMIN_USER_PASS
         iniset $TROVE_CONDUCTOR_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
         iniset $TROVE_CONDUCTOR_CONF DEFAULT control_exchange trove
 
@@ -291,9 +288,6 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
     iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_hosts $TROVE_HOST_GATEWAY
 
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_user radmin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_tenant_name trove
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_pass $RADMIN_USER_PASS
     iniset $TROVE_GUESTAGENT_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     iniset $TROVE_GUESTAGENT_CONF DEFAULT control_exchange trove
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin

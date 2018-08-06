@@ -54,9 +54,6 @@ data store version.
 
       rabbit_host = controller
       rabbit_password = RABBIT_PASS
-      nova_proxy_admin_user = admin
-      nova_proxy_admin_pass = ADMIN_PASS
-      nova_proxy_admin_tenant_name = service
       trove_auth_url = http://controller:35357/v2.0
 
    This example assumes you have created a MySQL 5.5 image called
