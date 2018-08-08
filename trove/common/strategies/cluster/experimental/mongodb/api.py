@@ -72,8 +72,12 @@ class MongoDbCluster(models.Cluster):
             raise exception.ClusterNumInstancesNotSupported(num_instances=3)
 
         mongo_conf = CONF.get(datastore_version.manager)
-        num_configsvr = mongo_conf.num_config_servers_per_cluster
-        num_mongos = mongo_conf.num_query_routers_per_cluster
+
+        num_configsvr = int(extended_properties.get(
+            'num_configsvr', mongo_conf.num_config_servers_per_cluster))
+        num_mongos = int(extended_properties.get(
+            'num_mongos', mongo_conf.num_query_routers_per_cluster))
+
         delta_instances = num_instances + num_configsvr + num_mongos
 
         models.validate_instance_flavors(
@@ -81,18 +85,32 @@ class MongoDbCluster(models.Cluster):
             mongo_conf.device_path)
         models.assert_homogeneous_cluster(instances)
 
-        req_volume_size = models.get_required_volume_size(
-            instances, mongo_conf.volume_support)
-
-        deltas = {'instances': delta_instances, 'volumes': req_volume_size}
-
-        check_quotas(context.tenant, deltas)
-        # Checking networks are same for the cluster
-        models.validate_instance_nics(context, instances)
-
         flavor_id = instances[0]['flavor_id']
+
         volume_size = instances[0].get('volume_size', None)
         volume_type = instances[0].get('volume_type', None)
+
+        configsvr_vsize = int(extended_properties.get(
+            'configsvr_volume_size', mongo_conf.config_servers_volume_size))
+        configsvr_vtype = extended_properties.get('configsvr_volume_type',
+                                                  volume_type)
+
+        mongos_vsize = int(extended_properties.get(
+            'mongos_volume_size', mongo_conf.query_routers_volume_size))
+        mongos_vtype = extended_properties.get('mongos_volume_type',
+                                               volume_type)
+
+        all_instances = (instances
+                         + [{'volume_size': configsvr_vsize}] * num_configsvr
+                         + [{'volume_size': mongos_vsize}] * num_mongos)
+        req_volume_size = models.get_required_volume_size(
+            all_instances, mongo_conf.volume_support)
+
+        deltas = {'instances': delta_instances, 'volumes': req_volume_size}
+        check_quotas(context.tenant, deltas)
+
+        # Checking networks are same for the cluster
+        models.validate_instance_nics(context, instances)
 
         nics = instances[0].get('nics', None)
 
@@ -150,12 +168,12 @@ class MongoDbCluster(models.Cluster):
                                         datastore_version.image_id,
                                         [], [], datastore,
                                         datastore_version,
-                                        volume_size, None,
+                                        configsvr_vsize, None,
                                         availability_zone=None,
                                         nics=nics,
                                         configuration_id=None,
                                         cluster_config=configsvr_config,
-                                        volume_type=volume_type,
+                                        volume_type=configsvr_vtype,
                                         locality=locality,
                                         region_name=regions[i % num_instances]
                                         )
@@ -167,12 +185,12 @@ class MongoDbCluster(models.Cluster):
                                         datastore_version.image_id,
                                         [], [], datastore,
                                         datastore_version,
-                                        volume_size, None,
+                                        mongos_vsize, None,
                                         availability_zone=None,
                                         nics=nics,
                                         configuration_id=None,
                                         cluster_config=mongos_config,
-                                        volume_type=volume_type,
+                                        volume_type=mongos_vtype,
                                         locality=locality,
                                         region_name=regions[i % num_instances]
                                         )

@@ -37,10 +37,14 @@ CONF = cfg.CONF
 class FakeOptGroup(object):
     def __init__(self, num_config_servers_per_cluster=3,
                  num_query_routers_per_cluster=1,
+                 config_servers_volume_size=10,
+                 query_routers_volume_size=10,
                  cluster_secure=True, volume_support=True,
                  device_path='/dev/vdb'):
         self.num_config_servers_per_cluster = num_config_servers_per_cluster
         self.num_query_routers_per_cluster = num_query_routers_per_cluster
+        self.config_servers_volume_size = config_servers_volume_size
+        self.query_routers_volume_size = query_routers_volume_size
         self.cluster_secure = cluster_secure
         self.volume_support = volume_support
         self.device_path = device_path
@@ -193,6 +197,25 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(task_api, 'load')
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(remote, 'create_neutron_client')
+    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(api, 'check_quotas')
+    def test_create_validate_volumes_deltas(self, mock_check_quotas, *args):
+        extended_properties = {
+            "configsvr_volume_size": 5,
+            "mongos_volume_size": 7}
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            self.instances,
+                            extended_properties, None, None)
+        deltas = {'instances': 7, 'volumes': 25}  # volumes=1*3+5*3+7*1
+        mock_check_quotas.assert_called_with(mock.ANY, deltas)
+
+    @mock.patch.object(task_api, 'load')
+    @mock.patch.object(inst_models.Instance, 'create')
+    @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
     @mock.patch.object(remote, 'create_nova_client')
     @mock.patch.object(remote, 'create_neutron_client')
@@ -229,6 +252,33 @@ class MongoDBClusterTest(trove_testtools.TestCase):
         nics_count = [kw.get('nics') for _, kw in
                       mock_ins_create.call_args_list].count(nics)
         self.assertEqual(7, nics_count)
+
+    @mock.patch.object(task_api, 'load')
+    @mock.patch.object(models.DBCluster, 'create')
+    @mock.patch.object(models, 'validate_instance_nics')
+    @mock.patch.object(QUOTAS, 'check_quotas')
+    @mock.patch.object(models, 'validate_instance_flavors')
+    @mock.patch.object(inst_models.Instance, 'create')
+    def test_create_with_extended_properties(self, mock_ins_create, *args):
+        extended_properties = {
+            "num_configsvr": 5,
+            "num_mongos": 7,
+            "configsvr_volume_size": 8,
+            "configsvr_volume_type": "foo_type",
+            "mongos_volume_size": 9,
+            "mongos_volume_type": "bar_type"}
+        self.cluster.create(mock.Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            self.instances,
+                            extended_properties, None, None)
+        volume_args_list = [
+            (arg[8], kw['volume_type']) for arg, kw in
+            mock_ins_create.call_args_list
+        ]
+        self.assertEqual(5, volume_args_list.count((8, "foo_type")))
+        self.assertEqual(7, volume_args_list.count((9, "bar_type")))
 
     @mock.patch.object(task_api, 'load')
     @mock.patch.object(inst_models.Instance, 'create')
