@@ -190,6 +190,12 @@ class TestInstanceController(trove_testtools.TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
+    def test_validate_resize_volume_string_start_with_zero(self):
+        body = {"resize": {"volume": {"size": "0040"}}}
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
     def test_validate_resize_volume_string_invalid_number(self):
         body = {"resize": {"volume": {"size": '-44.0'}}}
         schema = self.controller.get_schema('action', body)
@@ -197,7 +203,7 @@ class TestInstanceController(trove_testtools.TestCase):
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
         self.assertThat(errors[0].context[1].message,
-                        Equals("'-44.0' does not match '^[0-9]+$'"))
+                        Equals("'-44.0' does not match '^0*[1-9]+[0-9]*$'"))
         self.assertThat(errors[0].path.pop(), Equals('size'))
 
     def test_validate_resize_volume_invalid_characters(self):
@@ -209,7 +215,27 @@ class TestInstanceController(trove_testtools.TestCase):
         self.assertThat(errors[0].context[0].message,
                         Equals("'x' is not of type 'integer'"))
         self.assertThat(errors[0].context[1].message,
-                        Equals("'x' does not match '^[0-9]+$'"))
+                        Equals("'x' does not match '^0*[1-9]+[0-9]*$'"))
+        self.assertThat(errors[0].path.pop(), Equals('size'))
+
+    def test_validate_resize_volume_zero_number(self):
+        body = {"resize": {"volume": {"size": 0}}}
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertThat(errors[0].context[0].message,
+                        Equals("0 is less than the minimum of 1"))
+        self.assertThat(errors[0].path.pop(), Equals('size'))
+
+    def test_validate_resize_volume_string_zero_number(self):
+        body = {"resize": {"volume": {"size": '0'}}}
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertThat(errors[0].context[1].message,
+                        Equals("'0' does not match '^0*[1-9]+[0-9]*$'"))
         self.assertThat(errors[0].path.pop(), Equals('size'))
 
     def test_validate_resize_instance(self):
