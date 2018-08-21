@@ -46,11 +46,11 @@ class ConfigFile(object):
             auth_id = self.tenant
             tenant_id = self.tenant
 
-        print "id = %s" % auth_id
+        print("id = %s" % auth_id)
         self.headers = {
             'X-Auth-Token': str(auth_id)
         }
-        print "tenantID = %s" % tenant_id
+        print("tenantID = %s" % tenant_id)
         self.tenantID = tenant_id
         self.dbaas_url = "%s/v1.0/%s" % (self.api_url, self.tenantID)
 

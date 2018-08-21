@@ -43,19 +43,19 @@ class ExampleClient(object):
         self.directory = config.get("directory", None)
         if not self.directory.endswith('/'):
             self.directory += '/'
-        print "directory = %s" % self.directory
+        print("directory = %s" % self.directory)
         self.api_url = config.get("api_url", None)
-        print "api_url = %s" % self.api_url
+        print("api_url = %s" % self.api_url)
         #auth
         auth_url = config.get("auth_url", None)
-        print "auth_url = %s" % auth_url
+        print("auth_url = %s" % auth_url)
         username = config.get("username", None)
-        print "username = %s" % username
+        print("username = %s" % username)
         password = config.get("password", None)
-        print "password = %s" % password
+        print("password = %s" % password)
         self.tenant = config.get("tenant", None)
         self.replace_host = config.get("replace_host", None)
-        print "tenant = %s" % self.tenant
+        print("tenant = %s" % self.tenant)
         self.replace_dns_hostname = config.get("replace_dns_hostname", None)
         if auth_url:
             auth_id, tenant_id = self.get_auth_token_id_tenant_id(auth_url,
@@ -65,11 +65,11 @@ class ExampleClient(object):
             auth_id = self.tenant
             tenant_id = self.tenant
 
-        print "id = %s" % auth_id
+        print("id = %s" % auth_id)
         self.headers = {
             'X-Auth-Token': str(auth_id)
         }
-        print "tenantID = %s" % tenant_id
+        print("tenantID = %s" % tenant_id)
         self.tenantID = tenant_id
         self.dbaas_url = "%s/v1.0/%s" % (self.api_url, self.tenantID)
 
@@ -123,7 +123,7 @@ class ExampleClient(object):
     def make_request(self, name, method, json, xml,
                      output=True, print_resp=False):
         name = name.replace('_', '-')
-        print "http call for %s" % name
+        print("http call for %s" % name)
         http = httplib2.Http(disable_ssl_certificate_validation=True)
         req_headers = {'User-Agent': "python-example-client",
                        'Content-Type': "application/json",

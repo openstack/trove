@@ -44,7 +44,7 @@ class InstanceStatusTests(object):
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)
         instance = self.dbaas.instances.get(response.id)
-        print "Status: %s" % instance.status
+        print("Status: %s" % instance.status)
         assert_equal(instance.status, "ERROR",
             "Instance did not drop to error after volume prov failure.")
 
@@ -57,7 +57,7 @@ class InstanceStatusTests(object):
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)
         instance = self.dbaas.instances.get(response.id)
-        print "Status: %s" % instance.status
+        print("Status: %s" % instance.status)
         assert_equal(instance.status, "ERROR",
             "Instance did not drop to error after server prov failure.")
 
@@ -71,6 +71,6 @@ class InstanceStatusTests(object):
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)
         instance = self.dbaas.instances.get(response.id)
-        print "Status: %s" % instance.status
+        print("Status: %s" % instance.status)
         assert_equal(instance.status, "ERROR",
             "Instance did not drop to error after DNS prov failure.")
