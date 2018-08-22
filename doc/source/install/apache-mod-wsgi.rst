@@ -44,6 +44,6 @@ Installing API behind mod_wsgi
     Fedora/RHEL7/CentOS7:
       sudo systemctl reload httpd
 
-   Debian/Ubuntu:
-    sudo a2ensite trove
-    sudo service apache2 reload
+    Debian/Ubuntu:
+      sudo a2ensite trove
+      sudo service apache2 reload
