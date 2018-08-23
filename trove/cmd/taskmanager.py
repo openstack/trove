@@ -38,7 +38,8 @@ def startup(conf, topic):
     server = rpc_service.RpcService(
         key=key, manager=conf.taskmanager_manager, topic=topic,
         rpc_api_version=task_api.API.API_LATEST_VERSION)
-    launcher = openstack_service.launch(conf, server)
+    launcher = openstack_service.launch(conf, server,
+                                        restart_method='mutate')
     launcher.wait()
 
 

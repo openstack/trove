@@ -34,5 +34,6 @@ def main(conf):
         rpc_api_version=conductor_api.API.API_LATEST_VERSION,
         secure_serializer=sz.ConductorHostSerializer)
     workers = conf.trove_conductor_workers or processutils.get_worker_count()
-    launcher = openstack_service.launch(conf, server, workers=workers)
+    launcher = openstack_service.launch(conf, server, workers=workers,
+                                        restart_method='mutate')
     launcher.wait()
