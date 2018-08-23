@@ -41,10 +41,7 @@ be used.
 from __future__ import absolute_import
 import atexit
 import gettext
-import logging
 import os
-import time
-import unittest
 import six
 import sys
 import proboscis

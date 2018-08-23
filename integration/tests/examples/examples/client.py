@@ -1,9 +1,6 @@
-import httplib2
 import json
 import os
 import re
-import sys
-import time
 from urlparse import urlparse
 import xml.dom.minidom
 
