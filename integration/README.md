@@ -4,7 +4,7 @@
 
 ### Steps to setup this environment:
 
-Install a fresh Ubuntu 14.04 (Trusty Tahr) image ( _We suggest creating a development virtual machine using the image_ )
+Install a fresh Ubuntu 16.04 (xenial) image ( _We suggest creating a development virtual machine using the image_ )
 
 #### Login to the machine as root
 
