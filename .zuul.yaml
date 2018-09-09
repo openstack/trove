@@ -1,4 +1,11 @@
 - project:
+    templates:
+      - openstack-python-jobs
+      - openstack-python35-jobs
+      - publish-openstack-sphinx-docs
+      - periodic-stable-jobs
+      - check-requirements
+      - release-notes-jobs
     check:
       jobs:
         - trove-functional-mysql
@@ -22,6 +29,7 @@
             voting: false
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
+        - openstack-tox-pylint
     gate:
       queue: trove
       jobs:
@@ -30,6 +38,7 @@
         - trove-scenario-mysql-multi
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
+        - openstack-tox-pylint
     experimental:
       jobs:
         - trove-grenade
@@ -42,6 +51,9 @@
         - trove-scenario-percona-single
         - trove-scenario-percona-multi
 
+    post:
+      jobs:
+        - openstack-tox-cover
 - job:
     name: trove-functional-mysql
     parent: legacy-dsvm-base
