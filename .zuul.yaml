@@ -1,0 +1,18 @@
+- project:
+    templates:
+      - openstack-python-jobs
+      - openstack-python35-jobs
+      - publish-openstack-sphinx-docs
+      - periodic-stable-jobs
+      - check-requirements
+      - release-notes-jobs
+    check:
+      jobs:
+        - openstack-tox-pylint
+    gate:
+      queue: trove
+      jobs:
+        - openstack-tox-pylint
+    post:
+      jobs:
+        - openstack-tox-cover
