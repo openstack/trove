@@ -1,4 +1,11 @@
 - project:
+    templates:
+      - openstack-python-jobs
+      - openstack-python35-jobs
+      - publish-openstack-sphinx-docs
+      - periodic-stable-jobs
+      - check-requirements
+      - release-notes-jobs
     check:
       jobs:
         - trove-functional-mysql
@@ -25,6 +32,7 @@
         - trove-tox-bandit-baseline:
             voting: false
         - openstack-tox-lower-constraints
+        - openstack-tox-pylint
     gate:
       queue: trove
       jobs:
@@ -34,6 +42,7 @@
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
         - openstack-tox-lower-constraints
+        - openstack-tox-pylint
     experimental:
       jobs:
         - trove-grenade
@@ -46,6 +55,9 @@
         - trove-scenario-percona-single
         - trove-scenario-percona-multi
 
+    post:
+      jobs:
+        - openstack-tox-cover
 - job:
     name: trove-legacy-dsvm-base
     parent: legacy-dsvm-base
@@ -94,8 +106,8 @@
       # definition, so we just set SERVICE_HOST and HOST_IP to empty strings,
       # and VNCSERVER_PROXYCLIENT_ADDRESS to 127.0.0.1 instead.
       devstack_localrc:
-        SERVICE_HOST: ""
-        HOST_IP: ""
+        SERVICE_HOST: ''
+        HOST_IP: ''
         VNCSERVER_PROXYCLIENT_ADDRESS: 127.0.0.1
     run: playbooks/trove-devstack-base.yaml
     irrelevant-files:
@@ -288,20 +300,20 @@
     parent: openstack-tox
     timeout: 2400
     vars:
-        tox_envlist: bandit-baseline
+      tox_envlist: bandit-baseline
     required-projects:
-        - openstack/requirements
+      - openstack/requirements
     irrelevant-files:
-        - ^.*\.rst$
-        - ^.*\.txt$
-        - ^api-ref/.*$
-        - ^apidocs/.*$
-        - ^contrib/.*$
-        - ^doc/.*$
-        - ^etc/.*$
-        - ^releasenotes/.*$
-        - ^setup.cfg$
-        - ^tools/.*$
-        - ^trove/hacking/.*$
-        - ^trove/tests/scenario/.*$
-        - ^trove/tests/unittests/.*$
+      - ^.*\.rst$
+      - ^.*\.txt$
+      - ^api-ref/.*$
+      - ^apidocs/.*$
+      - ^contrib/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^setup.cfg$
+      - ^tools/.*$
+      - ^trove/hacking/.*$
+      - ^trove/tests/scenario/.*$
+      - ^trove/tests/unittests/.*$
