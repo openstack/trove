@@ -1,0 +1,1 @@
+git+https://git.openstack.org/openstack/python-troveclient#egg=python-troveclient
