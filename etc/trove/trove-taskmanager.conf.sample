@@ -227,7 +227,7 @@ device_path = /dev/vdb
 [redis]
 # Format (single port or port range): A, B-C
 # where C greater than B
-tcp_ports = 6379
+tcp_ports = 6379, 16379
 # redis uses local storage
 volume_support = False
 # default device_path = None
