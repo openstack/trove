@@ -53,7 +53,7 @@ def _get_user_count(server_info):
            ' where user like \\\"slave_%\\\"\\\'')
     server = create_server_connection(server_info.id)
     stdout, stderr = server.execute(cmd)
-    return int(stdout.rstrip())
+    return int(stdout)
 
 
 def slave_is_running(running=True):
@@ -364,10 +364,7 @@ class DetachReplica(object):
             cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
             server = create_server_connection(slave_instance.id)
             stdout, stderr = server.execute(cmd)
-            if (stdout.rstrip() != "0"):
-                return False
-            else:
-                return True
+            return stdout.rstrip() == "0"
         poll_until(check_not_read_only)
 
 

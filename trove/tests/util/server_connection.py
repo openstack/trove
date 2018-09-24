@@ -48,7 +48,8 @@ class ServerSSHConnection(object):
     def execute(self, cmd):
         exe_cmd = "%s %s %s" % (tests.SSH_CMD, self.ip_address, cmd)
         print("RUNNING COMMAND: %s" % exe_cmd)
-        return util.process(exe_cmd)
+        stdout, stderr = util.process(exe_cmd)
+        return (stdout.decode(), stderr.decode())
 
 
 class OpenVZServerConnection(object):

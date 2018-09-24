@@ -144,7 +144,7 @@ class ConfigurationRunner(TestRunner):
             configuration.has_field('description', six.string_types)
             configuration.has_field('values', dict)
             configuration.has_field('datastore_name', six.string_types)
-            configuration.has_field('datastore_version_id', unicode)
+            configuration.has_field('datastore_version_id', six.text_type)
             configuration.has_field('datastore_version_name', six.string_types)
 
             self.assert_equal(name, result.name)

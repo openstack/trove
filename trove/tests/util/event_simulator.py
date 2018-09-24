@@ -227,7 +227,7 @@ def fake_sleep(time_to_sleep):
 
 
 def fake_poll_until(retriever, condition=lambda value: value,
-                    sleep_time=1, time_out=None):
+                    sleep_time=1, time_out=0):
     """Fakes out poll until."""
     from trove.common import exception
     slept_time = 0

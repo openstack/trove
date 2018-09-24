@@ -145,7 +145,7 @@ class RunnerFactory(object):
                 # Only fail silently if it's something we expect,
                 # such as a missing override class.  Anything else
                 # shouldn't be suppressed.
-                l_msg = ie.message.lower()
+                l_msg = str(ie).lower()
                 if (load_type and load_type not in l_msg) or (
                         'no module named' not in l_msg and
                         'cannot be found' not in l_msg):
@@ -401,7 +401,16 @@ class TestRunner(object):
         """Assert that two lists contain same elements
         (with same multiplicities) ignoring the element order.
         """
-        return cls.assert_equal(sorted(expected), sorted(actual), message)
+        # Sorts the elements of a given list, including dictionaries.
+        # For dictionaries sorts based on dictionary key.
+        # example:
+        # [1, 3, 2]             -> [1, 2, 3]
+        # ["b", "a", "c"]       -> ["a", "b", "c"]
+        # [{'b':'y'},{'a':'x'}] -> [{'a':'x'},{'b':'y'}]
+        sort = lambda object: sorted(object, key=lambda e: sorted(e.keys())
+                                     if isinstance(e, dict) else e)
+
+        return cls.assert_equal(sort(expected), sort(actual), message)
 
     @classmethod
     def assert_equal(cls, expected, actual, message=None):
@@ -506,7 +515,7 @@ class TestRunner(object):
         if client:
             # Make sure that the client_cmd comes from the same client that
             # was passed in, otherwise asserting the client code may fail.
-            cmd_clz = client_cmd.im_self
+            cmd_clz = client_cmd.__self__
             cmd_clz_name = cmd_clz.__class__.__name__
             client_attrs = [attr[0] for attr in inspect.getmembers(
                             client.real_client)
@@ -700,7 +709,7 @@ class TestRunner(object):
         return False
 
     def _poll_while(self, instance_id, expected_status,
-                    sleep_time=1, time_out=None):
+                    sleep_time=1, time_out=0):
         poll_until(lambda: not self._has_status(instance_id, expected_status),
                    sleep_time=sleep_time, time_out=time_out)
 

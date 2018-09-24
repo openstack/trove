@@ -17,6 +17,7 @@
 import os
 from proboscis import SkipTest
 import re
+import six
 import tempfile
 import time
 
@@ -43,7 +44,7 @@ class ModuleRunner(TestRunner):
         self.MODULE_BINARY_SUFFIX = '_bin_auto'
         self.MODULE_BINARY_SUFFIX2 = self.MODULE_BINARY_SUFFIX + '_2'
         self.MODULE_BINARY_CONTENTS = os.urandom(20)
-        self.MODULE_BINARY_CONTENTS2 = '\x00\xFF\xea\x9c\x11\xfeok\xb1\x8ax'
+        self.MODULE_BINARY_CONTENTS2 = b'\x00\xFF\xea\x9c\x11\xfeok\xb1\x8ax'
 
         self.module_name_order = [
             {'suffix': self.MODULE_BINARY_SUFFIX,
@@ -1283,12 +1284,12 @@ class ModuleRunner(TestRunner):
                     if 'contents' in expected and expected['contents']:
                         with open(filename, 'rb') as fh:
                             contents = fh.read()
-                        # convert contents into bytearray to work with py27
-                        # and py34
-                        contents = bytes([ord(item) for item in contents])
-                        expected_contents = bytes(
-                            [ord(item) for item in expected['contents']])
-                        self.assert_equal(expected_contents, contents,
+
+                        expected = expected['contents']
+                        if isinstance(expected, six.string_types):
+                            expected = expected.encode()
+
+                        self.assert_equal(expected, contents,
                                           "Unexpected contents for %s" %
                                           module_name)
         finally:

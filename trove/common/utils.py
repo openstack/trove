@@ -185,14 +185,14 @@ class MethodInspector(object):
 
 
 def build_polling_task(retriever, condition=lambda value: value,
-                       sleep_time=1, time_out=None):
+                       sleep_time=1, time_out=0):
     start_time = time.time()
 
     def poll_and_check():
         obj = retriever()
         if condition(obj):
             raise loopingcall.LoopingCallDone(retvalue=obj)
-        if time_out is not None and time.time() - start_time > time_out:
+        if time_out > 0 and time.time() - start_time > time_out:
             raise exception.PollTimeOut
 
     return loopingcall.BackOffLoopingCall(
@@ -202,7 +202,7 @@ def build_polling_task(retriever, condition=lambda value: value,
 
 
 def poll_until(retriever, condition=lambda value: value,
-               sleep_time=1, time_out=None):
+               sleep_time=1, time_out=0):
     """Retrieves object until it passes condition, then returns it.
 
     If time_out_limit is passed in, PollTimeOut will be raised once that

@@ -189,12 +189,12 @@ class Service(object):
         # as python /path/to/executable args, so the entry is
         # /path/to/executable
         actual_command = self.cmd[proc_name_index].split("/")[-1]
-        print actual_command
+        print(actual_command)
         proc_command = ["/usr/bin/pgrep", "-f", actual_command]
-        print proc_command
+        print(proc_command)
         proc = start_proc(proc_command, shell=False)
         line = proc.stdout.readline()
-        print line
+        print(line)
         # pgrep only returns a pid. if there is no pid, it'll return nothing
         return len(line) != 0
 

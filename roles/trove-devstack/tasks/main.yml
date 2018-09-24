@@ -5,5 +5,5 @@
     export PATH_DEVSTACK_SRC=$DEST/devstack
     export TROVE_RESIZE_TIME_OUT={{trove_resize_time_out}}
 
-    cd $DEST/trove/integration/scripts
-    ./trovestack gate-tests {{trove_test_datastore}} {{trove_test_group}}
+    cd $DEST/trove
+    tox -etrovestack -vv -- gate-tests {{trove_test_datastore}} {{trove_test_group}}

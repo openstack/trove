@@ -20,7 +20,7 @@ class MysqlHelper(SqlHelper):
 
     def __init__(self, expected_override_name, report):
         super(MysqlHelper, self).__init__(expected_override_name, report,
-                                          'mysql')
+                                          'mysql+pymysql')
 
     def get_helper_credentials(self):
         return {'name': 'lite', 'password': 'litepass', 'database': 'firstdb'}

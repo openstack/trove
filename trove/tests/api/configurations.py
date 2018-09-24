@@ -138,7 +138,7 @@ def _test_configuration_is_applied_to_instance(instance, configuration_id):
         resp, body = instance_info.dbaas.client.last_response
         print(resp)
         print(body)
-        return json.loads(body)['type']
+        return json.loads(body.decode())['type']
 
     # check the config values are correct
     for key, value in actual_values:
