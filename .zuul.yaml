@@ -1,14 +1,20 @@
 - project:
     templates:
+      - check-requirements
+      - openstack-cover-jobs
+      - openstack-lower-constraints-jobs
       - openstack-python-jobs
       - openstack-python35-jobs
       - openstack-python36-jobs
-      - publish-openstack-docs-pti
       - periodic-stable-jobs
-      - check-requirements
+      - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
       jobs:
+        # Non-voting until job is fixed, remove it if it works,
+        # it's part of openstack-cover-jobs template.
+        - openstack-tox-cover:
+            voting: false
         - trove-functional-mysql
         - trove-scenario-mariadb-single:
             voting: false
@@ -32,7 +38,6 @@
         - trove-tox-apiexamples
         - trove-tox-bandit-baseline:
             voting: false
-        - openstack-tox-lower-constraints
         - openstack-tox-pylint
     gate:
       queue: trove
@@ -42,7 +47,6 @@
         - trove-scenario-mysql-multi
         - trove-tox-fakemodetests
         - trove-tox-apiexamples
-        - openstack-tox-lower-constraints
         - openstack-tox-pylint
     experimental:
       jobs:
@@ -56,9 +60,6 @@
         - trove-scenario-percona-single
         - trove-scenario-percona-multi
 
-    post:
-      jobs:
-        - openstack-tox-cover
 - job:
     name: trove-legacy-dsvm-base
     parent: legacy-dsvm-base
