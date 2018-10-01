@@ -291,6 +291,9 @@ function configure_trove {
 
 # install_trove() - Collect source and prepare
 function install_trove {
+    echo "Changing stack user sudoers"
+    echo "stack ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/60_stack_sh_allow_all
+
     setup_develop $TROVE_DIR
 
     if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
@@ -352,6 +355,12 @@ function init_trove {
         --os-username ${ADMIN_ALT_USERNAME} \
         --os-password ${ADMIN_PASSWORD} \
         --os-project-name ${ALT_TENANT_NAME}
+
+    # build and upload sample Trove mysql instance if not set otherwise
+    if [[ ${TROVE_DISABLE_IMAGE_SETUP} != "TRUE" ]]; then
+        echo "Setup datastore image"
+        _setup_minimal_image
+    fi
 
     # If no guest image is specified, skip remaining setup
     [ -z "$TROVE_GUEST_IMAGE_URL" ] && return 0
@@ -556,6 +565,120 @@ function stop_trove {
 function configure_tempest_for_trove {
     if is_service_enabled tempest; then
         iniset $TEMPEST_CONFIG service_available trove True
+    fi
+}
+
+# _setup_minimal_image() - build and register in Trove a vm image with mysql
+#                        - datastore can be set via env variables
+function _setup_minimal_image {
+    ##### Prerequisites:
+    ##### - SSH KEYS has to be created on controller
+    ##### - trove will access controller ip to get trove source code by using HOST_SCP_USERNAME and an ssh key
+    ##### - we assume tripleo elements and all other elements have been downloaded
+
+    echo "Exporting image-related environmental variables"
+    PRIMARY_IP=$(ip route get 8.8.8.8 | head -1 | cut -d' ' -f8)
+    export CONTROLLER_IP=${CONTROLLER_IP:-$PRIMARY_IP}
+    export HOST_USERNAME=${HOST_USERNAME:-'stack'}
+    export HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-'stack'}
+    export GUEST_USERNAME=${GUEST_USERNAME:-'ubuntu'}
+    export PATH_TROVE=${PATH_TROVE:-'/opt/stack/trove'}
+    export ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
+    export TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:-'/opt/stack/trove/integration/scripts'}
+    export SERVICE_TYPE=${SERVICE_TYPE:-'mysql'}
+    export SSH_DIR=${SSH_DIR:-'/opt/stack/.ssh'}
+    export GUEST_LOGDIR=${GUEST_LOGDIR:-'/var/log/trove/'}
+    export ESCAPED_GUEST_LOGDIR=$(echo $GUEST_LOGDIR | sed 's/\//\\\//g')
+    export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
+    export DISTRO="ubuntu"
+    export VM=${VM:-'/opt/stack/images/ubuntu_mysql/ubuntu_mysql'}
+
+    if [ -d "$TROVESTACK_SCRIPTS/files/elements" ]; then
+        export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
+    else
+        export ELEMENTS_PATH=.
+    fi
+
+    if [ ! -z "$PATH_DISKIMAGEBUILDER" ]; then
+        export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER/elements
+    elif [ -d "/usr/local/lib/python2.7/dist-packages/diskimage_builder" ]; then
+        PATH_DISKIMG="/usr/local/lib/python2.7/dist-packages/diskimage_builder"
+        export ELEMENTS_PATH+=:$PATH_DISKIMG/elements
+    fi
+
+    if [ ! -z "$PATH_TRIPLEO_ELEMENTS" ]; then
+        export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
+    else
+        git_clone $TRIPLEO_IMAGES_REPO $TRIPLEO_IMAGES_DIR $TRIPLEO_IMAGES_BRANCH
+        setup_develop $TRIPLEO_IMAGES_DIR
+
+        export ELEMENTS_PATH+=:$TRIPLEO_IMAGES_DIR/elements
+    fi
+
+    export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
+    export DIB_CLOUD_INIT_ETC_HOSTS=true
+    export QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
+    export RELEASE=${RELEASE:-'xenial'}
+    export DIB_RELEASE=${RELEASE:-'xenial'}
+
+    export TROVE_GUESTAGENT_CONF=${TROVE_GUESTAGENT_CONF:-'/etc/trove/trove-guestagent.conf'}
+
+    mkdir -p ${SSH_DIR}
+    /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
+    cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+    chmod 600 ${SSH_DIR}/authorized_keys
+
+    echo "Run disk image create to actually create a new image"
+    disk-image-create -a amd64 -o "${VM}" -x ${QEMU_IMG_OPTIONS} ${DISTRO} \
+        vm cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${RELEASE}-guest \
+        ${DISTRO}-${SERVICE_TYPE} ${DISTRO}-${RELEASE}-${SERVICE_TYPE}
+
+    QCOW_IMAGE="$VM.qcow2"
+
+    if [ ! -f $QCOW_IMAGE ]; then
+        echo "Image file was not found at $QCOW_IMAGE. Probably it was not created."
+        return 1
+    fi
+
+    DATASTORE=$SERVICE_TYPE
+    DATASTORE_VERSION=${DATASTORE_VERSION:-'5.7'}
+    ACTIVE=1
+    INACTIVE=0
+
+    echo "Add image to glance"
+    GLANCE_OUT=$(openstack --os-url $GLANCE_SERVICE_PROTOCOL://$GLANCE_HOSTPORT \
+        image create $DISTRO-${DATASTORE}-${DATASTORE_VERSION} \
+        --public --disk-format qcow2 --container-format bare --file $QCOW_IMAGE)
+    glance_image_id=$(echo "$GLANCE_OUT" | grep '| id ' | awk '{print $4}')
+
+    echo "Create datastore specific entry in Trove AFAIK one per datastore, do not need when changing image"
+    $TROVE_MANAGE datastore_update $DATASTORE ""
+
+    echo "Connect datastore entry to glance image"
+    $TROVE_MANAGE datastore_version_update $DATASTORE $DATASTORE_VERSION $DATASTORE $glance_image_id "" $ACTIVE
+
+    echo "Set default datastore version"
+    $TROVE_MANAGE datastore_update $DATASTORE $DATASTORE_VERSION
+
+    # just for tests
+    $TROVE_MANAGE datastore_version_update "$DATASTORE" "inactive_version" "manager1" $glance_image_id "" $INACTIVE
+    $TROVE_MANAGE datastore_update Test_Datastore_1 ""
+
+    echo "Add validation rules if available"
+    if [ -f "$PATH_TROVE"/trove/templates/$DATASTORE/validation-rules.json ]; then
+        $TROVE_MANAGE db_load_datastore_config_parameters "$DATASTORE" "$DATASTORE_VERSION" \
+            "$PATH_TROVE"/trove/templates/$DATASTORE/validation-rules.json
+    fi
+
+    echo "Generate cloudinit"
+    CLOUDINIT_PATH=/etc/trove/cloudinit/mysql.cloudinit
+
+    if [ ! -f $CLOUDINIT_PATH ]; then
+        sudo mkdir -p $(dirname $CLOUDINIT_PATH)
+
+        sudo echo "#!/usr/bin/env bash" | sudo tee $CLOUDINIT_PATH
+        PUBKEY=`cat ${SSH_DIR}/id_rsa.pub`
+        sudo echo "echo '${PUBKEY}' > /home/${GUEST_USERNAME}/.ssh/authorized_keys" | sudo tee --append $CLOUDINIT_PATH
     fi
 }
 

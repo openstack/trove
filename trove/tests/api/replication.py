@@ -177,7 +177,7 @@ class VerifySlave(object):
         return find_database
 
     @test
-    @time_out(5 * 60)
+    @time_out(20 * 60)
     def test_correctly_started_replication(self):
         poll_until(slave_is_running())
 

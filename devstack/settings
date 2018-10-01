@@ -14,6 +14,10 @@ TROVE_DASHBOARD_DIR=${TROVE_DASHBOARD_DIR:-${DEST}/trove-dashboard}
 TROVE_DASHBOARD_REPO=${TROVE_DASHBOARD_REPO:-${GIT_BASE}/openstack/trove-dashboard.git}
 TROVE_DASHBOARD_BRANCH=${TROVE_DASHBOARD_BRANCH:-master}
 
+TRIPLEO_IMAGES_DIR=${TRIPLEO_IMAGES_DIR:-${DEST}/tripleo-image-elements}
+TRIPLEO_IMAGES_REPO=${TRIPLEO_IMAGES_REPO:-${GIT_BASE}/openstack/tripleo-image-elements.git}
+TRIPLEO_IMAGES_BRANCH=${TRIPLEO_IMAGES_BRANCH:-master}
+
 # Set up configuration directory and files
 TROVE_CONF_DIR=${TROVE_CONF_DIR:-/etc/trove}
 TROVE_CONF=${TROVE_CONF:-${TROVE_CONF_DIR}/trove.conf}

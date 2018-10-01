@@ -934,7 +934,7 @@ class BaseMySqlApp(object):
         LOG.info("Starting slave replication.")
         with self.local_sql_client(self.get_engine()) as client:
             client.execute('START SLAVE')
-            self._wait_for_slave_status("ON", client, 60)
+            self._wait_for_slave_status("ON", client, 180)
 
     def stop_slave(self, for_failover):
         replication_user = None
@@ -944,7 +944,7 @@ class BaseMySqlApp(object):
             replication_user = result.first()['Master_User']
             client.execute('STOP SLAVE')
             client.execute('RESET SLAVE ALL')
-            self._wait_for_slave_status("OFF", client, 30)
+            self._wait_for_slave_status("OFF", client, 180)
             if not for_failover:
                 client.execute('DROP USER ' + replication_user)
         return {
