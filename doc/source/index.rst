@@ -35,6 +35,8 @@ For an in-depth look at the project's design and structure, see the
 
 * `Trove Wiki`_ on OpenStack
 * `Trove API Documentation`_ on developer.openstack.org
+* `Trove Blueprints`_ on blueprints.launchpad.net
+* `Trove Bugs`_ on bugs.launchpad.net
 
 
 Guest Images
@@ -58,3 +60,5 @@ Search Trove Documentation
 .. _Trove: https://git.openstack.org/cgit/openstack/trove
 .. _Trove Client: https://git.openstack.org/cgit/openstack/python-troveclient
 .. _Trove API Documentation: http://developer.openstack.org/api-ref/database/
+.. _Trove Blueprints: https://blueprints.launchpad.net/trove
+.. _Trove Bugs: https://bugs.launchpad.net/trove
