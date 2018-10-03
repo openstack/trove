@@ -83,8 +83,9 @@ class MySQLRestoreMixin(object):
         if not os.path.exists(run_dir):
             utils.execute("mkdir", run_dir,
                           run_as_root=True, root_helper="sudo")
-            utils.execute("chown", "mysql:mysql", run_dir, err_log_file.name,
-                          run_as_root=True, root_helper="sudo")
+        utils.execute("chown", "mysql:mysql", run_dir, err_log_file.name,
+                      init_file.name, run_as_root=True, root_helper="sudo")
+
         child = pexpect.spawn(
             "sudo mysqld_safe --init-file=%s --log-error=%s" %
             (init_file.name, err_log_file.name))
@@ -135,24 +136,26 @@ class MySQLRestoreMixin(object):
         for initial datastore configuration.
         """
 
-        with tempfile.NamedTemporaryFile(mode='w') as init_file:
+        try:
+            # Do not attempt to delete these files as the 'trove' user.
+            # The process writing into it may have assumed its ownership.
+            # Only owners can delete temporary files (restricted deletion).
+            init_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
             operating_system.write_file(init_file.name,
                                         self.RESET_ROOT_MYSQL_COMMANDS)
             operating_system.chmod(init_file.name, FileMode.ADD_READ_ALL,
                                    as_root=True)
-            # Do not attempt to delete the file as the 'trove' user.
-            # The process writing into it may have assumed its ownership.
-            # Only owners can delete temporary
-            # files (restricted deletion).
             err_log_file = tempfile.NamedTemporaryFile(
                 suffix=self._ERROR_LOG_SUFFIX,
                 delete=False)
-            try:
-                self._start_mysqld_safe_with_init_file(init_file, err_log_file)
-            finally:
-                err_log_file.close()
-                operating_system.remove(
-                    err_log_file.name, force=True, as_root=True)
+            self._start_mysqld_safe_with_init_file(init_file, err_log_file)
+        finally:
+            init_file.close()
+            err_log_file.close()
+            operating_system.remove(
+                init_file.name, force=True, as_root=True)
+            operating_system.remove(
+                err_log_file.name, force=True, as_root=True)
 
     def _find_first_error_message(self, fp):
         if self._is_non_zero_file(fp):
