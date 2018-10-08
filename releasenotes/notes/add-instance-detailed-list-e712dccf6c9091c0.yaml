@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Added ``/instances/detail`` endpoint to fetch list of instances with details.

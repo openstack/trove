@@ -15,6 +15,7 @@ from oslo_policy import policy
 PATH_BASE = '/v1.0/{account_id}'
 
 PATH_INSTANCES = PATH_BASE + '/instances'
+PATH_INSTANCES_DETAIL = PATH_INSTANCES + '/detail'
 PATH_INSTANCE = PATH_INSTANCES + '/{instance_id}'
 PATH_INSTANCE_ACTION = PATH_INSTANCE + '/action'
 PATH_USERS = PATH_INSTANCE + '/users'

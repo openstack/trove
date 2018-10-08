@@ -198,13 +198,31 @@ class InstanceController(wsgi.Controller):
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'instance:index')
+        instances = self._get_instances(req, instance_view=views.InstanceView)
+        return wsgi.Result(instances, 200)
+
+    def detail(self, req, tenant_id):
+        """Return all instances with details."""
+        LOG.info("Listing database instances with details for tenant '%s'",
+                 tenant_id)
+        LOG.debug("req : '%s'\n\n", req)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'instance:detail')
+        instances = self._get_instances(req,
+                                        instance_view=views.InstanceDetailView)
+        return wsgi.Result(instances, 200)
+
+    def _get_instances(self, req, instance_view):
+        context = req.environ[wsgi.CONTEXT_KEY]
         clustered_q = req.GET.get('include_clustered', '').lower()
         include_clustered = clustered_q == 'true'
-        servers, marker = models.Instances.load(context, include_clustered)
-        view = views.InstancesView(servers, req=req)
+        instances, marker = models.Instances.load(context, include_clustered)
+        view = views.InstancesView(instances,
+                                   item_view=instance_view,
+                                   req=req)
         paged = pagination.SimplePaginatedDataView(req.url, 'instances', view,
                                                    marker)
-        return wsgi.Result(paged.data(), 200)
+        return paged.data()
 
     def backups(self, req, tenant_id, id):
         """Return all backups for the specified instance."""
