@@ -8,6 +8,7 @@ set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get --allow-unauthenticated -y install python-dev libxml2-dev libxslt1-dev python-setuptools \
+    libffi-dev libssl-dev \
     python-pip python-sqlalchemy python-lxml \
     python-routes python-eventlet python-webob \
     python-pastedeploy python-paste python-netaddr \
