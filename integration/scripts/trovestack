@@ -1348,7 +1348,6 @@ function cmd_gate_tests() {
 
     sudo chown -R $(whoami) /etc/trove
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_host $CONTROLLER_IP
-    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_hosts $CONTROLLER_IP
     cd $TROVESTACK_SCRIPTS
     sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
 

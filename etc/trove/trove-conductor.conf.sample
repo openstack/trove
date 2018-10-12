@@ -56,32 +56,3 @@ connection = mysql+pymysql://root:e1a2c042c828d3566d0a@localhost/trove
 # message which failed to be delivered due to a recoverable
 # error. 0 - No retry, -1 - indefinite (integer value)
 #retry = -1
-
-[oslo_messaging_rabbit]
-# The RabbitMQ broker address where a single node is used. (string value)
-# Deprecated group/name - [DEFAULT]/rabbit_host
-#rabbit_host=localhost
-
-# The RabbitMQ broker port where a single node is used. (integer value)
-# Deprecated group/name - [DEFAULT]/rabbit_port
-#rabbit_port=5672
-
-# RabbitMQ HA cluster host:port pairs. (list value)
-# Deprecated group/name - [DEFAULT]/rabbit_hosts
-#rabbit_hosts=$rabbit_host:$rabbit_port
-
-# Connect over SSL for RabbitMQ. (boolean value)
-# Deprecated group/name - [DEFAULT]/rabbit_use_ssl
-#rabbit_use_ssl=false
-
-# The RabbitMQ userid. (string value)
-# Deprecated group/name - [DEFAULT]/rabbit_userid
-#rabbit_userid=guest
-
-# The RabbitMQ password. (string value)
-# Deprecated group/name - [DEFAULT]/rabbit_password
-#rabbit_password=f7999d1955c5014aa32c
-
-# The RabbitMQ virtual host. (string value)
-# Deprecated group/name - [DEFAULT]/rabbit_virtual_host
-#rabbit_virtual_host=/

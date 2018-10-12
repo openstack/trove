@@ -206,9 +206,7 @@ function configure_trove {
 
         iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
         iniset $TROVE_CONF DEFAULT control_exchange trove
-        iniset $TROVE_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
-        iniset $TROVE_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
-        iniset $TROVE_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+        iniset $TROVE_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
 
 
         iniset $TROVE_CONF database connection `database_connection_url trove`
@@ -237,9 +235,7 @@ function configure_trove {
 
         iniset $TROVE_TASKMANAGER_CONF DEFAULT rpc_backend "rabbit"
         iniset $TROVE_TASKMANAGER_CONF DEFAULT control_exchange trove
-        iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
-        iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
-        iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
 
         iniset $TROVE_TASKMANAGER_CONF database connection `database_connection_url trove`
         iniset $TROVE_TASKMANAGER_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
@@ -267,9 +263,7 @@ function configure_trove {
     # (Re)create trove conductor conf file if needed
     if is_service_enabled tr-cond; then
         iniset $TROVE_CONDUCTOR_CONF DEFAULT rpc_backend "rabbit"
-        iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
-        iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
-        iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+        iniset $TROVE_CONDUCTOR_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
 
         iniset $TROVE_CONDUCTOR_CONF database connection `database_connection_url trove`
         iniset $TROVE_CONDUCTOR_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
@@ -284,9 +278,7 @@ function configure_trove {
 
     # Set up Guest Agent conf
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rpc_backend "rabbit"
-    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
-    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
-    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_hosts $TROVE_HOST_GATEWAY
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$TROVE_HOST_GATEWAY:5672/
 
     iniset $TROVE_GUESTAGENT_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     iniset $TROVE_GUESTAGENT_CONF DEFAULT control_exchange trove

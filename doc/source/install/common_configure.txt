@@ -24,12 +24,7 @@
         [DEFAULT]
         ...
         rpc_backend = rabbit
-
-        [oslo_messaging_rabbit]
-        ...
-        rabbit_host = controller
-        rabbit_userid = openstack
-        rabbit_password = RABBIT_PASS
+        transport_url = rabbit://<rabbit_userid>:<rabbit_password>@<rabbit_host>:5672
 
 3. Verify that the ``api-paste.ini`` file is present in ``/etc/trove``.
 

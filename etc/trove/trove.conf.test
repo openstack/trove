@@ -7,7 +7,7 @@ remote_swift_client = trove.tests.fakes.swift.fake_create_swift_client
 remote_cinder_client = trove.tests.fakes.nova.fake_create_cinder_client
 
 # Fake out the RPC implementation
-rpc_backend = fake
+transport_url = 'fake:/'
 
 # Skip running periodic tasks
 report_interval = 0
@@ -103,12 +103,6 @@ notification_service_id = mysql:123,percona:abc
 control_exchange = trove
 
 paste_config_file=api-paste.ini.test
-
-[oslo_messaging_rabbit]
-# AMQP Connection info
-# Deprecated group/name - [DEFAULT]/rabbit_password
-#rabbit_password=f7999d1955c5014aa32c
-
 
 [mysql]
 volume_support = True
