@@ -6,3 +6,4 @@
    :maxdepth: 1
 
    trove-manage
+   trove-status
