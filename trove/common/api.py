@@ -85,6 +85,10 @@ class API(wsgi.Router):
                        controller=instance_resource,
                        action="index",
                        conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/instances/detail",
+                       controller=instance_resource,
+                       action="detail",
+                       conditions={'method': ['GET']})
         mapper.connect("/{tenant_id}/instances",
                        controller=instance_resource,
                        action="create",

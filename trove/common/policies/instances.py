@@ -13,7 +13,7 @@
 from oslo_policy import policy
 
 from trove.common.policies.base import (
-    PATH_INSTANCES, PATH_INSTANCE, PATH_INSTANCE_ACTION)
+    PATH_INSTANCES, PATH_INSTANCES_DETAIL, PATH_INSTANCE, PATH_INSTANCE_ACTION)
 
 
 rules = [
@@ -54,6 +54,16 @@ rules = [
         operations=[
             {
                 'path': PATH_INSTANCES,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
+        name='instance:detail',
+        check_str='rule:admin_or_owner',
+        description='List database instances with details.',
+        operations=[
+            {
+                'path': PATH_INSTANCES_DETAIL,
                 'method': 'GET'
             }
         ]),

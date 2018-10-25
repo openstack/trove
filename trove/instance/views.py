@@ -162,8 +162,9 @@ class InstanceDetailView(InstanceView):
 class InstancesView(object):
     """Shows a list of SimpleInstance objects."""
 
-    def __init__(self, instances, req=None):
+    def __init__(self, instances, item_view=InstanceView, req=None):
         self.instances = instances
+        self.item_view = item_view
         self.req = req
 
     def data(self):
@@ -174,7 +175,7 @@ class InstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        view = InstanceView(instance, req=self.req)
+        view = self.item_view(instance, req=self.req)
         return view.data()['instance']
 
 

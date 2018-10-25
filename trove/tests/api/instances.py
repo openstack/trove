@@ -1180,6 +1180,25 @@ class TestInstanceListing(object):
                 check.volume()
 
     @test
+    def test_detailed_list(self):
+        allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
+                         'links', 'name', 'status', 'updated', 'ip',
+                         'datastore', 'fault', 'region']
+        if VOLUME_SUPPORT:
+            allowed_attrs.append('volume')
+        instances = dbaas.instances.list(detailed=True)
+        assert_equal(200, dbaas.last_http_code)
+        for instance in instances:
+            instance_dict = instance._info
+            with CheckInstance(instance_dict) as check:
+                check.contains_allowed_attrs(instance_dict, allowed_attrs,
+                                             msg="Instance Detailed Index")
+                check.flavor()
+                check.datastore()
+                check.volume()
+                check.used_volume()
+
+    @test
     def test_get_instance(self):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
