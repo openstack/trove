@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 import xml.dom.minidom
 
 from proboscis.asserts import *

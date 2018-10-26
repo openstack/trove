@@ -5,7 +5,7 @@ import re
 import six
 import sys
 import time
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 import xml.dom.minidom
 
 from proboscis import before_class
