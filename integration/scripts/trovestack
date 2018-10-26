@@ -1341,7 +1341,7 @@ function cmd_gate_tests() {
     TROVESTACK_DUMP_ENV=true
 
     # Devstack vm-gate runs as a non-ubuntu user, but needs to connect to the guest image as ubuntu
-    echo "User=ubuntu" >> /home/$USER/.ssh/config
+    echo "User=ubuntu" >> $HOME/.ssh/config
 
     # Fix iptables rules that prevent amqp connections from the devstack box to the guests
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
