@@ -220,6 +220,7 @@
     name: trove-scenario-mysql-single
     parent: trove-devstack-base
     vars:
+      trove_test_datastore: mysql
       trove_test_group: mysql-supported-single
 
 - job:
@@ -227,7 +228,7 @@
     parent: trove-devstack-base
     vars:
       trove_test_datastore: mysql
-      trove_test_group: mysql-supported-single
+      trove_test_group: mysql-supported-multi
 
 - job:
     name: trove-scenario-percona-multi
