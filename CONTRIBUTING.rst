@@ -323,3 +323,13 @@ If you want to run only the tests in one file you can use testtools e.g.
 Note that some unit tests can use an existing database. The script
 ``tools/test-setup.sh`` sets up the database for CI jobs and can be
 used for local setup.
+
+Is there something missing?
+---------------------------
+
+Do not hesitate to chat and clear your doubts about Trove on
+IRC: #openstack-trove <http://webchat.freenode.net/?channels=openstack-trove>`_
+on freenode.net. Also, we meet every week at #openstack-meeting-alt
+<http://webchat.freenode.net/?channels=openstack-trove>`_ to discuss
+ongoing issues.
+
