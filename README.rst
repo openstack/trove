@@ -18,7 +18,7 @@ For information on how to contribute to trove, please see
 CONTRIBUTING.rst_ and HACKING.rst_
 
 .. _CONTRIBUTING.rst: https://git.openstack.org/cgit/openstack/trove/plain/CONTRIBUTING.rst
-.. _HACKING.rst: https://git.openstack.org/cgit/openstack/trove/plain/HACKING.rst>
+.. _HACKING.rst: https://git.openstack.org/cgit/openstack/trove/plain/HACKING.rst
 
 * `Wiki <https://wiki.openstack.org/wiki/Trove>`_
 * `Developer Docs <https://docs.openstack.org/trove/latest/>`_
