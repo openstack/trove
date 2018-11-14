@@ -738,7 +738,7 @@ volume_size:
   description: |
     The volume size, in gigabytes (GB). A valid value
     is from 1 to 50(this limit is controlled by the
-    configration ``max_accepted_volume_size``).
+    configuration ``max_accepted_volume_size``).
   in: body
   required: true
   type: integer
