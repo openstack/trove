@@ -630,7 +630,7 @@ class ClusterNumInstancesNotLargeEnough(TroveError):
 
 class ClusterNumInstancesBelowSafetyThreshold(TroveError):
     message = _("The number of instances in your cluster cannot "
-                "safely be lowered below the current level based"
+                "safely be lowered below the current level based "
                 "on your current fault-tolerance settings.")
 
 

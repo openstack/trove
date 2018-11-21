@@ -168,9 +168,9 @@ common_opts = [
     cfg.IntOpt('modules_page_size', default=20,
                help='Page size for listing modules.'),
     cfg.IntOpt('agent_call_low_timeout', default=15,
-               help="Maximum time (in seconds) to wait for Guest Agent 'quick'"
-                    "requests (such as retrieving a list of users or "
-                    "databases)."),
+               help="Maximum time (in seconds) to wait for Guest Agent "
+                    "'quick' requests (such as retrieving a list of "
+                    "users or databases)."),
     cfg.IntOpt('agent_call_high_timeout', default=60 * 10,
                help="Maximum time (in seconds) to wait for Guest Agent 'slow' "
                     "requests (such as restarting the database)."),

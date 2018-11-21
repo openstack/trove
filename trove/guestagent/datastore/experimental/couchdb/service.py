@@ -246,7 +246,7 @@ class CouchDBAdmin(object):
                              'username': user.name},
                             shell=True)
                     except exception.ProcessExecutionError as pe:
-                        LOG.debug("Error granting user: %(user)s access to"
+                        LOG.debug("Error granting user: %(user)s access to "
                                   "database: %(db)s.",
                                   {'user': user.name, 'db': mydb.name})
                         LOG.debug(pe)

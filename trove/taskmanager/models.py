@@ -719,7 +719,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             except AttributeError:
                 pass
             server_message = "\nServer error: %s" % server_fault_message
-            raise TroveError(_("Server not active, status: %(status)s"
+            raise TroveError(_("Server not active, status: %(status)s "
                                "%(srv_msg)s") %
                              {'status': server_status,
                               'srv_msg': server_message})

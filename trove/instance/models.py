@@ -848,7 +848,7 @@ class Instance(BuiltInstance):
             remote_ds_ver.image)
         if local_image.checksum != remote_image.checksum:
             raise exception.TroveError(
-                "Images for Datastore %(ds)s do not match"
+                "Images for Datastore %(ds)s do not match "
                 "between regions %(local)s and %(remote)s." %
                 {'ds': datastore.name, 'local': CONF.os_region_name,
                  'remote': region_name})
