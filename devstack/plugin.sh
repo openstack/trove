@@ -550,6 +550,15 @@ function stop_trove {
     done
 }
 
+# configure_tempest_for_trove() - Set Trove related setting on Tempest
+# NOTE (gmann): Configure all the Tempest setting for Trove service in
+# this function.
+function configure_tempest_for_trove {
+    if is_service_enabled tempest; then
+        iniset $TEMPEST_CONFIG service_available trove True
+    fi
+}
+
 # Dispatcher for trove plugin
 if is_service_enabled trove; then
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
@@ -581,6 +590,9 @@ if is_service_enabled trove; then
         # Start the trove API and trove taskmgr components
         echo_summary "Starting Trove"
         start_trove
+    elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
+        echo_summary "Configuring Tempest for Trove"
+        configure_tempest_for_trove
     fi
 
     if [[ "$1" == "unstack" ]]; then
