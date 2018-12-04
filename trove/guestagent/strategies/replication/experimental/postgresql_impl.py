@@ -198,7 +198,7 @@ class PostgresqlReplicationStreaming(base.Replication):
             utils.poll_until(_wait_for_failover, time_out=120)
 
         except exception.PollTimeOut:
-            raise RuntimeError(_("Timeout occurred waiting for slave to exit"
+            raise RuntimeError(_("Timeout occurred waiting for slave to exit "
                                  "recovery mode"))
 
     def cleanup_source_on_replica_detach(self, admin_service, replica_info):

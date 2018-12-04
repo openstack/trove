@@ -169,7 +169,7 @@ class DatastoreSchema(DatastoreModelsBase):
         :raises:             ValueError if name is on the reserved list.
         """
         if self.is_ignored():
-            raise ValueError(_('Database name "%(name)s" is on the reserved'
+            raise ValueError(_('Database name "%(name)s" is on the reserved '
                                'list: %(reserved)s.')
                              % {'name': self.name,
                                 'reserved': self.ignored_dbs})

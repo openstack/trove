@@ -614,5 +614,5 @@ class VerticaApp(object):
             utils.poll_until(_wait_for_node_status, time_out=600,
                              sleep_time=15)
         except exception.PollTimeOut:
-            raise RuntimeError(_("Timed out waiting for cluster to"
+            raise RuntimeError(_("Timed out waiting for cluster to "
                                  "change to status %s") % status)
