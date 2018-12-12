@@ -84,7 +84,7 @@
 
 - job:
     name: trove-devstack-base
-    parent: devstack
+    parent: devstack-xenial
     abstract: true
     timeout: 10800
     required-projects:
