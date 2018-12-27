@@ -75,4 +75,8 @@ Upgrade
 
   **11.0.0 (Stein)**
 
-  * Placeholder to be filled in with checks as they are added in Stein.
+  * Checks if any Trove instance with assigned task is running.
+    The assigned tasks may fail during the upgrade process due to transient
+    unavailability of Trove control plane.
+    Upgrade should be postponed until all instances are in the Active state.
+

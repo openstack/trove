@@ -18,17 +18,38 @@ from oslo_config import cfg
 from oslo_upgradecheck import upgradecheck
 
 from trove.common.i18n import _
+from trove import db
+from trove.instance.models import DBInstance
+from trove.instance.tasks import InstanceTasks
 
 
 class Checks(upgradecheck.UpgradeCommands):
-
     """Various upgrade checks should be added as separate methods in this class
     and added to _upgrade_checks tuple.
     """
 
-    def _check_placeholder(self):
-        # This is just a placeholder for upgrade checks, it should be
-        # removed when the actual checks are added
+    def _check_instances_with_running_tasks(self):
+        """Finds Trove instances with running tasks.
+
+        Such instances need to communicate with Trove control plane to report
+        status. This may rise issues if Trove services are unavailable, e.g.
+        Trove guest agent may be left in a failed state due to communication
+        issues.
+        """
+
+        db_api = db.get_db_api()
+        db_api.configure_db(cfg.CONF)
+
+        query = DBInstance.query()
+        query = query.filter(DBInstance.task_status != InstanceTasks.NONE)
+        query = query.filter_by(deleted=False)
+        instances_with_tasks = query.count()
+
+        if instances_with_tasks:
+            return upgradecheck.Result(
+                upgradecheck.Code.WARNING,
+                _("Instances with running tasks exist."))
+
         return upgradecheck.Result(upgradecheck.Code.SUCCESS)
 
     # The format of the check functions is to return an
@@ -39,14 +60,15 @@ class Checks(upgradecheck.UpgradeCommands):
     # in the returned Result's "details" attribute. The
     # summary will be rolled up at the end of the check() method.
     _upgrade_checks = (
-        # In the future there should be some real checks added here
-        (_('Placeholder'), _check_placeholder),
+        (_("instances_with_running_tasks"),
+         _check_instances_with_running_tasks),
     )
 
 
 def main():
     return upgradecheck.main(
-        cfg.CONF, project='trove', upgrade_command=Checks())
+        cfg.CONF, project="trove", upgrade_command=Checks())
+
 
 if __name__ == '__main__':
     sys.exit(main())
