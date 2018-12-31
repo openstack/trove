@@ -2,4 +2,4 @@
 fixes:
   - |
     Peviously root disable API returns a HTTP 200 response without any content,
-    a HTTP 204 reponse which is more appropriate will be returned now.
+    a HTTP 204 response which is more appropriate will be returned now.
