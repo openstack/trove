@@ -13,7 +13,7 @@ How trove-pylint works
 
 trove-pylint is driven by a configuration file which is by default,
 located in tools/trove-pylint.config. This file is a json dump of the
-configuration. A default configuraiton file looks like this.
+configuration. A default configuration file looks like this.
 
    {
       "include": ["*.py"],
