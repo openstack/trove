@@ -75,7 +75,7 @@ MYSQL_CONFIG = {operating_system.REDHAT: "/etc/my.cnf",
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 MYSQL_OWNER = 'mysql'
 CNF_EXT = 'cnf'
-CNF_INCLUDE_DIR = '/etc/mysql/conf.d/'
+CNF_INCLUDE_DIR = '/etc/mysql/conf.d'
 CNF_MASTER = 'master-replication'
 CNF_SLAVE = 'slave-replication'
 
@@ -764,9 +764,8 @@ class BaseMySqlApp(object):
                 pass
 
     def _create_mysql_confd_dir(self):
-        conf_dir = "/etc/mysql/conf.d"
-        LOG.debug("Creating %s.", conf_dir)
-        operating_system.create_directory(conf_dir, as_root=True)
+        LOG.debug("Creating %s.", CNF_INCLUDE_DIR)
+        operating_system.create_directory(CNF_INCLUDE_DIR, as_root=True)
 
     def _enable_mysql_on_boot(self):
         LOG.debug("Enabling MySQL on boot.")
