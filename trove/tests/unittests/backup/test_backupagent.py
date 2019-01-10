@@ -558,3 +558,21 @@ class BackupAgentTest(trove_testtools.TestCase):
             self.assertRaises(
                 AttributeError,
                 agent.execute_backup, TroveContext(), bkup_info, 'location')
+
+    def test_backup_mysqldump_check_process(self):
+        mysql_dump = mysql_impl.MySQLDump(
+            'abc', extra_opts='')
+
+        str_will_be_true = 'Warning: Using a password ' \
+                           'on the command line interface can be insecure.'
+        str_will_be_false = 'ERROR: mysqldump command did not succeed.'
+
+        with mock.patch('trove.guestagent.strategies.backup.mysql_impl.open',
+                        mock.mock_open(read_data='')):
+            self.assertTrue(mysql_dump.check_process())
+        with mock.patch('trove.guestagent.strategies.backup.mysql_impl.open',
+                        mock.mock_open(read_data=str_will_be_true)):
+            self.assertTrue(mysql_dump.check_process())
+        with mock.patch('trove.guestagent.strategies.backup.mysql_impl.open',
+                        mock.mock_open(read_data=str_will_be_false)):
+            self.assertFalse(mysql_dump.check_process())

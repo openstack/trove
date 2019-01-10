@@ -44,6 +44,22 @@ class MySQLDump(base.BackupRunner):
                ' --opt' + user_and_pass)
         return cmd + self.zip_cmd + self.encrypt_cmd
 
+    def check_process(self):
+        """Check the output from mysqldump ignoring 'Warning'."""
+        LOG.debug('Checking mysqldump process output.')
+        with open('/tmp/mysqldump.log', 'r') as backup_log:
+            output = backup_log.read()
+            if not output:
+                return True
+
+            LOG.debug(output)
+            for line in output.splitlines():
+                if not re.search('Warning', line.strip()):
+                    LOG.error("Mysqldump did not complete successfully.")
+                    return False
+
+        return True
+
 
 class InnoBackupEx(base.BackupRunner):
     """Implementation of Backup Strategy for InnoBackupEx."""
@@ -71,10 +87,11 @@ class InnoBackupEx(base.BackupRunner):
         LOG.debug('Checking innobackupex process output.')
         with open('/tmp/innobackupex.log', 'r') as backup_log:
             output = backup_log.read()
-            LOG.info(output)
             if not output:
                 LOG.error("Innobackupex log file empty.")
                 return False
+
+            LOG.debug(output)
             last_line = output.splitlines()[-1].strip()
             if not re.search('completed OK!', last_line):
                 LOG.error("Innobackupex did not complete successfully.")
