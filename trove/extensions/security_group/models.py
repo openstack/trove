@@ -89,7 +89,7 @@ class SecurityGroup(DatabaseModelBase):
         return sec_group
 
     @classmethod
-    def get_security_group_by_id_or_instance_id(self, id, tenant_id):
+    def get_security_group_by_id_or_instance_id(cls, id, tenant_id):
         try:
             return SecurityGroup.find_by(id=id,
                                          tenant_id=tenant_id,
