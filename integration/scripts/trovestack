@@ -852,26 +852,21 @@ function cmd_build_and_upload_image() {
         exit 1
     fi
 
-    local IMAGE_URL=""
-    # Use /tmp as file_cache
-    FILES=/tmp
-    if [[ -n $IMAGE_DOWNLOAD_URL ]]; then
-        exclaim "Downloading and using cached image"
-        IMAGE_URL=$IMAGE_DOWNLOAD_URL
-    else
-        exclaim "Trying to build image"
+
+    GLANCE_IMAGEID=$(openstack $CLOUD_ADMIN_ARG image list | grep "$DATASTORE_TYPE" | get_field 1)
+    echo "IMAGEID: $GLANCE_IMAGEID"
+    if [[ -z $GLANCE_IMAGEID ]]; then
         build_guest_image "${DATASTORE_TYPE}"
         QCOW_IMAGE=`find $VM_PATH -name '*.qcow2'`
         IMAGE_URL="file://$QCOW_IMAGE"
-    fi
+        GLANCE_IMAGEID=`get_glance_id upload_image $IMAGE_URL`
+        [[ -z "$GLANCE_IMAGEID" ]] && echo "Glance upload failed!" && exit 1
+        echo "IMAGE ID: $GLANCE_IMAGEID"
 
-    GLANCE_IMAGEIDS=$(openstack $CLOUD_ADMIN_ARG image list | grep $(basename $IMAGE_URL .qcow2) | get_field 1)
-    if [[ -n $GLANCE_IMAGEIDS ]]; then
-        openstack $CLOUD_ADMIN_ARG image delete $GLANCE_IMAGEIDS
+        if [[ -f /etc/trove/cloudinit/mysql.cloudinit ]]; then
+            sudo cp /etc/trove/cloudinit/mysql.cloudinit /etc/trove/cloudinit/${DATASTORE_TYPE}.cloudinit
+        fi
     fi
-    GLANCE_IMAGEID=`get_glance_id upload_image $IMAGE_URL`
-    [[ -z "$GLANCE_IMAGEID" ]] && echo "Glance upload failed!" && exit 1
-    echo "IMAGE ID: $GLANCE_IMAGEID"
 
     exclaim "Updating Datastores"
     cmd_set_datastore "${GLANCE_IMAGEID}" "${DATASTORE_TYPE}" "${RESTART_TROVE}"
@@ -1341,7 +1336,17 @@ function cmd_gate_tests() {
     TROVESTACK_DUMP_ENV=true
 
     # Devstack vm-gate runs as a non-ubuntu user, but needs to connect to the guest image as ubuntu
-    echo "User=ubuntu" >> $HOME/.ssh/config
+    export TROVE_TEST_SSH_USER='ubuntu'
+    export TROVE_TEST_SSH_KEY_FILE=$HOME/.ssh/id_rsa
+
+    CLOUDINIT_PATH=/etc/trove/cloudinit/mysql.cloudinit
+    PUBKEY=`cat ${HOME}/.ssh/id_rsa.pub`
+
+    sudo echo "#!/bin/sh" | sudo tee $CLOUDINIT_PATH
+    sudo echo "" | sudo tee -a $CLOUDINIT_PATH
+    sudo echo "echo '${PUBKEY}' > /home/ubuntu/.ssh/authorized_keys" | sudo tee -a $CLOUDINIT_PATH
+    sudo echo "chmod 700 /home/ubuntu/.ssh" | sudo tee -a $CLOUDINIT_PATH
+    sudo echo "chmod 600 /home/ubuntu/.ssh/authorized_keys" | sudo tee -a $CLOUDINIT_PATH
 
     # Fix iptables rules that prevent amqp connections from the devstack box to the guests
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
