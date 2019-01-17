@@ -12,19 +12,38 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import Mock
+from mock import patch
 from oslo_upgradecheck.upgradecheck import Code
 
 from trove.cmd import status
 from trove.tests.unittests import trove_testtools
 
 
-class TestUpgradeChecks(trove_testtools.TestCase):
-
+@patch("trove.cmd.status.db.get_db_api")
+@patch("trove.cmd.status.DBInstance")
+class TestUpgradeChecksInstancesWithTasks(trove_testtools.TestCase):
     def setUp(self):
-        super(TestUpgradeChecks, self).setUp()
+        super(TestUpgradeChecksInstancesWithTasks, self).setUp()
         self.cmd = status.Checks()
+        self.fake_db_api = Mock()
 
-    def test__check_placeholder(self):
-        check_result = self.cmd._check_placeholder()
-        self.assertEqual(
-            Code.SUCCESS, check_result.code)
+    def test__check_no_instances_with_tasks(self, mock_instance,
+                                            fake_get_db_api):
+        fake_get_db_api.return_value = self.fake_db_api
+
+        mock_instance.query.return_value.filter.return_value.filter_by.\
+            return_value.count.return_value = 0
+
+        check_result = self.cmd._check_instances_with_running_tasks()
+        self.assertEqual(Code.SUCCESS, check_result.code)
+
+    def test__check_instances_with_tasks(self, mock_instance,
+                                         fake_get_db_api):
+        fake_get_db_api.return_value = self.fake_db_api
+
+        mock_instance.query.return_value.filter.return_value.filter_by.\
+            return_value.count.return_value = 1
+
+        check_result = self.cmd._check_instances_with_running_tasks()
+        self.assertEqual(Code.WARNING, check_result.code)
