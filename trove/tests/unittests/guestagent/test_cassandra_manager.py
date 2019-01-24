@@ -332,11 +332,11 @@ class GuestAgentCassandraDBManagerTest(DatastoreManagerTest):
             models.CassandraUser(self._get_random_name(65536))
 
     @classmethod
-    def _serialize_collection(self, *collection):
+    def _serialize_collection(cls, *collection):
         return [item.serialize() for item in collection]
 
     @classmethod
-    def _get_random_name(self, size,
+    def _get_random_name(cls, size,
                          chars=string.ascii_letters + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
 

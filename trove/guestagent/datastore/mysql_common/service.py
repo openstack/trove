@@ -641,7 +641,7 @@ class BaseMySqlApp(object):
             {MySQLConfParser.SERVER_CONF_SECTION: {'datadir': value}})
 
     @classmethod
-    def get_client_auth_file(self):
+    def get_client_auth_file(cls):
         return guestagent_utils.build_file_path("~", ".my.cnf")
 
     def __init__(self, status, local_sql_client, keep_alive_connection_cls):
