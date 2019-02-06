@@ -409,7 +409,7 @@ function _create_private_subnet_v4 {
     if [[ -n "$NETWORK_GATEWAY" ]]; then
         subnet_params+="--gateway $NETWORK_GATEWAY "
     fi
-    if [ -n $SUBNETPOOL_V4_ID ]; then
+    if [ -n "$SUBNETPOOL_V4_ID" ]; then
         subnet_params+="--subnet-pool $SUBNETPOOL_V4_ID "
     else
         subnet_params+="--subnet-range $FIXED_RANGE "
