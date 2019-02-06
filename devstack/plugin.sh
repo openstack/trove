@@ -623,10 +623,14 @@ function _setup_minimal_image {
 
     export TROVE_GUESTAGENT_CONF=${TROVE_GUESTAGENT_CONF:-'/etc/trove/trove-guestagent.conf'}
 
-    mkdir -p ${SSH_DIR}
-    /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
-    cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
-    chmod 600 ${SSH_DIR}/authorized_keys
+    if [ -d ${SSH_DIR} ]; then
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+    else
+        mkdir -p ${SSH_DIR}
+        /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+        chmod 600 ${SSH_DIR}/authorized_keys
+    fi
 
     echo "Run disk image create to actually create a new image"
     disk-image-create -a amd64 -o "${VM}" -x ${QEMU_IMG_OPTIONS} ${DISTRO} \
