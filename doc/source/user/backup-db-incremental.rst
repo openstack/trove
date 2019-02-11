@@ -29,7 +29,7 @@ Create and use incremental backups
 
 #. **Create your first incremental backup**
 
-   Use the :command:`trove backup-create` command and specify:
+   Use the :command:`openstack database backup create` command and specify:
 
    -  The ``INSTANCE_ID`` of the database instance you are doing the
       incremental backup for (in this example,
@@ -43,7 +43,7 @@ Create and use incremental backups
 
    .. code-block:: console
 
-      $ trove backup-create INSTANCE_ID backup1.1  --parent BACKUP_ID
+      $ openstack database backup create INSTANCE_ID backup1.1  --parent BACKUP_ID
 
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
@@ -73,7 +73,7 @@ Create and use incremental backups
 
    .. code-block:: console
 
-      $ trove backup-create INSTANCE_ID  backup1.2  --parent BACKUP_ID
+      $ openstack database backup create INSTANCE_ID  backup1.2  --parent BACKUP_ID
 
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
@@ -94,7 +94,7 @@ Create and use incremental backups
 
    Now assume that your ``guest1`` database instance is damaged and you
    need to restore it from your incremental backups. In this example,
-   you use the :command:`trove create` command to create a new database
+   you use the :command:`openstack database instance create` command to create a new database
    instance called ``guest2``.
 
    To incorporate your incremental backups, you simply use the
@@ -105,7 +105,7 @@ Create and use incremental backups
 
    .. code-block:: console
 
-      $ trove create guest2 10 --size 1 --backup BACKUP_ID
+      $ openstack database instance create guest2 10 --size 1 --backup BACKUP_ID
 
       +-------------------+-----------------------------------------------------------+
       |      Property     |                       Value                               |

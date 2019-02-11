@@ -36,7 +36,7 @@ Set up clustering
 
 #. **Create a cluster**
 
-   Create a cluster by using the :command:`trove cluster-create` command. This
+   Create a cluster by using the :command:`openstack database cluster create` command. This
    command creates a one-shard cluster. Pass in:
 
    -  The name of the cluster.
@@ -52,7 +52,7 @@ Set up clustering
 
    .. code-block:: console
 
-      $ trove cluster-create cluster1 mongodb "2.4" \
+      $ openstack database cluster create cluster1 mongodb "2.4" \
         --instance flavor=7,volume=2 --instance flavor=7,volume=2 \
         --instance flavor=7,volume=2
        +-------------------+--------------------------------------+
@@ -71,15 +71,15 @@ Set up clustering
 #. **Display cluster information**
 
    Display information about a cluster by using the
-   :command:`trove cluster-show` command. Pass in the ID of the cluster.
+   :command:`openstack database cluster show` command. Pass in the ID of the cluster.
 
    The cluster ID displays when you first create a cluster. (If you need
-   to find it later on, use the :command:`trove cluster-list` command to list
+   to find it later on, use the :command:`openstack database cluster list` command to list
    the names and IDs of all the clusters in your system.)
 
    .. code-block:: console
 
-      $ trove cluster-show CLUSTER_ID
+      $ openstack database cluster show CLUSTER_ID
        +-------------------+--------------------------------------+
        | Property          | Value                                |
        +-------------------+--------------------------------------+
@@ -97,7 +97,7 @@ Set up clustering
 
    .. note::
 
-      **Your application connects to this IP address.** The :command:`trove cluster-show`
+      **Your application connects to this IP address.** The :command:`openstack database cluster show`
       command displays the IP address of the query router.
       This is the IP address your application uses to retrieve data from
       the database.
@@ -105,11 +105,11 @@ Set up clustering
 #. **List cluster instances**
 
    List the instances in a cluster by using the
-   :command:`trove cluster-instances` command.
+   :command:`openstack database cluster list instances` command.
 
    .. code-block:: console
 
-      $ trove cluster-instances CLUSTER_ID
+      $ openstack database cluster list instances CLUSTER_ID
       +--------------------------------------+----------------+-----------+------+
       | ID                                   | Name           | Flavor ID | Size |
       +--------------------------------------+----------------+-----------+------+
@@ -139,11 +139,11 @@ Set up clustering
 #. **List clusters**
 
    List all the clusters in your system, using the
-   :command:`trove cluster-list` command.
+   :command:`openstack database cluster list` command.
 
    .. code-block:: console
 
-      $ trove cluster-list
+      $ openstack database cluster list
       +--------------------------------------+----------+-----------+-------------------+-----------+
       | ID                                   | Name     | Datastore | Datastore Version | Task Name |
       +--------------------------------------+----------+-----------+-------------------+-----------+
@@ -153,11 +153,11 @@ Set up clustering
 
 #. **Delete a cluster**
 
-   Delete a cluster, using the :command:`trove cluster-delete` command.
+   Delete a cluster, using the :command:`openstack database cluster delete` command.
 
    .. code-block:: console
 
-      $ trove cluster-delete CLUSTER_ID
+      $ openstack database cluster delete CLUSTER_ID
 
 Query routers and config servers
 --------------------------------

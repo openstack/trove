@@ -26,7 +26,7 @@ Set up replication
 
    .. code-block:: console
 
-      $ trove list
+      $ openstack database instance list
       +-----------+------------+-----------+-------------------+--------+-----------+------+
       |     id    |  name      | datastore | datastore_version | status | flavor_id | size |
       +-----------+------------+-----------+-------------------+--------+-----------+------+
@@ -37,25 +37,26 @@ Set up replication
 
    Create a new instance that will be a replica of the original
    instance. You do this by passing in the ``--replica_of`` option with
-   the :command:`trove create` command. This example creates a replica
+   the :command:`openstack database instance create` command. This example creates a replica
    called ``replica_1``. ``replica_1`` is a replica of the original instance,
    ``base_1``:
 
    .. code-block:: console
 
-      $ trove create replica_1 6 --size=5 --datastore_version mysql-5.5 \
+      $ openstack database instance create replica_1 6 --size=5 \
+        --datastore_version mysql-5.5 \
         --datastore mysql --replica_of ID_OF_ORIGINAL_INSTANCE
 
 #. **Verify replication status**
 
-   Pass in ``replica_1``'s instance ID with the :command:`trove show` command
+   Pass in ``replica_1``'s instance ID with the :command:`openstack database instance show` command
    to verify that the newly created ``replica_1`` instance is a replica
    of the original ``base_1``. Note that the ``replica_of`` property is
    set to the ID of ``base_1``.
 
    .. code-block:: console
 
-      $ trove show INSTANCE_ID_OF_REPLICA_1
+      $ openstack database instance show INSTANCE_ID_OF_REPLICA_1
       +-------------------+--------------------------------------+
       | Property          | Value                                |
       +-------------------+--------------------------------------+
@@ -71,14 +72,14 @@ Set up replication
       | volume            | 5                                    |
       +-------------------+--------------------------------------+
 
-   Now pass in ``base_1``'s instance ID with the :command:`trove show` command
+   Now pass in ``base_1``'s instance ID with the :command:`openstack database instance show` command
    to list the replica(s) associated with the original instance. Note
    that the ``replicas`` property is set to the ID of ``replica_1``. If
    there are multiple replicas, they appear as a comma-separated list.
 
    .. code-block:: console
 
-      $ trove show INSTANCE_ID_OF_BASE_1
+      $ openstack database instance show INSTANCE_ID_OF_BASE_1
       +-------------------+--------------------------------------+
       | Property          | Value                                |
       +-------------------+--------------------------------------+
@@ -102,8 +103,8 @@ Set up replication
    replica becomes a standalone database instance. You can then take the
    new standalone instance and create a new replica of that instance.
 
-   You detach a replica using the :command:`trove detach-replica` command:
+   You detach a replica using the :command:`openstack database instance detach replica` command:
 
    .. code-block:: console
 
-      $ trove detach-replica INSTANCE_ID_OF_REPLICA
+      $ openstack database instance detach replica INSTANCE_ID_OF_REPLICA

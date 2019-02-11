@@ -106,7 +106,7 @@ Create and access a database
 
    .. code-block:: console
 
-      $ trove create mysql_instance_1 6 --size 5 --databases myDB \
+      $ openstack database instance create mysql_instance_1 6 --size 5 --databases myDB \
           --users userA:password --datastore_version mysql-5.5 \
           --datastore mysql
       +-------------------+---------------------------------------------------------------------------------------t-----------------------------------------------------------------------------------------------------------------+
@@ -125,12 +125,12 @@ Create and access a database
 
 #. **Get the IP address of the database instance**
 
-   First, use the :command:`trove list` command to list all instances and
+   First, use the :command:`openstack database instance list` command to list all instances and
    their IDs:
 
    .. code-block:: console
 
-      $ trove list
+      $ openstack database instance list
       +--------------------------------------+------------------+-----------+-------------------+--------+-----------+------+
       |                  id                  |       name       | datastore | datastore_version | status | flavor_id | size |
       +--------------------------------------+------------------+-----------+-------------------+--------+-----------+------+
@@ -139,13 +139,13 @@ Create and access a database
 
    This command returns the instance ID of your new instance.
 
-   You can now pass in the instance ID with the :command:`trove show` command
+   You can now pass in the instance ID with the :command:`openstack database instance show` command
    to get the IP address of the instance. In this example, replace
    ``INSTANCE_ID`` with ``5599dad6-731e-44df-bb60-488da3da9cfe``.
 
    .. code-block:: console
 
-      $ trove show INSTANCE_ID
+      $ openstack database instance show INSTANCE_ID
 
       +-------------------+--------------------------------------+
       |      Property     |                Value                 |

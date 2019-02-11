@@ -26,11 +26,11 @@ This example shows you how to back up and restore a MySQL database.
    -  Users: The ``user1`` user with the ``password`` password
 
    First, get the ID of the ``guest1`` database instance by using the
-   :command:`trove list` command:
+   :command:`openstack database instance list` command:
 
    .. code-block:: console
 
-      $ trove list
+      $ openstack database instance list
 
       +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
       |                  id                  |  name  | datastore | datastore_version | status | flavor_id | size |
@@ -38,7 +38,7 @@ This example shows you how to back up and restore a MySQL database.
       | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 | guest1 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
       +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
 
-   Back up the database instance by using the :command:`trove backup-create`
+   Back up the database instance by using the :command:`openstack database backup create`
    command. In this example, the backup is called ``backup1``. In this
    example, replace ``INSTANCE_ID`` with
    ``97b4b853-80f6-414f-ba6f-c6f455a79ae6``:
@@ -51,7 +51,7 @@ This example shows you how to back up and restore a MySQL database.
 
    .. code-block:: console
 
-      $ trove backup-create INSTANCE_ID backup1
+      $ openstack database backup create INSTANCE_ID backup1
 
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
@@ -71,12 +71,12 @@ This example shows you how to back up and restore a MySQL database.
    Note that the command returns both the ID of the original instance
    (``instance_id``) and the ID of the backup artifact (``id``).
 
-   Later on, use the :command:`trove backup-list` command to get this
+   Later on, use the :command:`openstack database backup list` command to get this
    information:
 
    .. code-block:: console
 
-      $ trove backup-list
+      $ openstack database backup list
       +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
       |                  id                  |             instance_id              |   name  |   status  | parent_id |       updated       |
       +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
@@ -84,12 +84,12 @@ This example shows you how to back up and restore a MySQL database.
       +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
 
    You can get additional information about the backup by using the
-   :command:`trove backup-show` command and passing in the ``BACKUP_ID``,
+   :command:`openstack database backup show` command and passing in the ``BACKUP_ID``,
    which is ``8af30763-61fd-4aab-8fe8-57d528911138``.
 
    .. code-block:: console
 
-      $ trove backup-show BACKUP_ID
+      $ openstack database backup show BACKUP_ID
 
       +-------------+----------------------------------------------------+
       |   Property  |                   Value                            |
@@ -109,7 +109,7 @@ This example shows you how to back up and restore a MySQL database.
 #. **Restore a database instance**
 
    Now assume that your ``guest1`` database instance is damaged and you
-   need to restore it. In this example, you use the :command:`trove create`
+   need to restore it. In this example, you use the :command:`openstack database instance create`
    command to create a new database instance called ``guest2``.
 
    -  You specify that the new ``guest2`` instance has the same flavor
@@ -123,7 +123,7 @@ This example shows you how to back up and restore a MySQL database.
 
    .. code-block:: console
 
-      $ trove create guest2 10 --size 2 --backup BACKUP_ID
+      $ openstack database instance create guest2 10 --size 2 --backup BACKUP_ID
 
       +-------------------+----------------------------------------------+
       |      Property     |                Value                         |
@@ -148,7 +148,7 @@ This example shows you how to back up and restore a MySQL database.
 
    .. code-block:: console
 
-      $ trove list
+      $ openstack database instance list
 
       +-----------+--------+-----------+-------------------+--------+-----------+------+
       |     id    |  name  | datastore | datastore_version | status | flavor_id | size |
@@ -157,13 +157,13 @@ This example shows you how to back up and restore a MySQL database.
       | ac7...04b | guest2 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
       +-----------+--------+-----------+-------------------+--------+-----------+------+
 
-   Use the :command:`trove show` command to display information about the new
+   Use the :command:`openstack database instance show` command to display information about the new
    guest2 instance. Pass in guest2's ``INSTANCE_ID``, which is
    ``ac7a2b35-a9b4-4ff6-beac-a1bcee86d04b``.
 
    .. code-block:: console
 
-      $ trove show INSTANCE_ID
+      $ openstack database instance INSTANCE_ID
 
       +-------------------+--------------------------------------+
       |      Property     |                Value                 |
@@ -184,12 +184,12 @@ This example shows you how to back up and restore a MySQL database.
    Note that the data store, flavor ID, and volume size have the same
    values as in the original ``guest1`` instance.
 
-   Use the :command:`trove database-list` command to check that the original
+   Use the :command:`openstack database db list` command to check that the original
    databases (``db1`` and ``db2``) are present on the restored instance.
 
    .. code-block:: console
 
-      $ trove database-list INSTANCE_ID
+      $ openstack database db list INSTANCE_ID
 
       +--------------------+
       |        name        |
@@ -200,12 +200,12 @@ This example shows you how to back up and restore a MySQL database.
       |        test        |
       +--------------------+
 
-   Use the :command:`trove user-list` command to check that the original user
+   Use the :command:`openstack database user list` command to check that the original user
    (``user1``) is present on the restored instance.
 
    .. code-block:: console
 
-      $ trove user-list INSTANCE_ID
+      $ openstack database user list INSTANCE_ID
 
       +--------+------+-----------+
       |  name  | host | databases |
@@ -219,14 +219,14 @@ This example shows you how to back up and restore a MySQL database.
    database instance that they can now access ``guest2``. Provide them
    with ``guest2``'s name, IP address, and any other information they
    might need. (You can get this information by using the
-   :command:`trove show` command.)
+   :command:`openstack database instance show` command.)
 
 #. **Clean up**
 
    At this point, you might want to delete the disabled ``guest1``
-   instance, by using the :command:`trove delete` command.
+   instance, by using the :command:`openstack database instance delete` command.
 
    .. code-block:: console
 
-      $ trove delete INSTANCE_ID
+      $ openstack database instance delete INSTANCE_ID
 

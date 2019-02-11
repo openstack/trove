@@ -27,7 +27,7 @@ Bulk-configure a database or databases
 
    .. code-block:: console
 
-      $ trove datastore-version-list mysql
+      $ openstack datastore version list mysql
 
       +--------------------------------------+-----------+
       |                  id                  |    name   |
@@ -36,12 +36,12 @@ Bulk-configure a database or databases
       +--------------------------------------+-----------+
 
    Pass in the data store version ID with the
-   :command:`trove configuration-parameter-list` command to get the available
+   :command:`openstack database configuration parameter list` command to get the available
    options:
 
    .. code-block:: console
 
-      $ trove configuration-parameter-list DATASTORE_VERSION_ID
+      $ openstack database configuration parameter list DATASTORE_VERSION_ID
 
       +--------------------------------+---------+---------+----------------------+------------------+
       |              name              |   type  |   min   |         max          | restart_required |
@@ -82,7 +82,7 @@ Bulk-configure a database or databases
       |          wait_timeout          | integer |    1    |       31536000       |      False       |
       +--------------------------------+---------+---------+----------------------+------------------+
 
-   In this example, the :command:`trove configuration-parameter-list` command
+   In this example, the :command:`openstack database configuration parameter list` command
    returns a list of options that work with MySQL 5.5.
 
 #. **Create a configuration group**
@@ -91,12 +91,12 @@ Bulk-configure a database or databases
    pairs. Each pair consists of a configuration option and its value.
 
    You can create a configuration group by using the
-   :command:`trove configuration-create` command. The general syntax
+   :command:`openstack database configuration create` command. The general syntax
    for this command is:
 
    .. code-block:: console
 
-      $ trove configuration-create NAME VALUES --datastore DATASTORE_NAME
+      $ openstack database configuration create NAME VALUES --datastore DATASTORE_NAME
 
    -  *NAME*. The name you want to use for this group.
 
@@ -116,7 +116,7 @@ Bulk-configure a database or databases
 
    .. code-block:: console
 
-      $ trove configuration-create group1 '{"sync_binlog" : 1}' --datastore mysql
+      $ openstack database configuration create group1 '{"sync_binlog" : 1}' --datastore mysql
 
       +----------------------+--------------------------------------+
       |       Property       |                Value                 |
@@ -154,14 +154,14 @@ Bulk-configure a database or databases
 
    You can change a database's configuration by attaching a
    configuration group to a database instance. You do this by using the
-   :command:`trove configuration-attach` command and passing in the ID of the
+   :command:`openstack database configuration attach` command and passing in the ID of the
    database instance and the ID of the configuration group.
 
    Get the ID of the database instance:
 
    .. code-block:: console
 
-      $ trove list
+      $ openstack database instance list
 
       +-------------+------------------+-----------+-------------------+--------+-----------+------+
       |     id      |       name       | datastore | datastore_version | status | flavor_id | size |
@@ -173,7 +173,7 @@ Bulk-configure a database or databases
 
    .. code-block:: console
 
-      $ trove configuration-list
+      $ openstack database configuration list
 
       +-------------+--------+-------------+---------------------+
       |    id       |  name  | description |datastore_version_id |
@@ -191,7 +191,7 @@ Bulk-configure a database or databases
 
    .. code-block:: console
 
-      $ trove configuration-attach DB_INSTANCE_ID CONFIG_GROUP_ID
+      $ openstack database configuration attach DB_INSTANCE_ID CONFIG_GROUP_ID
 
 #. **Re-examine the database configuration**
 
@@ -225,15 +225,15 @@ cloud configuration, on the fly, on a massive scale.
 features for working with configuration groups. You can:
 
 -  Disassociate a configuration group from a database instance, using
-   the :command:`trove configuration-detach` command.
+   the :command:`openstack database configuration detach` command.
 
 -  Modify a configuration group on the fly, using the
    :command:`trove configuration-patch` command.
 
 -  Find out what instances are using a configuration group, using the
-   :command:`trove configuration-instances` command.
+   :command:`openstack database configuration instances` command.
 
 -  Delete a configuration group, using the
-   :command:`trove configuration-delete` command. You might want to
+   :command:`openstack database configuration delete` command. You might want to
    do this if no instances use a group.
 
