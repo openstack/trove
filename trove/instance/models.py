@@ -32,6 +32,7 @@ from trove.common import exception
 from trove.common.glance_remote import create_glance_client
 from trove.common.i18n import _
 import trove.common.instance as tr_instance
+from trove.common import neutron
 from trove.common.notification import StartNotification
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
@@ -226,15 +227,23 @@ class SimpleInstance(object):
         """Returns IPs that will be visible to the user."""
         if self.addresses is None:
             return None
+
         IPs = []
+        mgmt_networks = neutron.get_management_networks(self.context)
+
         for label in self.addresses:
-            if (re.search(CONF.network_label_regex, label) and
-                    len(self.addresses[label]) > 0):
-                IPs.extend([addr.get('addr')
-                            for addr in self.addresses[label]])
+            if label in mgmt_networks:
+                continue
+            if (CONF.network_label_regex and
+                    not re.search(CONF.network_label_regex, label)):
+                continue
+
+            IPs.extend([addr.get('addr') for addr in self.addresses[label]])
+
         # Includes ip addresses that match the regexp pattern
         if CONF.ip_regex and CONF.black_list_regex:
             IPs = filter_ips(IPs, CONF.ip_regex, CONF.black_list_regex)
+
         return IPs
 
     @property

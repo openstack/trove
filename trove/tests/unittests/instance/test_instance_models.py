@@ -19,6 +19,7 @@ from trove.backup import models as backup_models
 from trove.common import cfg
 from trove.common import exception
 from trove.common.instance import ServiceStatuses
+from trove.common import neutron
 from trove.datastore import models as datastore_models
 from trove.instance import models
 from trove.instance.models import DBInstance
@@ -60,6 +61,11 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         super(SimpleInstanceTest, self).tearDown()
         CONF.network_label_regex = self.orig_conf
         CONF.ip_start = None
+        CONF.default_neutron_networks = []
+        CONF.ip_regex = self.orig_ip_regex
+        CONF.black_list_regex = self.orig_black_list_regex
+
+        neutron.reset_management_networks()
 
     def test_get_root_on_create(self):
         root_on_create_val = Instance.get_root_on_create(
@@ -106,6 +112,24 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         self.assertIn('10.123.123.123', ip)
         self.assertIn('123.123.123.123', ip)
         self.assertIn('15.123.123.123', ip)
+
+    @patch('trove.common.remote.create_neutron_client')
+    def test_filter_management_ip_addresses(self, mock_neutron_client):
+        CONF.network_label_regex = ''
+        CONF.default_neutron_networks = ['fake-net-id']
+
+        neutron_client = Mock()
+        neutron_client.show_network.return_value = {
+            'network': {'name': 'public'}
+        }
+        mock_neutron_client.return_value = neutron_client
+
+        ip = self.instance.get_visible_ip_addresses()
+
+        neutron_client.show_network.assert_called_once_with('fake-net-id')
+        self.assertEqual(2, len(ip))
+        self.assertIn('123.123.123.123', ip)
+        self.assertIn('10.123.123.123', ip)
 
     def test_locality(self):
         self.assertEqual('affinity', self.instance.locality)
