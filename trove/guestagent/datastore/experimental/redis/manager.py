@@ -22,8 +22,9 @@ from trove.common.notification import EndNotification
 from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.experimental.redis import service
+from trove.guestagent.datastore.experimental.redis import service, system
 from trove.guestagent.datastore import manager
+from trove.guestagent import guest_log
 from trove.guestagent import volume
 
 
@@ -36,6 +37,8 @@ class Manager(manager.Manager):
     based off of the service_type of the trove instance
     """
 
+    GUEST_LOG_DEFS_REDIS_LABEL = 'redis'
+
     def __init__(self):
         super(Manager, self).__init__('redis')
         self._app = service.RedisApp()
@@ -47,6 +50,19 @@ class Manager(manager.Manager):
     @property
     def configuration_manager(self):
         return self._app.configuration_manager
+
+    @property
+    def datastore_log_defs(self):
+        logfile = self._app.get_logfile()
+        if not logfile:
+            return {}
+        return {
+            self.GUEST_LOG_DEFS_REDIS_LABEL: {
+                self.GUEST_LOG_TYPE_LABEL: guest_log.LogType.SYS,
+                self.GUEST_LOG_USER_LABEL: system.REDIS_OWNER,
+                self.GUEST_LOG_FILE_LABEL: logfile
+            }
+        }
 
     def _perform_restore(self, backup_info, context, restore_location, app):
         """Perform a restore on this instance."""
