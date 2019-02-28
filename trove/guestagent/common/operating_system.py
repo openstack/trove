@@ -102,6 +102,26 @@ def exists(path, is_directory=False, as_root=False):
     return found
 
 
+def find_executable(executable, path=None):
+    """Finds a location of an executable in the locations listed in 'path'
+
+    :param executable          File to search.
+    :type executable           string
+
+    :param path                Lookup directories separated by a path
+                               separartor.
+    :type path                 string
+    """
+    if path is None:
+        path = os.environ.get('PATH', os.defpath)
+    dirs = path.split(os.pathsep)
+    for directory in dirs:
+        exec_path = os.path.join(directory, executable)
+        if os.path.isfile(exec_path) and os.access(exec_path, os.X_OK):
+            return exec_path
+    return None
+
+
 def _read_file_as_root(path, open_flag, convert_func):
     """Read a file as root.
 

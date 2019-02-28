@@ -49,10 +49,13 @@ class MariaDBApp(galera_service.GaleraApp):
                 "sudo service %s bootstrap"
                 % result['service'])
         elif result['type'] == 'systemd':
-            # TODO(mwj 2016/01/28): determine RHEL start for MariaDB Cluster
-            result['cmd_bootstrap_galera_cluster'] = (
-                "sudo systemctl start %s@bootstrap.service"
-                % result['service'])
+            if operating_system.find_executable('galera_new_cluster'):
+                result['cmd_bootstrap_galera_cluster'] = (
+                    "sudo galera_new_cluster")
+            else:
+                result['cmd_bootstrap_galera_cluster'] = (
+                    "sudo systemctl start %s@bootstrap.service"
+                    % result['service'])
         return result
 
     @property
