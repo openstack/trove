@@ -16,7 +16,6 @@ from oslo_config import cfg as openstack_cfg
 from oslo_service import service as openstack_service
 
 from trove.cmd.common import with_initialize
-from trove.taskmanager import api as task_api
 
 
 extra_opts = [openstack_cfg.StrOpt('taskmanager_manager')]
@@ -26,6 +25,7 @@ def startup(conf, topic):
     from trove.common import notification
     from trove.common.rpc import service as rpc_service
     from trove.instance import models as inst_models
+    from trove.taskmanager import api as task_api
 
     notification.DBaaSAPINotification.register_notify_callback(
         inst_models.persist_instance_fault)
