@@ -85,10 +85,12 @@ class MySQLRestoreMixin(object):
                           run_as_root=True, root_helper="sudo")
         utils.execute("chown", "mysql:mysql", run_dir, err_log_file.name,
                       init_file.name, run_as_root=True, root_helper="sudo")
-
-        child = pexpect.spawn(
-            "sudo mysqld_safe --init-file=%s --log-error=%s" %
-            (init_file.name, err_log_file.name))
+        command_mysql_safe = ("sudo mysqld_safe"
+                              " --init-file=%s"
+                              " --log-error=%s" %
+                              (init_file.name, err_log_file.name))
+        LOG.debug("Spawning: %s" % command_mysql_safe)
+        child = pexpect.spawn(command_mysql_safe)
         try:
             index = child.expect(['Starting mysqld daemon'])
             if index == 0:
