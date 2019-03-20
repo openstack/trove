@@ -1,4 +1,4 @@
 [mysqld]
-log_bin = /var/lib/mysql/data/mysql-bin.log
-relay_log = /var/lib/mysql/data/mysqld-relay-bin.log
+log_bin = /var/lib/mysql/data/mariadb-bin.log
+relay_log = /var/lib/mysql/data/mariadb-relay-bin.log
 read_only = true
