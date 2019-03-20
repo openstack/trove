@@ -11,6 +11,7 @@ handling complex administrative tasks.
    :maxdepth: 1
 
    create-db.rst
+   manage-db-and-users.rst
    backup-db.rst
    backup-db-incremental.rst
    manage-db-config.rst
