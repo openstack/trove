@@ -456,8 +456,14 @@ function set_up_network() {
     local NET_NAME=$3
     local SUBNET_NAME=$4
     local IPV6_SUBNET_NAME=$5
+    local SHARED=$6
 
-    NEW_NET_ID=$(openstack --os-cloud ${CLOUD_USER} --os-region "$REGION_NAME" network create --project ${PROJECT_ID} "$NET_NAME" | grep ' id ' | get_field 2)
+    local share_flag=""
+    if [[ "${SHARED}" == "TRUE" ]]; then
+        share_flag="--share"
+    fi
+
+    NEW_NET_ID=$(openstack --os-cloud ${CLOUD_USER} --os-region "$REGION_NAME" network create --project ${PROJECT_ID} ${share_flag} "$NET_NAME" | grep ' id ' | get_field 2)
     if [[ "$IP_VERSION" =~ 4.* ]]; then
         NEW_SUBNET_ID=$(_create_private_subnet_v4 ${PROJECT_ID} ${NEW_NET_ID} ${SUBNET_NAME} ${CLOUD_USER})
         openstack --os-cloud ${CLOUD_USER} --os-region "$REGION_NAME" router add subnet $ROUTER_ID $NEW_SUBNET_ID
@@ -493,14 +499,14 @@ function finalize_trove_network {
     ALT_PRIVATE_NETWORK_NAME=${TROVE_PRIVATE_NETWORK_NAME}
     ALT_PRIVATE_SUBNET_NAME=${TROVE_PRIVATE_SUBNET_NAME}
     ALT_PRIVATE_IPV6_SUBNET_NAME=ipv6-${ALT_PRIVATE_SUBNET_NAME}
-    ALT_NET_ID=$(set_up_network $ADMIN_ALT_DEMO_CLOUD $ALT_TENANT_ID $ALT_PRIVATE_NETWORK_NAME $ALT_PRIVATE_SUBNET_NAME $ALT_PRIVATE_IPV6_SUBNET_NAME)
+    ALT_NET_ID=$(set_up_network $ADMIN_ALT_DEMO_CLOUD $ALT_TENANT_ID $ALT_PRIVATE_NETWORK_NAME $ALT_PRIVATE_SUBNET_NAME $ALT_PRIVATE_IPV6_SUBNET_NAME $TROVE_SHARE_NETWORKS)
     echo "Created network ${ALT_PRIVATE_NETWORK_NAME} (${ALT_NET_ID})"
 
     # Set up a management network to test that functionality
     ALT_MGMT_NETWORK_NAME=trove-mgmt
     ALT_MGMT_SUBNET_NAME=${ALT_MGMT_NETWORK_NAME}-subnet
     ALT_MGMT_IPV6_SUBNET_NAME=ipv6-${ALT_MGMT_SUBNET_NAME}
-    ALT_MGMT_ID=$(set_up_network $ADMIN_ALT_DEMO_CLOUD $ALT_TENANT_ID $ALT_MGMT_NETWORK_NAME $ALT_MGMT_SUBNET_NAME $ALT_MGMT_IPV6_SUBNET_NAME)
+    ALT_MGMT_ID=$(set_up_network $ADMIN_ALT_DEMO_CLOUD $ALT_TENANT_ID $ALT_MGMT_NETWORK_NAME $ALT_MGMT_SUBNET_NAME $ALT_MGMT_IPV6_SUBNET_NAME $TROVE_SHARE_NETWORKS)
     echo "Created network ${ALT_MGMT_NETWORK_NAME} (${ALT_MGMT_ID})"
 
     # Make sure we can reach the VMs
