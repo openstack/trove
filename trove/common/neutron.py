@@ -22,7 +22,7 @@ MGMT_NETWORKS = None
 def get_management_networks(context):
     """Cache the management network names.
 
-    When CONF.default_neutron_networks is changed, the Trove service needs to
+    When CONF.management_networks is changed, the Trove service needs to
     restart so the global cache will be refreshed.
     """
     global MGMT_NETWORKS
@@ -31,10 +31,10 @@ def get_management_networks(context):
         return MGMT_NETWORKS
 
     MGMT_NETWORKS = []
-    if len(CONF.default_neutron_networks) > 0:
+    if len(CONF.management_networks) > 0:
         neutron_client = remote.create_neutron_client(context)
 
-        for net_id in CONF.default_neutron_networks:
+        for net_id in CONF.management_networks:
             MGMT_NETWORKS.append(
                 neutron_client.show_network(net_id)['network']['name']
             )

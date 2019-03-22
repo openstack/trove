@@ -524,16 +524,16 @@ function finalize_trove_network {
     iniset $TROVE_CONF DEFAULT ip_regex ""
     iniset $TROVE_CONF DEFAULT black_list_regex ""
     # Don't use a default network for now, until the neutron issues are figured out
-    #iniset $TROVE_CONF DEFAULT default_neutron_networks "${ALT_MGMT_ID}"
-    iniset $TROVE_CONF DEFAULT default_neutron_networks ""
+    #iniset $TROVE_CONF DEFAULT management_networks "${ALT_MGMT_ID}"
+    iniset $TROVE_CONF DEFAULT management_networks ""
     iniset $TROVE_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
 
     iniset $TROVE_TASKMANAGER_CONF DEFAULT network_label_regex "${ALT_PRIVATE_NETWORK_NAME}"
     iniset $TROVE_TASKMANAGER_CONF DEFAULT ip_regex ""
     iniset $TROVE_TASKMANAGER_CONF DEFAULT black_list_regex ""
     # Don't use a default network for now, until the neutron issues are figured out
-    #iniset $TROVE_TASKMANAGER_CONF DEFAULT default_neutron_networks "${ALT_MGMT_ID}"
-    iniset $TROVE_CONF DEFAULT default_neutron_networks ""
+    #iniset $TROVE_TASKMANAGER_CONF DEFAULT management_networks "${ALT_MGMT_ID}"
+    iniset $TROVE_CONF DEFAULT management_networks ""
     iniset $TROVE_TASKMANAGER_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
 }
 

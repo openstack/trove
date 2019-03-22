@@ -413,7 +413,8 @@ common_opts = [
     cfg.ListOpt('expected_filetype_suffixes', default=['json'],
                 help='Filetype endings not to be reattached to an ID '
                      'by the utils method correct_id_with_req.'),
-    cfg.ListOpt('default_neutron_networks', default=[],
+    cfg.ListOpt('management_networks', default=[],
+                deprecated_name='default_neutron_networks',
                 help='List of IDs for management networks which should be '
                      'attached to the instance regardless of what NICs '
                      'are specified in the create API call.'),
