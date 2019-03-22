@@ -583,7 +583,7 @@ function _setup_minimal_image {
     ##### - we assume tripleo elements and all other elements have been downloaded
 
     echo "Exporting image-related environmental variables"
-    PRIMARY_IP=$(ip route get 8.8.8.8 | head -1 | cut -d' ' -f8)
+    PRIMARY_IP=$(ip route get 8.8.8.8 | head -1 | awk '{print $7}')
     export CONTROLLER_IP=${CONTROLLER_IP:-$PRIMARY_IP}
     export HOST_USERNAME=${HOST_USERNAME:-'stack'}
     export HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-'stack'}
