@@ -97,7 +97,7 @@
         tempest: true
         tls-proxy: false
       devstack_plugins:
-        trove: git://git.openstack.org/openstack/trove
+        trove: https://git.openstack.org/openstack/trove
       # NOTE(zhaochao): we have to override the default settings from the
       # the base devstack job about "SERVICE_HOST" and "HOST_IP", as trove
       # guestagent should use public addresses to access the underlying
