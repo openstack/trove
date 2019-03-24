@@ -57,7 +57,7 @@ PATH_TRIPLEO_ELEMENTS=$DEST/tripleo-image-elements
 # Save the state of TROVE_BRANCH first, since it's used in trovestack
 TROVE_BRANCH_ORIG=${TROVE_BRANCH}
 # Devstack and OpenStack git repo source paths, etc.
-GIT_BASE=${GIT_BASE:-git://git.openstack.org}
+GIT_BASE=${GIT_BASE:-https://git.openstack.org}
 GIT_OPENSTACK=${GIT_OPENSTACK:-${GIT_BASE}/openstack}
 DEVSTACK_REPO=${DEVSTACK_REPO:-${GIT_BASE}/openstack-dev/devstack.git}
 TROVE_REPO=${TROVE_REPO:-${GIT_OPENSTACK}/trove.git}
