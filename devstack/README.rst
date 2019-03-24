@@ -17,7 +17,7 @@ Download DevStack
 .. sourcecode:: bash
 
     export DEVSTACK_DIR=~/devstack
-    git clone git://git.openstack.org/openstack-dev/devstack.git $DEVSTACK_DIR
+    git clone https://git.openstack.org/openstack-dev/devstack.git $DEVSTACK_DIR
 
 Enable the Trove plugin
 =======================
@@ -27,14 +27,14 @@ Enable the plugin by adding the following section to ``$DEVSTACK_DIR/local.conf`
 .. sourcecode:: bash
 
      [[local|localrc]]
-     enable_plugin trove git://git.openstack.org/openstack/trove
+     enable_plugin trove https://git.openstack.org/openstack/trove
 
 Optionally, a git refspec (branch or tag or commit) may be provided as follows:
 
 .. sourcecode:: bash
 
      [[local|localrc]]
-     enable_plugin trove git://git.openstack.org/openstack/trove <refspec>
+     enable_plugin trove https://git.openstack.org/openstack/trove <refspec>
 
 Run the DevStack utility
 ========================
