@@ -63,10 +63,10 @@ class RedisBackup(base.RestoreRunner):
 
         # IF AOF was set, we need to put back the original file
         if self.aof_set:
-            self.app.admin.wait_until('loading', '0',
+            self.app.admin.wait_until('loading', 0,
                                       section=self.INFO_PERSISTENCE_SECTION)
             self.app.admin.execute('BGREWRITEAOF')
-            self.app.admin.wait_until('aof_rewrite_in_progress', '0',
+            self.app.admin.wait_until('aof_rewrite_in_progress', 0,
                                       section=self.INFO_PERSISTENCE_SECTION)
             self.app.stop_db()
             self.app.configuration_manager.remove_system_override(
