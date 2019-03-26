@@ -18,7 +18,6 @@ import collections
 import inspect
 import os
 import shutil
-import time
 import uuid
 
 from eventlet.timeout import Timeout
@@ -186,19 +185,24 @@ class MethodInspector(object):
 
 def build_polling_task(retriever, condition=lambda value: value,
                        sleep_time=1, time_out=0):
-    start_time = time.time()
 
     def poll_and_check():
         obj = retriever()
         if condition(obj):
             raise loopingcall.LoopingCallDone(retvalue=obj)
-        if time_out > 0 and time.time() - start_time > time_out:
-            raise exception.PollTimeOut
 
     return loopingcall.BackOffLoopingCall(
         f=poll_and_check).start(initial_delay=False,
                                 starting_interval=sleep_time,
                                 max_interval=30, timeout=time_out)
+
+
+def wait_for_task(polling_task):
+    """Waits for the task until it is finished"""
+    try:
+        return polling_task.wait()
+    except loopingcall.LoopingCallTimeOut:
+        raise exception.PollTimeOut
 
 
 def poll_until(retriever, condition=lambda value: value,
@@ -209,9 +213,9 @@ def poll_until(retriever, condition=lambda value: value,
     amount of time is eclipsed.
 
     """
-
-    return build_polling_task(retriever, condition=condition,
-                              sleep_time=sleep_time, time_out=time_out).wait()
+    task = build_polling_task(retriever, condition=condition,
+                              sleep_time=sleep_time, time_out=time_out)
+    return wait_for_task(task)
 
 
 # Copied from nova.api.openstack.common in the old code.
