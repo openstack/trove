@@ -37,6 +37,7 @@ from proboscis import test
 import six
 from troveclient.compat import exceptions
 
+from trove.common import cfg
 from trove.common import exception as rd_exceptions
 from trove.common.utils import poll_until
 from trove.datastore import models as datastore_models
@@ -52,6 +53,8 @@ from trove.tests.util import iso_time
 from trove.tests.util import test_config
 from trove.tests.util.usage import create_usage_verifier
 from trove.tests.util.users import Requirements
+
+CONF = cfg.CONF
 
 FAKE = test_config.values['fake_mode']
 
@@ -972,7 +975,9 @@ class SecurityGroupsTest(object):
     def setUp(self):
         self.testSecurityGroup = dbaas.security_groups.get(
             instance_info.id)
-        self.secGroupName = "SecGroup_%s" % instance_info.id
+        self.secGroupName = (
+            "%s_%s" % (CONF.trove_security_group_name_prefix, instance_info.id)
+        )
         self.secGroupDescription = "Security Group for %s" % instance_info.id
 
     @test
@@ -1018,7 +1023,9 @@ class SecurityGroupsRulesTest(object):
     def setUp(self):
         self.testSecurityGroup = dbaas.security_groups.get(
             instance_info.id)
-        self.secGroupName = "SecGroup_%s" % instance_info.id
+        self.secGroupName = (
+            "%s_%s" % (CONF.trove_security_group_name_prefix, instance_info.id)
+        )
         self.secGroupDescription = "Security Group for %s" % instance_info.id
         self.orig_allowable_empty_sleeps = (event_simulator.
                                             allowable_empty_sleeps)

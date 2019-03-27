@@ -123,6 +123,7 @@ class TestConfig(object):
                 "volume_support": True,
             },
             "redis": {"volume_support": False},
+            "swift_enabled": True,
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None

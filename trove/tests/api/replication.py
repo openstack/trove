@@ -120,7 +120,8 @@ def validate_master(master, slaves):
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP])
+      groups=[GROUP],
+      enabled=CONFIG.swift_enabled)
 class CreateReplicationSlave(object):
 
     @test
@@ -152,7 +153,7 @@ class CreateReplicationSlave(object):
         slave_instance.id = create_slave()
 
 
-@test(groups=[GROUP])
+@test(groups=[GROUP], enabled=CONFIG.swift_enabled)
 class WaitForCreateSlaveToFinish(object):
     """Wait until the instance is created and set up as slave."""
 
@@ -162,7 +163,7 @@ class WaitForCreateSlaveToFinish(object):
         poll_until(lambda: instance_is_active(slave_instance.id))
 
 
-@test(enabled=(not CONFIG.fake_mode),
+@test(enabled=(not CONFIG.fake_mode and CONFIG.swift_enabled),
       depends_on=[WaitForCreateSlaveToFinish],
       groups=[GROUP])
 class VerifySlave(object):
@@ -217,7 +218,8 @@ class VerifySlave(object):
 
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[VerifySlave])
+      runs_after=[VerifySlave],
+      enabled=CONFIG.swift_enabled)
 class TestInstanceListing(object):
     """Test replication information in instance listing."""
 
@@ -232,7 +234,8 @@ class TestInstanceListing(object):
 
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[TestInstanceListing])
+      runs_after=[TestInstanceListing],
+      enabled=CONFIG.swift_enabled)
 class TestReplicationFailover(object):
     """Test replication failover functionality."""
 
@@ -332,7 +335,8 @@ class TestReplicationFailover(object):
 
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[TestReplicationFailover])
+      runs_after=[TestReplicationFailover],
+      enabled=CONFIG.swift_enabled)
 class DetachReplica(object):
 
     @test
@@ -370,7 +374,8 @@ class DetachReplica(object):
 
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[DetachReplica])
+      runs_after=[DetachReplica],
+      enabled=CONFIG.swift_enabled)
 class DeleteSlaveInstance(object):
 
     @test
