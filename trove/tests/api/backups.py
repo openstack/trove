@@ -52,7 +52,8 @@ backup_count_for_instance_prior_to_create = 0
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled)
 class CreateBackups(object):
 
     @test
@@ -142,7 +143,8 @@ class BackupRestoreMixin(object):
 
 
 @test(runs_after=[CreateBackups],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled)
 class WaitForBackupCreateToFinish(BackupRestoreMixin):
     """
         Wait until the backup create is finished.
@@ -156,7 +158,8 @@ class WaitForBackupCreateToFinish(BackupRestoreMixin):
 
 
 @test(depends_on=[WaitForBackupCreateToFinish],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled)
 class ListBackups(object):
 
     @test
@@ -244,7 +247,8 @@ class ListBackups(object):
 
 @test(runs_after=[ListBackups],
       depends_on=[WaitForBackupCreateToFinish],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled)
 class IncrementalBackups(BackupRestoreMixin):
 
     @test
@@ -271,7 +275,7 @@ class IncrementalBackups(BackupRestoreMixin):
         assert_equal(backup_info.id, incremental_info.parent_id)
 
 
-@test(groups=[GROUP, tests.INSTANCES])
+@test(groups=[GROUP, tests.INSTANCES], enabled=CONFIG.swift_enabled)
 class RestoreUsingBackup(object):
 
     @classmethod
@@ -297,7 +301,8 @@ class RestoreUsingBackup(object):
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
       runs_after_groups=['dbaas.api.configurations.define'],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled)
 class WaitForRestoreToFinish(object):
 
     @classmethod
@@ -330,7 +335,7 @@ class WaitForRestoreToFinish(object):
             fail('Timed out')
 
 
-@test(enabled=(not CONFIG.fake_mode),
+@test(enabled=(not CONFIG.fake_mode and CONFIG.swift_enabled),
       groups=[GROUP, tests.INSTANCES])
 class VerifyRestore(object):
 
@@ -356,7 +361,7 @@ class VerifyRestore(object):
             fail('Timed out')
 
 
-@test(groups=[GROUP, tests.INSTANCES])
+@test(groups=[GROUP, tests.INSTANCES], enabled=CONFIG.swift_enabled)
 class DeleteRestoreInstance(object):
 
     @classmethod
@@ -385,7 +390,8 @@ class DeleteRestoreInstance(object):
 
 
 @test(runs_after=[DeleteRestoreInstance],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled)
 class DeleteBackups(object):
 
     @test
@@ -432,7 +438,8 @@ class DeleteBackups(object):
 
 
 @test(depends_on=[WaitForGuestInstallationToFinish],
-      runs_after=[DeleteBackups])
+      runs_after=[DeleteBackups],
+      enabled=CONFIG.swift_enabled)
 class FakeTestHugeBackupOnSmallInstance(BackupRestoreMixin):
 
     report = CONFIG.get_report()

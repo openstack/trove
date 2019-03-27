@@ -13,6 +13,9 @@ REGION_NAME=${REGION_NAME:-${OS_REGION_NAME:-RegionOne}}
 # Enable Neutron
 ENABLE_NEUTRON=$(get_bool ENABLE_NEUTRON true)
 
+# Enable Swift
+ENABLE_SWIFT=$(get_bool ENABLE_SWIFT true)
+
 # Enable osprofiler - note: Enables Ceilometer as well
 ENABLE_PROFILER=$(get_bool ENABLE_PROFILER false)
 PROFILER_TRACE_SQL=$(get_bool PROFILER_TRACE_SQL false)
