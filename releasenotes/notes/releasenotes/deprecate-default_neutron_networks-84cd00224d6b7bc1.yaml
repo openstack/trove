@@ -1,0 +1,4 @@
+---
+deprecations:
+  - The config option ``default_neutron_networks`` is deprecated and will be
+    removed in the future release, use ``management_networks`` instead.

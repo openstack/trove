@@ -103,7 +103,7 @@ dns_service_type = dns
 
 # Neutron
 network_driver = trove.network.nova.NovaNetwork
-default_neutron_networks =
+management_networks =
 
 
 # Taskmanager queue name

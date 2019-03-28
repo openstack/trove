@@ -61,7 +61,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         super(SimpleInstanceTest, self).tearDown()
         CONF.network_label_regex = self.orig_conf
         CONF.ip_start = None
-        CONF.default_neutron_networks = []
+        CONF.management_networks = []
         CONF.ip_regex = self.orig_ip_regex
         CONF.black_list_regex = self.orig_black_list_regex
 
@@ -116,7 +116,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
     @patch('trove.common.remote.create_neutron_client')
     def test_filter_management_ip_addresses(self, mock_neutron_client):
         CONF.network_label_regex = ''
-        CONF.default_neutron_networks = ['fake-net-id']
+        CONF.management_networks = ['fake-net-id']
 
         neutron_client = Mock()
         neutron_client.show_network.return_value = {
