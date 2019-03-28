@@ -537,7 +537,7 @@ function set_mysql_pkg() {
        MYSQL_PKG="mysql-community-server"
        MYSQL_VER="5.6"
     else
-       if [ "$RELEASE" == "xenial" ]; then
+       if [[ "$RELEASE" == "xenial" || "$RELEASE" == "bionic" ]]; then
            MYSQL_PKG="mysql-server-5.7"
            MYSQL_VER="5.7"
        else
@@ -733,6 +733,9 @@ function mod_confs() {
 
     # Enable neutron tests if needed
     sed -i "s/%neutron_enabled%/$ENABLE_NEUTRON/g" $TEST_CONF
+
+    # Enable backup related tests if Swift is enabled
+    sed -i "s/%swift_enabled%/$ENABLE_SWIFT/g" $TEST_CONF
 
     # If neutron is enabled, the devstack plugin will have created an alt_demo
     # network - write this info to the confs so that the integration tests can
