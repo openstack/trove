@@ -484,6 +484,12 @@ class InstanceController(wsgi.Controller):
         """Return all information about all logs for an instance."""
         LOG.debug("Listing logs for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        try:
+            backup_model.verify_swift_auth_token(context)
+        except exception.SwiftNotFound:
+            raise exception.LogsNotAvailable()
+
         instance = models.Instance.load(context, id)
         if not instance:
             raise exception.NotFound(uuid=id)
@@ -496,6 +502,12 @@ class InstanceController(wsgi.Controller):
         """Processes a guest log."""
         LOG.info("Processing log for tenant %s", tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        try:
+            backup_model.verify_swift_auth_token(context)
+        except exception.SwiftNotFound:
+            raise exception.LogsNotAvailable()
+
         instance = models.Instance.load(context, id)
         if not instance:
             raise exception.NotFound(uuid=id)

@@ -368,7 +368,8 @@ class Controller(object):
             exception.LocalStorageNotSupported,
             exception.DatastoreOperationNotSupported,
             exception.ClusterInstanceOperationNotSupported,
-            exception.ClusterDatastoreNotSupported
+            exception.ClusterDatastoreNotSupported,
+            exception.LogsNotAvailable
         ],
     }
 
