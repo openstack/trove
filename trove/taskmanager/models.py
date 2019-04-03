@@ -363,7 +363,8 @@ class ClusterTasks(Cluster):
 
         LOG.debug("End rolling restart for id: %s.", cluster_id)
 
-    def rolling_upgrade_cluster(self, context, cluster_id, datastore_version):
+    def rolling_upgrade_cluster(self, context, cluster_id,
+                                datastore_version, ordering_function=None):
         LOG.debug("Begin rolling cluster upgrade for id: %s.", cluster_id)
 
         def _upgrade_cluster_instance(instance):
@@ -383,10 +384,17 @@ class ClusterTasks(Cluster):
         cluster_notification = context.notification
         request_info = cluster_notification.serialize(context)
         try:
+            instances = []
             for db_inst in DBInstance.find_all(cluster_id=cluster_id,
                                                deleted=False).all():
                 instance = BuiltInstanceTasks.load(
                     context, db_inst.id)
+                instances.append(instance)
+
+            if ordering_function is not None:
+                instances.sort(key=ordering_function)
+
+            for instance in instances:
                 _upgrade_cluster_instance(instance)
 
             self.reset_task()

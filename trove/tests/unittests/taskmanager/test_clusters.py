@@ -15,6 +15,7 @@
 
 import datetime
 
+from mock import MagicMock
 from mock import Mock
 from mock import patch
 
@@ -29,6 +30,7 @@ from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceTasks
+# from trove.taskmanager.models import BuiltInstanceTasks
 from trove.taskmanager.models import ServiceStatuses
 from trove.tests.unittests import trove_testtools
 
@@ -291,6 +293,78 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         self.clustertasks.delete_cluster(Mock(), self.cluster_id)
         self.assertEqual(ClusterTaskStatus.NONE, self.db_cluster.task_status)
         mock_save.assert_called_with()
+
+    def test_rolling_upgrade_cluster_without_order_specified(self):
+        self._assert_rolling_upgrade_cluster(None, None)
+
+    def test_rolling_upgrade_cluster_with_order_specified(self):
+        ordering = {
+            1: 1,
+            2: 2,
+            3: 3,
+            4: 4,
+            5: 5
+        }
+
+        def ordering_function(instance):
+            return ordering[instance.id]
+
+        self._assert_rolling_upgrade_cluster(ordering_function, ordering)
+
+    @patch('trove.taskmanager.models.DBaaSInstanceUpgrade')
+    @patch('trove.taskmanager.models.BuiltInstanceTasks')
+    @patch('trove.taskmanager.models.EndNotification')
+    @patch('trove.taskmanager.models.StartNotification')
+    @patch('trove.taskmanager.models.Timeout')
+    @patch.object(ClusterTasks, 'reset_task')
+    @patch.object(DBInstance, 'find_all')
+    def _assert_rolling_upgrade_cluster(self,
+                                        ordering_function,
+                                        ordering,
+                                        mock_find_all,
+                                        mock_reset_task,
+                                        mock_timeout,
+                                        mock_start,
+                                        mock_end,
+                                        mock_instance_task,
+                                        mock_upgrade):
+        class MockInstance(Mock):
+            upgrade_counter = 0
+
+            def upgrade(self, _):
+                MockInstance.upgrade_counter += 1
+                self.upgrade_number = MockInstance.upgrade_counter
+
+        db_instances = [Mock() for _ in range(5)]
+        for i in range(5):
+            db_instances[i].id = i + 1
+
+        mock_find_all.return_value.all.return_value = db_instances
+        instances = []
+
+        def load_side_effect(_, instance_id):
+            return_value = MockInstance()
+            return_value.id = instance_id
+            instances.append(return_value)
+            return return_value
+
+        mock_instance_task.load.side_effect = load_side_effect
+        if ordering is None:
+            ordering = {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5
+            }
+        self.clustertasks.rolling_upgrade_cluster(MagicMock(),
+                                                  Mock(),
+                                                  Mock(),
+                                                  ordering_function)
+        order_result = {inst.id: inst.upgrade_number for inst in instances}
+
+        self.assertEqual(ClusterTaskStatus.NONE, self.db_cluster.task_status)
+        self.assertDictEqual(ordering, order_result)
 
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, '_create_shard')

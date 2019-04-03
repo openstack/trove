@@ -717,6 +717,18 @@ class CassandraApp(object):
         self.logback_conf_manager.apply_system_override(
             {'configuration': {'root': {'@level': log_level}}})
 
+    def drain(self):
+        """Drains Cassandra node so that it can upgraded safely.
+        """
+        LOG.debug("Draining node.")
+        self._run_nodetool_command('drain')
+
+    def upgrade_sstables(self):
+        """Upgrades sstables to match new datastore version.
+        """
+        LOG.debug("Upgrading sstables.")
+        self._run_nodetool_command('upgradesstables')
+
     def _run_nodetool_command(self, cmd, *args, **kwargs):
         """Execute a nodetool command on this node.
         """
