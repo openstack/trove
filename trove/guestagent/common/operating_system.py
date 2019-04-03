@@ -16,6 +16,7 @@
 import inspect
 import operator
 import os
+import pwd
 import re
 import stat
 import tempfile
@@ -861,3 +862,8 @@ def is_mount(path):
     directory_dev = get_device(path, as_root=True)
     parent_dev = get_device(os.path.join(path, '..'), as_root=True)
     return directory_dev != parent_dev
+
+
+def get_current_user():
+    """Returns name of the current OS user"""
+    return pwd.getpwuid(os.getuid())[0]

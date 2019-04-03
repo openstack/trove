@@ -278,17 +278,20 @@ class MySqlManager(manager.Manager):
             self.mount_volume(context, mount_point=upgrade_info['mount_point'],
                               device_path=upgrade_info['device'],
                               write_to_fstab=True)
+            operating_system.chown(path=upgrade_info['mount_point'],
+                                   user=service.MYSQL_OWNER,
+                                   group=service.MYSQL_OWNER,
+                                   recursive=True, as_root=True)
+
+        self._restore_home_directory(upgrade_info['home_save'])
 
         if operating_system.exists(upgrade_info['save_etc_dir'],
                                    is_directory=True, as_root=True):
-            operating_system.copy("%s/." % upgrade_info['save_etc_dir'],
-                                  "/etc", preserve=True, as_root=True)
+            self._restore_directory(upgrade_info['save_etc_dir'], "/etc")
 
-        operating_system.copy("%s/." % upgrade_info['save_dir'], "/etc/mysql",
-                              preserve=True, as_root=True)
-        operating_system.copy("%s/." % upgrade_info['home_save'],
-                              os.path.expanduser('~'),
-                              preserve=True, as_root=True)
+        self._restore_directory("%s/." % upgrade_info['save_dir'],
+                                "/etc/mysql")
+
         self.configuration_manager.refresh_cache()
         app.start_mysql()
         app.status.end_restart()
