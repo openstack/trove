@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from oslo_log import log as logging
 
 from trove.common import exception
@@ -108,6 +110,49 @@ class Manager(manager.Manager):
             self._app.restart()
         if snapshot:
             self.attach_replica(context, snapshot, snapshot['config'])
+
+    def pre_upgrade(self, context):
+        mount_point = self._app.get_working_dir()
+        save_etc_dir = "%s/etc" % mount_point
+        home_save = "%s/trove_user" % mount_point
+
+        self._app.status.begin_restart()
+        self._app.stop_db()
+
+        operating_system.copy("%s/." % system.REDIS_CONF_DIR, save_etc_dir,
+                              preserve=True, as_root=True)
+
+        operating_system.copy("%s/." % os.path.expanduser('~'), home_save,
+                              preserve=True, as_root=True)
+
+        self.unmount_volume(context, mount_point=mount_point)
+
+        return {
+            'mount_point': mount_point,
+            'save_etc_dir': save_etc_dir,
+            'home_save': home_save
+        }
+
+    def post_upgrade(self, context, upgrade_info):
+        self._app.stop_db()
+
+        if 'device' in upgrade_info:
+            self.mount_volume(context, mount_point=upgrade_info['mount_point'],
+                              device_path=upgrade_info['device'],
+                              write_to_fstab=True)
+            operating_system.chown(path=upgrade_info['mount_point'],
+                                   user=system.REDIS_OWNER,
+                                   group=system.REDIS_OWNER,
+                                   recursive=True, as_root=True)
+
+        self._restore_home_directory(upgrade_info['home_save'])
+
+        self._restore_directory(upgrade_info['save_etc_dir'],
+                                system.REDIS_CONF_DIR)
+
+        self._app = service.RedisApp()
+        self._app.start_db()
+        self._app.status.end_restart()
 
     def restart(self, context):
         """
