@@ -1,0 +1,4 @@
+---
+features:
+  - Support for upgrading Redis instance.
+  - Support for upgrading Redis cluster.
