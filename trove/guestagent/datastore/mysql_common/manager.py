@@ -291,6 +291,7 @@ class MySqlManager(manager.Manager):
                               preserve=True, as_root=True)
         self.configuration_manager.refresh_cache()
         app.start_mysql()
+        app.status.end_restart()
 
     def restart(self, context):
         app = self.mysql_app(self.mysql_app_status.get())
