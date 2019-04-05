@@ -984,6 +984,75 @@ class TestOperatingSystem(trove_testtools.TestCase):
                               "Got unknown keyword args: {'_unknown_kw': 0}"),
             'path', _unknown_kw=0)
 
+    def test_find_executable_without_path(self):
+        command = "command"
+        self._delegate_assert_find_executable(command=command,
+                                              path=None,
+                                              isfile=True,
+                                              access=True,
+                                              expected_return_value=(
+                                                  "/usr/bin/command"))
+        self._delegate_assert_find_executable(command=command,
+                                              path=None,
+                                              isfile=True,
+                                              access=False,
+                                              expected_return_value=None)
+        self._delegate_assert_find_executable(command=command,
+                                              path=None,
+                                              isfile=False,
+                                              access=True,
+                                              expected_return_value=None)
+        self._delegate_assert_find_executable(command=command,
+                                              path=None,
+                                              isfile=False,
+                                              access=False,
+                                              expected_return_value=None)
+
+    def test_find_executable_with_path(self):
+        command = "command"
+        path = "/home"
+        self._delegate_assert_find_executable(command=command,
+                                              path=path,
+                                              isfile=True,
+                                              access=True,
+                                              expected_return_value=(
+                                                  "/home/command"))
+        self._delegate_assert_find_executable(command=command,
+                                              path=path,
+                                              isfile=True,
+                                              access=False,
+                                              expected_return_value=None)
+        self._delegate_assert_find_executable(command=command,
+                                              path=path,
+                                              isfile=False,
+                                              access=True,
+                                              expected_return_value=None)
+        self._delegate_assert_find_executable(command=command,
+                                              path=path,
+                                              isfile=False,
+                                              access=False,
+                                              expected_return_value=None)
+
+    def _delegate_assert_find_executable(self, command, path, isfile,
+                                         access, expected_return_value):
+        self._assert_find_executable(command, path, isfile, access,
+                                     expected_return_value)
+
+    @patch.object(os, 'access')
+    @patch.object(os.path, 'isfile')
+    @patch.object(os.environ, 'get', return_value="/usr/bin")
+    def _assert_find_executable(self, command, path, isfile, access,
+                                expected_return_value, mock_environ,
+                                mock_isfile, mock_access):
+        mock_access.return_value = access
+        mock_isfile.return_value = isfile
+        actual_result = operating_system.find_executable(command, path)
+        self.assertEqual(expected_return_value, actual_result)
+        if path is None:
+            mock_environ.assert_called_once()
+        else:
+            mock_environ.assert_not_called()
+
     def test_exists(self):
         self.assertFalse(
             operating_system.exists(tempfile.gettempdir(), is_directory=False))
