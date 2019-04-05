@@ -68,8 +68,8 @@ class MgmtDataStoreVersion(object):
     def test_mgmt_ds_version_list_original_count(self):
         """Tests the mgmt datastore version list method."""
         self.ds_versions = self.client.mgmt_datastore_versions.list()
-        # By default we create two datastore-versions for mysql
-        assert_equal(2, len(self.ds_versions))
+        # datastore-versions should exist for a functional Trove deployment.
+        assert_true(len(self.ds_versions) > 0)
 
     @test(depends_on=[test_mgmt_ds_version_list_original_count])
     def test_mgmt_ds_version_list_fields_present(self):
