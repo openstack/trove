@@ -1,0 +1,3 @@
+guest-agent:
+  default: guest-agent
+  redhat: trove-guest-agent

@@ -97,10 +97,6 @@ KEYSTONE_AUTH_PORT=${KEYSTONE_AUTH_PORT:-35357}
 GLANCE_HOSTPORT=${GLANCE_HOSTPORT:-$SERVICE_HOST:9292}
 GLANCE_SERVICE_PROTOCOL=${GLANCE_SERVICE_PROTOCOL:-http}
 
-# The following depends on whether neutron is used or nova-network
-# neutron uses a bridge, nova-network does not
-[[ $ENABLE_NEUTRON = true ]] && CONTROLLER_IP=$BRIDGE_IP || CONTROLLER_IP=$NETWORK_GATEWAY
-
 # PATH_TROVE more than likely has file separators, which sed does not like
 # This will escape them
 ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
@@ -828,51 +824,52 @@ function cmd_test_init() {
 
 function cmd_build_image() {
     local IMAGE_DATASTORE_TYPE=${1:-'mysql'}
-    local ESCAPED_PATH_TROVE=${2:-'\/opt\/stack\/trove'}
-    local HOST_SCP_USERNAME=${3:-'ubuntu'}
-    local GUEST_USERNAME=${4:-'ubuntu'}
+    local IMAGE_GUEST_OS=${2:-'ubuntu'}
+    local IMAGE_GUEST_RELEASE=${3:-'xenial'}
+    local DEV_MODE=${4:-'true'}
 
     exclaim "Ensuring we have all packages needed to build image."
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
-    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu
-    sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
-    pkg_install python-yaml
-
+    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap
+    sudo -H $HTTP_PROXY pip install diskimage-builder
     install_devstack_code
 
-    cmd_clone_projects do_not_force_update $TROVESTACK_SCRIPTS/image-projects-list
-
-    exclaim "Use tripleo-diskimagebuilder to actually build the Trove Guest Agent Image."
-    build_guest_image $IMAGE_DATASTORE_TYPE
+    exclaim "Use diskimage-builder to actually build the Trove Guest Agent Image."
+    build_guest_image $IMAGE_DATASTORE_TYPE $IMAGE_GUEST_OS $IMAGE_GUEST_RELEASE $DEV_MODE
 }
 
 function cmd_build_and_upload_image() {
-    local DATASTORE_TYPE=$1
-    local RESTART_TROVE=${2:-$(get_bool RESTART_TROVE "true")}
+    local datastore_type=$1
+    local restart_trove=${2:-$(get_bool RESTART_TROVE "true")}
+    local guest_os=${3:-"ubuntu"}
+    local guest_release=${4:-"xenial"}
+    local dev_mode=${5:-"true"}
+    local guest_username=${6:-"ubuntu"}
 
-    if [ -z "${DATASTORE_TYPE}" ]; then
+    if [ -z "${datastore_type}" ]; then
         exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
         exit 1
     fi
 
+    glance_imageid=$(openstack $CLOUD_ADMIN_ARG image list | grep "$datastore_type" | get_field 1)
+    echo "IMAGEID: $glance_imageid"
+    if [[ -z $glance_imageid ]]; then
+        build_guest_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username}
 
-    GLANCE_IMAGEID=$(openstack $CLOUD_ADMIN_ARG image list | grep "$DATASTORE_TYPE" | get_field 1)
-    echo "IMAGEID: $GLANCE_IMAGEID"
-    if [[ -z $GLANCE_IMAGEID ]]; then
-        build_guest_image "${DATASTORE_TYPE}"
-        QCOW_IMAGE=`find $VM_PATH -name '*.qcow2'`
-        IMAGE_URL="file://$QCOW_IMAGE"
-        GLANCE_IMAGEID=`get_glance_id upload_image $IMAGE_URL`
-        [[ -z "$GLANCE_IMAGEID" ]] && echo "Glance upload failed!" && exit 1
-        echo "IMAGE ID: $GLANCE_IMAGEID"
+        image_folder=$HOME/images
+        qcow_image=`find $image_folder -name '*.qcow2'`
+        image_url="file://$qcow_image"
+        glance_imageid=`get_glance_id upload_image $image_url`
+        [[ -z "$glance_imageid" ]] && echo "Glance upload failed!" && exit 1
+        echo "IMAGE ID: $glance_imageid"
 
         if [[ -f /etc/trove/cloudinit/mysql.cloudinit ]]; then
-            sudo cp /etc/trove/cloudinit/mysql.cloudinit /etc/trove/cloudinit/${DATASTORE_TYPE}.cloudinit
+            sudo cp /etc/trove/cloudinit/mysql.cloudinit /etc/trove/cloudinit/${datastore_type}.cloudinit
         fi
     fi
 
     exclaim "Updating Datastores"
-    cmd_set_datastore "${GLANCE_IMAGEID}" "${DATASTORE_TYPE}" "${RESTART_TROVE}"
+    cmd_set_datastore "${glance_imageid}" "${datastore_type}" "${restart_trove}"
 }
 
 
@@ -1158,7 +1155,6 @@ function cmd_run_ci() {
     set -e
     cmd_install
     cmd_test_init "${DATASTORE_TYPE}"
-    # The arg will be the image type
     cmd_build_and_upload_image "${DATASTORE_TYPE}" "${RESTART_TROVE}"
 
     # Test in fake mode.

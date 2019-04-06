@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+SCRIPTDIR=$(dirname $0)
+GUEST_VENV=/opt/guest-agent-venv
+
+# Create a virtual environment to contain the guest agent
+${DIB_PYTHON} -m virtualenv $GUEST_VENV
+$GUEST_VENV/bin/pip install pip --upgrade
+$GUEST_VENV/bin/pip install -U -c /opt/upper-constraints.txt /opt/guest-agent
+
+# Link the trove-guestagent out to /usr/local/bin where the startup scripts look
+ln -s $GUEST_VENV/bin/trove-guestagent /usr/local/bin/guest-agent || true
+
+mkdir -p /var/lib/trove /etc/trove/certs /var/log/trove
+
+install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
+
+case "$DIB_INIT_SYSTEM" in
+    upstart)
+        install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.conf /etc/init/guest-agent.conf
+        ;;
+    systemd)
+        install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.service /usr/lib/systemd/system/guest-agent.service
+        ;;
+    sysv)
+        install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.init /etc/init.d/guest-agent.init
+        ;;
+    *)
+        echo "Unsupported init system"
+        exit 1
+        ;;
+esac

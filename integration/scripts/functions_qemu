@@ -3,147 +3,118 @@
 # Additional functions that would mostly just pertain to a Ubuntu + Qemu setup
 #
 
-# tmpfs dedicates half the available RAM to an internal cache to speed up
-# image building. This can lead to failures when the data doesn't fit into
-# the cache, for example when compiling large programs.  This flag allows
-# tmpfs to be turned off by the caller by setting USE_TMPF=false
-
-USE_TMPFS=${USE_TMPFS:-true}
-
-# Use the latest distro provided hardware enablement stack which is required
-# by some platforms (ppc64el) for nested virtualization.  Trovestack runs a
-# VM (db guest image) in a VM (OpenStack+Trove)
-
-DIB_USE_HWE_KERNEL=${DIB_USE_HWE_KERNEL:-true}
-
 function build_vm() {
     exclaim "Actually building the image, this can take up to 15 minutes"
 
-    # set variables here and ensure they are not changed during the duration of this script
-    readonly HOMEDIR=$1
-    readonly HOST_USERNAME=$2
-    GUEST_USERNAME=${GUEST_USERNAME:-$2}
-    HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-$2}
-    VM=$3
-    DISTRO=$4
-    SERVICE_TYPE=$5
+    datastore_type=$1
+    guest_os=$2
+    guest_release=$3
+    dev_mode=$4
+    guest_username=$5
+    image_output=$6
 
-    readonly SSH_DIR=${KEY_DIR:-${HOMEDIR}/.ssh}
+    elementes="base vm"
+    trove_elements_path=${PATH_TROVE}/integration/scripts/files/elements
+    GUEST_IMAGETYPE=${GUEST_IMAGETYPE:-"qcow2"}
+    GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-3}
+    GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
+    GUEST_WORKING_DIR=${GUEST_WORKING_DIR:-"$HOME/images"}
+
+    export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
+    export GUEST_USERNAME=${guest_username}
+    export HOST_SCP_USERNAME=$(whoami)
     manage_ssh_keys
 
-    ARCH=amd64
-    if [ $DISTRO == 'ubuntu' ]; then
-        export DIB_RELEASE=$RELEASE
-        export DIB_CLOUD_IMAGES=cloud-images.ubuntu.com/$DIB_RELEASE/current
-        export DIB_USE_HWE_KERNEL
-        ARCH=$(dpkg --print-architecture)
-    elif [ $DISTRO == 'fedora' ]; then
-        EXTRA_ELEMENTS=selinux-permissive
+    # In dev mode, the trove guest agent needs to download trove code from
+    # trove-taskmanager host.
+    if [[ "${dev_mode}" == "true" ]]; then
+        host_ip=$(ip route get 8.8.8.8 | head -1 | awk '{print $7}')
+        export CONTROLLER_IP=${CONTROLLER_IP:-${host_ip}}
+        export PATH_TROVE=${PATH_TROVE}
+        export ESCAPED_PATH_TROVE=$(echo ${PATH_TROVE} | sed 's/\//\\\//g')
+        export GUEST_LOGDIR=${GUEST_LOGDIR:-"/var/log/trove/"}
+        export ESCAPED_GUEST_LOGDIR=$(echo ${GUEST_LOGDIR} | sed 's/\//\\\//g')
+        export TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS}
+        export HOST_USERNAME=${HOST_SCP_USERNAME}
     fi
 
-    case "$USE_TMPFS" in
-       false|FALSE|False|no|NO|n|N)
-           TMPFS_ARGS='--no-tmpfs'
-           ;;
-       *)
-           TMPFS_ARGS=''
-           ;;
-    esac
+    # For system-wide installs, DIB will automatically find the elements, so we only check local path
+    if [ "${DIB_LOCAL_ELEMENTS_PATH}" ]; then
+        export ELEMENTS_PATH=${trove_elements_path}:${DIB_LOCAL_ELEMENTS_PATH}
+    else
+        export ELEMENTS_PATH=${trove_elements_path}
+    fi
 
-    export HOST_USERNAME
-    export HOST_SCP_USERNAME
-    export GUEST_USERNAME
-    export CONTROLLER_IP
-    export TROVESTACK_SCRIPTS
-    export SERVICE_TYPE
-    export PATH_TROVE
-    export ESCAPED_PATH_TROVE
-    export SSH_DIR
-    export GUEST_LOGDIR
-    export ESCAPED_GUEST_LOGDIR
-    export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
-    export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER_ELEMENTS
-    export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
+    export DIB_RELEASE=${guest_release}
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
-    export DATASTORE_PKG_LOCATION
-    export BRANCH_OVERRIDE
-    export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
-    export DIB_CLOUD_INIT_ETC_HOSTS=true
-    local QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
-    disk-image-create ${TMPFS_ARGS} -a ${ARCH} -o "${VM}" \
-        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
-        cloud-init-datasources ${DISTRO}-${RELEASE}-guest ${DISTRO}-${RELEASE}-${SERVICE_TYPE}
+
+    if  [ "${GUEST_WORKING_DIR}" ]; then
+        mkdir -p ${GUEST_WORKING_DIR}
+        TEMP=$(mktemp -d ${GUEST_WORKING_DIR}/diskimage-create.XXXXXX)
+    else
+        TEMP=$(mktemp -d diskimage-create.XXXXXX)
+    fi
+    pushd $TEMP > /dev/null
+
+    elementes="$elementes ${guest_os}"
+
+    if [[ "${dev_mode}" != "true" ]]; then
+        elementes="$elementes pip-and-virtualenv"
+        elementes="$elementes pip-cache"
+        elementes="$elementes no-resolvconf"
+        elementes="$elementes guest-agent"
+    else
+        elementes="$elementes ${guest_os}-guest"
+        elementes="$elementes ${guest_os}-${guest_release}-guest"
+    fi
+
+    elementes="$elementes ${guest_os}-${datastore_type}"
+    elementes="$elementes ${guest_os}-${guest_release}-${datastore_type}"
+
+    # Build the image
+    disk-image-create -x \
+      -a amd64 \
+      -o ${image_output} \
+      -t ${GUEST_IMAGETYPE} \
+      --image-size ${GUEST_IMAGESIZE} \
+      --image-cache ${GUEST_CACHEDIR} \
+      $elementes
+
+    # out of $TEMP
+    popd > /dev/null
+    rm -rf $TEMP
+
+    exclaim "Image ${image_output}.${GUEST_IMAGETYPE} was built successfully."
 }
 
 function build_guest_image() {
-    exclaim "Building an image for use with development and integration tests."
-    if [ -z "$1" ]
+    exclaim "Building an image for Trove guest agent."
+    datastore_type=$1
+    guest_os=${2:-"ubuntu"}
+    guest_release=${3:-"xenial"}
+    dev_mode=${4:-"true"}
+    guest_username=${5:-"ubuntu"}
+
+    if [ -z "$datastore_type" ]
     then
         echo "You must pass an image type to build, like mysql"
         exit 1
     fi
-    SERVICE_TYPE=$1
     VALID_SERVICES='mysql percona mariadb redis cassandra couchbase mongodb postgresql couchdb vertica db2 pxc'
-    if ! [[ " $VALID_SERVICES " =~ " $SERVICE_TYPE " ]]; then
+    if ! [[ " $VALID_SERVICES " =~ " $datastore_type " ]]; then
         exclaim "You did not pass in a valid image type. Valid types are:" $VALID_SERVICES
         exit 1
     fi
 
-    GUEST_LOGDIR=$(iniget $PATH_TROVE/etc/trove/trove-guestagent.conf.sample DEFAULT log_dir)
-    GUEST_LOGFILE=$(iniget $PATH_TROVE/etc/trove/trove-guestagent.conf.sample DEFAULT log_file)
+    image_name=${guest_os}_${datastore_type}
+    image_folder=$HOME/images
+    mkdir -p $image_folder
+    image_path=${image_folder}/${image_name}
 
-    if [ -z $GUEST_LOGDIR ] || [ -z $GUEST_LOGFILE ]
-    then
-        exclaim "error: log_dir and log_file are required in: " $PATH_TROVE/etc/trove/trove-guestagent.conf.sample
-        exit 1
-    fi
+    # Always rebuild the image.
+    rm -rf ${image_folder}/*
 
-    ESCAPED_GUEST_LOGDIR=`echo $GUEST_LOGDIR | sed 's/\//\\\\\//g'`
-
-    USERNAME=`whoami`
-    # To change the distro, edit the trovestack.rc file
-    readonly IMAGENAME=${DISTRO}_${SERVICE_TYPE}
-    readonly VM_PATH=$USERHOME/images/${IMAGENAME}
-    readonly VM_PATH_NAME=${VM_PATH}/${IMAGENAME}
-    mkdir -p $VM_PATH
-
-    # If the path does not exist, build it, otherwise just upload it
-    # (unless we're explicitly told to rebuild it)
-    REBUILD_IMAGE=$(echo "${REBUILD_IMAGE}" | tr '[:upper:]' '[:lower:]')
-    if [ "${REBUILD_IMAGE}" = "true" ] || [ ! -d $VM_PATH ] || [ `ls -1 $VM_PATH | wc -l` -eq '0' ]
-    then
-        if [ "${REBUILD_IMAGE}" = "true" ]
-        then
-            exclaim "Rebuilding image"
-            rm -rf "${VM_PATH}"
-        fi
-        build_vm $USERHOME $USERNAME $VM_PATH_NAME $DISTRO $SERVICE_TYPE
-        touch -c "${VM_PATH}"
-    else
-        exclaim "Found image in $VM_PATH - using the qcow2 image found here..."
-        ELEMENTS_DIR="files/elements/${DISTRO}-${SERVICE_TYPE}"
-        ELEMENTS_DIR_GUEST="files/elements/${DISTRO}-guest"
-        # Print out a warning on all the elements files that are newer than the image.
-        # Directories are not excluded as that is the only way to determine if a file
-        # has been removed.
-        # The rebuild is not automatically triggered as there are valid reasons for a
-        # new file to be present (rollback of change, inadvertent .log files present,
-        # feature half implemented, etc.).
-        IMAGE_OLD=
-        while IFS= read -r -d '' ELEMENT_FILE
-        do
-            if [ "${ELEMENT_FILE}" -nt "${VM_PATH}" ]
-            then
-                IMAGE_OLD=true
-                exclaim "${COLOR_RED}WARNING: Element file '${ELEMENT_FILE}' is newer than cached image${COLOR_NONE}"
-            fi
-        done < <(find "${ELEMENTS_DIR}" "${ELEMENTS_DIR_GUEST}" -depth -print0)
-        if [ "${IMAGE_OLD}" = "true" ]
-        then
-            exclaim "${COLOR_RED}Use ${COLOR_NONE}REBUILD_IMAGE=True${COLOR_RED} to rebuild image${COLOR_NONE}"
-        fi
-
-    fi
+    build_vm ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username} ${image_path}
 }
 
 function clean_instances() {
@@ -151,42 +122,23 @@ function clean_instances() {
     for i in $LIST; do sudo virsh destroy $i; done
 }
 
+# Trove doesn't support to specify keypair when creating the db instance, the
+# ssh keys are injected when the image is built. This could be removed when
+# we support keypair in the future.
 function manage_ssh_keys() {
-    if [ -e ${SSH_DIR} ]; then
+    if [ -d ${SSH_DIR} ]; then
         echo "${SSH_DIR} already exists"
     else
-        echo "Creating ${SSH_DIR} for ${HOST_USERNAME}"
-        sudo -Hiu ${HOST_USERNAME} mkdir -m go-w -p ${SSH_DIR}
+        echo "Creating ${SSH_DIR} for ${HOST_SCP_USERNAME}"
+        sudo -Hiu ${HOST_SCP_USERNAME} mkdir -m go-w -p ${SSH_DIR}
     fi
 
     if [ ! -f ${SSH_DIR}/id_rsa.pub ]; then
-        sudo ${PKG_MGR} ${PKG_GET_ARGS} install expect
-        generate_empty_passphrase_ssh_key ${HOST_USERNAME}
+         /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
     fi
 
-    add_host_key_to_authorizedkeys
-}
-
-function generate_empty_passphrase_ssh_key () {
-    echo "generating a empty passphrase DEV ONLY rsa key"
-    expect -c "
-spawn sudo -Hiu ${HOST_USERNAME} /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q
-expect \"empty for no passphrase\"
-send \n
-expect assphrase
-send \n
-expect eof"
-}
-
-function add_host_key_to_authorizedkeys () {
-    # test to see if the host key is already in its own authorized_keys file - if not then add it.  This is then later copied
-    # to the guest image
-    is_in_keyfile=`cat ${SSH_DIR}/id_rsa.pub | grep -f - ${SSH_DIR}/authorized_keys | wc -l`
-    if [ $is_in_keyfile == 0 ]; then
-        echo "Adding keyfile to authorized_keys, it does not yet exist"
-        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
-        chmod 600 ${SSH_DIR}/authorized_keys
-    else
-        echo "Keyfile already exists in authorized_keys - skipping"
-    fi
+    cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+    sort ${SSH_DIR}/authorized_keys | uniq > ${SSH_DIR}/authorized_keys.uniq
+    mv ${SSH_DIR}/authorized_keys.uniq ${SSH_DIR}/authorized_keys
+    chmod 600 ${SSH_DIR}/authorized_keys
 }

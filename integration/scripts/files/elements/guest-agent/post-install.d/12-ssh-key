@@ -1,7 +1,7 @@
 #!/bin/bash
 
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
 # PURPOSE: take "staged" ssh keys (see extra-data.d/62-ssh-key) and put them in the GUEST_USERS home directory
-# In future, this should be removed and use Nova keypair to inject ssh keys.
 
 set -e
 set -o xtrace
@@ -9,18 +9,29 @@ set -o xtrace
 SSH_DIR="/home/${GUEST_USERNAME}/.ssh"
 TMP_HOOKS_DIR="/tmp/in_target.d"
 
-if [ -e "${TMP_HOOKS_DIR}/ssh-authorized-keys" ]; then
-    if [ ! -e ${SSH_DIR} ]; then
+if ! id -u ${GUEST_USERNAME} >/dev/null 2>&1; then
+    echo "Adding ${GUEST_USERNAME} user"
+    useradd -G sudo -m ${GUEST_USERNAME} -s /bin/bash
+    chown ${GUEST_USERNAME}:${GUEST_USERNAME} /home/${GUEST_USERNAME}
+    passwd ${GUEST_USERNAME} <<_EOF_
+${GUEST_USERNAME}
+${GUEST_USERNAME}
+_EOF_
+fi
+
+if [ -f "${TMP_HOOKS_DIR}/ssh-authorized-keys" ]; then
+    if [ ! -d ${SSH_DIR} ]; then
         # this method worked more reliable in vmware fusion over doing sudo -Hiu ${GUEST_USERNAME}
         mkdir ${SSH_DIR}
         chown ${GUEST_USERNAME}:${GUEST_USERNAME} ${SSH_DIR}
     fi
+
     sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/authorized_keys conv=notrunc if=${TMP_HOOKS_DIR}/ssh-authorized-keys
-    if [ ! -e "${SSH_DIR}/id_rsa" ]; then
-        sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/id_rsa if=${TMP_HOOKS_DIR}/id_rsa
+    if [ ! -f "${SSH_DIR}/id_rsa" ]; then
+        sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/id_rsa if=${TMP_HOOKS_DIR}/ssh-id_rsa
         # perms have to be right on this file for ssh to work
         sudo -Hiu ${GUEST_USERNAME} chmod 600 ${SSH_DIR}/id_rsa
-        sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/id_rsa.pub if=${TMP_HOOKS_DIR}/id_rsa.pub
+        sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/id_rsa.pub if=${TMP_HOOKS_DIR}/ssh-id_rsa.pub
     fi
 else
     echo "SSH Keys were not staged by host"

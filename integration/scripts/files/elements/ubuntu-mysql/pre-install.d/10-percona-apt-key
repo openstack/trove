@@ -6,8 +6,8 @@
 set -e
 set -o xtrace
 
-[ -n "${GUEST_USERNAME}" ] || die "GUEST_USERNAME needs to be set to the user for the guest image"
-[ -n "${RELEASE}" ] || die "RELEASE must be set to a valid Ubuntu release (e.g. trusty)"
+GUEST_USERNAME=${GUEST_USERNAME:-"ubuntu"}
+RELEASE=${DIB_RELEASE:-"xenial"}
 
 # Add Percona GPG key
 mkdir -p /home/${GUEST_USERNAME}/.gnupg
