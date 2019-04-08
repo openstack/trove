@@ -357,9 +357,12 @@ function init_trove {
         --os-project-name ${ALT_TENANT_NAME}
 
     # build and upload sample Trove mysql instance if not set otherwise
-    if [[ ${TROVE_DISABLE_IMAGE_SETUP} != "TRUE" ]]; then
-        echo "Setup datastore image"
+    TROVE_DISABLE_IMAGE_SETUP=`echo ${TROVE_DISABLE_IMAGE_SETUP} | tr '[:upper:]' '[:lower:]'`
+    if [[ ${TROVE_DISABLE_IMAGE_SETUP} != "true" ]]; then
+        echo "Setup datastore image."
         _setup_minimal_image
+    else
+        echo "Skip datastore image building."
     fi
 
     # If no guest image is specified, skip remaining setup
