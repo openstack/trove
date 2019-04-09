@@ -34,7 +34,6 @@ from proboscis import before_class
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 from proboscis import test
-import six
 from troveclient.compat import exceptions
 
 from trove.common import cfg
@@ -44,11 +43,9 @@ from trove.datastore import models as datastore_models
 from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util.check import AttrCheck
-from trove.tests.util.check import TypeCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import create_nova_client
 from trove.tests.util import dns_checker
-from trove.tests.util import event_simulator
 from trove.tests.util import iso_time
 from trove.tests.util import test_config
 from trove.tests.util.usage import create_usage_verifier
@@ -68,7 +65,6 @@ GROUP_USERS = "dbaas.api.users"
 GROUP_ROOT = "dbaas.api.root"
 GROUP_GUEST = "dbaas.guest.start.test"
 GROUP_DATABASES = "dbaas.api.databases"
-GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 GROUP_CREATE_INSTANCE_FAILURE = "dbaas.api.failures"
 GROUP_QUOTAS = "dbaas.quotas"
 
@@ -965,126 +961,6 @@ class WaitForGuestInstallationToFinish(object):
                    "to skip ahead to this point." % instance_info.id)
         report.log("Add TESTS_DO_NOT_DELETE_INSTANCE=True to avoid deleting "
                    "the instance at the end of the tests.")
-
-
-@test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP, GROUP_SECURITY_GROUPS])
-class SecurityGroupsTest(object):
-
-    @before_class
-    def setUp(self):
-        self.testSecurityGroup = dbaas.security_groups.get(
-            instance_info.id)
-        self.secGroupName = (
-            "%s_%s" % (CONF.trove_security_group_name_prefix, instance_info.id)
-        )
-        self.secGroupDescription = "Security Group for %s" % instance_info.id
-
-    @test
-    def test_created_security_group(self):
-        assert_is_not_none(self.testSecurityGroup)
-        with TypeCheck('SecurityGroup', self.testSecurityGroup) as secGrp:
-            secGrp.has_field('id', six.string_types)
-            secGrp.has_field('name', six.string_types)
-            secGrp.has_field('description', six.string_types)
-            secGrp.has_field('created', six.string_types)
-            secGrp.has_field('updated', six.string_types)
-        assert_equal(self.testSecurityGroup.name, self.secGroupName)
-        assert_equal(self.testSecurityGroup.description,
-                     self.secGroupDescription)
-        assert_equal(self.testSecurityGroup.created,
-                     self.testSecurityGroup.updated)
-
-    @test
-    def test_list_security_group(self):
-        securityGroupList = dbaas.security_groups.list()
-        assert_is_not_none(securityGroupList)
-        securityGroup = [x for x in securityGroupList
-                         if x.name in self.secGroupName]
-        assert_is_not_none(securityGroup)
-
-    @test
-    def test_get_security_group(self):
-        securityGroup = dbaas.security_groups.get(self.testSecurityGroup.id)
-        assert_is_not_none(securityGroup)
-        assert_equal(securityGroup.name, self.secGroupName)
-        assert_equal(securityGroup.description, self.secGroupDescription)
-        assert_equal(securityGroup.instance_id, instance_info.id)
-
-
-@test(depends_on_classes=[SecurityGroupsTest],
-      groups=[GROUP, GROUP_SECURITY_GROUPS])
-class SecurityGroupsRulesTest(object):
-
-    # Security group already have default rule
-    # that is why 'delete'-test is not needed anymore
-
-    @before_class
-    def setUp(self):
-        self.testSecurityGroup = dbaas.security_groups.get(
-            instance_info.id)
-        self.secGroupName = (
-            "%s_%s" % (CONF.trove_security_group_name_prefix, instance_info.id)
-        )
-        self.secGroupDescription = "Security Group for %s" % instance_info.id
-        self.orig_allowable_empty_sleeps = (event_simulator.
-                                            allowable_empty_sleeps)
-        event_simulator.allowable_empty_sleeps = 2
-        self.test_rule_id = None
-
-    @after_class
-    def tearDown(self):
-        (event_simulator.
-         allowable_empty_sleeps) = self.orig_allowable_empty_sleeps
-
-    @test
-    def test_create_security_group_rule(self):
-        # Need to sleep to verify created/updated timestamps
-        time.sleep(1)
-        cidr = "1.2.3.4/16"
-        self.testSecurityGroupRules = (
-            dbaas.security_group_rules.create(
-                group_id=self.testSecurityGroup.id,
-                cidr=cidr))
-        assert_not_equal(len(self.testSecurityGroupRules), 0)
-        assert_is_not_none(self.testSecurityGroupRules)
-        for rule in self.testSecurityGroupRules:
-            assert_is_not_none(rule)
-            assert_equal(rule['security_group_id'],
-                         self.testSecurityGroup.id)
-            assert_is_not_none(rule['id'])
-            assert_equal(rule['cidr'], cidr)
-            assert_equal(rule['from_port'], 3306)
-            assert_equal(rule['to_port'], 3306)
-            assert_is_not_none(rule['created'])
-            self.test_rule_id = rule['id']
-
-        if not CONFIG.fake_mode:
-            group = dbaas.security_groups.get(
-                self.testSecurityGroup.id)
-            assert_not_equal(self.testSecurityGroup.created,
-                             group.updated)
-            assert_not_equal(self.testSecurityGroup.updated,
-                             group.updated)
-
-    @test(depends_on=[test_create_security_group_rule])
-    def test_delete_security_group_rule(self):
-        # Need to sleep to verify created/updated timestamps
-        time.sleep(1)
-        group_before = dbaas.security_groups.get(
-            self.testSecurityGroup.id)
-        dbaas.security_group_rules.delete(self.test_rule_id)
-        assert_equal(204, dbaas.last_http_code)
-
-        if not CONFIG.fake_mode:
-            group = dbaas.security_groups.get(
-                self.testSecurityGroup.id)
-            assert_not_equal(group_before.created,
-                             group.updated)
-            assert_not_equal(group_before.updated,
-                             group.updated)
-            assert_not_equal(self.testSecurityGroup,
-                             group.updated)
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],

@@ -94,7 +94,6 @@ black_box_groups = [
     GROUP_SERVICES_INITIALIZE,
     instances.GROUP_START,
     instances.GROUP_QUOTAS,
-    instances.GROUP_SECURITY_GROUPS,
     backups.GROUP,
     replication.GROUP,
     configurations.GROUP,
