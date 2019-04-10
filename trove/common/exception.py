@@ -684,6 +684,11 @@ class LogAccessForbidden(Forbidden):
     message = _("You must be admin to %(action)s log '%(log)s'.")
 
 
+class LogsNotAvailable(Forbidden):
+
+    message = _("Log actions are not supported.")
+
+
 class SlaveOperationNotSupported(TroveError):
 
     message = _("The '%(operation)s' operation is not supported for slaves in "
