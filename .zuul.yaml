@@ -193,6 +193,8 @@
     name: trove-scenario-mariadb-single
     parent: trove-devstack-base
     vars:
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-single
 
