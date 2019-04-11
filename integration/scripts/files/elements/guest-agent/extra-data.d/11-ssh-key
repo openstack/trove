@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+# CONTEXT: HOST prior to IMAGE BUILD as SCRIPT USER
+# PURPOSE: creates the SSH key on the host if it doesn't exist.  Then this copies the keys over to a staging area where
+# they will be duplicated in the guest VM.
+# This process allows the host to log into the guest but more importantly the guest phones home to get the trove
+# source
+
+source $_LIB/die
+
+HOST_USERNAME=${HOST_USERNAME:-"ubuntu"}
+SSH_DIR=${SSH_DIR:-"/home/${HOST_USERNAME}/.ssh"}
+
+[ -n "${TMP_HOOKS_PATH}" ] || die "Temp hook path not set"
+
+# copy files over the "staging" area for the guest image (they'll later be put in the correct location by the guest user
+# not these keys should not be overridden otherwise a) you won't be able to ssh in and b) the guest won't be able to
+# rsync the files
+if [ -f ${SSH_DIR}/id_rsa ]; then
+   dd if=${SSH_DIR}/authorized_keys of=${TMP_HOOKS_PATH}/ssh-authorized-keys
+   dd if=${SSH_DIR}/id_rsa of=${TMP_HOOKS_PATH}/ssh-id_rsa
+   dd if=${SSH_DIR}/id_rsa.pub of=${TMP_HOOKS_PATH}/ssh-id_rsa.pub
+else
+    die "SSH Authorized Keys file must exist along with pub and private key"
+fi

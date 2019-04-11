@@ -1,0 +1,62 @@
+guest-agent:
+  installtype: package
+build-essential:
+  installtype: source
+libffi-dev:
+  installtype: source
+libssl-dev:
+  installtype: source
+python-dev:
+  installtype: source
+
+python-sqlalchemy:
+python-lxml:
+python-eventlet:
+python-webob:
+python-httplib2:
+python-iso8601:
+python-pexpect:
+python-mysqldb:
+python-migrate:
+acl:
+acpid:
+apparmor:
+apparmor-utils:
+apt-transport-https:
+at:
+bash-completion:
+cloud-guest-utils:
+cloud-init:
+cron:
+curl:
+dbus:
+dkms:
+dmeventd:
+ethtool:
+gawk:
+ifenslave:
+ifupdown:
+iptables:
+iputils-tracepath:
+irqbalance:
+isc-dhcp-client:
+less:
+logrotate:
+lsof:
+net-tools:
+netbase:
+netcat-openbsd:
+open-vm-tools:
+openssh-client:
+openssh-server:
+pollinate:
+psmisc:
+rsyslog:
+screen:
+socat:
+tcpdump:
+ubuntu-cloudimage-keyring:
+ureadahead:
+uuid-runtime:
+vim-tiny:
+vlan:

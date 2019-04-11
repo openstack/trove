@@ -1,0 +1,14 @@
+/var/log/guest-agent.log {
+    daily
+    rotate 10
+    missingok
+    notifempty
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        # Signal name shall not have the SIG prefix in kill command
+        # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/kill.html
+        kill -s USR1 $(cat /var/run/guest-agent.pid)
+    endscript
+}

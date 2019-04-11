@@ -631,12 +631,21 @@ function _setup_minimal_image {
 
     if [ -d ${SSH_DIR} ]; then
         cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+        sort ${SSH_DIR}/authorized_keys | uniq > ${SSH_DIR}/authorized_keys.uniq
+        mv ${SSH_DIR}/authorized_keys.uniq ${SSH_DIR}/authorized_keys
     else
         mkdir -p ${SSH_DIR}
         /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
         cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
         chmod 600 ${SSH_DIR}/authorized_keys
     fi
+
+    # Make sure the guest agent has permission to ssh into the devstack host
+    # in order to download trove code during the service initialization.
+    home_keys=$HOME/.ssh/authorized_keys
+    cat ${SSH_DIR}/id_rsa.pub >> ${home_keys}
+    sort ${home_keys} | uniq > ${home_keys}.uniq
+    mv ${home_keys}.uniq ${home_keys}
 
     echo "Run disk image create to actually create a new image"
     disk-image-create -a amd64 -o "${VM}" -x ${QEMU_IMG_OPTIONS} ${DISTRO} \
@@ -723,6 +732,10 @@ if is_service_enabled trove; then
         # Start the trove API and trove taskmgr components
         echo_summary "Starting Trove"
         start_trove
+
+        # Guarantee the file permission in the trove code repo in order to
+        # download trove code from trove-guestagent.
+        sudo chown -R $STACK_USER:$STACK_USER "$DEST/trove"
     elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
         echo_summary "Configuring Tempest for Trove"
         configure_tempest_for_trove

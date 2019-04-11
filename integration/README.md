@@ -1,93 +1,92 @@
-## Integration dev scripts, tests and docs for Trove.
+# Trove integration script - trovestack
 
-***
+## Steps to setup environment
 
-### Steps to setup this environment:
+Install a fresh Ubuntu 16.04 (xenial) image. We suggest creating a development virtual machine using the image.
 
-Install a fresh Ubuntu 16.04 (xenial) image ( _We suggest creating a development virtual machine using the image_ )
+1. Login to the machine as root
+1. Make sure we have git installed
 
-#### Login to the machine as root
-
-#### Make sure we have git installed:
-
+    ```
     # apt-get update
     # apt-get install git-core -y
+    ```
 
-#### Add a user named ubuntu if you do not already have one:
+1. Add a user named ubuntu if you do not already have one:
 
+    ```
     # adduser ubuntu
     # visudo
+    ```
 
-  add this line to the file below the root user
+    Add this line to the file below the root user
 
-    ubuntu  ALL=(ALL:ALL) ALL
+        ubuntu  ALL=(ALL:ALL) ALL
 
-    **OR use this if you dont want to type your password to sudo a command**
+    Or use this if you dont want to type your password to sudo a command:
 
-    ubuntu  ALL=(ALL) NOPASSWD: ALL
+        ubuntu  ALL=(ALL) NOPASSWD: ALL
 
-  if /dev/pts/0 does not have read/write for your user
+    if /dev/pts/0 does not have read/write for your user
 
-    # chmod 666 /dev/pts/0
+        # chmod 666 /dev/pts/0
 
-  *Note that this number can change and if you can not connect to the screen session then the /dev/pts/# needs modding like above.*
+    > Note that this number can change and if you can not connect to the screen session then the /dev/pts/# needs modding like above.
 
-#### Login with ubuntu:
+1. Login with ubuntu and download the Trove code.
 
+    ```shell
     # su ubuntu
     $ mkdir -p /opt/stack
     $ cd /opt/stack
+    ```
 
-    *Note that it is important that you clone the repository
-     here. This is a change from the earlier trove-integration where
-     you could clone trove-integration anywhere you wanted (like HOME)
-     and trove would get cloned for you in the right place. Since
-     trovestack is now in the trove repository, if you wish to test
-     changes that you have made to trove, it is advisable for you to
-     have your trove repository in /opt/stack to avoid another trove
-     repository being cloned for you.
+    > Note that it is important that you clone the repository
+    here. This is a change from the earlier trove-integration where
+    you could clone trove-integration anywhere you wanted (like HOME)
+    and trove would get cloned for you in the right place. Since
+    trovestack is now in the trove repository, if you wish to test
+    changes that you have made to trove, it is advisable for you to
+    have your trove repository in /opt/stack to avoid another trove
+    repository being cloned for you.
 
-#### Clone this repo:
-
+1. Clone this repo and go into the scripts directory
+    ```
     $ git clone https://github.com/openstack/trove.git
-
-#### Go into the scripts directory:
-
     $ cd trove/integration/scripts/
+    ```
 
-#### Running trovestack:
-*Run this to get the command list with a short description of each*
+## Running trovestack
+
+Run this to get the command list with a short description of each
 
     $ ./trovestack
 
-#### Install all the dependencies and then install trove via trovestack.
-*This brings up trove (rd-api rd-tmgr) and initializes the trove database.*
+### Install Trove
+*This brings up trove services and initializes the trove database.*
 
     $ ./trovestack install
 
-***
-
-#### Connecting to the screen session
+### Connecting to the screen session
 
     $ screen -x stack
 
-*If that command fails with the error*
+If that command fails with the error
 
     Cannot open your terminal '/dev/pts/1'
 
-*If that command fails with the error chmod the corresponding /dev/pts/#*
+If that command fails with the error chmod the corresponding /dev/pts/#
 
     $ chmod 660 /dev/pts/1
 
-#### Navigate the log screens
+### Navigate the log screens
 To produce the list of screens that you can scroll through and select
 
     ctrl+a then "
 
-Num Name
-
+An example of screen list:
+```
 ..... (full list ommitted)
-
 20 c-vol
 21 h-eng
 22 h-api
@@ -96,6 +95,7 @@ Num Name
 25 tr-api
 26 tr-tmgr
 27 tr-cond
+```
 
 Alternatively, to go directly to a specific screen window
 
@@ -103,58 +103,47 @@ Alternatively, to go directly to a specific screen window
 
 then enter a number (like 25) or name (like tr-api)
 
-#### Detach from the screen session
+### Detach from the screen session
 Allows the services to continue running in the background
 
     ctrl+a then d
 
-***
-
-#### Kick start the build/test-init/build-image commands
+### Kick start the build/test-init/build-image commands
 *Add mysql as a parameter to set build and add the mysql guest image. This will also populate /etc/trove/test.conf with appropriate values for running the integration tests.*
 
     $ ./trovestack kick-start mysql
 
-*Optional commands if you did not run kick-start*
-
-#### Initialize the test configuration and set up test users (overwrites /etc/trove/test.conf)
+### Initialize the test configuration and set up test users (overwrites /etc/trove/test.conf)
 
     $ ./trovestack test-init
 
-#### Build the image and add it to glance
+### Build guest agent image
+The trove guest agent image could be created using `trovestack` script 
+according to the following command:
 
-    $ ./trovestack build-image mysql
+```shell
+PATH_DEVSTACK_OUTPUT=/opt/stack \
+  ./trovestack build-image \
+  ${datastore_type} \
+  ${guest_os} \
+  ${guest_os_release} \
+  ${dev_mode}
+```
 
-***
+- If the script is running as a part of DevStack, the viriable 
+  `PATH_DEVSTACK_OUTPUT` is set automatically.
+- if `dev_mode=false`, the trove code for guest agent is injected into the 
+  image at the building time. Now `dev_mode=false` is still in experimental
+  and not considered production ready yet.
+- If `dev_mode=true`, the script assumes to be running on the host of 
+  trove-taskmanager, otherwise, `CONTROLLER_IP` needs to be specified 
+  explicitly.
 
-### Reset your environment
+For example, build a Mysql image for Ubuntu Xenial operating system:
 
-#### Stop all the services running in the screens and refresh the environment:
-
-    $ killall -9 screen
-    $ screen -wipe
-    $ RECLONE=yes ./trovestack install
-    $ ./trovestack kick-start mysql
-
- or
-
-    $ RECLONE=yes ./trovestack install
-    $ ./trovestack test-init
-    $ ./trovestack build-image mysql
-
-***
-
-### Recover after reboot
-If the VM was restarted, then the process for bringing up Openstack and Trove is quite simple
-
-    $./trovestack start-deps
-    $./trovestack start
-
-Use screen to ensure all modules have started without error
-
-    $screen -r stack
-
-***
+```shell
+$ ./trovestack build-image mysql ubuntu xenial false
+```
 
 ### Running Integration Tests
 Check the values in /etc/trove/test.conf in case it has been re-initialized prior to running the tests. For example, from the previous mysql steps:
@@ -167,21 +156,44 @@ should be:
     "dbaas_datastore": "mysql",
     "dbaas_datastore_version": "5.5",
 
-Once Trove is running on DevStack, you can use the dev scripts to run the integration tests locally.
+Once Trove is running on DevStack, you can run the integration tests locally.
 
     $./trovestack int-tests
 
-This will runs all of the blackbox tests by default. Use the --group option to run a different group:
+This will runs all of the blackbox tests by default. Use the `--group` option to run a different group:
 
     $./trovestack int-tests --group=simple_blackbox
 
-You can also specify the TESTS_USE_INSTANCE_ID environment variable to have the integration tests use an existing instance for the tests rather than creating a new one.
+You can also specify the `TESTS_USE_INSTANCE_ID` environment variable to have the integration tests use an existing instance for the tests rather than creating a new one.
 
     $./TESTS_DO_NOT_DELETE_INSTANCE=True TESTS_USE_INSTANCE_ID=INSTANCE_UUID ./trovestack int-tests --group=simple_blackbox
 
-***
+## Reset your environment
 
-### VMware Fusion 5 speed improvement
+### Stop all the services running in the screens and refresh the environment
+
+    $ killall -9 screen
+    $ screen -wipe
+    $ RECLONE=yes ./trovestack install
+    $ ./trovestack kick-start mysql
+
+ or
+
+    $ RECLONE=yes ./trovestack install
+    $ ./trovestack test-init
+    $ ./trovestack build-image mysql
+
+## Recover after reboot
+If the VM was restarted, then the process for bringing up Openstack and Trove is quite simple
+
+    $./trovestack start-deps
+    $./trovestack start
+
+Use screen to ensure all modules have started without error
+
+    $screen -r stack
+
+## VMware Fusion 5 speed improvement
 Running Ubuntu with KVM or Qemu can be extremely slow without certain optimizations. The following are some VMware settings that can improve performance and may also apply to other virtualization platforms.
 
 1. Shutdown the Ubuntu VM.
@@ -203,7 +215,7 @@ INFO: /dev/kvm exists
 KVM acceleration can be used
 ```
 
-### VMware Workstation performance improvements
+## VMware Workstation performance improvements
 
 In recent versions of VMWare, you can get much better performance if you enable the right virtualization options. For example, in VMWare Workstation (found in version 10.0.2), click on VM->Settings->Processor.
 

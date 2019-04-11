@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenStack Trove Guest Agent
+After=network.target syslog.service
+Wants=syslog.service
+
+[Service]
+ExecStart=/usr/local/bin/guest-agent --config-dir=/etc/trove/conf.d
+KillMode=mixed
+Restart=always
+ExecStartPost=/bin/sh -c "echo $MAINPID > /var/run/guest-agent.pid"
+PIDFile=/var/run/guest-agent.pid
+
+[Install]
+WantedBy=multi-user.target

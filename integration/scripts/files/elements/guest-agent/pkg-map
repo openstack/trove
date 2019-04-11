@@ -1,0 +1,26 @@
+{
+  "family": {
+    "redhat": {
+      "guest-agent": "openstack-trove-guest-agent",
+      "netcat-openbsd": "nmap-ncat",
+      "netbase": "",
+      "cron": "",
+      "ifenslave": "",
+      "iputils-tracepath": "",
+      "cloud-guest-utils": "",
+      "apparmor": "",
+      "dmeventd": "",
+      "isc-dhcp-client": "",
+      "uuid-runtime": "",
+      "ubuntu-cloudimage-keyring": "",
+      "vim-tiny": "",
+      "ureadahead": "",
+      "apt-transport-https": "",
+      "pollinate": "",
+      "ifupdown": ""
+    }
+  },
+  "default": {
+    "guest-agent": "guest-agent"
+  }
+}
