@@ -1341,6 +1341,9 @@ function cmd_gate_tests() {
     CLOUDINIT_PATH=/etc/trove/cloudinit/mysql.cloudinit
     PUBKEY=`cat ${HOME}/.ssh/id_rsa.pub`
 
+    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
+    sudo touch "$CLOUDINIT_PATH"
+
     sudo echo "#!/bin/sh" | sudo tee $CLOUDINIT_PATH
     sudo echo "" | sudo tee -a $CLOUDINIT_PATH
     sudo echo "echo '${PUBKEY}' > /home/ubuntu/.ssh/authorized_keys" | sudo tee -a $CLOUDINIT_PATH
