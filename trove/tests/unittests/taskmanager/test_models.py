@@ -79,6 +79,7 @@ class fake_Server(object):
         self.security_groups = None
         self.block_device_mapping_v2 = None
         self.status = 'ACTIVE'
+        self.key_name = None
 
 
 class fake_ServerManager(object):
@@ -86,7 +87,7 @@ class fake_ServerManager(object):
                security_groups, block_device_mapping_v2=None,
                availability_zone=None,
                nics=None, config_drive=False,
-               scheduler_hints=None):
+               scheduler_hints=None, key_name=None):
         server = fake_Server()
         server.id = "server_id"
         server.name = name
@@ -98,6 +99,8 @@ class fake_ServerManager(object):
         server.block_device_mapping_v2 = block_device_mapping_v2
         server.availability_zone = availability_zone
         server.nics = nics
+        server.key_name = key_name
+
         return server
 
 
@@ -239,6 +242,14 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             None, None, None, datastore_manager, None, None, None)
         self.assertEqual(server.userdata, self.userdata)
 
+    def test_create_instance_with_keypair(self):
+        cfg.CONF.set_override('nova_keypair', 'fake_keypair')
+
+        server = self.freshinstancetasks._create_server(
+            None, None, None, None, None, None, None)
+
+        self.assertEqual('fake_keypair', server.key_name)
+
     @patch.object(DBInstance, 'get_by')
     def test_create_instance_guestconfig(self, patch_get_by):
         cfg.CONF.set_override('guest_config', self.guestconfig)
@@ -303,15 +314,18 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
                                                None, 'mysql', None, None,
                                                None)
-        mock_servers_create.assert_called_with('fake-hostname', 'fake-image',
-                                               'fake-flavor', files={},
-                                               userdata=None,
-                                               security_groups=None,
-                                               block_device_mapping_v2=None,
-                                               availability_zone=None,
-                                               nics=None,
-                                               config_drive=True,
-                                               scheduler_hints=None)
+        mock_servers_create.assert_called_with(
+            'fake-hostname', 'fake-image',
+            'fake-flavor', files={},
+            userdata=None,
+            security_groups=None,
+            block_device_mapping_v2=None,
+            availability_zone=None,
+            nics=None,
+            config_drive=True,
+            scheduler_hints=None,
+            key_name=None
+        )
 
     @patch.object(InstanceServiceStatus, 'find_by',
                   return_value=fake_InstanceServiceStatus.find_by())

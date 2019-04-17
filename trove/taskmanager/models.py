@@ -890,14 +890,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         name = self.hostname or self.name
         bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive
+        key_name = CONF.nova_keypair
 
         server = self.nova_client.servers.create(
             name, image_id, flavor_id, files=files, userdata=userdata,
             security_groups=security_groups, block_device_mapping_v2=bdmap_v2,
             availability_zone=availability_zone, nics=nics,
-            config_drive=config_drive, scheduler_hints=scheduler_hints)
+            config_drive=config_drive, scheduler_hints=scheduler_hints,
+            key_name=key_name)
         LOG.debug("Created new compute instance %(server_id)s "
-                  "for instance %(id)s",
+                  "for database instance %(id)s",
                   {'server_id': server.id, 'id': self.id})
         return server
 
