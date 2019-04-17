@@ -1146,7 +1146,7 @@ class CassandraAdmin(object):
         if user:
             return user.databases
 
-        raise exception.UserNotFound(username)
+        raise exception.UserNotFound(uuid=username)
 
     def _deserialize_keyspace(self, keyspace_dict, check_reserved=True):
         if keyspace_dict:

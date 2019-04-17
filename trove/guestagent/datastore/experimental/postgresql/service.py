@@ -654,7 +654,7 @@ class PgSqlAdmin(object):
         if user is not None:
             return user.databases
 
-        raise exception.UserNotFound(username)
+        raise exception.UserNotFound(uuid=username)
 
     def create_database(self, context, databases):
         """Create the list of specified databases.

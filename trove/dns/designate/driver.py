@@ -104,7 +104,7 @@ class DesignateDriver(driver.DnsDriver):
         matching_record = [rec for rec in records
                            if rec.name == name + '.' and rec.type == type]
         if not matching_record:
-            raise exception.DnsRecordNotFound(name)
+            raise exception.DnsRecordNotFound(name=name)
         LOG.debug("Deleting DNS entry %s.", name)
         self.dns_client.records.delete(dns_zone.id, matching_record[0].id)
 
