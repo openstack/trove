@@ -1,0 +1,13 @@
+features:
+  - Added a new config option ``nova_keypair`` to specify an existing Nova
+    keypair name for the database instance creation, the cloud administrator is
+    responsible for the keypair management and configuration. It's recommended
+    to create Trove database instance in the admin project for security
+    reasons, so only the cloud administrator who has the private key can access
+    the database instance. With the keypair support, ssh keys are no longer
+    injected into Trove guest agent image at build time.
+upgrade:
+  - Cloud administrator needs to create a Nova keypair and specify the keypair
+    name for config option ``nova_keypair``, the private key is used to ssh
+    into new database instances created. The previous private key is also
+    needed to ssh into the existing database instances.

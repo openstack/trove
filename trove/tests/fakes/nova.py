@@ -101,7 +101,7 @@ class FakeServer(object):
     next_local_id = 0
 
     def __init__(self, parent, owner, id, name, image_id, flavor_ref,
-                 volumes):
+                 volumes, key_name):
         self.owner = owner  # This is a context.
         self.id = id
         self.parent = parent
@@ -125,6 +125,7 @@ class FakeServer(object):
         setattr(self, 'OS-EXT-AZ:availability_zone', 'nova')
 
         self._info = {'os:volumes': info_vols}
+        self.key_name = key_name
 
     @property
     def addresses(self):
@@ -268,11 +269,11 @@ class FakeServers(object):
     def create(self, name, image_id, flavor_ref, files=None, userdata=None,
                block_device_mapping_v2=None, security_groups=None,
                availability_zone=None, nics=None, config_drive=False,
-               scheduler_hints=None):
+               scheduler_hints=None, key_name=None):
         id = "FAKE_%s" % uuid.uuid4()
         volumes = self._get_volumes_from_bdm_v2(block_device_mapping_v2)
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
-                            volumes)
+                            volumes, key_name)
         self.db[id] = server
         if name.endswith('SERVER_ERROR'):
             raise nova_exceptions.ClientException("Fake server create error.")
