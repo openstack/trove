@@ -2,40 +2,36 @@
 
 # CONTEXT: GUEST during CONSTRUCTION as ROOT
 # PURPOSE: Install controller base required packages
+# Refer to https://mariadb.com/kb/en/library/installing-mariadb-deb-files
 
 set -e
 set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
 
-# NOTE(vkmc): Using MariaDB repositories is required
-# https://mariadb.com/kb/en/mariadb/installing-mariadb-deb-files/
-apt-get -y install software-properties-common
+# These GPG key IDs are used to fetch keys from a keyserver on Ubuntu & Debian
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
+curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup |
+  bash -s -- --mariadb-server-version="mariadb-10.4" --skip-key-import --skip-maxscale
 
-get_key_robust 0xF1656F24C74CD1D8
+# NOTE(lxkong): Refer to https://www.percona.com/doc/percona-xtrabackup/2.4/installation/apt_repo.html
+wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
+dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
 
-add-apt-repository 'deb http://ftp.osuosl.org/pub/mariadb/repo/10.1/ubuntu xenial main'
+apt-get update
 
-# Pin MariaDB repository
-sudo echo -e "Package: *\nPin: origin ftp.osuosl.org\nPin-Priority: 1000" > /etc/apt/preferences.d/mariadb.pref
+# Disable password prompt
+debconf-set-selections <<< "mariadb-server mysql-server/root_password password ''"
+debconf-set-selections <<< "mariadb-server mysql-server/root_password_again password ''"
 
-apt-get -y update
-apt-get -y install socat percona-xtrabackup
-apt-get -y install libmariadbclient18 mariadb-server
+apt-get install -y --allow-unauthenticated mariadb-server mariadb-client galera-4 libmariadb3 mariadb-backup mariadb-common percona-xtrabackup-24
 
-cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
+cat <<EOF >/etc/mysql/conf.d/no_perf_schema.cnf
 [mysqld]
 performance_schema = off
-_EOF_
+EOF
 
-mv /etc/mysql/my.cnf.fallback /etc/mysql/my.cnf
 chown mysql:mysql /etc/mysql/my.cnf
-cat >/etc/mysql/my.cnf <<_EOF_
-[mysql]
-
-!includedir /etc/mysql/conf.d/
-_EOF_
-
-rm /etc/init.d/mysql
+rm -f /etc/init.d/mysql
 systemctl daemon-reload
 systemctl enable mariadb
