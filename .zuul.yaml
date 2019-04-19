@@ -61,7 +61,7 @@
     post-run: playbooks/legacy/trove-functional-dsvm-mysql/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -75,8 +75,8 @@
     post-run: playbooks/legacy/grenade-dsvm-trove/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-dev/grenade
-      - openstack-infra/devstack-gate
+      - openstack/grenade
+      - openstack/devstack-gate
       - openstack/trove
       - openstack/trove-dashboard
 
@@ -87,7 +87,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-cassandra-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -101,7 +101,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-cassandra-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -115,7 +115,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-couchdb-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -129,7 +129,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-couchbase-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -143,7 +143,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-mariadb-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -157,7 +157,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-mariadb-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -171,7 +171,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-mongodb-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -185,7 +185,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-mongodb-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -199,7 +199,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-mysql-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -213,7 +213,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-mysql-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -227,7 +227,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-percona-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -241,7 +241,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-percona-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -255,7 +255,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-postgresql-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -269,7 +269,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-postgresql-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -283,7 +283,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-pxc-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -297,7 +297,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-pxc-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -311,7 +311,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-redis-single/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
@@ -325,7 +325,7 @@
     post-run: playbooks/legacy/trove-scenario-dsvm-redis-multi/post.yaml
     timeout: 10800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/diskimage-builder
       - openstack/python-troveclient
       - openstack/tripleo-image-elements
