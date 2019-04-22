@@ -323,7 +323,7 @@ function run_review_for() {
     do
         # This should be the ref spec for what we pull
         pushd $PATH_ARG
-        git_timed pull https://review.openstack.org/p/openstack/$GIT_NAME refs/changes/$review
+        git_timed pull https://review.opendev.org/p/openstack/$GIT_NAME refs/changes/$review
         popd
     done
 }

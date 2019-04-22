@@ -130,8 +130,8 @@ Obtain the Trove source components from OpenStack repositories:
 .. code-block:: bash
 
     $ cd ~
-    $ git clone https://git.openstack.org/openstack/trove.git
-    $ git clone https://git.openstack.org/openstack/python-troveclient.git
+    $ git clone https://opendev.org/openstack/trove.git
+    $ git clone https://opendev.org/openstack/python-troveclient.git
 
 
 Install Trove
