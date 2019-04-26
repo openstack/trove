@@ -81,9 +81,10 @@ class BaseDbStatus(object):
         # Set the value of __prepared_completed based on the existence of
         # the file.  This is required as the state is cached so this method
         # must be called any time the existence of the file changes.
-        self.__prepare_completed = os.path.isfile(
+        is_file = os.path.isfile(
             guestagent_utils.build_file_path(
                 self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME))
+        self.__prepare_completed = is_file if is_file else None
 
     def begin_install(self):
         """First call of the DB prepare."""

@@ -16,6 +16,7 @@
 
 import abc
 import operator
+import os
 
 from oslo_config import cfg as oslo_cfg
 from oslo_log import log as logging
@@ -408,6 +409,21 @@ class Manager(periodic_task.PeriodicTasks):
         from the pre_upgrade step
         """
         pass
+
+    def _restore_directory(self, restore_dir, target_dir, owner=None):
+        restore_path = os.path.join(restore_dir, ".")
+        operating_system.copy(restore_path, target_dir,
+                              preserve=True, as_root=True)
+        if owner is not None:
+            operating_system.chown(path=target_dir, user=owner, group=owner,
+                                   recursive=True, as_root=True)
+
+    def _restore_home_directory(self, saved_home_dir):
+        home_dir = os.path.expanduser("~")
+        home_owner = operating_system.get_current_user()
+        self._restore_directory(restore_dir=saved_home_dir,
+                                target_dir=home_dir,
+                                owner=home_owner)
 
     #################
     # Service related

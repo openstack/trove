@@ -484,6 +484,42 @@ class ManagerTest(trove_testtools.TestCase):
                 error_occurred=True,
                 post_processing=ANY)
 
+    @patch.object(operating_system, 'copy')
+    @patch.object(operating_system, 'chown')
+    def test_restore_directory_with_owner(self, chown_mock, copy_mock):
+        restore_dir = '/restore_directory'
+        restore_files = '/restore_directory/.'
+        target_dir = '/target_directory'
+        owner = 'owner'
+        self.manager._restore_directory(restore_dir, target_dir, owner)
+        copy_mock.assert_called_once_with(restore_files, target_dir,
+                                          preserve=True, as_root=True)
+        chown_mock.assert_called_once_with(path=target_dir, user=owner,
+                                           group=owner, recursive=True,
+                                           as_root=True)
+
+    @patch.object(operating_system, 'copy')
+    @patch.object(operating_system, 'chown')
+    def test_restore_directory_without_owner(self, chown_mock, copy_mock):
+        restore_dir = '/restore_directory'
+        restore_files = '/restore_directory/.'
+        target_dir = '/target_directory'
+        self.manager._restore_directory(restore_dir, target_dir)
+        copy_mock.assert_called_once_with(restore_files, target_dir,
+                                          preserve=True, as_root=True)
+        chown_mock.assert_not_called()
+
+    @patch.object(manager.Manager, '_restore_directory')
+    @patch.object(operating_system, 'get_current_user', return_value='trove')
+    def test_restore_home_directory(self, os_mock, restore_mock):
+        saved_home_dir = '/old_home'
+        with patch.object(os.path, 'expanduser', return_value='/home/trove'):
+            self.manager._restore_home_directory(saved_home_dir)
+            os_mock.assert_any_call()
+            restore_mock.assert_called_once_with(restore_dir=saved_home_dir,
+                                                 target_dir='/home/trove',
+                                                 owner='trove')
+
     def test_module_list(self):
         with patch.object(module_manager.ModuleManager, 'read_module_results',
                           return_value=[
