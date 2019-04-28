@@ -89,7 +89,7 @@ Other references:
    - https://wiki.openstack.org/wiki/ReviewChecklist
    - https://wiki.openstack.org/wiki/GitCommitMessages
    - https://docs.openstack.org/hacking/latest/
-   - https://review.openstack.org/#/c/116176/
+   - https://review.opendev.org/#/c/116176/
    - trove-pylint readme file in tools/trove-pylint.README
 
 Code Review Priority

@@ -12,13 +12,13 @@ Getting Started
 
 If you'd like to run from the master branch, you can clone the git repo:
 
-    git clone https://git.openstack.org/cgit/openstack/trove
+    git clone https://opendev.org/openstack/trove
 
 For information on how to contribute to trove, please see
 CONTRIBUTING.rst_ and HACKING.rst_
 
-.. _CONTRIBUTING.rst: https://git.openstack.org/cgit/openstack/trove/plain/CONTRIBUTING.rst
-.. _HACKING.rst: https://git.openstack.org/cgit/openstack/trove/plain/HACKING.rst
+.. _CONTRIBUTING.rst: https://opendev.org/openstack/trove/plain/CONTRIBUTING.rst
+.. _HACKING.rst: https://opendev.org/openstack/trove/plain/HACKING.rst
 
 * `Wiki <https://wiki.openstack.org/wiki/Trove>`_
 * `Developer Docs <https://docs.openstack.org/trove/latest/>`_
@@ -36,13 +36,13 @@ Python client
 -------------
 Python-troveclient_ is a client for Trove.
 
-.. _Python-troveclient: https://git.openstack.org/cgit/openstack/python-troveclient
+.. _Python-troveclient: https://opendev.org/openstack/python-troveclient
 
 Dashboard plugin
 ----------------
 Trove-dashboard_ is OpenStack dashbaord plugin for Trove.
 
-.. _Trove-dashboard: https://git.openstack.org/cgit/openstack/trove-dashboard
+.. _Trove-dashboard: https://opendev.org/openstack/trove-dashboard
 
 References
 ----------
