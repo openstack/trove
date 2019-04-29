@@ -14,7 +14,7 @@ To enable Trove in DevStack, perform the following steps:
 Download DevStack
 =================
 
-.. sourcecode:: bash
+.. code-block:: bash
 
     export DEVSTACK_DIR=~/devstack
     git clone https://opendev.org/openstack/devstack.git $DEVSTACK_DIR
@@ -25,14 +25,14 @@ Enable the Trove plugin
 Enable the plugin by adding the following section to
 ``$DEVSTACK_DIR/local.conf``
 
-.. sourcecode:: bash
+.. code-block:: bash
 
      [[local|localrc]]
      enable_plugin trove https://opendev.org/openstack/trove
 
 Optionally, a git refspec (branch or tag or commit) may be provided as follows:
 
-.. sourcecode:: bash
+.. code-block:: bash
 
      [[local|localrc]]
      enable_plugin trove https://opendev.org/openstack/trove <refspec>
@@ -40,7 +40,7 @@ Optionally, a git refspec (branch or tag or commit) may be provided as follows:
 Run the DevStack utility
 ========================
 
-.. sourcecode:: bash
+.. code-block:: bash
 
      cd $DEVSTACK_DIR
      ./stack.sh
