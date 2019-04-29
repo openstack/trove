@@ -649,6 +649,10 @@ class DBaaSClusterGrow(DBaaSAPINotification):
     def required_start_traits(self):
         return ['cluster_id']
 
+    @abc.abstractmethod
+    def required_end_traits(self):
+        return ['cluster_id']
+
 
 class DBaaSClusterShrink(DBaaSAPINotification):
 
@@ -658,6 +662,10 @@ class DBaaSClusterShrink(DBaaSAPINotification):
 
     @abc.abstractmethod
     def required_start_traits(self):
+        return ['cluster_id']
+
+    @abc.abstractmethod
+    def required_end_traits(self):
         return ['cluster_id']
 
 

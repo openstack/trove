@@ -331,7 +331,9 @@ class Cluster(object):
                 return self.grow(instances)
         elif action == 'shrink':
             context.notification = DBaaSClusterShrink(context, request=req)
-            with StartNotification(context, cluster_id=self.id):
+            instance_ids = [instance['id'] for instance in param]
+            with StartNotification(context, cluster_id=self.id,
+                                   instance_ids=instance_ids):
                 instance_ids = [instance['id'] for instance in param]
                 return self.shrink(instance_ids)
         elif action == "reset-status":
