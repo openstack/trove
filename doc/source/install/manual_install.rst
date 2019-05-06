@@ -171,17 +171,21 @@ Additionally, you will need to register Trove as an OpenStack service and its en
 
 .. code-block:: bash
 
-    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 tenant-create --user trove_for_trove_usage
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity project create trove_for_trove_usage
 
-    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 user-create --user regular_trove_user --pass trove --tenant trove_for_trove_usage
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity user create regular_trove_user --project trove_for_trove_usage --password-prompt
 
-    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 user-create --user admin_trove_user --pass trove --tenant trove_for_trove_usage
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity user create admin_trove_user --project trove_for_trove_usage --password-prompt
 
-    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 user-role-add --user admin_trove_user --tenant trove_for_trove_usage --role admin
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity role add --user admin_trove_user --project trove_for_trove_usage admin
 
-    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 service-create --user trove --type database
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity service create --name trove --description "Database" database
 
-    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 endpoint-create --service trove --region RegionOne --publicurl 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s' --adminurl 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s' --internalurl 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s'
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity endpoint create --region RegionOne database public 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s'
+
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity endpoint create --region RegionOne database admin 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s'
+
+    $ openstack --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-project-name <OpenStackAdminProject> --os-domain-name <OpenstackDomainName> --os-auth-url http://<KeystoneIP>/identity endpoint create --region RegionOne database internal 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s'
 
 Where <EnvironmentPublicIP> and <EnvironmentPort> are the IP address and Port of the server where Trove was installed. This IP should be reachable from any hosts that will be used to communicate with Trove.
 
@@ -372,15 +376,17 @@ You need to build a `keystonerc` file that contains data to simplify the auth pr
 
 .. code-block:: bash
 
-        export OS_TENANT_NAME=trove
+        export OS_PROJECT_NAME=trove
 
         export OS_USERNAME=regular_trove_user
 
-        export OS_PASSWORD=trove
+        export OS_PASSWORD=<UserPassword>
 
-        export OS_AUTH_URL="http://<KeystoneIP>:<KeystonePort>/v2.0/"
+        export OS_AUTH_URL="http://<KeystoneIP>/identity"
 
-        export OS_AUTH_STRATEGY=keystone
+        export OS_USER_DOMAIN_NAME=Default
+
+        export OS_PROJECT_DOMAIN_NAME=Default
 
 Trove deployment verification
 =============================
@@ -401,16 +407,18 @@ To create an instance:
 
 .. code-block:: bash
 
-    $ trove create <name> <flavor_id>
-                    [--size <size>]
-                    [--databases <databases> [<databases> ...]]
-                    [--users <users> [<users> ...]] [--backup <backup>]
+    $ trove create <name> <flavor>
+                    [--size <size>] [--volume_type <volume_type>]
+                    [--databases <database> [<database> ...]]
+                    [--users <user:password> [<user:password> ...]]
+                    [--backup <backup>]
                     [--availability_zone <availability_zone>]
                     [--datastore <datastore>]
                     [--datastore_version <datastore_version>]
-                    [--nic <net-id=net-uuid,v4-fixed-ip=ip-addr,port-id=port-uuid>]
+                    [--nic <net-id=<net-uuid>,v4-fixed-ip=<ip-addr>,port-id=<port-uuid>>]
                     [--configuration <configuration>]
-                    [--replica_of <source_id>]
+                    [--replica_of <source_instance>] [--replica_count <count>]
+                    [--module <module>] [--locality <policy>]
 
 ===============
 Troubleshooting
