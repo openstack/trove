@@ -17,8 +17,8 @@ If you'd like to run from the master branch, you can clone the git repo:
 For information on how to contribute to trove, please see
 CONTRIBUTING.rst_ and HACKING.rst_
 
-.. _CONTRIBUTING.rst: https://opendev.org/openstack/trove/plain/CONTRIBUTING.rst
-.. _HACKING.rst: https://opendev.org/openstack/trove/plain/HACKING.rst
+.. _CONTRIBUTING.rst: https://opendev.org/openstack/trove/src/branch/master/CONTRIBUTING.rst
+.. _HACKING.rst: https://opendev.org/openstack/trove/src/branch/master/HACKING.rst
 
 * `Wiki <https://wiki.openstack.org/wiki/Trove>`_
 * `Developer Docs <https://docs.openstack.org/trove/latest/>`_
