@@ -166,6 +166,8 @@
     vars:
       trove_test_datastore: cassandra
       trove_test_group: cassandra-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-cassandra-multi
@@ -173,6 +175,8 @@
     vars:
       trove_test_datastore: cassandra
       trove_test_group: cassandra-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-couchdb-single
@@ -180,6 +184,8 @@
     vars:
       trove_test_datastore: couchdb
       trove_test_group: couchdb-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-couchbase-single
@@ -187,15 +193,17 @@
     vars:
       trove_test_datastore: couchbase
       trove_test_group: couchbase-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-mariadb-single
     parent: trove-devstack-base
     vars:
-      devstack_localrc:
-        TROVE_DISABLE_IMAGE_SETUP: true
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-mariadb-multi
@@ -203,6 +211,8 @@
     vars:
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-mongodb-single
@@ -210,6 +220,8 @@
     vars:
       trove_test_datastore: mongodb
       trove_test_group: mongodb-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-mongodb-multi
@@ -217,6 +229,8 @@
     vars:
       trove_test_datastore: mongodb
       trove_test_group: mongodb-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-mysql-single
@@ -238,6 +252,8 @@
     vars:
       trove_test_datastore: percona
       trove_test_group: percona-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-percona-single
@@ -245,6 +261,8 @@
     vars:
       trove_test_datastore: percona
       trove_test_group: percona-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-postgresql-single
@@ -252,6 +270,8 @@
     vars:
       trove_test_datastore: postgresql
       trove_test_group: postgresql-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-postgresql-multi
@@ -259,6 +279,8 @@
     vars:
       trove_test_datastore: postgresql
       trove_test_group: postgresql-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-pxc-single
@@ -266,6 +288,8 @@
     vars:
       trove_test_datastore: pxc
       trove_test_group: pxc-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-pxc-multi
@@ -273,6 +297,8 @@
     vars:
       trove_test_datastore: pxc
       trove_test_group: pxc-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-redis-single
@@ -280,6 +306,8 @@
     vars:
       trove_test_datastore: redis
       trove_test_group: redis-supported-single
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-scenario-redis-multi
@@ -287,6 +315,8 @@
     vars:
       trove_test_datastore: redis
       trove_test_group: redis-supported-multi
+      devstack_localrc:
+        TROVE_DISABLE_IMAGE_SETUP: true
 
 - job:
     name: trove-tox-fakemodetests
