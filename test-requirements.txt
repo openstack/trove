@@ -4,7 +4,6 @@
 # Hacking already pins down pep8, pyflakes and flake8
 hacking!=0.13.0,<0.14,>=0.12.0 # Apache-2.0
 bandit>=1.1.0 # Apache-2.0
-sphinx!=1.6.6,!=1.6.7,>=1.6.2 # BSD
 os-api-ref>=1.4.0 # Apache-2.0
 reno>=2.5.0 # Apache-2.0
 coverage!=4.4,>=4.0 # Apache-2.0
@@ -27,3 +26,4 @@ stestr>=1.1.0 # Apache-2.0
 doc8>=0.6.0 # Apache-2.0
 astroid==1.6.5 # LGPLv2.1
 pylint==1.9.2 # GPLv2
+oslotest>=3.2.0 # Apache-2.0
