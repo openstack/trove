@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock, patch, PropertyMock
+from mock import MagicMock, Mock, patch, PropertyMock
 from proboscis.asserts import assert_equal
 
 from trove.backup.models import Backup
@@ -273,6 +273,42 @@ class TestManager(trove_testtools.TestCase):
             self.manager.delete_cluster(self.context, 'some-cluster-id')
         mock_tasks.delete_cluster.assert_called_with(self.context,
                                                      'some-cluster-id')
+
+    def test_shrink_cluster_with_success(self):
+        self._assert_shrink_cluster(True)
+
+    def test_shrink_cluster_with_error(self):
+        self._assert_shrink_cluster(False)
+
+    @patch('trove.taskmanager.manager.EndNotification')
+    @patch('trove.taskmanager.manager.models.load_cluster_tasks')
+    def _assert_shrink_cluster(self, success, mock_load, mock_notification):
+        if success:
+            mock_load.side_effect = Mock()
+        else:
+            mock_load.side_effect = Exception
+
+        end_notification = MagicMock()
+        mock_notification.return_value = end_notification
+        context = Mock()
+        cluster_id = Mock()
+        instance_ids = Mock()
+
+        try:
+            self.manager.shrink_cluster(context, cluster_id, instance_ids)
+            self.assertTrue(success)
+        except Exception:
+            self.assertFalse(success)
+
+        mock_load.assert_called_once_with(context, cluster_id)
+        mock_notification.assert_called_once_with(context,
+                                                  cluster_id=cluster_id,
+                                                  instance_ids=instance_ids)
+        exit_error_type = end_notification.__exit__.call_args_list[0][0][0]
+        if success:
+            self.assertFalse(exit_error_type)
+        else:
+            self.assertTrue(exit_error_type)
 
 
 class TestTaskManagerService(trove_testtools.TestCase):

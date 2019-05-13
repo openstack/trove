@@ -428,12 +428,16 @@ class Manager(periodic_task.PeriodicTasks):
             cluster_tasks.create_cluster(context, cluster_id)
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):
-        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
-        cluster_tasks.grow_cluster(context, cluster_id, new_instance_ids)
+        with EndNotification(context, cluster_id=cluster_id,
+                             instance_ids=new_instance_ids):
+            cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+            cluster_tasks.grow_cluster(context, cluster_id, new_instance_ids)
 
     def shrink_cluster(self, context, cluster_id, instance_ids):
-        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
-        cluster_tasks.shrink_cluster(context, cluster_id, instance_ids)
+        with EndNotification(context, cluster_id=cluster_id,
+                             instance_ids=instance_ids):
+            cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+            cluster_tasks.shrink_cluster(context, cluster_id, instance_ids)
 
     def restart_cluster(self, context, cluster_id):
         cluster_tasks = models.load_cluster_tasks(context, cluster_id)

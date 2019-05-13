@@ -1,0 +1,8 @@
+---
+features:
+  - Adds new fields "instance_ids", which is supposed to contain ids of
+    cluster instances, in payloads of two cluster events -
+    DBaaSClusterShrink and DBaaSClusterGrow. Moreover, additional end
+    notifications after growing and shrinking cluster have been added.
+    It allows better integration with tools for monitoring resources
+    usage.
