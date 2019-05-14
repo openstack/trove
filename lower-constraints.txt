@@ -89,6 +89,7 @@ oslo.serialization==2.18.0
 oslo.service==1.24.0
 oslo.upgradecheck==0.1.0
 oslo.utils==3.33.0
+oslotest==3.2.0
 osprofiler==1.4.0
 packaging==17.1
 passlib==1.7.0
