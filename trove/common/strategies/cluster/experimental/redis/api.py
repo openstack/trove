@@ -125,6 +125,9 @@ class RedisCluster(models.Cluster):
 
         return RedisCluster(context, db_info, datastore, datastore_version)
 
+    def upgrade(self, datastore_version):
+        self.rolling_upgrade(datastore_version)
+
     def grow(self, instances):
         LOG.debug("Growing cluster.")
 

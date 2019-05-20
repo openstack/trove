@@ -154,6 +154,9 @@ class RedisClusterTasks(task_models.ClusterTasks):
 
         LOG.debug("End grow_cluster for id: %s.", cluster_id)
 
+    def upgrade_cluster(self, context, cluster_id, datastore_version):
+        self.rolling_upgrade_cluster(context, cluster_id, datastore_version)
+
 
 class RedisTaskManagerAPI(task_api.API):
 
