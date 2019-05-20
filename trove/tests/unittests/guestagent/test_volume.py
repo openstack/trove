@@ -14,6 +14,7 @@
 
 from mock import ANY, call, DEFAULT, patch, mock_open
 
+from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common import operating_system
@@ -21,10 +22,15 @@ from trove.guestagent import volume
 from trove.tests.unittests import trove_testtools
 
 
+CONF = cfg.CONF
+
+
 class VolumeDeviceTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(VolumeDeviceTest, self).setUp()
+        self.patch_conf_property('volume_fstype', 'ext3')
+        self.patch_conf_property('format_options', '-m 5')
         self.volumeDevice = volume.VolumeDevice('/dev/vdb')
 
         self.exec_patcher = patch.object(
@@ -199,10 +205,79 @@ class VolumeDeviceTest(trove_testtools.TestCase):
         self.mock_exec.assert_has_calls(calls)
 
 
+class VolumeDeviceTestXFS(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(VolumeDeviceTestXFS, self).setUp()
+        self.patch_conf_property('volume_fstype', 'xfs')
+        self.patch_conf_property('format_options', '')
+        self.volumeDevice = volume.VolumeDevice('/dev/vdb')
+
+        self.exec_patcher = patch.object(
+            utils, 'execute', return_value=('', ''))
+        self.mock_exec = self.exec_patcher.start()
+        self.addCleanup(self.exec_patcher.stop)
+        self.ismount_patcher = patch.object(operating_system, 'is_mount')
+        self.mock_ismount = self.ismount_patcher.start()
+        self.addCleanup(self.ismount_patcher.stop)
+
+    def tearDown(self):
+        super(VolumeDeviceTestXFS, self).tearDown()
+        self.volumeDevice = None
+
+    def test__check_format(self):
+        self.volumeDevice._check_format()
+        self.assertEqual(1, self.mock_exec.call_count)
+        calls = [
+            call('xfs_admin', '-l', '/dev/vdb',
+                 root_helper='sudo', run_as_root=True)
+        ]
+        self.mock_exec.assert_has_calls(calls)
+
+    @patch('trove.guestagent.volume.LOG')
+    @patch.object(utils, 'execute',
+                  return_value=('not a valid XFS filesystem', ''))
+    def test__check_format_2(self, mock_logging, mock_exec):
+        self.assertRaises(exception.GuestError,
+                          self.volumeDevice._check_format)
+
+    def test__format(self):
+        self.volumeDevice._format()
+        self.assertEqual(1, self.mock_exec.call_count)
+        calls = [
+            call('mkfs.xfs', '/dev/vdb',
+                 root_helper='sudo', run_as_root=True)
+        ]
+        self.mock_exec.assert_has_calls(calls)
+
+    def test_resize_fs(self):
+        with patch.object(operating_system, 'is_mount', return_value=True):
+            mount_point = '/mnt/volume'
+            self.volumeDevice.resize_fs(mount_point)
+            self.assertEqual(6, self.mock_exec.call_count)
+            calls = [
+                call('blockdev', '--getsize64', '/dev/vdb', attempts=3,
+                     root_helper='sudo', run_as_root=True),
+                call("umount", mount_point, run_as_root=True,
+                     root_helper='sudo'),
+                call('xfs_repair', '/dev/vdb', root_helper='sudo',
+                     run_as_root=True),
+                call('mount', '/dev/vdb', root_helper='sudo',
+                     run_as_root=True),
+                call('xfs_growfs', '/dev/vdb', root_helper='sudo',
+                     run_as_root=True),
+                call('umount', '/dev/vdb', root_helper='sudo',
+                     run_as_root=True)
+            ]
+            self.mock_exec.assert_has_calls(calls)
+
+
 class VolumeMountPointTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(VolumeMountPointTest, self).setUp()
+        self.patch_conf_property('volume_fstype', 'ext3')
+        self.patch_conf_property('format_options', '-m 5')
         self.volumeMountPoint = volume.VolumeMountPoint('/mnt/device',
                                                         '/dev/vdb')
         self.exec_patcher = patch.object(utils, 'execute',
