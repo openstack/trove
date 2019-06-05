@@ -281,11 +281,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
             # remaining ones.
             try:
 
-                # All nodes should have the same seeds.
-                # We retrieve current seeds from the first node.
-                test_node = self.load_cluster_nodes(
-                    context, cluster_node_ids[:1])[0]
-                current_seeds = test_node['guest'].get_seeds()
+                current_seeds = self._get_current_seeds(context, cluster_id)
                 # The seeds will have to be updated on all remaining instances
                 # if any of the seed nodes is going to be removed.
                 update_seeds = any(node['ip'] in current_seeds
@@ -351,7 +347,24 @@ class CassandraClusterTasks(task_models.ClusterTasks):
             context, cluster_id, delay_sec=CONF.cassandra.node_sync_time)
 
     def upgrade_cluster(self, context, cluster_id, datastore_version):
-        self.rolling_upgrade_cluster(context, cluster_id, datastore_version)
+        current_seeds = self._get_current_seeds(context, cluster_id)
+
+        def ordering_function(instance):
+
+            if self.get_ip(instance) in current_seeds:
+                return -1
+            return 0
+
+        self.rolling_upgrade_cluster(context, cluster_id,
+                                     datastore_version, ordering_function)
+
+    def _get_current_seeds(self, context, cluster_id):
+        # All nodes should have the same seeds.
+        # We retrieve current seeds from the first node.
+        cluster_node_ids = self.find_cluster_node_ids(cluster_id)
+        test_node = self.load_cluster_nodes(context,
+                                            cluster_node_ids[:1])[0]
+        return test_node['guest'].get_seeds()
 
 
 class CassandraTaskManagerAPI(task_api.API):

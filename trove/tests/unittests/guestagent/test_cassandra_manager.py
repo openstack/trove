@@ -737,6 +737,18 @@ class GuestAgentCassandraDBManagerTest(DatastoreManagerTest):
             self.manager.apply_overrides(Mock(), NonCallableMagicMock()))
 
     @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    @patch.object(cass_service.CassandraApp, '_run_nodetool_command')
+    def test_drain(self, command_runner_mock, _):
+        self.manager._app.drain()
+        command_runner_mock.assert_called_once_with('drain')
+
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    @patch.object(cass_service.CassandraApp, '_run_nodetool_command')
+    def test_upgrade_sstables(self, command_runner_mock, _):
+        self.manager._app.upgrade_sstables()
+        command_runner_mock.assert_called_once_with('upgradesstables')
+
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def test_enable_root(self, _):
         with patch.object(self.manager._app, 'is_root_enabled',
                           return_value=False):

@@ -22,6 +22,7 @@ from trove.common import cfg
 from trove.common import instance as trove_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.cassandra import service
 from trove.guestagent.datastore import manager
 from trove.guestagent import guest_log
@@ -179,6 +180,52 @@ class Manager(manager.Manager):
         if not cluster_config and self.is_root_enabled(context):
             self.status.report_root(context)
 
+    def pre_upgrade(self, context):
+        data_dir = self.app.cassandra_data_dir
+        mount_point, _data = os.path.split(data_dir)
+        save_etc_dir = "%s/etc" % mount_point
+        home_save = "%s/trove_user" % mount_point
+
+        self.app.status.begin_restart()
+        self.app.drain()
+        self.app.stop_db()
+
+        operating_system.copy("%s/." % self.app.cassandra_conf_dir,
+                              save_etc_dir,
+                              preserve=True, as_root=True)
+        operating_system.copy("%s/." % os.path.expanduser('~'), home_save,
+                              preserve=True, as_root=True)
+
+        self.unmount_volume(context, mount_point=mount_point)
+
+        return {
+            'mount_point': mount_point,
+            'save_etc_dir': save_etc_dir,
+            'home_save': home_save
+        }
+
+    def post_upgrade(self, context, upgrade_info):
+        self.app.stop_db()
+
+        if 'device' in upgrade_info:
+            self.mount_volume(context, mount_point=upgrade_info['mount_point'],
+                              device_path=upgrade_info['device'],
+                              write_to_fstab=True)
+            operating_system.chown(path=upgrade_info['mount_point'],
+                                   user=self.app.cassandra_owner,
+                                   group=self.app.cassandra_owner,
+                                   recursive=True,
+                                   as_root=True)
+
+        self._restore_home_directory(upgrade_info['home_save'])
+        self._restore_directory(upgrade_info['save_etc_dir'],
+                                self.app.cassandra_conf_dir)
+
+        self._reset_app()
+        self.app.start_db()
+        self.app.upgrade_sstables()
+        self.app.status.end_restart()
+
     def change_passwords(self, context, users):
         with EndNotification(context):
             self.admin.change_passwords(context, users)
@@ -310,3 +357,13 @@ class Manager(manager.Manager):
     def store_admin_credentials(self, context, admin_credentials):
         self.app.store_admin_credentials(admin_credentials)
         self._admin = self.app.build_admin()
+
+    def _reset_app(self):
+        """
+        A function for reseting app and admin properties.
+        It is useful when we want to force reload application.
+        Possible usages: loading new configuration files, loading new
+        datastore password
+        """
+        self._app = None
+        self._admin = None
