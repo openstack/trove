@@ -22,8 +22,6 @@ from proboscis import before_class
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 from proboscis import test
-from sqlalchemy import exc as sqlalchemy_exc
-from sqlalchemy.sql.expression import text
 from troveclient.compat.exceptions import BadRequest
 from troveclient.compat.exceptions import HTTPNotImplemented
 
@@ -38,7 +36,6 @@ from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.config import CONFIG
 import trove.tests.util as testsutil
-from trove.tests.util.check import Checker
 from trove.tests.util.check import TypeCheck
 from trove.tests.util import LocalSqlClient
 from trove.tests.util.server_connection import create_server_connection
@@ -46,7 +43,7 @@ from trove.tests.util.server_connection import create_server_connection
 GROUP = "dbaas.api.instances.actions"
 GROUP_REBOOT = "dbaas.api.instances.actions.reboot"
 GROUP_RESTART = "dbaas.api.instances.actions.restart"
-GROUP_RESIZE = "dbaas.api.instances.actions.resize.instance"
+GROUP_RESIZE = "dbaas.api.instances.actions.resize"
 GROUP_STOP_MYSQL = "dbaas.api.instances.actions.stop"
 MYSQL_USERNAME = "test_user"
 MYSQL_PASSWORD = "abcde"
@@ -73,19 +70,27 @@ class MySqlConnection(object):
         self.client = LocalSqlClient(sql_engine, use_flush=False)
 
     def is_connected(self):
+        cmd = "SELECT 1;"
         try:
             with self.client:
-                self.client.execute(text("""SELECT "Hello.";"""))
+                self.client.execute(cmd)
             return True
-        except (sqlalchemy_exc.OperationalError,
-                sqlalchemy_exc.DisconnectionError,
-                sqlalchemy_exc.TimeoutError):
+        except Exception as e:
+            print(
+                "Failed to execute command: %s, error: %s" % (cmd, str(e))
+            )
             return False
-        except Exception as ex:
-            print("EX WAS:")
-            print(type(ex))
-            print(ex)
-            raise ex
+
+    def execute(self, cmd):
+        try:
+            with self.client:
+                self.client.execute(cmd)
+            return True
+        except Exception as e:
+            print(
+                "Failed to execute command: %s, error: %s" % (cmd, str(e))
+            )
+            return False
 
 
 # Use default value from trove.common.cfg, and it could be overridden by
@@ -125,6 +130,10 @@ class ActionTestBase(object):
         return instance_info.get_address()
 
     @property
+    def instance_mgmt_address(self):
+        return instance_info.get_address(mgmt=True)
+
+    @property
     def instance_id(self):
         return instance_info.id
 
@@ -144,28 +153,34 @@ class ActionTestBase(object):
             time.sleep(5)
 
     def ensure_mysql_is_running(self):
-        """Make sure MySQL is accessible before restarting."""
-        with Checker() as check:
-            if USE_IP:
-                self.connection.connect()
-                check.true(self.connection.is_connected(),
-                           "Able to connect to MySQL.")
-                self.proc_id = self.find_mysql_proc_on_instance()
-                check.true(self.proc_id is not None,
-                           "MySQL process can not be found.")
-            instance = self.instance
-            check.false(instance is None)
-            check.equal(instance.status, "ACTIVE")
+        if USE_IP:
+            self.connection.connect()
+            asserts.assert_true(self.connection.is_connected(),
+                                "Unable to connect to MySQL.")
+
+            self.proc_id = self.find_mysql_proc_on_instance()
+            asserts.assert_is_not_none(self.proc_id,
+                                       "MySQL process can not be found.")
+
+        asserts.assert_is_not_none(self.instance)
+        asserts.assert_equal(self.instance.status, "ACTIVE")
 
     def find_mysql_proc_on_instance(self):
-        server = create_server_connection(self.instance_id)
-        cmd = "ps acux | grep mysqld " \
+        server = create_server_connection(
+            self.instance_id,
+            ip_address=self.instance_mgmt_address
+        )
+        cmd = "sudo ps acux | grep mysqld " \
               "| grep -v mysqld_safe | awk '{print $2}'"
-        stdout, _ = server.execute(cmd)
+
         try:
+            stdout = server.execute(cmd)
             return int(stdout)
         except ValueError:
             return None
+        except Exception as e:
+            asserts.fail("Failed to execute command: %s, error: %s" %
+                         (cmd, str(e)))
 
     def log_current_users(self):
         users = self.dbaas.users.list(self.instance_id)
@@ -246,22 +261,36 @@ class RebootTestBase(ActionTestBase):
 
     def mess_up_mysql(self):
         """Ruin MySQL's ability to restart."""
-        server = create_server_connection(self.instance_id)
-        cmd = "sudo cp /dev/null /var/lib/mysql/data/ib_logfile%d"
+        server = create_server_connection(self.instance_id,
+                                          self.instance_mgmt_address)
+        cmd_template = "sudo cp /dev/null /var/lib/mysql/data/ib_logfile%d"
         instance_info.dbaas_admin.management.stop(self.instance_id)
+
         for index in range(2):
-            server.execute(cmd % index)
+            cmd = cmd_template % index
+            try:
+                server.execute(cmd)
+            except Exception as e:
+                asserts.fail("Failed to execute command %s, error: %s" %
+                             (cmd, str(e)))
 
     def fix_mysql(self):
         """Fix MySQL's ability to restart."""
         if not FAKE_MODE:
-            server = create_server_connection(self.instance_id)
-            cmd = "sudo rm /var/lib/mysql/data/ib_logfile%d"
+            server = create_server_connection(self.instance_id,
+                                              self.instance_mgmt_address)
+            cmd_template = "sudo rm /var/lib/mysql/data/ib_logfile%d"
             # We want to stop mysql so that upstart does not keep trying to
             # respawn it and block the guest agent from accessing the logs.
             instance_info.dbaas_admin.management.stop(self.instance_id)
+
             for index in range(2):
-                server.execute(cmd % index)
+                cmd = cmd_template % index
+                try:
+                    server.execute(cmd)
+                except Exception as e:
+                    asserts.fail("Failed to execute command %s, error: %s" %
+                                 (cmd, str(e)))
 
     def wait_for_failure_status(self):
         """Wait until status becomes running."""
@@ -404,8 +433,7 @@ class RebootTests(RebootTestBase):
         self.successful_restart()
 
 
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP,
-              GROUP_RESIZE],
+@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_RESIZE],
       depends_on_groups=[GROUP_START], depends_on=[create_user],
       runs_after=[RebootTests])
 class ResizeInstanceTest(ActionTestBase):
@@ -534,24 +562,18 @@ class ResizeInstanceTest(ActionTestBase):
         # a resize. The code below is an attempt to catch this while proceeding
         # with the rest of the test (note the use of runs_after).
         if USE_IP:
-            self.connection.connect()
-            if not self.connection.is_connected():
-                # Ok, this is def. a failure, but before we toss up an error
-                # lets recreate to see how far we can get.
-                CONFIG.get_report().log(
-                    "Having to recreate the test_user! Resizing killed it!")
-                self.log_current_users()
+            users = self.dbaas.users.list(self.instance_id)
+            usernames = [user.name for user in users]
+            if MYSQL_USERNAME not in usernames:
                 self.create_user()
-                asserts.fail(
-                    "Somehow, the resize made the test user disappear.")
+                asserts.fail("Resize made the test user disappear.")
 
     @test(depends_on=[test_instance_returns_to_active_after_resize],
           runs_after=[resize_should_not_delete_users])
     def test_make_sure_mysql_is_running_after_resize(self):
         self.ensure_mysql_is_running()
 
-    @test(depends_on=[test_instance_returns_to_active_after_resize],
-          runs_after=[test_make_sure_mysql_is_running_after_resize])
+    @test(depends_on=[test_make_sure_mysql_is_running_after_resize])
     def test_instance_has_new_flavor_after_resize(self):
         actual = self.get_flavor_href(self.instance.flavor['id'])
         expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
@@ -597,7 +619,7 @@ def resize_should_not_delete_users():
         asserts.fail("Somehow, the resize made the test user disappear.")
 
 
-@test(runs_after=[ResizeInstanceTest], depends_on=[create_user],
+@test(depends_on=[ResizeInstanceTest],
       groups=[GROUP, tests.INSTANCES, INSTANCE_GROUP, GROUP_RESIZE],
       enabled=VOLUME_SUPPORT)
 class ResizeInstanceVolume(ActionTestBase):

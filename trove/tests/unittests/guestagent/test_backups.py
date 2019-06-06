@@ -79,14 +79,14 @@ UNZIP = "gzip -d -c"
 ENCRYPT = "openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key"
 DECRYPT = "openssl enc -d -aes-256-cbc -salt -pass pass:default_aes_cbc_key"
 XTRA_BACKUP_RAW = ("sudo innobackupex --stream=xbstream %(extra_opts)s "
-                   " --user=os_admin --password=password"
+                   " --user=os_admin --password=password --host=127.0.0.1"
                    " /var/lib/mysql/data 2>/tmp/innobackupex.log")
 XTRA_BACKUP = XTRA_BACKUP_RAW % {'extra_opts': ''}
 XTRA_BACKUP_EXTRA_OPTS = XTRA_BACKUP_RAW % {'extra_opts': '--no-lock'}
 XTRA_BACKUP_INCR = ('sudo innobackupex --stream=xbstream'
                     ' --incremental --incremental-lsn=%(lsn)s'
                     ' %(extra_opts)s '
-                    ' --user=os_admin --password=password'
+                    ' --user=os_admin --password=password --host=127.0.0.1'
                     ' /var/lib/mysql/data'
                     ' 2>/tmp/innobackupex.log')
 SQLDUMP_BACKUP_RAW = ("mysqldump --all-databases %(extra_opts)s "

@@ -15,12 +15,10 @@
 
 import netaddr
 import os
-import re
 import time
 from time import sleep
 import unittest
 import uuid
-
 
 from proboscis import after_class
 from proboscis.asserts import assert_equal
@@ -85,14 +83,17 @@ class InstanceTestInfo(object):
         self.dbaas_inactive_datastore_version = None  # The DS inactive id
         self.id = None  # The ID of the instance in the database.
         self.local_id = None
+
+        # The IP address of the database instance for the user.
         self.address = None
+        # The management network IP address.
+        self.mgmt_address = None
+
         self.nics = None  # The dict of type/id for nics used on the instance.
         shared_network = CONFIG.get('shared_network', None)
         if shared_network:
             self.nics = [{'net-id': shared_network}]
         self.initial_result = None  # The initial result from the create call.
-        self.user_ip = None  # The IP address of the instance, given to user.
-        self.infra_ip = None  # The infrastructure network IP address.
         self.result = None  # The instance info returned by the API
         self.nova_client = None  # The instance of novaclient.
         self.volume_client = None  # The instance of the volume client.
@@ -126,17 +127,30 @@ class InstanceTestInfo(object):
                     "Flavor href '%s' not found!" % flavor_name)
         return flavor, flavor_href
 
-    def get_address(self):
-        result = self.dbaas_admin.mgmt.instances.show(self.id)
-        if not hasattr(result, 'hostname'):
-            try:
-                return next(str(ip) for ip in result.ip
-                            if netaddr.valid_ipv4(ip))
-            except StopIteration:
-                fail("No IPV4 ip found")
+    def get_address(self, mgmt=False):
+        if mgmt:
+            if self.mgmt_address:
+                return self.mgmt_address
+
+            mgmt_netname = test_config.get("trove_mgmt_network", "trove-mgmt")
+            result = self.dbaas_admin.mgmt.instances.show(self.id)
+            mgmt_interfaces = result.server['addresses'].get(mgmt_netname, [])
+            mgmt_addresses = [str(inf["addr"]) for inf in mgmt_interfaces
+                              if inf["version"] == 4]
+            if len(mgmt_addresses) == 0:
+                fail("No IPV4 ip found for management network.")
+            self.mgmt_address = mgmt_addresses[0]
+            return self.mgmt_address
         else:
-            return [str(ip) for ip in result.server['addresses']
-                    if netaddr.valid_ipv4(ip)]
+            if self.address:
+                return self.address
+
+            result = self.dbaas.instances.get(self.id)
+            addresses = [str(ip) for ip in result.ip if netaddr.valid_ipv4(ip)]
+            if len(addresses) == 0:
+                fail("No IPV4 ip found for database network.")
+            self.address = addresses[0]
+            return self.address
 
     def get_local_id(self):
         mgmt_instance = self.dbaas_admin.management.show(self.id)
@@ -985,12 +999,6 @@ class TestGuestProcess(object):
             assert_true(isinstance(hwinfo.hwinfo['mem_total'], int))
             assert_true(isinstance(hwinfo.hwinfo['num_cpus'], int))
 
-    @test
-    def grab_diagnostics_before_tests(self):
-        if CONFIG.test_mgmt:
-            diagnostics = dbaas_admin.diagnostics.get(instance_info.id)
-            diagnostic_tests_helper(diagnostics)
-
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_TEST, "dbaas.dns"])
@@ -1243,34 +1251,18 @@ class TestCreateNotification(object):
                                              **expected)
 
 
-@test(depends_on_groups=['dbaas.api.instances.actions'],
-      groups=[GROUP, tests.INSTANCES, "dbaas.diagnostics"])
-class CheckDiagnosticsAfterTests(object):
-    """Check the diagnostics after running api commands on an instance."""
-    @test
-    def test_check_diagnostics_on_instance_after_tests(self):
-        diagnostics = dbaas_admin.diagnostics.get(instance_info.id)
-        assert_equal(200, dbaas.last_http_code)
-        diagnostic_tests_helper(diagnostics)
-        msg = "Fat Pete has emerged. size (%s > 30MB)" % diagnostics.vmPeak
-        assert_true(diagnostics.vmPeak < (30 * 1024), msg)
-
-
 @test(depends_on=[WaitForGuestInstallationToFinish],
       depends_on_groups=[GROUP_USERS, GROUP_DATABASES, GROUP_ROOT],
       groups=[GROUP, GROUP_STOP],
       runs_after_groups=[GROUP_START,
-                         GROUP_START_SIMPLE, GROUP_TEST, tests.INSTANCES])
+                         GROUP_START_SIMPLE, GROUP_TEST, tests.INSTANCES],
+      enabled=not do_not_delete_instance())
 class DeleteInstance(object):
     """Delete the created instance."""
 
     @time_out(3 * 60)
     @test
     def test_delete(self):
-        if do_not_delete_instance():
-            CONFIG.get_report().log("TESTS_DO_NOT_DELETE_INSTANCE=True was "
-                                    "specified, skipping delete...")
-            raise SkipTest("TESTS_DO_NOT_DELETE_INSTANCE was specified.")
         global dbaas
         if not hasattr(instance_info, "initial_result"):
             raise SkipTest("Instance was never created, skipping test...")
@@ -1294,27 +1286,10 @@ class DeleteInstance(object):
             fail("A failure occurred when trying to GET instance %s for the %d"
                  " time: %s" % (str(instance_info.id), attempts, str(ex)))
 
-    @time_out(30)
-    @test(enabled=VOLUME_SUPPORT,
-          depends_on=[test_delete])
-    def test_volume_is_deleted(self):
-        try:
-            while True:
-                instance = dbaas.instances.get(instance_info.id)
-                assert_equal(instance.volume['status'], "available")
-                time.sleep(1)
-        except exceptions.NotFound:
-            pass
-        except Exception as ex:
-            fail("Failure: %s" % str(ex))
 
-    # TODO(tim-simpson): make sure that the actual instance, volume,
-    # guest status, and DNS entries are deleted.
-
-
-@test(depends_on=[WaitForGuestInstallationToFinish],
-      runs_after=[DeleteInstance],
-      groups=[GROUP, GROUP_STOP, 'dbaas.usage'])
+@test(depends_on=[DeleteInstance],
+      groups=[GROUP, GROUP_STOP, 'dbaas.usage'],
+      enabled=not do_not_delete_instance())
 class AfterDeleteChecks(object):
 
     @test
@@ -1616,27 +1591,3 @@ class BadInstanceStatusBug(object):
                     self.instances.remove(id)
                 except exceptions.UnprocessableEntity:
                     sleep(1.0)
-
-
-def diagnostic_tests_helper(diagnostics):
-    print("diagnostics : %r" % diagnostics._info)
-    allowed_attrs = ['version', 'fdSize', 'vmSize', 'vmHwm', 'vmRss',
-                     'vmPeak', 'threads']
-    CheckInstance(None).contains_allowed_attrs(
-        diagnostics._info, allowed_attrs,
-        msg="Diagnostics")
-    assert_true(isinstance(diagnostics.fdSize, int))
-    assert_true(isinstance(diagnostics.threads, int))
-    assert_true(isinstance(diagnostics.vmHwm, int))
-    assert_true(isinstance(diagnostics.vmPeak, int))
-    assert_true(isinstance(diagnostics.vmRss, int))
-    assert_true(isinstance(diagnostics.vmSize, int))
-    actual_version = diagnostics.version
-    update_test_conf = CONFIG.values.get("guest-update-test", None)
-    if update_test_conf is not None:
-        if actual_version == update_test_conf['next-version']:
-            return  # This is acceptable but may not match the regex.
-    version_pattern = re.compile(r'[a-f0-9]+')
-    msg = "Version %s does not match pattern %s." % (actual_version,
-                                                     version_pattern)
-    assert_true(version_pattern.match(actual_version), msg)

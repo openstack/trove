@@ -1015,8 +1015,10 @@ class Instance(BuiltInstance):
         if not nics:
             nics = []
         if CONF.management_networks:
-            nics = [{"net-id": net_id}
-                    for net_id in CONF.management_networks] + nics
+            # Make sure management network interface is always configured after
+            # user defined instance.
+            nics = nics + [{"net-id": net_id}
+                           for net_id in CONF.management_networks]
         if nics:
             call_args['nics'] = nics
         if cluster_config:

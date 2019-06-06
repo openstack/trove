@@ -34,6 +34,7 @@ from proboscis.asserts import fail
 from proboscis import SkipTest
 from six.moves.urllib.parse import unquote
 from sqlalchemy import create_engine
+import tenacity
 from troveclient.compat import Dbaas
 
 from trove.common import cfg
@@ -41,6 +42,7 @@ from trove.common.utils import import_class
 from trove.common.utils import import_object
 from trove.tests.config import CONFIG as test_config
 from trove.tests.util.client import TestClient
+from trove.tests.util import mysql
 from trove.tests.util import test_config as CONFIG
 from trove.tests.util.users import Requirements
 
@@ -192,10 +194,8 @@ def dns_checker(mgmt_instance):
 
 
 def process(cmd):
-    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    result = process.communicate()
-    return result
+    output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+    return output
 
 
 def string_in_list(str, substr_list):
@@ -248,9 +248,7 @@ def mysql_connection():
 
 
 class MySqlConnection(object):
-
     def assert_fails(self, ip, user_name, password):
-        from trove.tests.util import mysql
         try:
             with mysql.create_mysql_connection(ip, user_name, password):
                 pass
@@ -262,8 +260,15 @@ class MySqlConnection(object):
             fail("Expected to see permissions failure. Instead got message:"
                  "%s" % mcf.message)
 
+    @tenacity.retry(
+        wait=tenacity.wait_fixed(3),
+        stop=tenacity.stop_after_attempt(5),
+        reraise=True
+    )
     def create(self, ip, user_name, password):
-        from trove.tests.util import mysql
+        print("Connecting mysql, host: %s, user: %s, password: %s" %
+              (ip, user_name, password))
+
         return mysql.create_mysql_connection(ip, user_name, password)
 
 

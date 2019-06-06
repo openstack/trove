@@ -94,20 +94,20 @@ black_box_groups = [
     GROUP_SERVICES_INITIALIZE,
     instances.GROUP_START,
     instances.GROUP_QUOTAS,
-    backups.GROUP,
-    replication.GROUP,
-    configurations.GROUP,
-    datastores.GROUP,
+    backups.BACKUP_GROUP,
+    replication.REPLICATION_GROUP,
+    configurations.CONFIGURATION_GROUP,
     instances_actions.GROUP_RESIZE,
+    instances_actions.GROUP_STOP_MYSQL,
+    instances.GROUP_STOP,
+    instances.GROUP_GUEST,
+    versions.GROUP,
+    datastores.GROUP,
+    datastore_versions.GROUP,
     # TODO(SlickNik): The restart tests fail intermittently so pulling
     # them out of the blackbox group temporarily. Refer to Trove bug:
     # https://bugs.launchpad.net/trove/+bug/1204233
     # instances_actions.GROUP_RESTART,
-    instances_actions.GROUP_STOP_MYSQL,
-    instances.GROUP_STOP,
-    versions.GROUP,
-    instances.GROUP_GUEST,
-    datastore_versions.GROUP,
 ]
 proboscis.register(groups=["blackbox", "mysql"],
                    depends_on_groups=black_box_groups)
@@ -245,7 +245,9 @@ user_actions_groups.extend([user_actions_group.GROUP])
 
 # groups common to all datastores
 common_groups = list(instance_create_groups)
-common_groups.extend([guest_log_groups, instance_init_groups, module_groups])
+# NOTE(lxkong): Remove the module related tests(module_groups) for now because
+# of no use case.
+common_groups.extend([guest_log_groups, instance_init_groups])
 
 # Register: Component based groups
 register(["backup"], backup_groups)

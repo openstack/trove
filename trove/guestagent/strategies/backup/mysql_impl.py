@@ -67,7 +67,7 @@ class InnoBackupEx(base.BackupRunner):
 
     @property
     def user_and_pass(self):
-        return (' --user=%(user)s --password=%(password)s ' %
+        return (' --user=%(user)s --password=%(password)s --host=127.0.0.1 ' %
                 {'user': ADMIN_USER_NAME,
                  'password': MySqlApp.get_auth_password()})
 
