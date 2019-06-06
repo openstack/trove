@@ -1070,31 +1070,6 @@ function cmd_int_tests_white_box() {
         --nova-flags=/etc/nova/nova.conf $@
 }
 
-function cmd_example_tests() {
-    set +e
-    cmd_stop
-    set -e
-    cmd_start_fake
-    sleep 3
-    echo "
-{
-    \"directory\": \"$TROVESTACK_TESTS/../apidocs/src/resources/samples/\",
-    \"auth_url\":\"http://$KEYSTONE_AUTH_HOST/identity/v2.0/tokens\",
-    \"api_url\":\"http://$SERVICE_HOST:8779\",
-    \"replace_host\":\"https://ord.databases.api.rackspacecloud.com\",
-    \"replace_dns_hostname\": \"e09ad9a3f73309469cf1f43d11e79549caf9acf2.rackspaceclouddb.com\",
-    \"username\":\"examples\",
-    \"password\":\"examples\",
-    \"tenant\":\"trove\"
-}" > /tmp/example-tests.conf
-    python $TROVESTACK_TESTS/examples/examples/example_generation.py /tmp/example-tests.conf
-    pushd $TROVESTACK_TESTS/../apidocs
-    mvn clean
-    mvn generate-sources
-    popd
-    cmd_stop
-}
-
 
 ###############################################################################
 # Misc. tools
@@ -1545,7 +1520,6 @@ function run_command() {
                             $TROVESTACK_SCRIPTS/image-projects-list;;
         "reset-task" ) shift; cmd_reset_task $@;;
         "wipe-queues" ) shift; cmd_wipe_queues $@;;
-        "example-tests" ) shift; cmd_example_tests $@;;
         "repl" ) shift; cmd_repl $@;;
         "help" ) print_usage;;
         * )

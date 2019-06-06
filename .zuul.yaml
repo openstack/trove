@@ -34,7 +34,6 @@
         - trove-scenario-redis-multi:
             voting: false
         - trove-tox-fakemodetests
-        - trove-tox-apiexamples
         - trove-tox-bandit-baseline:
             voting: false
         - openstack-tox-pylint
@@ -45,7 +44,6 @@
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
         - trove-tox-fakemodetests
-        - trove-tox-apiexamples
         - openstack-tox-pylint
     experimental:
       jobs:
@@ -74,7 +72,6 @@
     irrelevant-files:
       - ^.*\.rst$
       - ^api-ref/.*$
-      - ^apidocs/.*$
       - ^doc/.*$
       - ^releasenotes/.*$
       - ^tools/.*$
@@ -114,7 +111,6 @@
     irrelevant-files:
       - ^.*\.rst$
       - ^api-ref/.*$
-      - ^apidocs/.*$
       - ^doc/.*$
       - ^releasenotes/.*$
       - ^tools/.*$
@@ -128,7 +124,6 @@
     irrelevant-files:
       - ^.*\.rst$
       - ^api-ref/.*$
-      - ^apidocs/.*$
       - ^contrib/.*$
       - ^doc/.*$
       - ^releasenotes/.*$
@@ -324,12 +319,6 @@
       tox_envlist: fakemodetests
 
 - job:
-    name: trove-tox-apiexamples
-    parent: trove-fakemodetests-base
-    vars:
-      tox_envlist: apiexamples
-
-- job:
     name: trove-tox-bandit-baseline
     parent: openstack-tox
     timeout: 2400
@@ -341,7 +330,6 @@
       - ^.*\.rst$
       - ^.*\.txt$
       - ^api-ref/.*$
-      - ^apidocs/.*$
       - ^contrib/.*$
       - ^doc/.*$
       - ^etc/.*$
