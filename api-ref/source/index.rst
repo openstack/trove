@@ -12,7 +12,6 @@
 .. include:: database-instance-logs.inc
 .. include:: databases.inc
 .. include:: user-management.inc
-.. include:: flavors.inc
 .. include:: datastores.inc
 .. include:: configurations.inc
 .. include:: backups.inc
