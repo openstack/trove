@@ -722,10 +722,11 @@ function mod_confs() {
     sed -i "s/%region_name%/${REGION_NAME}/g" $TEST_CONF
 
     # Add the tenant id's into test.conf
-    sed -i "s/%admin_tenant_id%/$(get_attribute_id project admin 1)/g" $TEST_CONF
+    sed -i "s/%service_tenant_id%/$(get_attribute_id project service 1)/g" $TEST_CONF
     sed -i "s/%alt_demo_tenant_id%/$(get_attribute_id project alt_demo 1)/g" $TEST_CONF
     sed -i "s/%demo_tenant_id%/$(get_attribute_id project demo 1)/g" $TEST_CONF
     sed -i "s/%admin_password%/$ADMIN_PASSWORD/g" $TEST_CONF
+    sed -i "s/%service_password%/$SERVICE_PASSWORD/g" $TEST_CONF
 
     # Enable neutron tests if needed
     sed -i "s/%neutron_enabled%/$ENABLE_NEUTRON/g" $TEST_CONF
@@ -733,9 +734,8 @@ function mod_confs() {
     # Enable backup related tests if Swift is enabled
     sed -i "s/%swift_enabled%/$ENABLE_SWIFT/g" $TEST_CONF
 
-    # If neutron is enabled, the devstack plugin will have created an alt_demo
-    # network - write this info to the confs so that the integration tests can
-    # use it.
+    # If neutron is enabled, the devstack plugin has already set up the shared
+    # private network for testing.
     if [[ $ENABLE_NEUTRON = true ]]; then
         TROVE_NET_ID=$(openstack $CLOUD_ADMIN_ARG network list | grep " $TROVE_PRIVATE_NETWORK_NAME " | awk '{print $2}')
         TROVE_SUBNET_ID=$(openstack $CLOUD_ADMIN_ARG subnet list | grep " $TROVE_PRIVATE_SUBNET_NAME " | awk '{print $2}')

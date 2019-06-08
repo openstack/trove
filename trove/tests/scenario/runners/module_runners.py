@@ -47,24 +47,40 @@ class ModuleRunner(TestRunner):
         self.MODULE_BINARY_CONTENTS2 = b'\x00\xFF\xea\x9c\x11\xfeok\xb1\x8ax'
 
         self.module_name_order = [
+            # 0
             {'suffix': self.MODULE_BINARY_SUFFIX,
              'priority': True, 'order': 1},
+            # 1
             {'suffix': self.MODULE_BINARY_SUFFIX2,
              'priority': True, 'order': 2},
+            # 2
             {'suffix': '_hidden_all_tenant_auto_priority',
              'priority': True, 'order': 3},
+            # 3
             {'suffix': '_hidden', 'priority': True, 'order': 4},
+            # 4
             {'suffix': '_auto', 'priority': True, 'order': 5},
+            # 5
             {'suffix': '_live', 'priority': True, 'order': 6},
+            # 6
             {'suffix': '_priority', 'priority': True, 'order': 7},
+            # 7
             {'suffix': '_ds', 'priority': False, 'order': 1},
+            # 8
             {'suffix': '_ds_ver', 'priority': False, 'order': 2},
+            # 9
             {'suffix': '_all_tenant_ds_ver', 'priority': False, 'order': 3},
+            # 10
             {'suffix': '', 'priority': False, 'order': 4},
+            # 11
             {'suffix': '_ds_diff', 'priority': False, 'order': 5},
+            # 12
             {'suffix': '_diff_tenant', 'priority': False, 'order': 6},
+            # 13
             {'suffix': '_full_access', 'priority': False, 'order': 7},
+            # 14
             {'suffix': '_for_update', 'priority': False, 'order': 8},
+            # 15
             {'suffix': '_updated', 'priority': False, 'order': 8},
         ]
 
@@ -80,7 +96,6 @@ class ModuleRunner(TestRunner):
         self.module_count_prior_to_create = 0
         self.module_ds_count_prior_to_create = 0
         self.module_ds_all_count_prior_to_create = 0
-        self.module_all_tenant_count_prior_to_create = 0
         self.module_auto_apply_count_prior_to_create = 0
         self.module_admin_count_prior_to_create = 0
         self.module_other_count_prior_to_create = 0
@@ -106,10 +121,12 @@ class ModuleRunner(TestRunner):
 
     @property
     def main_test_module(self):
+        # The module named "test_module_1"
         return self._get_test_module(0)
 
     @property
     def update_test_module(self):
+        # The module named "test_module_1_updated"
         return self._get_test_module(1)
 
     @property
@@ -205,6 +222,7 @@ class ModuleRunner(TestRunner):
 
     # Tests start here
     def run_module_delete_existing(self):
+        """Delete all the testing modules if exist."""
         modules = self.admin_client.modules.list()
         for module in modules:
             if module.name.startswith(self.MODULE_NAME):
@@ -222,6 +240,7 @@ class ModuleRunner(TestRunner):
     def run_module_create_non_admin_auto(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        """Non-admin cannot create modules by specifying auto_apply."""
         client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
@@ -232,6 +251,7 @@ class ModuleRunner(TestRunner):
     def run_module_create_non_admin_all_tenant(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        """Non-admin cannot create modules by specifying all_tenants."""
         client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
@@ -242,6 +262,7 @@ class ModuleRunner(TestRunner):
     def run_module_create_non_admin_hidden(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        """Non-admin cannot create modules by specifying visible."""
         client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
@@ -252,6 +273,7 @@ class ModuleRunner(TestRunner):
     def run_module_create_non_admin_priority(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        """Non-admin cannot create modules by specifying priority_apply."""
         client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
@@ -262,6 +284,7 @@ class ModuleRunner(TestRunner):
     def run_module_create_non_admin_no_full_access(
             self, expected_exception=exceptions.Forbidden,
             expected_http_code=403):
+        """Non-admin cannot create modules by specifying full_access."""
         client = self.auth_client
         self.assert_raises(
             expected_exception, expected_http_code,
@@ -272,6 +295,7 @@ class ModuleRunner(TestRunner):
     def run_module_create_full_access_with_admin_opt(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
+        """full_access cannot be used together with auto_apply."""
         client = self.admin_client
         self.assert_raises(
             expected_exception, expected_http_code,
@@ -320,8 +344,6 @@ class ModuleRunner(TestRunner):
         self.module_ds_all_count_prior_to_create = len(
             self.auth_client.modules.list(
                 datastore=models.Modules.MATCH_ALL_NAME))
-        self.module_all_tenant_count_prior_to_create = len(
-            self.unauth_client.modules.list())
         self.module_auto_apply_count_prior_to_create = len(
             [module for module in self.admin_client.modules.list()
              if module.auto_apply])
@@ -329,6 +351,8 @@ class ModuleRunner(TestRunner):
             self.admin_client.modules.list())
         self.module_other_count_prior_to_create = len(
             self.unauth_client.modules.list())
+
+        # Create module "test_module_1" for datastore "all"
         self.assert_module_create(self.auth_client, 10)
 
     def assert_module_create(self, client, name_order,
@@ -361,23 +385,31 @@ class ModuleRunner(TestRunner):
             priority_apply=priority_apply,
             apply_order=apply_order,
             full_access=full_access)
+
         username = client.real_client.client.username
-        if (('alt' in username and 'admin' not in username) or
-                ('admin' in username and visible)):
+        if username == self.instance_info.user.auth_user:
             self.module_create_count += 1
             if datastore:
                 if datastore == self.instance_info.dbaas_datastore:
                     self.module_ds_create_count += 1
             else:
                 self.module_ds_all_create_count += 1
-        elif not visible:
-            self.module_admin_create_count += 1
-        else:
+        elif (username != self.instance_info.admin_user.auth_user and
+              username != self.instance_info.user.auth_user):
             self.module_other_create_count += 1
+        else:
+            self.module_admin_create_count += 1
+
         if all_tenants and visible:
             self.module_all_tenant_create_count += 1
+            if datastore:
+                if datastore == self.instance_info.dbaas_datastore:
+                    self.module_ds_create_count += 1
+            else:
+                self.module_ds_all_create_count += 1
         if auto_apply and visible:
             self.module_auto_apply_create_count += 1
+
         self.test_modules.append(result)
 
         tenant_id = None
@@ -400,7 +432,11 @@ class ModuleRunner(TestRunner):
             expected_datastore_version=datastore_version,
             expected_auto_apply=auto_apply,
             expected_contents=contents,
-            expected_is_admin=('admin' in username and not full_access))
+            expected_is_admin=(
+                username == self.instance_info.admin_user.auth_user and
+                not full_access
+            )
+        )
 
     def validate_module(self, module, validate_all=False,
                         expected_name=None,
@@ -485,6 +521,7 @@ class ModuleRunner(TestRunner):
                                   'Unexpected visible')
 
     def run_module_create_for_update(self):
+        # Create module "test_module_1_updated"
         self.assert_module_create(self.auth_client, 14)
 
     def run_module_create_dupe(
@@ -547,7 +584,12 @@ class ModuleRunner(TestRunner):
     def run_module_list(self):
         self.assert_module_list(
             self.auth_client,
-            self.module_count_prior_to_create + self.module_create_count)
+            (
+                self.module_count_prior_to_create +
+                self.module_create_count +
+                self.module_all_tenant_create_count
+            )
+        )
 
     def assert_module_list(self, client, expected_count, datastore=None):
         if datastore:
@@ -576,7 +618,7 @@ class ModuleRunner(TestRunner):
     def run_module_list_unauth_user(self):
         self.assert_module_list(
             self.unauth_client,
-            (self.module_all_tenant_count_prior_to_create +
+            (self.module_other_count_prior_to_create +
              self.module_all_tenant_create_count +
              self.module_other_create_count))
 
@@ -665,7 +707,12 @@ class ModuleRunner(TestRunner):
     def run_module_list_again(self):
         self.assert_module_list(
             self.auth_client,
-            self.module_count_prior_to_create + self.module_create_count)
+            (
+                self.module_count_prior_to_create +
+                self.module_create_count +
+                self.module_all_tenant_create_count
+            )
+        )
 
     def run_module_list_ds(self):
         self.assert_module_list(
@@ -698,7 +745,7 @@ class ModuleRunner(TestRunner):
              self.module_other_create_count))
 
     def run_module_update(self):
-        self.assert_module_update(
+        self.assert_module_update_description(
             self.auth_client,
             self.main_test_module.id,
             description=self.MODULE_DESC + " modified")
@@ -732,8 +779,8 @@ class ModuleRunner(TestRunner):
                           "MD5 changed with same contents")
 
     def run_module_update_auto_toggle(self,
-                                      expected_exception=exceptions.Forbidden,
-                                      expected_http_code=403):
+                                      expected_exception=exceptions.NotFound,
+                                      expected_http_code=404):
         module = self._find_auto_apply_module()
         toggle_off_args = {'auto_apply': False}
         toggle_on_args = {'auto_apply': True}
@@ -762,8 +809,8 @@ class ModuleRunner(TestRunner):
             **toggle_on_args)
 
     def run_module_update_all_tenant_toggle(
-            self, expected_exception=exceptions.Forbidden,
-            expected_http_code=403):
+            self, expected_exception=exceptions.NotFound,
+            expected_http_code=404):
         module = self._find_all_tenant_module()
         toggle_off_args = {'all_tenants': False}
         toggle_on_args = {'all_tenants': True}
@@ -772,8 +819,8 @@ class ModuleRunner(TestRunner):
                                   expected_http_code=expected_http_code)
 
     def run_module_update_invisible_toggle(
-            self, expected_exception=exceptions.Forbidden,
-            expected_http_code=403):
+            self, expected_exception=exceptions.NotFound,
+            expected_http_code=404):
         module = self._find_invisible_module()
         toggle_off_args = {'visible': True}
         toggle_on_args = {'visible': False}
@@ -782,8 +829,8 @@ class ModuleRunner(TestRunner):
                                   expected_http_code=expected_http_code)
 
     def run_module_update_priority_toggle(
-            self, expected_exception=exceptions.Forbidden,
-            expected_http_code=403):
+            self, expected_exception=exceptions.NotFound,
+            expected_http_code=404):
         module = self._find_priority_apply_module()
         toggle_off_args = {'priority_apply': False}
         toggle_on_args = {'priority_apply': True}
@@ -810,8 +857,8 @@ class ModuleRunner(TestRunner):
             self.main_test_module.id, visible=False)
 
     def run_module_update_non_admin_auto_off(
-            self, expected_exception=exceptions.Forbidden,
-            expected_http_code=403):
+            self, expected_exception=exceptions.NotFound,
+            expected_http_code=404):
         module = self._find_auto_apply_module()
         client = self.auth_client
         self.assert_raises(
@@ -819,8 +866,8 @@ class ModuleRunner(TestRunner):
             client, client.modules.update, module.id, auto_apply=False)
 
     def run_module_update_non_admin_auto_any(
-            self, expected_exception=exceptions.Forbidden,
-            expected_http_code=403):
+            self, expected_exception=exceptions.NotFound,
+            expected_http_code=404):
         module = self._find_auto_apply_module()
         client = self.auth_client
         self.assert_raises(
@@ -935,11 +982,6 @@ class ModuleRunner(TestRunner):
         self.assert_module_query(
             self.auth_client, self.instance_info.id,
             self.module_auto_apply_count_prior_to_create)
-
-    def run_module_query_after_remove(self):
-        self.assert_module_query(
-            self.auth_client, self.instance_info.id,
-            self.module_auto_apply_count_prior_to_create + 2)
 
     def assert_module_query(self, client, instance_id, expected_count,
                             expected_http_code=200, expected_results=None):
@@ -1063,7 +1105,10 @@ class ModuleRunner(TestRunner):
 
     def run_module_list_instance_after_apply(self):
         self.assert_module_list_instance(
-            self.auth_client, self.instance_info.id, self.apply_count)
+            self.auth_client,
+            self.instance_info.id,
+            self.apply_count + self.module_auto_apply_count_prior_to_create
+        )
 
     def run_module_apply_another(self):
         self.assert_module_apply(self.auth_client, self.instance_info.id,
@@ -1072,7 +1117,10 @@ class ModuleRunner(TestRunner):
 
     def run_module_list_instance_after_apply_another(self):
         self.assert_module_list_instance(
-            self.auth_client, self.instance_info.id, self.apply_count)
+            self.auth_client,
+            self.instance_info.id,
+            self.apply_count + self.module_auto_apply_count_prior_to_create
+        )
 
     def run_module_update_after_remove(self):
         name, description, contents, priority, order = (
@@ -1095,7 +1143,8 @@ class ModuleRunner(TestRunner):
             {self.main_test_module.md5: 1})
 
     def run_module_query_after_apply(self):
-        expected_count = self.module_auto_apply_count_prior_to_create + 2
+        expected_count = (self.module_auto_apply_count_prior_to_create +
+                          self.apply_count)
         expected_results = self.create_default_query_expected_results(
             [self.main_test_module])
         self.assert_module_query(self.auth_client, self.instance_info.id,
@@ -1138,7 +1187,8 @@ class ModuleRunner(TestRunner):
             {self.main_test_module.md5: 1})
 
     def run_module_query_after_apply_another(self):
-        expected_count = self.module_auto_apply_count_prior_to_create + 3
+        expected_count = (self.module_auto_apply_count_prior_to_create +
+                          self.apply_count)
         expected_results = self.create_default_query_expected_results(
             [self.main_test_module, self.update_test_module])
         self.assert_module_query(self.auth_client, self.instance_info.id,
@@ -1162,7 +1212,10 @@ class ModuleRunner(TestRunner):
 
     def run_module_list_instance_after_apply_live(self):
         self.assert_module_list_instance(
-            self.auth_client, self.instance_info.id, self.apply_count)
+            self.auth_client,
+            self.instance_info.id,
+            self.apply_count + self.module_auto_apply_count_prior_to_create
+        )
 
     def run_module_update_live_update(self):
         module = self.live_update_test_module
@@ -1232,6 +1285,7 @@ class ModuleRunner(TestRunner):
     def run_module_remove(self):
         self.assert_module_remove(self.auth_client, self.instance_info.id,
                                   self.update_test_module.id)
+        self.apply_count -= 1
 
     def assert_module_remove(self, client, instance_id, module_id,
                              expected_http_code=200):

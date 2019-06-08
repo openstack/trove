@@ -33,13 +33,6 @@ GROUP = "dbaas.api.mgmt.ds_versions"
 
 
 @test(groups=[GROUP])
-def mgmt_datastore_version_list_requires_admin_account():
-    """Verify that an admin context is required to call this function."""
-    client = create_client(is_admin=False)
-    assert_raises(exceptions.Unauthorized, client.mgmt_datastore_versions.list)
-
-
-@test(groups=[GROUP])
 class MgmtDataStoreVersion(object):
     """Tests the mgmt datastore version methods."""
 
@@ -70,6 +63,13 @@ class MgmtDataStoreVersion(object):
         self.ds_versions = self.client.mgmt_datastore_versions.list()
         # datastore-versions should exist for a functional Trove deployment.
         assert_true(len(self.ds_versions) > 0)
+
+    @test
+    def mgmt_datastore_version_list_requires_admin_account(self):
+        """Test admin is required to list datastore versions."""
+        client = create_client(is_admin=False)
+        assert_raises(exceptions.Unauthorized,
+                      client.mgmt_datastore_versions.list)
 
     @test(depends_on=[test_mgmt_ds_version_list_original_count])
     def test_mgmt_ds_version_list_fields_present(self):

@@ -17,6 +17,7 @@ from time import sleep
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+from proboscis.asserts import fail
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 from proboscis import test
@@ -24,11 +25,12 @@ from troveclient.compat import exceptions
 
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
+from trove import tests
+from trove.tests.api import configurations
 from trove.tests.api.instances import CheckInstance
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
-from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
 from trove.tests.scenario import runners
 from trove.tests.scenario.runners.test_runners import SkipKnownBug
@@ -42,7 +44,7 @@ class SlaveInstanceTestInfo(object):
         self.replicated_db = generate_uuid()
 
 
-GROUP = "dbaas.api.replication"
+REPLICATION_GROUP = "dbaas.api.replication"
 slave_instance = SlaveInstanceTestInfo()
 existing_db_on_master = generate_uuid()
 backup_count = None
@@ -52,19 +54,29 @@ def _get_user_count(server_info):
     cmd = ('mysql -BNq -e \\\'select count\\(*\\) from mysql.user'
            ' where user like \\\"slave_%\\\"\\\'')
     server = create_server_connection(server_info.id)
-    stdout, stderr = server.execute(cmd)
-    return int(stdout)
+
+    try:
+        stdout = server.execute(cmd)
+        return int(stdout)
+    except Exception as e:
+        fail("Failed to execute command: %s, error: %s" % (cmd, str(e)))
 
 
 def slave_is_running(running=True):
-
     def check_slave_is_running():
         server = create_server_connection(slave_instance.id)
         cmd = ("mysqladmin extended-status "
                "| awk '/Slave_running/{print $4}'")
-        stdout, stderr = server.execute(cmd)
-        expected = "ON" if running else "OFF"
-        return stdout.rstrip() == expected
+
+        try:
+            stdout = server.execute(cmd)
+            stdout = stdout.rstrip()
+        except Exception as e:
+            fail("Failed to execute command %s, error: %s" %
+                 (cmd, str(e)))
+
+        expected = b"ON" if running else b"OFF"
+        return stdout == expected
 
     return check_slave_is_running
 
@@ -119,8 +131,8 @@ def validate_master(master, slaves):
     assert_true(asserted_ids.issubset(master_ids))
 
 
-@test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP],
+@test(depends_on_groups=[configurations.CONFIGURATION_GROUP],
+      groups=[REPLICATION_GROUP, tests.INSTANCES],
       enabled=CONFIG.swift_enabled)
 class CreateReplicationSlave(object):
 
@@ -153,11 +165,13 @@ class CreateReplicationSlave(object):
         slave_instance.id = create_slave()
 
 
-@test(groups=[GROUP], enabled=CONFIG.swift_enabled)
+@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
+      enabled=CONFIG.swift_enabled,
+      depends_on=[CreateReplicationSlave])
 class WaitForCreateSlaveToFinish(object):
     """Wait until the instance is created and set up as slave."""
 
-    @test(depends_on=[CreateReplicationSlave.test_create_slave])
+    @test
     @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_slave_created(self):
         poll_until(lambda: instance_is_active(slave_instance.id))
@@ -165,7 +179,7 @@ class WaitForCreateSlaveToFinish(object):
 
 @test(enabled=(not CONFIG.fake_mode and CONFIG.swift_enabled),
       depends_on=[WaitForCreateSlaveToFinish],
-      groups=[GROUP])
+      groups=[REPLICATION_GROUP, tests.INSTANCES])
 class VerifySlave(object):
 
     def db_is_found(self, database_to_find):
@@ -191,8 +205,15 @@ class VerifySlave(object):
     def test_slave_is_read_only(self):
         cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
         server = create_server_connection(slave_instance.id)
-        stdout, stderr = server.execute(cmd)
-        assert_equal(stdout, "1\n")
+
+        try:
+            stdout = server.execute(cmd)
+            stdout = int(stdout.rstrip())
+        except Exception as e:
+            fail("Failed to execute command %s, error: %s" %
+                 (cmd, str(e)))
+
+        assert_equal(stdout, 1)
 
     @test(depends_on=[test_slave_is_read_only])
     def test_create_db_on_master(self):
@@ -216,7 +237,7 @@ class VerifySlave(object):
         assert_equal(_get_user_count(instance_info), 1)
 
 
-@test(groups=[GROUP],
+@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
       depends_on=[WaitForCreateSlaveToFinish],
       runs_after=[VerifySlave],
       enabled=CONFIG.swift_enabled)
@@ -232,7 +253,7 @@ class TestInstanceListing(object):
         validate_master(instance_info, [slave_instance])
 
 
-@test(groups=[GROUP],
+@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
       depends_on=[WaitForCreateSlaveToFinish],
       runs_after=[TestInstanceListing],
       enabled=CONFIG.swift_enabled)
@@ -317,8 +338,15 @@ class TestReplicationFailover(object):
 
         cmd = "sudo service trove-guestagent stop"
         server = create_server_connection(self._third_slave.id)
-        stdout, stderr = server.execute(cmd)
-        assert_equal(stdout, "1\n")
+
+        try:
+            stdout = server.execute(cmd)
+            stdout = int(stdout.rstrip())
+        except Exception as e:
+            fail("Failed to execute command %s, error: %s" %
+                 (cmd, str(e)))
+
+        assert_equal(stdout, 1)
 
     @test(depends_on=[disable_master], enabled=False)
     def test_eject_replica_master(self):
@@ -333,7 +361,7 @@ class TestReplicationFailover(object):
         validate_slave(instance_info, slave_instance)
 
 
-@test(groups=[GROUP],
+@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
       depends_on=[WaitForCreateSlaveToFinish],
       runs_after=[TestReplicationFailover],
       enabled=CONFIG.swift_enabled)
@@ -367,12 +395,19 @@ class DetachReplica(object):
         def check_not_read_only():
             cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
             server = create_server_connection(slave_instance.id)
-            stdout, stderr = server.execute(cmd)
-            return stdout.rstrip() == "0"
+
+            try:
+                stdout = server.execute(cmd)
+                stdout = int(stdout)
+            except Exception:
+                return False
+
+            return stdout == 0
+
         poll_until(check_not_read_only)
 
 
-@test(groups=[GROUP],
+@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
       depends_on=[WaitForCreateSlaveToFinish],
       runs_after=[DetachReplica],
       enabled=CONFIG.swift_enabled)

@@ -195,31 +195,28 @@ class TestUserAccessPasswordChange(UserAccessBase):
         user = self._pick_a_user()
         password = user["password"]
         self.dbaas.users.change_passwords(instance_info.id, [user])
+
+        asserts.assert_equal(202, self.dbaas.last_http_code)
         self._check_mysql_connection(user["name"], password)
 
     @test(depends_on=[test_change_password])
     def test_change_password_back(self):
+        """Test change and restore user password."""
         user = self._pick_a_user()
         old_password = user["password"]
         new_password = "NEWPASSWORD"
 
         user["password"] = new_password
         self.dbaas.users.change_passwords(instance_info.id, [user])
+
+        asserts.assert_equal(202, self.dbaas.last_http_code)
         self._check_mysql_connection(user["name"], new_password)
 
         user["password"] = old_password
         self.dbaas.users.change_passwords(instance_info.id, [user])
-        self._check_mysql_connection(user["name"], old_password)
 
-    @test(depends_on=[test_change_password_back])
-    def test_change_password_twice(self):
-        # Changing the password twice isn't a problem.
-        user = self._pick_a_user()
-        password = "NEWPASSWORD"
-        user["password"] = password
-        self.dbaas.users.change_passwords(instance_info.id, [user])
-        self.dbaas.users.change_passwords(instance_info.id, [user])
-        self._check_mysql_connection(user["name"], password)
+        asserts.assert_equal(202, self.dbaas.last_http_code)
+        self._check_mysql_connection(user["name"], old_password)
 
     @after_class(always_run=True)
     def tearDown(self):

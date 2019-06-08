@@ -182,6 +182,7 @@ class InstanceTestInfo(object):
         self.databases = None  # The databases created on the instance.
         self.helper_user = None  # Test helper user if exists.
         self.helper_database = None  # Test helper database if exists.
+        self.admin_user = None
 
 
 class LogOnFail(type):
@@ -330,7 +331,10 @@ class TestRunner(object):
         self.instance_info.dbaas_datastore = CONFIG.dbaas_datastore
         self.instance_info.dbaas_datastore_version = (
             CONFIG.dbaas_datastore_version)
-        self.instance_info.user = CONFIG.users.find_user_by_name('alt_demo')
+        self.instance_info.user = CONFIG.users.find_user_by_name("alt_demo")
+        self.instance_info.admin_user = CONFIG.users.find_user(
+            Requirements(is_admin=True)
+        )
         if self.VOLUME_SUPPORT:
             self.instance_info.volume_size = CONFIG.get('trove_volume_size', 1)
             self.instance_info.volume = {
@@ -469,17 +473,20 @@ class TestRunner(object):
 
     def _create_admin_client(self):
         """Create a client from an admin user."""
-        requirements = Requirements(is_admin=True, services=["swift"])
+        requirements = Requirements(is_admin=True, services=["trove"])
         admin_user = CONFIG.users.find_user(requirements)
         return create_dbaas_client(admin_user)
 
     @property
     def swift_client(self):
-        return self._create_swift_client()
+        return self._create_swift_client(admin=False)
 
-    def _create_swift_client(self):
-        """Create a swift client from the admin user details."""
-        requirements = Requirements(is_admin=True, services=["swift"])
+    @property
+    def admin_swift_client(self):
+        return self._create_swift_client(admin=True)
+
+    def _create_swift_client(self, admin=True):
+        requirements = Requirements(is_admin=admin, services=["swift"])
         user = CONFIG.users.find_user(requirements)
         os_options = {'region_name': CONFIG.trove_client_region_name}
         return swiftclient.client.Connection(
@@ -492,7 +499,7 @@ class TestRunner(object):
 
     @property
     def nova_client(self):
-        return create_nova_client(self.instance_info.user)
+        return create_nova_client(self.instance_info.admin_user)
 
     def register_debug_inst_ids(self, inst_ids):
         """Method to 'register' an instance ID (or list of instance IDs)
@@ -768,7 +775,7 @@ class TestRunner(object):
             self.fail("Found left-over server group: %s" % server_group)
 
     def get_instance(self, instance_id, client=None):
-        client = client or self.auth_client
+        client = client or self.admin_client
         return client.instances.get(instance_id)
 
     def extract_ipv4s(self, ips):

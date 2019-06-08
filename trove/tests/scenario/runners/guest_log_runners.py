@@ -101,7 +101,8 @@ class GuestLogRunner(TestRunner):
                         expected_http_code=200,
                         expected_type=guest_log.LogType.USER.name,
                         expected_status=guest_log.LogStatus.Disabled.name,
-                        expected_published=None, expected_pending=None):
+                        expected_published=None, expected_pending=None,
+                        is_admin=False):
         self.report.log("Executing log_show for log '%s'" % log_name)
         log_details = client.instances.log_show(
             self.instance_info.id, log_name)
@@ -111,12 +112,14 @@ class GuestLogRunner(TestRunner):
             expected_type=expected_type,
             expected_status=expected_status,
             expected_published=expected_published,
-            expected_pending=expected_pending)
+            expected_pending=expected_pending,
+            is_admin=is_admin)
 
     def assert_log_details(self, log_details, expected_log_name,
                            expected_type=guest_log.LogType.USER.name,
                            expected_status=guest_log.LogStatus.Disabled.name,
-                           expected_published=None, expected_pending=None):
+                           expected_published=None, expected_pending=None,
+                           is_admin=False):
         """Check that the action generates the proper response data.
         For log_published and log_pending, setting the value to 'None'
         will skip that check (useful when using an existing instance,
@@ -162,18 +165,23 @@ class GuestLogRunner(TestRunner):
                              "expected %d, got %d" %
                              (expected_log_name, expected_pending,
                               log_details.pending))
+
         container = self.container
         prefix = self.prefix_pattern % {
             'instance_id': self.instance_info.id,
             'datastore': CONFIG.dbaas_datastore,
             'log': expected_log_name}
         metafile = prefix.rstrip('/') + '_metafile'
+
         if expected_published == 0:
-            self.assert_storage_gone(container, prefix, metafile)
+            self.assert_storage_gone(container, prefix, metafile,
+                                     is_admin=is_admin)
             container = 'None'
             prefix = 'None'
         else:
-            self.assert_storage_exists(container, prefix, metafile)
+            self.assert_storage_exists(container, prefix, metafile,
+                                       is_admin=is_admin)
+
         self.assert_equal(container, log_details.container,
                           "Wrong log container for '%s' log" %
                           expected_log_name)
@@ -220,7 +228,8 @@ class GuestLogRunner(TestRunner):
                            expected_http_code=200,
                            expected_type=guest_log.LogType.USER.name,
                            expected_status=guest_log.LogStatus.Disabled.name,
-                           expected_published=None, expected_pending=None):
+                           expected_published=None, expected_pending=None,
+                           is_admin=False):
         self.report.log("Executing log_publish for log '%s' (disable: %s  "
                         "discard: %s)" %
                         (log_name, disable, discard))
@@ -232,7 +241,8 @@ class GuestLogRunner(TestRunner):
             expected_type=expected_type,
             expected_status=expected_status,
             expected_published=expected_published,
-            expected_pending=expected_pending)
+            expected_pending=expected_pending,
+            is_admin=is_admin)
 
     def assert_log_discard(self, client, log_name,
                            expected_http_code=200,
@@ -250,9 +260,14 @@ class GuestLogRunner(TestRunner):
             expected_published=expected_published,
             expected_pending=expected_pending)
 
-    def assert_storage_gone(self, container, prefix, metafile):
+    def assert_storage_gone(self, container, prefix, metafile, is_admin=False):
+        if is_admin:
+            swift_client = self.admin_swift_client
+        else:
+            swift_client = self.swift_client
+
         try:
-            headers, container_files = self.swift_client.get_container(
+            headers, container_files = swift_client.get_container(
                 container, prefix=prefix)
             self.assert_equal(0, len(container_files),
                               "Found files in %s/%s: %s" %
@@ -265,7 +280,7 @@ class GuestLogRunner(TestRunner):
             else:
                 raise
         try:
-            self.swift_client.get_object(container, metafile)
+            swift_client.get_object(container, metafile)
             self.fail("Found metafile after discard: %s" % metafile)
         except ClientException as ex:
             if ex.http_status == 404:
@@ -275,9 +290,15 @@ class GuestLogRunner(TestRunner):
             else:
                 raise
 
-    def assert_storage_exists(self, container, prefix, metafile):
+    def assert_storage_exists(self, container, prefix, metafile,
+                              is_admin=False):
+        if is_admin:
+            swift_client = self.admin_swift_client
+        else:
+            swift_client = self.swift_client
+
         try:
-            headers, container_files = self.swift_client.get_container(
+            headers, container_files = swift_client.get_container(
                 container, prefix=prefix)
             self.assert_true(len(container_files) > 0,
                              "No files found in %s/%s" %
@@ -288,7 +309,7 @@ class GuestLogRunner(TestRunner):
             else:
                 raise
         try:
-            self.swift_client.get_object(container, metafile)
+            swift_client.get_object(container, metafile)
         except ClientException as ex:
             if ex.http_status == 404:
                 self.fail("Missing metafile: %s" % metafile)
@@ -507,7 +528,7 @@ class GuestLogRunner(TestRunner):
     def run_test_log_publish_again_user(self):
         for log_name in self._get_exposed_user_log_names():
             self.assert_log_publish(
-                self.admin_client,
+                self.auth_client,
                 log_name,
                 expected_status=[guest_log.LogStatus.Published.name,
                                  guest_log.LogStatus.Partial.name],
@@ -696,7 +717,9 @@ class GuestLogRunner(TestRunner):
             expected_type=guest_log.LogType.SYS.name,
             expected_status=[guest_log.LogStatus.Ready.name,
                              guest_log.LogStatus.Partial.name],
-            expected_published=0, expected_pending=1)
+            expected_published=0, expected_pending=1,
+            is_admin=True
+        )
 
     def run_test_log_publish_sys(self):
         log_name = self._get_unexposed_sys_log_name()
@@ -705,7 +728,8 @@ class GuestLogRunner(TestRunner):
             log_name,
             expected_type=guest_log.LogType.SYS.name,
             expected_status=guest_log.LogStatus.Partial.name,
-            expected_published=1, expected_pending=1)
+            expected_published=1, expected_pending=1,
+            is_admin=True)
 
     def run_test_log_publish_again_sys(self):
         log_name = self._get_unexposed_sys_log_name()
@@ -715,7 +739,8 @@ class GuestLogRunner(TestRunner):
             expected_type=guest_log.LogType.SYS.name,
             expected_status=guest_log.LogStatus.Partial.name,
             expected_published=self._get_last_log_published(log_name) + 1,
-            expected_pending=1)
+            expected_pending=1,
+            is_admin=True)
 
     def run_test_log_generator_sys(self):
         log_name = self._get_unexposed_sys_log_name()
@@ -737,7 +762,7 @@ class GuestLogRunner(TestRunner):
             self.admin_client,
             log_name, publish=True,
             lines=4, expected_lines=4,
-            swift_client=self.swift_client)
+            swift_client=self.admin_swift_client)
 
     def run_test_log_save_sys(self):
         log_name = self._get_unexposed_sys_log_name()

@@ -13,43 +13,62 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import netaddr
 import os
+import subprocess
+
 from proboscis.asserts import fail
+import tenacity
 
 from trove import tests
+from trove.tests.config import CONFIG
 from trove.tests import util
 from trove.tests.util.users import Requirements
 
 
-def create_server_connection(instance_id):
+def create_server_connection(instance_id, ip_address=None):
     if util.test_config.use_local_ovz:
         return OpenVZServerConnection(instance_id)
-    return ServerSSHConnection(instance_id)
+    return ServerSSHConnection(instance_id, ip_address=ip_address)
 
 
 class ServerSSHConnection(object):
-    def __init__(self, instance_id):
-        self.instance_id = instance_id
-        req_admin = Requirements(is_admin=True)
-        self.user = util.test_config.users.find_user(req_admin)
-        self.dbaas_admin = util.create_dbaas_client(self.user)
-        self.instance = self.dbaas_admin.management.show(self.instance_id)
-        try:
-            self.ip_address = [str(ip) for ip in self.instance.ip
-                               if netaddr.valid_ipv4(ip)][0]
-        except Exception:
-            fail("No IPV4 ip found")
+    def __init__(self, instance_id, ip_address=None):
+        if not ip_address:
+            req_admin = Requirements(is_admin=True)
+            user = util.test_config.users.find_user(req_admin)
+            dbaas_admin = util.create_dbaas_client(user)
+            instance = dbaas_admin.management.show(instance_id)
+
+            mgmt_interfaces = instance.server["addresses"].get(
+                CONFIG.trove_mgmt_network, []
+            )
+            mgmt_addresses = [str(inf["addr"]) for inf in mgmt_interfaces
+                              if inf["version"] == 4]
+
+            if len(mgmt_addresses) == 0:
+                fail("No IPV4 ip found for management network.")
+            else:
+                self.ip_address = mgmt_addresses[0]
+        else:
+            self.ip_address = ip_address
 
         TROVE_TEST_SSH_USER = os.environ.get('TROVE_TEST_SSH_USER')
         if TROVE_TEST_SSH_USER and '@' not in self.ip_address:
             self.ip_address = TROVE_TEST_SSH_USER + '@' + self.ip_address
 
+    @tenacity.retry(
+        wait=tenacity.wait_fixed(5),
+        stop=tenacity.stop_after_attempt(3),
+        retry=tenacity.retry_if_exception_type(subprocess.CalledProcessError)
+    )
     def execute(self, cmd):
         exe_cmd = "%s %s %s" % (tests.SSH_CMD, self.ip_address, cmd)
         print("RUNNING COMMAND: %s" % exe_cmd)
-        stdout, stderr = util.process(exe_cmd)
-        return (stdout.decode(), stderr.decode())
+
+        output = util.process(exe_cmd)
+
+        print("OUTPUT: %s" % output)
+        return output
 
 
 class OpenVZServerConnection(object):

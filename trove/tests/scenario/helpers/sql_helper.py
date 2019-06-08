@@ -139,7 +139,8 @@ class SqlHelper(TestHelper):
             root_client = self.get_client(host, *args, **kwargs)
             root_client.execute("SELECT 1;")
             return True
-        except Exception:
+        except Exception as e:
+            print("Failed to execute sql command, error: %s" % str(e))
             return False
 
     def get_configuration_value(self, property_name, host, *args, **kwargs):

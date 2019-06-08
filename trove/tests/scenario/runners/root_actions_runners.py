@@ -87,17 +87,22 @@ class RootActionsRunner(TestRunner):
     def assert_can_connect(self, instance_id, test_connect_creds):
         self._assert_connect(instance_id, True, test_connect_creds)
 
-    def _assert_connect(
-            self, instance_id, expected_response, test_connect_creds):
+    def _assert_connect(self, instance_id, expected_response,
+                        test_connect_creds):
         host = self.get_instance_host(instance_id=instance_id)
-        self.report.log("Pinging instance %s with credentials: %s"
-                        % (instance_id, test_connect_creds))
+        self.report.log(
+            "Pinging instance %s with credentials: %s, database: %s" %
+            (instance_id, test_connect_creds,
+             self.test_helper.credentials.get("database"))
+        )
 
         ping_response = self.test_helper.ping(
             host,
             username=test_connect_creds[0],
-            password=test_connect_creds[1]
+            password=test_connect_creds[1],
+            database=self.test_helper.credentials.get("database")
         )
+
         self.assert_equal(expected_response, ping_response)
 
     def run_check_root_enabled(self, expected_http_code=200):

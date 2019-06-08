@@ -233,6 +233,7 @@ class BackupAgentTest(trove_testtools.TestCase):
                               ' --stream=xbstream'
                               ' %(extra_opts)s '
                               ' --user=os_admin --password=123'
+                              ' --host=127.0.0.1'
                               ' /var/lib/mysql/data 2>/tmp/innobackupex.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
