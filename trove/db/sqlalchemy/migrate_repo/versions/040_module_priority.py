@@ -17,6 +17,7 @@
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 from sqlalchemy.sql.expression import update
+from sqlalchemy import text
 
 from trove.db.sqlalchemy.migrate_repo.schema import Boolean
 from trove.db.sqlalchemy.migrate_repo.schema import Integer
@@ -44,5 +45,5 @@ def upgrade(migrate_engine):
     # mark all non-visible, auto-apply and all-tenant modules as is_admin
     update(table=modules,
            values=dict(is_admin=1),
-           whereclause="visible=0 or auto_apply=1 or tenant_id is null"
+           whereclause=text("visible=0 or auto_apply=1 or tenant_id is null")
            ).execute()

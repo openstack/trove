@@ -10,3 +10,4 @@
    database_module_usage
    guest_cloud_init
    secure_oslo_messaging
+   trovestack

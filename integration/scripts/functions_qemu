@@ -20,13 +20,8 @@ function build_vm() {
     GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
     GUEST_WORKING_DIR=${GUEST_WORKING_DIR:-"$HOME/images"}
 
-    export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
-    export GUEST_USERNAME=${guest_username}
-    export HOST_SCP_USERNAME=$(whoami)
-    manage_ssh_keys
-
     # In dev mode, the trove guest agent needs to download trove code from
-    # trove-taskmanager host.
+    # trove-taskmanager host during service initialization.
     if [[ "${dev_mode}" == "true" ]]; then
         host_ip=$(ip route get 8.8.8.8 | head -1 | awk '{print $7}')
         export CONTROLLER_IP=${CONTROLLER_IP:-${host_ip}}
@@ -35,7 +30,11 @@ function build_vm() {
         export GUEST_LOGDIR=${GUEST_LOGDIR:-"/var/log/trove/"}
         export ESCAPED_GUEST_LOGDIR=$(echo ${GUEST_LOGDIR} | sed 's/\//\\\//g')
         export TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS}
+        export HOST_SCP_USERNAME=$(whoami)
         export HOST_USERNAME=${HOST_SCP_USERNAME}
+        export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
+        export GUEST_USERNAME=${guest_username}
+        manage_ssh_keys
     fi
 
     # For system-wide installs, DIB will automatically find the elements, so we only check local path
@@ -58,7 +57,7 @@ function build_vm() {
 
     elementes="$elementes ${guest_os}"
 
-    if [[ "${dev_mode}" != "true" ]]; then
+    if [[ "${dev_mode}" == "false" ]]; then
         elementes="$elementes pip-and-virtualenv"
         elementes="$elementes pip-cache"
         elementes="$elementes no-resolvconf"
@@ -88,21 +87,17 @@ function build_vm() {
 }
 
 function build_guest_image() {
-    exclaim "Building an image for Trove guest agent."
-    datastore_type=$1
+    datastore_type=${1:-"mysql"}
     guest_os=${2:-"ubuntu"}
     guest_release=${3:-"xenial"}
     dev_mode=${4:-"true"}
     guest_username=${5:-"ubuntu"}
 
-    if [ -z "$datastore_type" ]
-    then
-        echo "You must pass an image type to build, like mysql"
-        exit 1
-    fi
+    exclaim "Building a ${datastore_type} image of trove guest agent for ${guest_os} ${guest_release}."
+
     VALID_SERVICES='mysql percona mariadb redis cassandra couchbase mongodb postgresql couchdb vertica db2 pxc'
     if ! [[ " $VALID_SERVICES " =~ " $datastore_type " ]]; then
-        exclaim "You did not pass in a valid image type. Valid types are:" $VALID_SERVICES
+        exclaim "You did not pass in a valid datastore type. Valid types are:" $VALID_SERVICES
         exit 1
     fi
 

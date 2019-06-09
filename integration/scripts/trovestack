@@ -832,7 +832,6 @@ function cmd_build_image() {
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap
     sudo -H $HTTP_PROXY pip install diskimage-builder
-    install_devstack_code
 
     exclaim "Use diskimage-builder to actually build the Trove Guest Agent Image."
     build_guest_image $IMAGE_DATASTORE_TYPE $IMAGE_GUEST_OS $IMAGE_GUEST_RELEASE $DEV_MODE

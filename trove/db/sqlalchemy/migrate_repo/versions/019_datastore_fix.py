@@ -16,6 +16,7 @@ from sqlalchemy.schema import MetaData
 from sqlalchemy.sql.expression import insert
 from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.expression import update
+from sqlalchemy import text
 
 from trove.common import cfg
 from trove.db.sqlalchemy.migrate_repo.schema import Table
@@ -53,9 +54,9 @@ def create_legacy_version(datastores_table,
 def find_image(service_name):
     image_table = Table('service_images', meta, autoload=True)
     image = select(
-        columns=["id", "image_id", "service_name"],
+        columns=[text("id"), text("image_id"), text("service_name")],
         from_obj=image_table,
-        whereclause="service_name='%s'" % service_name,
+        whereclause=text("service_name='%s'" % service_name),
         limit=1
     ).execute().fetchone()
 
@@ -66,9 +67,9 @@ def find_image(service_name):
 
 def has_instances_wo_datastore_version(instances_table):
     instance = select(
-        columns=["id"],
+        columns=[text("id")],
         from_obj=instances_table,
-        whereclause="datastore_version_id is NULL",
+        whereclause=text("datastore_version_id is NULL"),
         limit=1
     ).execute().fetchone()
 
@@ -77,9 +78,9 @@ def has_instances_wo_datastore_version(instances_table):
 
 def find_all_instances_wo_datastore_version(instances_table):
     instances = select(
-        columns=["id"],
+        columns=[text("id")],
         from_obj=instances_table,
-        whereclause="datastore_version_id is NULL"
+        whereclause=text("datastore_version_id is NULL")
     ).execute()
 
     return instances
@@ -107,16 +108,16 @@ def upgrade(migrate_engine):
         for instance in instances:
             update(
                 table=instance_table,
-                whereclause="id='%s'" % instance.id,
+                whereclause=text("id='%s'" % instance.id),
                 values=dict(datastore_version_id=version_id)
             ).execute()
 
     constraint_names = db_utils.get_foreign_key_constraint_names(
         engine=migrate_engine,
         table='instances',
-        columns=['datastore_version_id'],
+        columns=[text('datastore_version_id')],
         ref_table='datastore_versions',
-        ref_columns=['id'])
+        ref_columns=[text('id')])
     db_utils.drop_foreign_key_constraints(
         constraint_names=constraint_names,
         columns=[instance_table.c.datastore_version_id],
