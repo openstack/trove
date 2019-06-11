@@ -20,7 +20,9 @@ from mock import MagicMock
 from mock import patch
 import six
 
+from trove.common import exception
 from trove.dns.designate import driver
+from trove.dns import driver as base_driver
 from trove.tests.unittests import trove_testtools
 
 
@@ -171,6 +173,56 @@ class DesignateDriverTest(trove_testtools.TestCase):
     def assertDomainsAreEqual(self, expected, actual):
         self.assertEqual(expected.name, actual.name)
         self.assertEqual(expected.id, actual.id)
+
+
+class DesignateDriverV2Test(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(DesignateDriverV2Test, self).setUp()
+        self.records = [dict(name='record1.', type='A', data='10.0.0.1',
+                             ttl=3600, priority=1,
+                             id='11111111-1111-1111-1111-111111111111'),
+                        dict(name='record2.', type='CNAME', data='10.0.0.2',
+                             ttl=1800, priority=2,
+                             id='22222222-2222-2222-2222-222222222222'),
+                        dict(name='record3.', type='A', data='10.0.0.3',
+                             ttl=3600, priority=1,
+                             id='3333333-3333-3333-3333-333333333333')]
+        self.mock_client = MagicMock()
+        self.create_des_client_patch = patch.object(
+            driver, 'create_designate_client', MagicMock(
+                return_value=self.mock_client))
+        self.create_des_client_mock = self.create_des_client_patch.start()
+        self.addCleanup(self.create_des_client_patch.stop)
+
+    def test_create_entry(self):
+        dns_driver = driver.DesignateDriverV2()
+        zone = driver.DesignateDnsZone(
+            id='22222222-2222-2222-2222-222222222222', name='www.trove.com')
+        entry = base_driver.DnsEntry(name='www.example.com', content='None',
+                                     type='A', ttl=3600, priority=None,
+                                     dns_zone=zone)
+
+        dns_driver.create_entry(entry, '1.2.3.4')
+        self.mock_client.recordsets.create.assert_called_once_with(
+            driver.DNS_DOMAIN_ID, entry.name + '.', entry.type,
+            records=['1.2.3.4'])
+
+    def test_delete_entry(self):
+        with patch.object(driver.DesignateDriverV2, '_get_records',
+                          MagicMock(return_value=self.records)):
+            dns_driver = driver.DesignateDriverV2()
+            dns_driver.delete_entry('record1', 'A')
+            self.mock_client.recordsets.delete(driver.DNS_DOMAIN_ID)
+
+    def test_delete_no_entry(self):
+        with patch.object(driver.DesignateDriverV2, '_get_records',
+                          MagicMock(return_value=self.records)):
+            dns_driver = driver.DesignateDriverV2()
+            self.assertRaises(exception.DnsRecordNotFound,
+                              dns_driver.delete_entry,
+                              'nothere', 'A')
+            self.mock_client.recordsets.assert_not_called()
 
 
 class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):

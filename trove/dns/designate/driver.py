@@ -20,8 +20,10 @@ Dns Driver that uses Designate DNSaaS.
 import base64
 import hashlib
 
-from designateclient.v1 import Client
+from designateclient import client
 from designateclient.v1.records import Record
+from keystoneauth1 import loading
+from keystoneauth1 import session
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 import six
@@ -44,14 +46,16 @@ DNS_PASSKEY = CONF.dns_passkey
 DNS_TTL = CONF.dns_ttl
 DNS_DOMAIN_ID = CONF.dns_domain_id
 DNS_DOMAIN_NAME = CONF.dns_domain_name
-
+DNS_USER_DOMAIN_ID = CONF.dns_user_domain_id
+DNS_PROJECT_DOMAIN_ID = CONF.dns_project_domain_id
 
 LOG = logging.getLogger(__name__)
 
 
 class DesignateObjectConverter(object):
 
-    def domain_to_zone(self, domain):
+    @staticmethod
+    def domain_to_zone(domain):
         return DesignateDnsZone(id=domain.id, name=domain.name)
 
     def record_to_entry(self, record, dns_zone):
@@ -60,22 +64,23 @@ class DesignateObjectConverter(object):
                                priority=record.priority, dns_zone=dns_zone)
 
 
-def create_designate_client():
+def create_designate_client(api_version='2'):
     """Creates a Designate DNSaaS client."""
-    client = Client(auth_url=DNS_AUTH_URL,
-                    username=DNS_USERNAME,
-                    password=DNS_PASSKEY,
-                    tenant_id=DNS_TENANT_ID,
-                    endpoint=DNS_ENDPOINT_URL,
-                    service_type=DNS_SERVICE_TYPE,
-                    region_name=DNS_REGION)
-    return client
+    loader = loading.get_plugin_loader('password')
+    auth = loader.load_from_options(auth_url=DNS_AUTH_URL,
+                                    username=DNS_USERNAME,
+                                    password=DNS_PASSKEY,
+                                    project_id=DNS_TENANT_ID,
+                                    user_domain_id=DNS_USER_DOMAIN_ID,
+                                    project_domain_id=DNS_PROJECT_DOMAIN_ID)
+    sesh = session.Session(auth=auth)
+    return client.Client(api_version, session=sesh)
 
 
 class DesignateDriver(driver.DnsDriver):
 
     def __init__(self):
-        self.dns_client = create_designate_client()
+        self.dns_client = create_designate_client(api_version='1')
         self.converter = DesignateObjectConverter()
         self.default_dns_zone = DesignateDnsZone(id=DNS_DOMAIN_ID,
                                                  name=DNS_DOMAIN_NAME)
@@ -138,6 +143,46 @@ class DesignateDriver(driver.DnsDriver):
         if not dns_zone:
             raise TypeError(_('DNS domain is must be specified'))
         return self.dns_client.records.list(dns_zone.id)
+
+
+class DesignateDriverV2(driver.DnsDriver):
+
+    def __init__(self):
+        self.dns_client = create_designate_client()
+        self.default_dns_zone = DesignateDnsZone(id=DNS_DOMAIN_ID,
+                                                 name=DNS_DOMAIN_NAME)
+
+    def create_entry(self, entry, content):
+        """Creates the entry in the driver at the given dns zone."""
+        dns_zone = entry.dns_zone or self.default_dns_zone
+        if not dns_zone.id:
+            raise TypeError(_("The entry's dns_zone must have an ID "
+                              "specified."))
+        name = entry.name
+        LOG.debug("Creating DNS entry %s.", name)
+        client = self.dns_client
+        # Record name has to end with a '.' by dns standard
+        client.recordsets.create(DNS_DOMAIN_ID, entry.name + '.', entry.type,
+                                 records=[content])
+
+    def delete_entry(self, name, type, dns_zone=None):
+        """Deletes an entry with the given name and type from a dns zone."""
+        dns_zone = dns_zone or self.default_dns_zone
+        records = self._get_records(dns_zone)
+        matching_record = [rec for rec in records
+                           if rec['name'] == name + '.'
+                           and rec['type'] == type]
+        if not matching_record:
+            raise exception.DnsRecordNotFound(name)
+        LOG.debug("Deleting DNS entry %s.", name)
+        self.dns_client.recordsets.delete(dns_zone.id,
+                                          matching_record[0]['id'])
+
+    def _get_records(self, dns_zone):
+        dns_zone = dns_zone or self.default_dns_zone
+        if not dns_zone:
+            raise TypeError(_('DNS domain is must be specified'))
+        return self.dns_client.recordsets.list(dns_zone.id)
 
 
 class DesignateInstanceEntryFactory(driver.DnsInstanceEntryFactory):
