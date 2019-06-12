@@ -1,6 +1,4 @@
 Element to install an Trove guest agent.
 
-Note: this requires a system base image modified to include OpenStack
+Note: this requires a system base image modified to include Trove source code
 repositories
-
-the ubuntu-guest element could be removed.

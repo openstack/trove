@@ -21,6 +21,8 @@ function build_vm() {
     GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
     GUEST_WORKING_DIR=${GUEST_WORKING_DIR:-"$HOME/images"}
 
+    export GUEST_USERNAME=${guest_username}
+
     # In dev mode, the trove guest agent needs to download trove code from
     # trove-taskmanager host during service initialization.
     if [[ "${dev_mode}" == "true" ]]; then
@@ -34,7 +36,6 @@ function build_vm() {
         export HOST_SCP_USERNAME=$(whoami)
         export HOST_USERNAME=${HOST_SCP_USERNAME}
         export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
-        export GUEST_USERNAME=${guest_username}
         manage_ssh_keys
     fi
 
@@ -68,7 +69,6 @@ function build_vm() {
     if [[ "${dev_mode}" == "false" ]]; then
         elementes="$elementes pip-and-virtualenv"
         elementes="$elementes pip-cache"
-        elementes="$elementes no-resolvconf"
         elementes="$elementes guest-agent"
     else
         elementes="$elementes ${guest_os}-guest"
@@ -101,7 +101,7 @@ function build_guest_image() {
     dev_mode=${4:-"true"}
     guest_username=${5:-"ubuntu"}
 
-    exclaim "Building a ${datastore_type} image of trove guest agent for ${guest_os} ${guest_release}."
+    exclaim "Building a ${datastore_type} image of trove guest agent for ${guest_os} ${guest_release}, dev_mode=${dev_mode}"
 
     VALID_SERVICES='mysql percona mariadb redis cassandra couchbase mongodb postgresql couchdb vertica db2 pxc'
     if ! [[ " $VALID_SERVICES " =~ " $datastore_type " ]]; then
@@ -109,7 +109,7 @@ function build_guest_image() {
         exit 1
     fi
 
-    image_name=${guest_os}_${datastore_type}
+    image_name=${guest_os}-${datastore_type}
     image_folder=$HOME/images
     mkdir -p $image_folder
     image_path=${image_folder}/${image_name}

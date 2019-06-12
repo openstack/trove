@@ -10,7 +10,7 @@
       "cloud-guest-utils": "",
       "apparmor": "",
       "dmeventd": "",
-      "isc-dhcp-client": "",
+      "isc-dhcp-client": "dhcp-client",
       "uuid-runtime": "",
       "ubuntu-cloudimage-keyring": "",
       "vim-tiny": "",

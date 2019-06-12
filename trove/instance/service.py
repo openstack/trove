@@ -36,13 +36,11 @@ from trove.instance import models, views
 from trove.module import models as module_models
 from trove.module import views as module_views
 
-
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
 class InstanceController(wsgi.Controller):
-
     """Controller for instance functionality."""
     schemas = apischema.instance.copy()
 
@@ -86,7 +84,7 @@ class InstanceController(wsgi.Controller):
             'restart': self._action_restart,
             'resize': self._action_resize,
             'promote_to_replica_source':
-            self._action_promote_to_replica_source,
+                self._action_promote_to_replica_source,
             'eject_replica_source': self._action_eject_replica_source,
             'reset_status': self._action_reset_status,
         }
@@ -478,7 +476,7 @@ class InstanceController(wsgi.Controller):
         LOG.debug("Default config for instance %(instance_id)s is %(config)s",
                   {'instance_id': id, 'config': config})
         return wsgi.Result(views.DefaultConfigurationView(
-                           config).data(), 200)
+            config).data(), 200)
 
     def guest_log_list(self, req, tenant_id, id):
         """Return all information about all logs for an instance."""

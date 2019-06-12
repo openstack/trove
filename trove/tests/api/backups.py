@@ -52,7 +52,7 @@ backup_count_prior_to_create = 0
 backup_count_for_instance_prior_to_create = 0
 
 
-@test(depends_on_groups=[instances_actions.GROUP_STOP_MYSQL],
+@test(depends_on_groups=[instances_actions.GROUP_RESIZE],
       groups=[BACKUP_GROUP, tests.INSTANCES],
       enabled=CONFIG.swift_enabled)
 class CreateBackups(object):
@@ -379,7 +379,7 @@ class DeleteRestoreInstance(object):
         assert_raises(exceptions.NotFound, instance_info.dbaas.instances.get,
                       instance_id)
 
-    @test(runs_after=[VerifyRestore.test_database_restored_incremental])
+    @test(depends_on=[VerifyRestore.test_database_restored_incremental])
     def test_delete_restored_instance_incremental(self):
         try:
             self._delete(incremental_restore_instance_id)

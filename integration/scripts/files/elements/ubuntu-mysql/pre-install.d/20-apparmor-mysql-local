@@ -5,6 +5,7 @@ set -e
 #CONTEXT: chroot on host
 #PURPOSE: Allows mysqld to create temporary files when restoring backups
 
+mkdir -p /etc/apparmor.d/local/
 cat <<EOF >>/etc/apparmor.d/local/usr.sbin.mysqld
   /tmp/ rw,
   /tmp/** rwk,

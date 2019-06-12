@@ -45,6 +45,7 @@ GROUP_REBOOT = "dbaas.api.instances.actions.reboot"
 GROUP_RESTART = "dbaas.api.instances.actions.restart"
 GROUP_RESIZE = "dbaas.api.instances.actions.resize"
 GROUP_STOP_MYSQL = "dbaas.api.instances.actions.stop"
+GROUP_UPDATE_GUEST = "dbaas.api.instances.actions.update_guest"
 MYSQL_USERNAME = "test_user"
 MYSQL_PASSWORD = "abcde"
 # stored in test conf
@@ -104,7 +105,6 @@ def get_resize_timeout():
 
 
 TIME_OUT_TIME = get_resize_timeout()
-USER_WAS_DELETED = False
 
 
 class ActionTestBase(object):
@@ -223,23 +223,25 @@ class RebootTestBase(ActionTestBase):
     def call_reboot(self):
         raise NotImplementedError()
 
-    def wait_for_broken_connection(self):
-        """Wait until our connection breaks."""
-        if not USE_IP:
-            return
-        if not hasattr(self, "connection"):
-            return
-        poll_until(self.connection.is_connected,
-                   lambda connected: not connected,
-                   time_out=TIME_OUT_TIME)
-
     def wait_for_successful_restart(self):
-        """Wait until status becomes running."""
-        def is_finished_rebooting():
+        """Wait until status becomes running.
+
+        Reboot is an async operation, make sure the instance is rebooting
+        before active.
+        """
+        def _is_rebooting():
             instance = self.instance
             if instance.status == "REBOOT":
+                return True
+            return False
+
+        poll_until(_is_rebooting, time_out=TIME_OUT_TIME)
+
+        def is_finished_rebooting():
+            instance = self.instance
+            asserts.assert_not_equal(instance.status, "ERROR")
+            if instance.status != "ACTIVE":
                 return False
-            asserts.assert_equal("ACTIVE", instance.status)
             return True
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
@@ -253,44 +255,9 @@ class RebootTestBase(ActionTestBase):
 
     def successful_restart(self):
         """Restart MySQL via the REST API successfully."""
-        self.fix_mysql()
         self.call_reboot()
-        self.wait_for_broken_connection()
         self.wait_for_successful_restart()
         self.assert_mysql_proc_is_different()
-
-    def mess_up_mysql(self):
-        """Ruin MySQL's ability to restart."""
-        server = create_server_connection(self.instance_id,
-                                          self.instance_mgmt_address)
-        cmd_template = "sudo cp /dev/null /var/lib/mysql/data/ib_logfile%d"
-        instance_info.dbaas_admin.management.stop(self.instance_id)
-
-        for index in range(2):
-            cmd = cmd_template % index
-            try:
-                server.execute(cmd)
-            except Exception as e:
-                asserts.fail("Failed to execute command %s, error: %s" %
-                             (cmd, str(e)))
-
-    def fix_mysql(self):
-        """Fix MySQL's ability to restart."""
-        if not FAKE_MODE:
-            server = create_server_connection(self.instance_id,
-                                              self.instance_mgmt_address)
-            cmd_template = "sudo rm /var/lib/mysql/data/ib_logfile%d"
-            # We want to stop mysql so that upstart does not keep trying to
-            # respawn it and block the guest agent from accessing the logs.
-            instance_info.dbaas_admin.management.stop(self.instance_id)
-
-            for index in range(2):
-                cmd = cmd_template % index
-                try:
-                    server.execute(cmd)
-                except Exception as e:
-                    asserts.fail("Failed to execute command %s, error: %s" %
-                                 (cmd, str(e)))
 
     def wait_for_failure_status(self):
         """Wait until status becomes running."""
@@ -305,19 +272,6 @@ class RebootTestBase(ActionTestBase):
             return True
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
-
-    def unsuccessful_restart(self):
-        """Restart MySQL via the REST when it should fail, assert it does."""
-        assert not FAKE_MODE
-        self.mess_up_mysql()
-        self.call_reboot()
-        self.wait_for_broken_connection()
-        self.wait_for_failure_status()
-
-    def restart_normally(self):
-        """Fix iblogs and reboot normally."""
-        self.fix_mysql()
-        self.test_successful_restart()
 
 
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_RESTART],
@@ -338,22 +292,14 @@ class RestartTests(RebootTestBase):
         """Make sure MySQL is accessible before restarting."""
         self.ensure_mysql_is_running()
 
-    @test(depends_on=[test_ensure_mysql_is_running], enabled=not FAKE_MODE)
-    def test_unsuccessful_restart(self):
-        """Restart MySQL via the REST when it should fail, assert it does."""
-        if FAKE_MODE:
-            raise SkipTest("Cannot run this in fake mode.")
-        self.unsuccessful_restart()
-
-    @test(depends_on=[test_set_up],
-          runs_after=[test_ensure_mysql_is_running, test_unsuccessful_restart])
+    @test(depends_on=[test_ensure_mysql_is_running])
     def test_successful_restart(self):
         """Restart MySQL via the REST API successfully."""
         self.successful_restart()
 
 
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_STOP_MYSQL],
-      depends_on_groups=[GROUP_START], depends_on=[create_user])
+      depends_on_groups=[GROUP_RESTART], depends_on=[create_user])
 class StopTests(RebootTestBase):
     """Tests which involve stopping MySQL."""
 
@@ -373,11 +319,10 @@ class StopTests(RebootTestBase):
     def test_stop_mysql(self):
         """Stops MySQL."""
         instance_info.dbaas_admin.management.stop(self.instance_id)
-        self.wait_for_broken_connection()
         self.wait_for_failure_status()
 
     @test(depends_on=[test_stop_mysql])
-    def test_instance_get_shows_volume_info_while_mysql_is_down(self):
+    def test_volume_info_while_mysql_is_down(self):
         """
         Confirms the get call behaves appropriately while an instance is
         down.
@@ -392,15 +337,14 @@ class StopTests(RebootTestBase):
             check.true(isinstance(instance.volume.get('size', None), int))
             check.true(isinstance(instance.volume.get('used', None), float))
 
-    @test(depends_on=[test_set_up],
-          runs_after=[test_instance_get_shows_volume_info_while_mysql_is_down])
+    @test(depends_on=[test_volume_info_while_mysql_is_down])
     def test_successful_restart_when_in_shutdown_state(self):
         """Restart MySQL via the REST API successfully when MySQL is down."""
         self.successful_restart()
 
 
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_REBOOT],
-      depends_on_groups=[GROUP_START], depends_on=[RestartTests, create_user])
+      depends_on_groups=[GROUP_STOP_MYSQL])
 class RebootTests(RebootTestBase):
     """Tests restarting instance."""
 
@@ -418,14 +362,7 @@ class RebootTests(RebootTestBase):
         """Make sure MySQL is accessible before restarting."""
         self.ensure_mysql_is_running()
 
-    @test(depends_on=[test_ensure_mysql_is_running])
-    def test_unsuccessful_restart(self):
-        """Restart MySQL via the REST when it should fail, assert it does."""
-        if FAKE_MODE:
-            raise SkipTest("Cannot run this in fake mode.")
-        self.unsuccessful_restart()
-
-    @after_class(depends_on=[test_set_up])
+    @after_class(depends_on=[test_ensure_mysql_is_running])
     def test_successful_restart(self):
         """Restart MySQL via the REST API successfully."""
         if FAKE_MODE:
@@ -434,8 +371,7 @@ class RebootTests(RebootTestBase):
 
 
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_RESIZE],
-      depends_on_groups=[GROUP_START], depends_on=[create_user],
-      runs_after=[RebootTests])
+      depends_on_groups=[GROUP_REBOOT])
 class ResizeInstanceTest(ActionTestBase):
 
     """
@@ -466,7 +402,6 @@ class ResizeInstanceTest(ActionTestBase):
             self.connection.connect()
             asserts.assert_true(self.connection.is_connected(),
                                 "Should be able to connect before resize.")
-        self.user_was_deleted = False
 
     @test
     def test_instance_resize_same_size_should_fail(self):
@@ -484,8 +419,6 @@ class ResizeInstanceTest(ActionTestBase):
         poll_until(is_active, time_out=TIME_OUT_TIME)
         asserts.assert_equal(self.instance.status, 'ACTIVE')
 
-        self.get_flavor_href(
-            flavor_id=self.expected_old_flavor_id)
         asserts.assert_raises(HTTPNotImplemented,
                               self.dbaas.instances.resize_instance,
                               self.instance_id, flavors[0].id)
@@ -517,11 +450,6 @@ class ResizeInstanceTest(ActionTestBase):
         flavor = flavors[0]
         self.old_dbaas_flavor = instance_info.dbaas_flavor
         instance_info.dbaas_flavor = flavor
-        asserts.assert_true(flavor is not None,
-                            "Flavor '%s' not found!" % flavor_name)
-        flavor_href = self.dbaas.find_flavor_self_href(flavor)
-        asserts.assert_true(flavor_href is not None,
-                            "Flavor href '%s' not found!" % flavor_name)
         self.expected_new_flavor_id = flavor.id
 
     @test(depends_on=[test_instance_resize_same_size_should_fail])
@@ -578,45 +506,6 @@ class ResizeInstanceTest(ActionTestBase):
         actual = self.get_flavor_href(self.instance.flavor['id'])
         expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
         asserts.assert_equal(actual, expected)
-
-    @test(depends_on=[test_instance_has_new_flavor_after_resize])
-    @time_out(TIME_OUT_TIME)
-    def test_resize_down(self):
-        expected_dbaas_flavor = self.expected_dbaas_flavor
-
-        def is_active():
-            return self.instance.status == 'ACTIVE'
-        poll_until(is_active, time_out=TIME_OUT_TIME)
-        asserts.assert_equal(self.instance.status, 'ACTIVE')
-
-        old_flavor_href = self.get_flavor_href(
-            flavor_id=self.expected_old_flavor_id)
-
-        self.dbaas.instances.resize_instance(self.instance_id, old_flavor_href)
-        asserts.assert_equal(202, self.dbaas.last_http_code)
-        self.old_dbaas_flavor = instance_info.dbaas_flavor
-        instance_info.dbaas_flavor = expected_dbaas_flavor
-        self.wait_for_resize()
-        asserts.assert_equal(str(self.instance.flavor['id']),
-                             str(self.expected_old_flavor_id))
-
-    @test(depends_on=[test_resize_down],
-          groups=["dbaas.usage"])
-    def test_resize_instance_down_usage_event_sent(self):
-        expected = self._build_expected_msg()
-        expected['old_instance_size'] = self.old_dbaas_flavor.ram
-        instance_info.consumer.check_message(instance_info.id,
-                                             'trove.instance.modify_flavor',
-                                             **expected)
-
-
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP,
-              GROUP + ".resize.instance"],
-      depends_on_groups=[GROUP_START], depends_on=[create_user],
-      runs_after=[RebootTests, ResizeInstanceTest])
-def resize_should_not_delete_users():
-    if USER_WAS_DELETED:
-        asserts.fail("Somehow, the resize made the test user disappear.")
 
 
 @test(depends_on=[ResizeInstanceTest],
@@ -708,9 +597,8 @@ class ResizeInstanceVolume(ActionTestBase):
 UPDATE_GUEST_CONF = CONFIG.values.get("guest-update-test", None)
 
 
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP + ".update_guest"],
-      depends_on=[create_user],
-      depends_on_groups=[GROUP_START])
+@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_UPDATE_GUEST],
+      depends_on_groups=[GROUP_RESIZE])
 class UpdateGuest(object):
 
     def get_version(self):

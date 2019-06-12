@@ -52,7 +52,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
     def test_version_create(self, mock_glance_client):
         body = {"version": {
             "datastore_name": "test_ds",
-            "name": "test_vr",
+            "name": "test_version",
             "datastore_manager": "mysql",
             "image": "image-id",
             "packages": "test-pkg",

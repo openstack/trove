@@ -18,7 +18,6 @@ from trove.tests.api import backups
 from trove.tests.api import configurations
 from trove.tests.api import databases
 from trove.tests.api import datastores
-from trove.tests.api import flavors
 from trove.tests.api import instances
 from trove.tests.api import instances_actions
 from trove.tests.api.mgmt import accounts
@@ -86,7 +85,6 @@ def register(group_names, *test_groups, **kwargs):
                        depends_on_groups=build_group(*test_groups))
 
 black_box_groups = [
-    flavors.GROUP,
     users.GROUP,
     user_access.GROUP,
     databases.GROUP,
@@ -114,7 +112,6 @@ proboscis.register(groups=["blackbox", "mysql"],
 
 simple_black_box_groups = [
     GROUP_SERVICES_INITIALIZE,
-    flavors.GROUP,
     versions.GROUP,
     instances.GROUP_START_SIMPLE,
     admin_required.GROUP,
@@ -141,7 +138,6 @@ proboscis.register(groups=["blackbox_mgmt"],
 # Base groups for all other groups
 base_groups = [
     GROUP_SERVICES_INITIALIZE,
-    flavors.GROUP,
     versions.GROUP,
     GROUP_SETUP
 ]
