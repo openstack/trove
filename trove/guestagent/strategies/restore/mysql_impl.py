@@ -39,7 +39,7 @@ class MySQLRestoreMixin(object):
     RESET_ROOT_SLEEP_INTERVAL = 10
 
     RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
-                                 "'root'@'localhost'=PASSWORD('');")
+                                 "'root'@'localhost'='';")
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'

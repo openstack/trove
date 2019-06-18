@@ -468,13 +468,13 @@ class MySqlAdminTest(trove_testtools.TestCase):
 
     def test_change_passwords(self):
         user = [{"name": "test_user", "host": "%", "password": "password"}]
-        expected = ("SET PASSWORD FOR 'test_user'@'%' = PASSWORD('password');")
+        expected = ("SET PASSWORD FOR 'test_user'@'%' = 'password';")
         with patch.object(self.mock_client, 'execute') as mock_execute:
             self.mySqlAdmin.change_passwords(user)
             self._assert_execute_call(expected, mock_execute)
 
     def test_update_attributes_password(self):
-        expected = ("SET PASSWORD FOR 'test_user'@'%' = PASSWORD('password');")
+        expected = ("SET PASSWORD FOR 'test_user'@'%' = 'password';")
         user = MagicMock()
         user.name = "test_user"
         user.host = "%"
@@ -558,14 +558,12 @@ class MySqlAdminTest(trove_testtools.TestCase):
 
     def test_create_user(self):
         access_grants_expected = ("GRANT ALL PRIVILEGES ON `testDB`.* TO "
-                                  "`random`@`%` IDENTIFIED BY 'guesswhat';")
-        create_user_expected = ("GRANT USAGE ON *.* TO `random`@`%` "
-                                "IDENTIFIED BY 'guesswhat';")
+                                  "`random`@`%`;")
 
         with patch.object(self.mock_client, 'execute') as mock_execute:
             self.mySqlAdmin.create_user(FAKE_USER)
-            self._assert_execute_call(create_user_expected,
-                                      mock_execute, call_idx=0)
+            mock_execute.assert_any_call(TextClauseMatcher('CREATE USER'),
+                                         user='random', host='%')
             self._assert_execute_call(access_grants_expected,
                                       mock_execute, call_idx=1)
 
@@ -1411,7 +1409,7 @@ class MySqlAppTest(trove_testtools.TestCase):
             self.mySqlApp.secure_root()
         update_root_password, _ = self.mock_execute.call_args_list[0]
         update_expected = ("SET PASSWORD FOR 'root'@'localhost' = "
-                           "PASSWORD('some_password');")
+                           "'some_password';")
 
         remove_root, _ = self.mock_execute.call_args_list[1]
         remove_expected = ("DELETE FROM mysql.user WHERE "
