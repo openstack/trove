@@ -14,6 +14,7 @@ datadir = /var/lib/mysql/data
 tmpdir = /var/tmp
 pid-file = /var/run/mysqld/mysqld.pid
 socket = /var/run/mysqld/mysqld.sock
+default_authentication_plugin = mysql_native_password
 skip-external-locking = 1
 key_buffer_size = {{ (50 * flavor['ram']/512)|int }}M
 max_allowed_packet = {{ (1024 * flavor['ram']/512)|int }}K
