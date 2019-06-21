@@ -421,14 +421,24 @@ class PgSqlApp(object):
         """Wrapper for pg_current_xlog_location()
         Cannot be used against a running slave
         """
-        r = self.build_admin().query("SELECT pg_current_xlog_location()")
+        version = int(self.pg_version[1])
+        if version < 10:
+            query = "SELECT pg_current_xlog_location()"
+        else:
+            query = "SELECT pg_current_wal_lsn()"
+        r = self.build_admin().query(query)
         return r[0][0]
 
     def pg_last_xlog_replay_location(self):
         """Wrapper for pg_last_xlog_replay_location()
          For use on standby servers
          """
-        r = self.build_admin().query("SELECT pg_last_xlog_replay_location()")
+        version = int(self.pg_version[1])
+        if version < 10:
+            query = "SELECT pg_last_xlog_replay_location()"
+        else:
+            query = "SELECT pg_last_wal_replay_lsn()"
+        r = self.build_admin().query(query)
         return r[0][0]
 
     def pg_is_in_recovery(self):
@@ -513,8 +523,12 @@ class PgSqlApp(object):
         return r[0][0]
 
     def pg_xlogfile_name(self, start_segment):
-        r = self.build_admin().query(
-            "SELECT pg_xlogfile_name('%s')" % start_segment)
+        version = int(self.pg_version[1])
+        if version < 10:
+            query = "SELECT pg_xlogfile_name('%s')"
+        else:
+            query = "SELECT pg_walfile_name('%s')"
+        r = self.build_admin().query(query % start_segment)
         return r[0][0]
 
     def pg_stop_backup(self):
