@@ -44,7 +44,7 @@ class TemplateTest(trove_testtools.TestCase):
         flavor_multiplier = test_flavor['ram'] // 512
         found_group = self._find_in_template(contents, teststr)
         if not found_group:
-            raise "Could not find text in template"
+            raise Exception("Could not find text in template")
         # Check that the last group has been rendered
         memsize = found_group.split(" ")[2]
         self.assertEqual("%sM" % (8 * flavor_multiplier), memsize)
