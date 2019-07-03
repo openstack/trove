@@ -85,7 +85,6 @@ class TestClusterController(trove_testtools.TestCase):
         schema = self.controller.get_schema('create', self.cluster)
         self.assertIsNotNone(schema)
         self.assertIn('cluster', schema['properties'])
-        self.assertTrue('cluster')
 
     def test_get_schema_action_add_shard(self):
         schema = self.controller.get_schema('action', self.add_shard)
