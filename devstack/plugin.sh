@@ -594,13 +594,15 @@ function _setup_minimal_image {
     export PATH_TROVE=${PATH_TROVE:-'/opt/stack/trove'}
     export ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
     export TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:-'/opt/stack/trove/integration/scripts'}
-    export SERVICE_TYPE=${SERVICE_TYPE:-'mysql'}
+    export TROVE_DATASTORE_TYPE=${TROVE_DATASTORE_TYPE:-'mysql'}
+    export TROVE_DATASTORE_VERSION=${TROVE_DATASTORE_VERSION:-'5.7'}
+    export TROVE_DATASTORE_PACKAGE=${TROVE_DATASTORE_PACKAGE:-"${TROVE_DATASTORE_TYPE}-${TROVE_DATASTORE_VERSION}"}
     export SSH_DIR=${SSH_DIR:-'/opt/stack/.ssh'}
     export GUEST_LOGDIR=${GUEST_LOGDIR:-'/var/log/trove/'}
     export ESCAPED_GUEST_LOGDIR=$(echo $GUEST_LOGDIR | sed 's/\//\\\//g')
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
     export DISTRO="ubuntu"
-    export VM=${VM:-'/opt/stack/images/ubuntu_mysql/ubuntu_mysql'}
+    export VM=${VM:-"/opt/stack/images/${DISTRO}_${TROVE_DATASTORE_TYPE}/${DISTRO}_${TROVE_DATASTORE_TYPE}"}
 
     if [ -d "$TROVESTACK_SCRIPTS/files/elements" ]; then
         export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
@@ -660,7 +662,7 @@ function _setup_minimal_image {
     echo "Run disk image create to actually create a new image"
     disk-image-create -a amd64 -o "${VM}" -x ${QEMU_IMG_OPTIONS} ${DISTRO} \
         vm cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${RELEASE}-guest \
-        ${DISTRO}-${SERVICE_TYPE} ${DISTRO}-${RELEASE}-${SERVICE_TYPE}
+        ${DISTRO}-${TROVE_DATASTORE_TYPE} ${DISTRO}-${RELEASE}-${TROVE_DATASTORE_TYPE}
 
     QCOW_IMAGE="$VM.qcow2"
 
@@ -669,34 +671,32 @@ function _setup_minimal_image {
         return 1
     fi
 
-    DATASTORE=$SERVICE_TYPE
-    DATASTORE_VERSION=${DATASTORE_VERSION:-'5.7'}
     ACTIVE=1
     INACTIVE=0
 
     echo "Add image to glance"
     GLANCE_OUT=$(openstack --os-url $GLANCE_SERVICE_PROTOCOL://$GLANCE_HOSTPORT \
-        image create $DISTRO-${DATASTORE}-${DATASTORE_VERSION} \
+        image create $DISTRO-${TROVE_DATASTORE_TYPE}-${TROVE_DATASTORE_VERSION} \
         --public --disk-format qcow2 --container-format bare --file $QCOW_IMAGE)
     glance_image_id=$(echo "$GLANCE_OUT" | grep '| id ' | awk '{print $4}')
 
     echo "Create datastore specific entry in Trove AFAIK one per datastore, do not need when changing image"
-    $TROVE_MANAGE datastore_update $DATASTORE ""
+    $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE ""
 
     echo "Connect datastore entry to glance image"
-    $TROVE_MANAGE datastore_version_update $DATASTORE $DATASTORE_VERSION $DATASTORE $glance_image_id "" $ACTIVE
+    $TROVE_MANAGE datastore_version_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION $TROVE_DATASTORE_TYPE $glance_image_id "" $ACTIVE
 
     echo "Set default datastore version"
-    $TROVE_MANAGE datastore_update $DATASTORE $DATASTORE_VERSION
+    $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION
 
     # just for tests
-    $TROVE_MANAGE datastore_version_update "$DATASTORE" "inactive_version" "manager1" $glance_image_id "" $INACTIVE
+    $TROVE_MANAGE datastore_version_update "$TROVE_DATASTORE_TYPE" "inactive_version" "manager1" $glance_image_id "" $INACTIVE
     $TROVE_MANAGE datastore_update Test_Datastore_1 ""
 
     echo "Add validation rules if available"
-    if [ -f "$PATH_TROVE"/trove/templates/$DATASTORE/validation-rules.json ]; then
-        $TROVE_MANAGE db_load_datastore_config_parameters "$DATASTORE" "$DATASTORE_VERSION" \
-            "$PATH_TROVE"/trove/templates/$DATASTORE/validation-rules.json
+    if [ -f "$PATH_TROVE"/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]; then
+        $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
+            "$PATH_TROVE"/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
     fi
 
     echo "Generate cloudinit"
