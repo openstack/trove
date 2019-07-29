@@ -580,10 +580,11 @@ name:
   type: string
 nics:
   description: |
-     Network interfaces when creating underlying Nova
-     instances.
-     ``NOTE:`` this parameter use the same schema when
-     novaclient creating servers.
+     Network interfaces for database service inside Nova instances.
+     ``NOTE:`` For backward compatibility, this parameter uses the same schema
+     as novaclient creating servers, but only ``net-id`` is supported ans can
+     only be specified once. This parameter is required in service tenant
+     deployment model.
   in: body
   required: false
   type: array
