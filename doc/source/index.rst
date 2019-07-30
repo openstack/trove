@@ -59,6 +59,6 @@ Search Trove Documentation
 .. _Trove Wiki: https://wiki.openstack.org/wiki/Trove
 .. _Trove: https://opendev.org/openstack/trove
 .. _Trove Client: https://opendev.org/openstack/python-troveclient
-.. _Trove API Documentation: https://developer.openstack.org/api-ref/database/
+.. _Trove API Documentation: https://docs.openstack.org/api-ref/database/
 .. _Trove Blueprints: https://blueprints.launchpad.net/trove
 .. _Trove Bugs: https://bugs.launchpad.net/trove
