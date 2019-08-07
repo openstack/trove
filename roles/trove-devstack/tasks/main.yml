@@ -1,4 +1,6 @@
 - name: Run trovestack
+  become: true
+  become_user: stack
   shell: |
     export BRIDGE_IP=10.1.0.1
     export DEST={{devstack_base_dir}}

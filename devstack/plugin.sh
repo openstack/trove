@@ -356,16 +356,15 @@ function init_trove {
     # Initialize the trove database
     $TROVE_MANAGE db_sync
 
-    # build and upload sample Trove mysql instance if not set otherwise
-    TROVE_DISABLE_IMAGE_SETUP=`echo ${TROVE_DISABLE_IMAGE_SETUP} | tr '[:upper:]' '[:lower:]'`
+    # build and upload sample Trove mysql instance if not set otherwise.
+    # We recommend to use trovestack tooling for image build.
+    TROVE_DISABLE_IMAGE_SETUP=`echo ${TROVE_DISABLE_IMAGE_SETUP,,}`
     if [[ ${TROVE_DISABLE_IMAGE_SETUP} != "true" ]]; then
         echo "Setup datastore image."
         _setup_minimal_image
     else
         echo "Skip datastore image building."
     fi
-
-    # If no guest image is specified, skip remaining setup
     [ -z "$TROVE_GUEST_IMAGE_URL" ] && return 0
 
     # Find the glance id for the trove guest image

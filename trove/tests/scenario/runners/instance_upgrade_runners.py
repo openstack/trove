@@ -12,6 +12,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from oslo_service import loopingcall
 
 from trove.tests.scenario.helpers.test_helper import DataType
 from trove.tests.scenario.runners.test_runners import TestRunner
@@ -34,9 +35,8 @@ class InstanceUpgradeRunner(TestRunner):
         host = self.get_instance_host(self.instance_info.id)
         self.test_helper.remove_data(DataType.small, host)
 
-    def run_instance_upgrade(
-            self, expected_states=['UPGRADE', 'ACTIVE'],
-            expected_http_code=202):
+    def run_instance_upgrade(self, expected_states=['UPGRADE', 'ACTIVE'],
+                             expected_http_code=202):
         instance_id = self.instance_info.id
         self.report.log("Testing upgrade on instance: %s" % instance_id)
 
@@ -45,3 +45,24 @@ class InstanceUpgradeRunner(TestRunner):
         client.instances.upgrade(instance_id, target_version)
         self.assert_client_code(client, expected_http_code)
         self.assert_instance_action(instance_id, expected_states)
+
+        def _wait_for_user_list():
+            try:
+                all_users = self.get_user_names(client, instance_id)
+                self.report.log("Users in the db instance %s: %s" %
+                                (instance_id, all_users))
+            except Exception as e:
+                self.report.log(
+                    "Failed to list users in db instance %s(will continue), "
+                    "error: %s" % (instance_id, str(e))
+                )
+            else:
+                raise loopingcall.LoopingCallDone()
+
+        timer = loopingcall.FixedIntervalWithTimeoutLoopingCall(
+            _wait_for_user_list)
+        try:
+            timer.start(interval=3, timeout=120).wait()
+        except loopingcall.LoopingCallTimeOut:
+            self.fail("Timed out: Cannot list users in the db instance %s"
+                      % instance_id)

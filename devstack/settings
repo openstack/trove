@@ -84,3 +84,5 @@ enable_service trove tr-api tr-tmgr tr-cond
 # Nova to use a single MQ for the computes to talk to the scheduler.
 CELLSV2_SETUP=singleconductor
 
+# Trove image configuration, by default we don't build image.
+TROVE_DISABLE_IMAGE_SETUP=${TROVE_DISABLE_IMAGE_SETUP:-"true"}

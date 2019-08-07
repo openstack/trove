@@ -5,6 +5,7 @@
 
 function build_vm() {
     exclaim "Actually building the image, this can take up to 15 minutes"
+    rm -rf ~/.cache/image-create
 
     datastore_type=$1
     guest_os=$2
@@ -16,7 +17,7 @@ function build_vm() {
     elementes="base vm"
     trove_elements_path=${PATH_TROVE}/integration/scripts/files/elements
     GUEST_IMAGETYPE=${GUEST_IMAGETYPE:-"qcow2"}
-    GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-3}
+    GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-4}
     GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
     GUEST_WORKING_DIR=${GUEST_WORKING_DIR:-"$HOME/images"}
 
@@ -46,6 +47,13 @@ function build_vm() {
 
     export DIB_RELEASE=${guest_release}
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
+
+    # https://cloud-images.ubuntu.com/releases is more stable than the daily
+    # builds(https://cloud-images.ubuntu.com/xenial/current/),
+    # e.g. sometimes SHA256SUMS file is missing in the daily builds
+    declare -A releasemapping=( ["xenial"]="16.04" ["bionic"]="18.04")
+    export DIB_CLOUD_IMAGES="https://cloud-images.ubuntu.com/releases/${DIB_RELEASE}/release/"
+    export BASE_IMAGE_FILE="ubuntu-${releasemapping[${DIB_RELEASE}]}-server-cloudimg-amd64-root.tar.gz"
 
     if  [ "${GUEST_WORKING_DIR}" ]; then
         mkdir -p ${GUEST_WORKING_DIR}
