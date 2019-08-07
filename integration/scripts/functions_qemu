@@ -18,6 +18,7 @@ DIB_USE_HWE_KERNEL=${DIB_USE_HWE_KERNEL:-true}
 
 function build_vm() {
     exclaim "Actually building the image, this can take up to 15 minutes"
+    rm -rf ~/.cache/image-create
 
     # set variables here and ensure they are not changed during the duration of this script
     readonly HOMEDIR=$1
@@ -70,6 +71,14 @@ function build_vm() {
     export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
     export DIB_CLOUD_INIT_ETC_HOSTS=true
     local QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
+
+    # https://cloud-images.ubuntu.com/releases is more stable than the daily
+    # builds(https://cloud-images.ubuntu.com/xenial/current/),
+    # e.g. sometimes SHA256SUMS file is missing in the daily builds
+    declare -A releasemapping=( ["xenial"]="16.04" ["bionic"]="18.04")
+    export DIB_CLOUD_IMAGES="https://cloud-images.ubuntu.com/releases/${DIB_RELEASE}/release/"
+    export BASE_IMAGE_FILE="ubuntu-${releasemapping[${DIB_RELEASE}]}-server-cloudimg-amd64-root.tar.gz"
+
     disk-image-create ${TMPFS_ARGS} -a ${ARCH} -o "${VM}" \
         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm \
         cloud-init-datasources ${DISTRO}-${RELEASE}-guest ${DISTRO}-${RELEASE}-${SERVICE_TYPE}

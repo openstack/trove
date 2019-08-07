@@ -865,10 +865,6 @@ function cmd_build_and_upload_image() {
         GLANCE_IMAGEID=`get_glance_id upload_image $IMAGE_URL`
         [[ -z "$GLANCE_IMAGEID" ]] && echo "Glance upload failed!" && exit 1
         echo "IMAGE ID: $GLANCE_IMAGEID"
-
-        if [[ -f /etc/trove/cloudinit/mysql.cloudinit ]]; then
-            sudo cp /etc/trove/cloudinit/mysql.cloudinit /etc/trove/cloudinit/${DATASTORE_TYPE}.cloudinit
-        fi
     fi
 
     exclaim "Updating Datastores"
@@ -1038,6 +1034,9 @@ function cmd_int_tests() {
     else
         args="$@"
     fi
+
+    export TROVE_TEST_SSH_USER=${TROVE_TEST_SSH_USER:-"ubuntu"}
+    export TROVE_TEST_SSH_KEY_FILE=${TROVE_TEST_SSH_KEY_FILE:-"$HOME/.ssh/id_rsa"}
 
     dump_env
     # -- verbose makes it prettier.
@@ -1338,18 +1337,20 @@ function cmd_gate_tests() {
     export TROVE_REPORT_DIR=$HOME/gate-tests-report/
     TROVESTACK_DUMP_ENV=true
 
-    # Devstack vm-gate runs as a non-ubuntu user, but needs to connect to the guest image as ubuntu
-    export TROVE_TEST_SSH_USER='ubuntu'
-    export TROVE_TEST_SSH_KEY_FILE=$HOME/.ssh/id_rsa
+    export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
+    # The user used to connect the db instance.
+    export TROVE_TEST_SSH_USER=${TROVE_TEST_SSH_USER:-"ubuntu"}
+    # This var is used to ssh into the db instance during the test.
+    export TROVE_TEST_SSH_KEY_FILE=${SSH_DIR}/id_rsa
 
-    CLOUDINIT_PATH=/etc/trove/cloudinit/mysql.cloudinit
-    PUBKEY=`cat ${HOME}/.ssh/id_rsa.pub`
-
-    sudo echo "#!/bin/sh" | sudo tee $CLOUDINIT_PATH
-    sudo echo "" | sudo tee -a $CLOUDINIT_PATH
-    sudo echo "echo '${PUBKEY}' > /home/ubuntu/.ssh/authorized_keys" | sudo tee -a $CLOUDINIT_PATH
-    sudo echo "chmod 700 /home/ubuntu/.ssh" | sudo tee -a $CLOUDINIT_PATH
-    sudo echo "chmod 600 /home/ubuntu/.ssh/authorized_keys" | sudo tee -a $CLOUDINIT_PATH
+    # To avoid 'Connection timed out' error of sudo command
+    CLOUDINIT_PATH=/etc/trove/cloudinit/${DATASTORE_TYPE}.cloudinit
+    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
+    sudo touch "$CLOUDINIT_PATH"
+    sudo tee $CLOUDINIT_PATH >/dev/null <<'EOF'
+#cloud-config
+manage_etc_hosts: "localhost"
+EOF
 
     # Fix iptables rules that prevent amqp connections from the devstack box to the guests
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true

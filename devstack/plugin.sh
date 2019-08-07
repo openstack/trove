@@ -592,6 +592,8 @@ function _setup_minimal_image {
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
     export DISTRO="ubuntu"
     export VM=${VM:-'/opt/stack/images/ubuntu_mysql/ubuntu_mysql'}
+    export DEST=${DEST:-'/opt/stack'}
+    export BRANCH_OVERRIDE="stein"
 
     if [ -d "$TROVESTACK_SCRIPTS/files/elements" ]; then
         export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements

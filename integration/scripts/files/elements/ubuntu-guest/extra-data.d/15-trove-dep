@@ -9,7 +9,6 @@ set -o xtrace
 source $_LIB/die
 
 BRANCH_OVERRIDE=${BRANCH_OVERRIDE:-default}
-ADD_BRANCH=$(basename ${BRANCH_OVERRIDE})
 REQUIREMENTS_FILE=${TROVESTACK_SCRIPTS}/files/requirements/ubuntu-requirements.txt
 
 [ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
@@ -32,13 +31,12 @@ if [ -f "${DEST}/requirements/${UC_FILE}" ]; then
 else
     UC_DIR=$(pwd)
     UC_BRANCH=${BRANCH_OVERRIDE}
-    if [ "${ADD_BRANCH}" == "default" ]; then
+    if [ "${UC_BRANCH}" == "default" ]; then
         UC_BRANCH=master
     fi
 
     set +e
-    curl -o "${UC_DIR}/${UC_FILE}" \
-        https://git.openstack.org/cgit/openstack/requirements/plain/${UC_FILE}?h=${UC_BRANCH}
+    curl -L -o "${UC_DIR}/${UC_FILE}" "https://releases.openstack.org/constraints/upper/${UC_BRANCH}"
     set -e
 
     if [ -f "${UC_DIR}/${UC_FILE}" ]; then
