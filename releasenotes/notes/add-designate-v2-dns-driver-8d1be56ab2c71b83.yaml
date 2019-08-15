@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Added support for designate v2 api with a new dns driver. To use this driver
+    set dns_driver = trove.dns.designate.driver.DesignateDriverV2
