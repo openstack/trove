@@ -851,7 +851,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         bdm = CONF.block_device_mapping
 
         # use Nova block_device_mapping_v2, referrence:
-        # https://developer.openstack.org/api-ref/compute/#create-server
+        # https://docs.openstack.org/api-ref/compute/#create-server
         # setting the delete_on_terminate instance to true=1
         block_device_v2 = [{
             "uuid": v_ref.id,
