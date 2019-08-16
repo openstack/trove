@@ -3,5 +3,5 @@
 set -e
 set -o xtrace
 
-sed -i "s/PIDFile=\/var\/run\/postgresql\/%i.pid/PIDFile=\/var\/run\/postgresql\/postgresql.pid/" /lib/systemd/system/postgresql@.service
+sed -i "s/PIDFile=\/run\/postgresql\/%i.pid/PIDFile=\/var\/run\/postgresql\/postgresql.pid/" /lib/systemd/system/postgresql@.service
 
