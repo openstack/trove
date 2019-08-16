@@ -37,6 +37,7 @@
         - trove-tox-bandit-baseline:
             voting: false
         - openstack-tox-pylint
+        - trove-tempest-ipv6-only
     gate:
       queue: trove
       jobs:
@@ -45,6 +46,7 @@
         - trove-scenario-mysql-multi
         - trove-tox-fakemodetests
         - openstack-tox-pylint
+        - trove-tempest-ipv6-only
     experimental:
       jobs:
         - trove-grenade
