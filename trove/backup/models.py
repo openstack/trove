@@ -182,22 +182,22 @@ class Backup(object):
         return query.all(), marker
 
     @classmethod
-    def list(cls, context, datastore=None):
-        """
-        list all live Backups belong to given tenant
-        :param cls:
-        :param context: tenant_id included
-        :param datastore: datastore to filter by
-        :return:
-        """
+    def list(cls, context, datastore=None, instance_id=None,
+             all_projects=False):
         query = DBBackup.query()
-        filters = [DBBackup.tenant_id == context.tenant,
-                   DBBackup.deleted == 0]
+        filters = [DBBackup.deleted == 0]
+
+        if not all_projects:
+            filters.append(DBBackup.tenant_id == context.tenant)
+        if instance_id:
+            filters.append(DBBackup.instance_id == instance_id)
+
         if datastore:
             ds = datastore_models.Datastore.load(datastore)
             filters.append(datastore_models.DBDatastoreVersion.
                            datastore_id == ds.id)
             query = query.join(datastore_models.DBDatastoreVersion)
+
         query = query.filter(*filters)
         return cls._paginate(context, query)
 
