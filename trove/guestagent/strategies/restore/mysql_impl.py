@@ -43,7 +43,7 @@ class MySQLRestoreMixin(object):
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'
-    _ERROR_MESSAGE_PATTERN = re.compile("ERROR")
+    _ERROR_MESSAGE_PATTERN = re.compile(b"ERROR")
 
     def mysql_is_running(self):
         try:
