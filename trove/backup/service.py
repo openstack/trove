@@ -39,9 +39,21 @@ class BackupController(wsgi.Controller):
         """
         LOG.debug("Listing backups for tenant %s", tenant_id)
         datastore = req.GET.get('datastore')
+        instance_id = req.GET.get('instance_id')
+        all_projects = req.GET.get('all_projects', False)
         context = req.environ[wsgi.CONTEXT_KEY]
-        policy.authorize_on_tenant(context, 'backup:index')
-        backups, marker = Backup.list(context, datastore)
+
+        if all_projects:
+            policy.authorize_on_tenant(context, 'backup:index:all_projects')
+        else:
+            policy.authorize_on_tenant(context, 'backup:index')
+
+        backups, marker = Backup.list(
+            context,
+            datastore=datastore,
+            instance_id=instance_id,
+            all_projects=all_projects
+        )
         view = views.BackupViews(backups)
         paged = pagination.SimplePaginatedDataView(req.url, 'backups', view,
                                                    marker)

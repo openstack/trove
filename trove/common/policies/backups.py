@@ -46,6 +46,16 @@ rules = [
             }
         ]),
     policy.DocumentedRuleDefault(
+        name='backup:index:all_projects',
+        check_str='role:admin',
+        description='List backups for all the projects.',
+        operations=[
+            {
+                'path': PATH_BACKUPS,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
         name='backup:show',
         check_str='rule:admin_or_owner',
         description='Get informations of a backup.',
