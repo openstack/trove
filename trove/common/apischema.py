@@ -111,7 +111,13 @@ volume = {
     "required": ["size"],
     "properties": {
         "size": volume_size,
-        "type": non_empty_string
+        "type": {
+            "oneOf": [
+                non_empty_string,
+                {"type": "null"}
+            ]
+
+        }
     }
 }
 
