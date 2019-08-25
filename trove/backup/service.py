@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_log import log as logging
+from oslo_utils import strutils
 
 from trove.backup.models import Backup
 from trove.backup import views
@@ -40,7 +41,7 @@ class BackupController(wsgi.Controller):
         LOG.debug("Listing backups for tenant %s", tenant_id)
         datastore = req.GET.get('datastore')
         instance_id = req.GET.get('instance_id')
-        all_projects = req.GET.get('all_projects', False)
+        all_projects = strutils.bool_from_string(req.GET.get('all_projects'))
         context = req.environ[wsgi.CONTEXT_KEY]
 
         if all_projects:
