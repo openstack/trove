@@ -125,7 +125,6 @@ def import_tests():
     if not ADD_DOMAINS:
         from tests.api import delete_all
         from tests.api import instances_pagination
-        from tests.api import instances_quotas
         from tests.api import instances_states
         from tests.dns import dns
         from tests import initialize

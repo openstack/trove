@@ -850,18 +850,26 @@ function cmd_build_and_upload_image() {
         exit 1
     fi
 
-    glance_imageid=$(openstack $CLOUD_ADMIN_ARG image list | grep "$datastore_type" | get_field 1)
-    echo "IMAGEID: $glance_imageid"
-    if [[ -z $glance_imageid ]]; then
-        build_guest_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username}
+    image_var="${datastore_type^^}_IMAGE_ID"
+    glance_imageid=`eval echo '$'"$image_var"`
 
-        image_folder=$HOME/images
-        qcow_image=`find $image_folder -name '*.qcow2'`
-        image_url="file://$qcow_image"
-        glance_imageid=`get_glance_id upload_image $image_url`
-        [[ -z "$glance_imageid" ]] && echo "Glance upload failed!" && exit 1
-        echo "IMAGE ID: $glance_imageid"
+    if [[ -z $glance_imageid ]]; then
+      # Find the first image id with the name contains datastore_type.
+      glance_imageid=$(openstack $CLOUD_ADMIN_ARG image list | grep "$datastore_type" | awk 'NR==1 {print}' | awk '{print $2}')
+
+      if [[ -z $glance_imageid ]]; then
+          build_guest_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username}
+
+          image_folder=$HOME/images
+          qcow_image=`find $image_folder -name '*.qcow2'`
+          image_url="file://$qcow_image"
+          glance_imageid=`get_glance_id upload_image $image_url`
+          [[ -z "$glance_imageid" ]] && echo "Glance upload failed!" && exit 1
+          echo "IMAGE ID: $glance_imageid"
+      fi
     fi
+
+    echo "IMAGEID: $glance_imageid"
 
     exclaim "Updating Datastores"
     cmd_set_datastore "${glance_imageid}" "${datastore_type}" "${restart_trove}"
@@ -1257,7 +1265,12 @@ function cmd_kick_start() {
     exclaim "Running kick-start for $DATASTORE_TYPE (restart trove: $RESTART_TROVE)"
     dump_env
     cmd_test_init "${DATASTORE_TYPE}"
-    cmd_build_and_upload_image "${DATASTORE_TYPE}" "${RESTART_TROVE}"
+
+    export GUEST_OS=${GUEST_OS:-"ubuntu"}
+    export GUEST_OS_RELEASE=${GUEST_OS_RELEASE:-"xenial"}
+    export GUEST_OS_USERNAME=${GUEST_OS_USERNAME:-"ubuntu"}
+    export DEV_MOEE=${DEV_MODE:-"true"}
+    cmd_build_and_upload_image "${DATASTORE_TYPE}" "${RESTART_TROVE}" "${GUEST_OS}" "${GUEST_OS_RELEASE}" "${DEV_MOEE}" "${GUEST_OS_USERNAME}"
 }
 
 function cmd_gate_tests() {

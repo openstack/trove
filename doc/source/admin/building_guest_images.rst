@@ -55,9 +55,9 @@ Operating System and Database
 A Trove Guest Instance contains at least a functioning Operating
 System and the database software that the instance wishes to provide
 (as a Service). For example, if your chosen operating system is Ubuntu
-and you wish to deliver MySQL version 5.5, then your guest instance is
+and you wish to deliver MySQL version 5.7, then your guest instance is
 a Nova instance running the Ubuntu operating system and will have
-MySQL version 5.5 installed on it.
+MySQL version 5.7 installed on it.
 
 -----------------
 Trove Guest Agent
@@ -77,7 +77,7 @@ Guest Agent API is the common API used by Trove to communicate with
 any guest database, and the Guest Agent is the implementation of that
 API for the specific database.
 
-The Trove Guest Agent runs on the Trove Guest Instance.
+The Trove Guest Agent runs inside the Trove Guest Instance.
 
 ------------------------------------------
 Injected Configuration for the Guest Agent
@@ -87,11 +87,11 @@ When TaskManager launches the guest VM it injects the specific settings
 for the guest into the VM, into the file /etc/trove/conf.d/guest_info.conf.
 The file is injected one of three ways.
 
-If use_nova_server_config_drive=True, it is injected via ConfigDrive. Otherwise
-it is passed to the nova create call as the 'files' parameter and will be
-injected based on the configuration of Nova; the Nova default is to discard the
-files. If the settings in guest_info.conf are not present on the guest
-Guest Agent will fail to start up.
+If ``use_nova_server_config_drive=True``, it is injected via ConfigDrive.
+Otherwise it is passed to the nova create call as the 'files' parameter and
+will be injected based on the configuration of Nova; the Nova default is to
+discard the files. If the settings in guest_info.conf are not present on the
+guest Guest Agent will fail to start up.
 
 ------------------------------
 Persistent Storage, Networking
@@ -99,9 +99,13 @@ Persistent Storage, Networking
 
 The database stores data on persistent storage on Cinder (if
 configured, see trove.conf and the volume_support parameter) or
-ephemeral storage on the Nova instance. The database is accessible
-over the network and the Guest Instance is configured for network
-access by client applications.
+ephemeral storage on the Nova instance. The database service is accessible
+over the tenant network provided when creating the database instance.
+
+The cloud administrator is able to config a management
+networks(``CONF.management_networks``) that is invisible to the cloud tenants,
+database instance can talk to the control plane services(e.g. the message
+queue) via that network.
 
 Building Guest Images using DIB
 ===============================

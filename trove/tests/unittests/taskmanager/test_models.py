@@ -309,6 +309,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                   new_callable=PropertyMock,
                   return_value='fake-hostname')
     def test_servers_create_block_device_mapping_v2(self, mock_hostname):
+        self.freshinstancetasks._prepare_userdata = Mock(return_value=None)
         mock_nova_client = self.freshinstancetasks.nova_client = Mock()
         mock_servers_create = mock_nova_client.servers.create
         self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
@@ -867,26 +868,23 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
 
     @patch.object(utils, 'poll_until')
     def test_reboot(self, mock_poll):
-        self.instance_task.datastore_status_matches = Mock(return_value=True)
-        self.instance_task._refresh_datastore_status = Mock()
         self.instance_task.server.reboot = Mock()
         self.instance_task.set_datastore_status_to_paused = Mock()
         self.instance_task.reboot()
         self.instance_task._guest.stop_db.assert_any_call()
-        self.instance_task._refresh_datastore_status.assert_any_call()
         self.instance_task.server.reboot.assert_any_call()
         self.instance_task.set_datastore_status_to_paused.assert_any_call()
 
     @patch.object(utils, 'poll_until')
     @patch('trove.taskmanager.models.LOG')
     def test_reboot_datastore_not_ready(self, mock_logging, mock_poll):
-        self.instance_task.datastore_status_matches = Mock(return_value=False)
-        self.instance_task._refresh_datastore_status = Mock()
+        mock_poll.side_effect = PollTimeOut
         self.instance_task.server.reboot = Mock()
         self.instance_task.set_datastore_status_to_paused = Mock()
+
         self.instance_task.reboot()
+
         self.instance_task._guest.stop_db.assert_any_call()
-        self.instance_task._refresh_datastore_status.assert_any_call()
         assert not self.instance_task.server.reboot.called
         assert not self.instance_task.set_datastore_status_to_paused.called
 

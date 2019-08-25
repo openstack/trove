@@ -802,10 +802,8 @@ class TestRunner(object):
         self.assert_equal(
             1, len(flavors),
             "Unexpected number of flavors with name '%s' found." % flavor_name)
-        flavor = flavors[0]
-        self.assert_is_not_none(flavor, "Flavor '%s' not found." % flavor_name)
 
-        return flavor
+        return flavors[0]
 
     def get_instance_flavor(self, fault_num=None):
         name_format = 'instance%s%s_flavor_name'

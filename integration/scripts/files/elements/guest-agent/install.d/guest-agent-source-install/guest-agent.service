@@ -4,11 +4,12 @@ After=network.target syslog.service
 Wants=syslog.service
 
 [Service]
+User=GUEST_USERNAME
+Group=GUEST_USERNAME
+ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove/conf.d"
 ExecStart=/usr/local/bin/guest-agent --config-dir=/etc/trove/conf.d
 KillMode=mixed
 Restart=always
-ExecStartPost=/bin/sh -c "echo $MAINPID > /var/run/guest-agent.pid"
-PIDFile=/var/run/guest-agent.pid
 
 [Install]
 WantedBy=multi-user.target

@@ -8,28 +8,35 @@ set -o pipefail
 
 SCRIPTDIR=$(dirname $0)
 GUEST_VENV=/opt/guest-agent-venv
+GUEST_USERNAME=${GUEST_USERNAME:-"ubuntu"}
 
-# Create a virtual environment to contain the guest agent
-${DIB_PYTHON} -m virtualenv $GUEST_VENV
-$GUEST_VENV/bin/pip install pip --upgrade
-$GUEST_VENV/bin/pip install -U -c /opt/upper-constraints.txt /opt/guest-agent
+# Create a virtual environment for guest agent
+${DIB_PYTHON} -m virtualenv ${GUEST_VENV}
+${GUEST_VENV}/bin/pip install pip --upgrade
+${GUEST_VENV}/bin/pip install -U -c /opt/upper-constraints.txt /opt/guest-agent
+chown -R ${GUEST_USERNAME}:root ${GUEST_VENV}
 
-# Link the trove-guestagent out to /usr/local/bin where the startup scripts look
-ln -s $GUEST_VENV/bin/trove-guestagent /usr/local/bin/guest-agent || true
+# Link the trove-guestagent out to /usr/local/bin where the startup scripts look for
+ln -s ${GUEST_VENV}/bin/trove-guestagent /usr/local/bin/guest-agent || true
 
-mkdir -p /var/lib/trove /etc/trove/certs /var/log/trove
+for folder in "/var/lib/trove" "/etc/trove" "/etc/trove/certs" "/etc/trove/conf.d" "/var/log/trove"; do
+    mkdir -p ${folder}
+    chown -R ${GUEST_USERNAME}:root ${folder}
+done
 
-install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
+install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
 
 case "$DIB_INIT_SYSTEM" in
-    upstart)
-        install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.conf /etc/init/guest-agent.conf
-        ;;
     systemd)
-        install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.service /usr/lib/systemd/system/guest-agent.service
+        mkdir -p /usr/lib/systemd/system
+        touch /usr/lib/systemd/system/guest-agent.service
+        sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g" ${SCRIPTDIR}/guest-agent.service > /usr/lib/systemd/system/guest-agent.service
+        ;;
+    upstart)
+        install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.conf /etc/init/guest-agent.conf
         ;;
     sysv)
-        install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.init /etc/init.d/guest-agent.init
+        install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.init /etc/init.d/guest-agent.init
         ;;
     *)
         echo "Unsupported init system"

@@ -404,7 +404,7 @@ function create_mgmt_subnet_v4 {
     local name=$3
     local ip_range=$4
 
-    subnet_id=$(openstack subnet create --project ${project_id} --ip-version 4 --subnet-range ${ip_range} --gateway none --network ${net_id} $name -c id -f value)
+    subnet_id=$(openstack subnet create --project ${project_id} --ip-version 4 --subnet-range ${ip_range} --gateway none --dns-nameserver 8.8.8.8 --network ${net_id} $name -c id -f value)
     die_if_not_set $LINENO subnet_id "Failed to create private IPv4 subnet for network: ${net_id}, project: ${project_id}"
     echo $subnet_id
 }

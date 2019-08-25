@@ -131,7 +131,14 @@ class MgmtInstanceController(InstanceController):
 
     def _action_reboot(self, context, instance, req, body):
         LOG.debug("Rebooting instance %s.", instance.id)
-        instance.reboot()
+
+        context.notification = notification.DBaaSInstanceReboot(
+            context,
+            request=req
+        )
+        with StartNotification(context, instance_id=instance.id):
+            instance.reboot()
+
         return wsgi.Result(None, 202)
 
     def _action_migrate(self, context, instance, req, body):

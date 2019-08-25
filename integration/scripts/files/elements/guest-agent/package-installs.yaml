@@ -9,15 +9,6 @@ libssl-dev:
 python-dev:
   installtype: source
 
-python-sqlalchemy:
-python-lxml:
-python-eventlet:
-python-webob:
-python-httplib2:
-python-iso8601:
-python-pexpect:
-python-mysqldb:
-python-migrate:
 acl:
 acpid:
 apparmor:
@@ -46,13 +37,14 @@ lsof:
 net-tools:
 netbase:
 netcat-openbsd:
+network-scripts:
 open-vm-tools:
+  arch: i386, amd64
 openssh-client:
 openssh-server:
 pollinate:
 psmisc:
 rsyslog:
-screen:
 socat:
 tcpdump:
 ubuntu-cloudimage-keyring:

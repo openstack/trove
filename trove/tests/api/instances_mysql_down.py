@@ -52,6 +52,7 @@ class TestBase(object):
                                                  'm1.tiny')
             flavor2_name = test_config.values.get(
                 'instance_bigger_flavor_name', 'm1.small')
+
         flavors = self.client.find_flavors_by_name(flavor_name)
         self.flavor_id = flavors[0].id
         self.name = "TEST_" + str(uuid.uuid4())

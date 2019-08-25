@@ -206,7 +206,6 @@ def import_tests():
     from trove.tests.api import configurations  # noqa
     from trove.tests.api import databases  # noqa
     from trove.tests.api import datastores  # noqa
-    from trove.tests.api import flavors  # noqa
     from trove.tests.api import header  # noqa
     from trove.tests.api import instances as rd_instances  # noqa
     from trove.tests.api import instances_actions as rd_actions  # noqa

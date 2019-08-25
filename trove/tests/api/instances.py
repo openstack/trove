@@ -16,11 +16,9 @@
 import netaddr
 import os
 import time
-from time import sleep
 import unittest
 import uuid
 
-from proboscis import after_class
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
@@ -35,7 +33,6 @@ from proboscis import test
 from troveclient.compat import exceptions
 
 from trove.common import cfg
-from trove.common import exception as rd_exceptions
 from trove.common.utils import poll_until
 from trove.datastore import models as datastore_models
 from trove import tests
@@ -116,15 +113,17 @@ class InstanceTestInfo(object):
                                             'eph.rd-tiny')
         else:
             flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
+
         flavors = self.dbaas.find_flavors_by_name(flavor_name)
         assert_equal(len(flavors), 1,
                      "Number of flavors with name '%s' "
                      "found was '%d'." % (flavor_name, len(flavors)))
+
         flavor = flavors[0]
-        assert_true(flavor is not None, "Flavor '%s' not found!" % flavor_name)
         flavor_href = self.dbaas.find_flavor_self_href(flavor)
         assert_true(flavor_href is not None,
                     "Flavor href '%s' not found!" % flavor_name)
+
         return flavor, flavor_href
 
     def get_address(self, mgmt=False):
@@ -255,17 +254,10 @@ def test_delete_instance_not_found():
       groups=[GROUP, GROUP_QUOTAS],
       runs_after_groups=[tests.PRE_INSTANCES])
 class CreateInstanceQuotaTest(unittest.TestCase):
-
-    def setUp(self):
-        import copy
-
-        self.test_info = copy.deepcopy(instance_info)
-        self.test_info.dbaas_datastore = CONFIG.dbaas_datastore
-
     def tearDown(self):
         quota_dict = {'instances': CONFIG.trove_max_instances_per_tenant,
                       'volumes': CONFIG.trove_max_volumes_per_tenant}
-        dbaas_admin.quota.update(self.test_info.user.tenant_id,
+        dbaas_admin.quota.update(instance_info.user.tenant_id,
                                  quota_dict)
 
     def test_instance_size_too_big(self):
@@ -273,52 +265,48 @@ class CreateInstanceQuotaTest(unittest.TestCase):
                 VOLUME_SUPPORT):
             too_big = CONFIG.trove_max_accepted_volume_size
 
-            self.test_info.volume = {'size': too_big + 1}
-            self.test_info.name = "way_too_large"
             assert_raises(exceptions.OverLimit,
                           dbaas.instances.create,
-                          self.test_info.name,
-                          self.test_info.dbaas_flavor_href,
-                          self.test_info.volume,
+                          "volume_size_too_large",
+                          instance_info.dbaas_flavor_href,
+                          {'size': too_big + 1},
                           nics=instance_info.nics)
 
     def test_update_quota_invalid_resource_should_fail(self):
         quota_dict = {'invalid_resource': 100}
         assert_raises(exceptions.NotFound, dbaas_admin.quota.update,
-                      self.test_info.user.tenant_id, quota_dict)
+                      instance_info.user.tenant_id, quota_dict)
 
     def test_update_quota_volume_should_fail_volume_not_supported(self):
         if VOLUME_SUPPORT:
             raise SkipTest("Volume support needs to be disabled")
         quota_dict = {'volumes': 100}
         assert_raises(exceptions.NotFound, dbaas_admin.quota.update,
-                      self.test_info.user.tenant_id, quota_dict)
+                      instance_info.user.tenant_id, quota_dict)
 
     def test_create_too_many_instances(self):
         instance_quota = 0
         quota_dict = {'instances': instance_quota}
-        new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
+        new_quotas = dbaas_admin.quota.update(instance_info.user.tenant_id,
                                               quota_dict)
 
-        set_quota = dbaas_admin.quota.show(self.test_info.user.tenant_id)
+        set_quota = dbaas_admin.quota.show(instance_info.user.tenant_id)
         verify_quota = {q.resource: q.limit for q in set_quota}
 
         assert_equal(new_quotas['instances'], quota_dict['instances'])
         assert_equal(0, verify_quota['instances'])
-        self.test_info.volume = None
 
+        volume = None
         if VOLUME_SUPPORT:
             assert_equal(CONFIG.trove_max_volumes_per_tenant,
                          verify_quota['volumes'])
-            self.test_info.volume = {'size':
-                                     CONFIG.get('trove_volume_size', 1)}
+            volume = {'size': CONFIG.get('trove_volume_size', 1)}
 
-        self.test_info.name = "too_many_instances"
         assert_raises(exceptions.OverLimit,
                       dbaas.instances.create,
-                      self.test_info.name,
-                      self.test_info.dbaas_flavor_href,
-                      self.test_info.volume,
+                      "too_many_instances",
+                      instance_info.dbaas_flavor_href,
+                      volume,
                       nics=instance_info.nics)
 
         assert_equal(413, dbaas.last_http_code)
@@ -328,17 +316,15 @@ class CreateInstanceQuotaTest(unittest.TestCase):
             raise SkipTest("Volume support not enabled")
         volume_quota = 3
         quota_dict = {'volumes': volume_quota}
-        self.test_info.volume = {'size': volume_quota + 1}
-        new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
+        new_quotas = dbaas_admin.quota.update(instance_info.user.tenant_id,
                                               quota_dict)
         assert_equal(volume_quota, new_quotas['volumes'])
 
-        self.test_info.name = "too_large_volume"
         assert_raises(exceptions.OverLimit,
                       dbaas.instances.create,
-                      self.test_info.name,
-                      self.test_info.dbaas_flavor_href,
-                      self.test_info.volume,
+                      "too_large_volume",
+                      instance_info.dbaas_flavor_href,
+                      {'size': volume_quota + 1},
                       nics=instance_info.nics)
 
         assert_equal(413, dbaas.last_http_code)
@@ -474,6 +460,7 @@ class CreateInstanceFail(object):
         databases = []
         flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
         flavors = dbaas.find_flavors_by_name(flavor_name)
+
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
                       instance_name, flavors[0].id, None, databases,
                       nics=instance_info.nics)
@@ -1508,86 +1495,3 @@ class CheckInstance(AttrCheck):
                     slave, allowed_attrs,
                     msg="Replica links not found")
                 self.links(slave['links'])
-
-
-@test(groups=[GROUP])
-class BadInstanceStatusBug(object):
-
-    @before_class()
-    def setUp(self):
-        self.instances = []
-        reqs = Requirements(is_admin=True)
-        self.user = CONFIG.users.find_user(
-            reqs, black_list=[])
-        self.client = create_dbaas_client(self.user)
-        self.mgmt = self.client.management
-
-    @test
-    def test_instance_status_after_double_migrate(self):
-        """
-        This test is to verify that instance status returned is more
-        informative than 'Status is {}'.  There are several ways to
-        replicate this error.  A double migration is just one of them but
-        since this is a known way to recreate that error we will use it
-        here to be sure that the error is fixed.  The actual code lives
-        in trove/instance/models.py in _validate_can_perform_action()
-        """
-        # TODO(imsplitbit): test other instances where this issue could be
-        # replicated.  Resizing a resized instance awaiting confirmation
-        # can be used as another case.  This all boils back to the same
-        # piece of code so I'm not sure if it's relevant or not but could
-        # be done.
-        size = None
-        if VOLUME_SUPPORT:
-            size = {'size': 5}
-
-        result = self.client.instances.create('testbox',
-                                              instance_info.dbaas_flavor_href,
-                                              size,
-                                              nics=instance_info.nics)
-        id = result.id
-        self.instances.append(id)
-
-        def verify_instance_is_active():
-            result = self.client.instances.get(id)
-            print(result.status)
-            return result.status == 'ACTIVE'
-
-        def attempt_migrate():
-            print('attempting migration')
-            try:
-                self.mgmt.migrate(id)
-            except exceptions.UnprocessableEntity:
-                return False
-            return True
-
-        # Timing necessary to make the error occur
-        poll_until(verify_instance_is_active, time_out=120, sleep_time=1)
-
-        try:
-            poll_until(attempt_migrate, time_out=10, sleep_time=1)
-        except rd_exceptions.PollTimeOut:
-            fail('Initial migration timed out')
-
-        try:
-            self.mgmt.migrate(id)
-        except exceptions.UnprocessableEntity as err:
-            assert('status was {}' not in err.message)
-        else:
-            # If we are trying to test what status is returned when an
-            # instance is in a confirm_resize state and another
-            # migration is attempted then we also need to
-            # assert that an exception is raised when running migrate.
-            # If one is not then we aren't able to test what the
-            # returned status is in the exception message.
-            fail('UnprocessableEntity was not thrown')
-
-    @after_class(always_run=True)
-    def tearDown(self):
-        while len(self.instances) > 0:
-            for id in self.instances:
-                try:
-                    self.client.instances.delete(id)
-                    self.instances.remove(id)
-                except exceptions.UnprocessableEntity:
-                    sleep(1.0)

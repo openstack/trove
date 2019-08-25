@@ -34,23 +34,21 @@ The trove guest agent image could be created by running the following command:
 
 .. code-block:: console
 
-    $ CONTROLLER_IP=10.0.17.132 \
-        ./trovestack build-image \
+    $ ./trovestack build-image \
         ${datastore_type} \
         ${guest_os} \
         ${guest_os_release} \
         ${dev_mode}
 
 * Currently, only ``guest_os=ubuntu`` and ``guest_os_release=xenial`` are fully
-  tested.
+  tested and supported.
 
-* ``dev_mode=true`` is mainly for testing purpose for trove developers. When
-  ``dev_mode=true``, ``CONTROLLER_IP`` could be ignored. You need to build the
-  image on the trove controller service host, because the host and the guest VM
-  need to ssh into each other without password. In this mode, when the trove
-  guest agent code is changed, the image doesn't need to be rebuilt which is
-  convenient for debugging. Trove guest agent will ssh into the host and
-  download trove code when the service is initialized.
+* ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
+  necessary to build the image on the trove controller host, because the host
+  and the guest VM need to ssh into each other without password. In this mode,
+  when the trove guest agent code is changed, the image doesn't need to be
+  rebuilt which is convenient for debugging. Trove guest agent will ssh into
+  the host and download trove code during the service initialization.
 
 * if ``dev_mode=false``, the trove code for guest agent is injected into the
   image at the building time. Now ``dev_mode=false`` is still in experimental
@@ -62,7 +60,8 @@ The trove guest agent image could be created by running the following command:
   also need to create a Nova keypair and set ``nova_keypair`` option in Trove
   config file in order to ssh into the guest agent.
 
-For example, build a MySQL image for Ubuntu Xenial operating system:
+For example, in order to build a MySQL image for Ubuntu Xenial operating
+system:
 
 .. code-block:: console
 

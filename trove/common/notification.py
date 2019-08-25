@@ -447,6 +447,15 @@ class DBaaSInstanceCreate(DBaaSAPINotification):
         return ['instance_id']
 
 
+class DBaaSInstanceReboot(DBaaSAPINotification):
+
+    def event_type(self):
+        return 'instance_reboot'
+
+    def required_start_traits(self):
+        return ['instance_id']
+
+
 class DBaaSInstanceRestart(DBaaSAPINotification):
 
     def event_type(self):

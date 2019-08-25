@@ -7,5 +7,3 @@ set -e
 set -o xtrace
 
 apt-get clean
-
-

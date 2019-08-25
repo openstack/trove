@@ -199,8 +199,8 @@ class InstanceCreateRunner(TestRunner):
 
             self.assert_equal(instance_info.name, instance._info['name'],
                               "Unexpected instance name")
-            self.assert_equal(flavor.id,
-                              int(instance._info['flavor']['id']),
+            self.assert_equal(str(flavor.id),
+                              str(instance._info['flavor']['id']),
                               "Unexpected instance flavor")
             self.assert_equal(instance_info.dbaas_datastore,
                               instance._info['datastore']['type'],
