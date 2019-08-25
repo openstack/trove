@@ -15,6 +15,7 @@
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
+from proboscis.asserts import assert_true
 from proboscis.asserts import fail
 from proboscis.decorators import time_out
 from proboscis import SkipTest
@@ -81,7 +82,7 @@ class CreateBackups(object):
         assert_equal('NEW', result.status)
         instance = instance_info.dbaas.instances.get(instance_info.id)
 
-        assert_equal('BACKUP', instance.status)
+        assert_true(instance.status in ['ACTIVE', 'BACKUP'])
         assert_equal(instance_info.dbaas_datastore,
                      result.datastore['type'])
         assert_equal(instance_info.dbaas_datastore_version,
