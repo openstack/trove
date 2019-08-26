@@ -1,0 +1,5 @@
+---
+features:
+  - Support to filter backups by ``instance_id``, additionally, admin user can
+    get backups of all the projects by specifying ``all_projects`` in the query
+    string parameters.
