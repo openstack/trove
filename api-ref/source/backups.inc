@@ -12,7 +12,13 @@ List database backups
 
 .. rest_method::  GET /v1.0/{accountId}/backups
 
-List all database backups information for a tenant.
+List all database backups information for a project. You can filter results by
+using query string parameters. The following filters are supported:
+
+- ``instance_id={instance_id}`` - Return the list of backups for a particular
+  database instance.
+- ``all_projects`` - Return the list of backups for all the projects, this is
+  admin only param by default.
 
 Normal response codes: 200
 
@@ -65,7 +71,8 @@ List database backups for an instance
 
 .. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/backups
 
-List all database backups for the specified instance.
+List all database backups for the specified instance. This is equivalent to
+``GET /v1.0/{accountId}/backups?instance_id={instanceId}``.
 
 Normal response codes: 200
 
