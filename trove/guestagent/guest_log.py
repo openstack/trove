@@ -294,7 +294,7 @@ class GuestLog(object):
             return True
 
     def _update_log_header_digest(self, log_file):
-        with open(log_file, 'r') as log:
+        with open(log_file, 'rb') as log:
             self._header_digest = hashlib.md5(log.readline()).hexdigest()
 
     def _get_headers(self):
