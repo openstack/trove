@@ -37,7 +37,6 @@ lsof:
 net-tools:
 netbase:
 netcat-openbsd:
-network-scripts:
 open-vm-tools:
   arch: i386, amd64
 openssh-client:
