@@ -19,9 +19,9 @@ the workflow documented at:
 
 (Pull requests submitted through GitHub will be ignored.)
 
-Bugs should be filed on Launchpad, not GitHub:
+Bugs should be filed on Storyboard now, not GitHub:
 
-   https://bugs.launchpad.net/trove
+   https://storyboard.openstack.org/#!/project/openstack/trove
 
 We welcome all types of contributions, from blueprint designs to
 documentation to testing to deployment scripts. The best way to get
@@ -171,17 +171,17 @@ process.
    there is no available volunteer who will step up to take over the
    patch set.
 
-Launchpad Bugs
---------------
+Storyboard Bugs
+---------------
 
-Bugs should be filed on Launchpad at:
+Bugs should be filed on Storyboard at:
 
-    https://bugs.launchpad.net/trove
+    https://storyboard.openstack.org/#!/project/openstack/trove
 
-All changes that address a Launchpad bug should include the bug in the
-Commit Message using the Closes-Bug, Related-Bug, or Partial-Bug keyword.
+All changes that address a Storyboard bug should include the bug in the
+Commit Message using the Story and Task.
 
-It is not required that a Launchpad bug be filed for every change.
+It is not required that a Storyboard bug be filed for every change.
 
 Release Notes
 -------------
@@ -192,8 +192,8 @@ that are submitted as part of a change will be included in the release
 notes. The failure to add a release note for a user visible change
 should be identified in review, and corrected.
 
-If a Launchpad bug is being fixed, the release note should list the
-bug number.
+If a Storyboard bug is being fixed, the release note should list the
+story and task number.
 
 For help using reno, the release notes tool, see:
 

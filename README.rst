@@ -24,7 +24,7 @@ CONTRIBUTING.rst_ and HACKING.rst_
 * `Developer Docs <https://docs.openstack.org/trove/latest/>`_
 
 You can raise bugs here:
-`Bug Tracker <https://bugs.launchpad.net/trove>`_
+`Bug Tracker <https://storyboard.openstack.org/#!/project/openstack/trove>`_
 
 The plan for trove can be found at
 `Trove Specs <https://specs.openstack.org/openstack/trove-specs/>`_
