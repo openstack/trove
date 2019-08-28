@@ -22,7 +22,9 @@ import subprocess
 from tempfile import NamedTemporaryFile
 
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 import pexpect
+import six
 
 from trove.common import exception
 from trove.common.exception import ProcessExecutionError
@@ -50,9 +52,10 @@ def getoutput(*cmd):
                                 stderr=subprocess.STDOUT)
     except OSError:
         # ignore errors like program not found
-        return b''
+        return six.text_type("")
+
     stdout = proc.communicate()[0]
-    return stdout
+    return encodeutils.safe_decode(stdout)
 
 
 class PkgAdminLockError(exception.TroveError):

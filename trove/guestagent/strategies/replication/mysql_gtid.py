@@ -14,6 +14,7 @@
 #    under the License.
 #
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 
 from trove.common import exception
 from trove.common.i18n import _
@@ -71,8 +72,8 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
         LOG.info("Reading last master GTID from %s", INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
-                row = f.read().split('\t')
-                return row[2]
+                row = f.read().split(b'\t')
+                return encodeutils.safe_decode(row[2])
         except (IOError, IndexError) as ex:
             LOG.exception(ex)
             raise self.UnableToDetermineLastMasterGTID(
