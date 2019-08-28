@@ -260,22 +260,24 @@ class LogOnFail(type):
                     report.log(msg_prefix + "Exception detected, "
                                "but no instance IDs are registered to log.")
 
-                for inst_id in inst_ids:
-                    try:
-                        client.instances.get(inst_id)
-                    except Exception as ex:
-                        report.log(msg_prefix + "Error in instance show "
-                                   "for %s:\n%s" % (inst_id, ex))
-                    try:
-                        log_gen = client.instances.log_generator(
-                            inst_id, 'guest',
-                            publish=True, lines=0, swift=None)
-                        log_contents = "".join([chunk for chunk in log_gen()])
-                        report.log(msg_prefix + "Guest log for %s:\n%s" %
-                                   (inst_id, log_contents))
-                    except Exception as ex:
-                        report.log(msg_prefix + "Error in guest log "
-                                   "retrieval for %s:\n%s" % (inst_id, ex))
+                if CONFIG.instance_log_on_failure:
+                    for inst_id in inst_ids:
+                        try:
+                            client.instances.get(inst_id)
+                        except Exception as ex:
+                            report.log("%s Error in instance show for %s:\n%s"
+                                       % (msg_prefix, inst_id, ex))
+                        try:
+                            log_gen = client.instances.log_generator(
+                                inst_id, 'guest',
+                                publish=True, lines=0, swift=None)
+                            log_contents = "".join(
+                                [chunk for chunk in log_gen()])
+                            report.log("%s Guest log for %s:\n%s" %
+                                       (msg_prefix, inst_id, log_contents))
+                        except Exception as ex:
+                            report.log("%s Error in guest log retrieval for "
+                                       "%s:\n%s" % (msg_prefix, inst_id, ex))
 
                 # Only report on the first error that occurs
                 mcs.reset_inst_ids()

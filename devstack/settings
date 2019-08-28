@@ -59,6 +59,7 @@ else
 fi
 TROVE_SHARE_NETWORKS=$(trueorfalse TRUE TROVE_SHARE_NETWORKS)
 TROVE_MGMT_KEYPAIR_NAME=${TROVE_MGMT_KEYPAIR_NAME:-"trove-mgmt"}
+TROVE_MGMT_SECURITY_GROUP=${TROVE_MGMT_SECURITY_GROUP:-"trove-mgmt"}
 
 # Support entry points installation of console scripts
 if [[ -d $TROVE_DIR/bin ]]; then

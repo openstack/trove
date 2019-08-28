@@ -54,6 +54,14 @@ The trove guest agent image could be created by running the following command:
   image at the building time. Now ``dev_mode=false`` is still in experimental
   and not considered production ready yet.
 
+* Some other global variables:
+
+  * ``HOST_SCP_USERNAME``: only used in dev mode, this is the user name used by
+    guest agent to connect to the controller host, e.g. in devstack
+    environment, it should be the ``stack`` user.
+  * ``GUEST_WORKING_DIR``: The place to save the guest image, default value is
+    ``$HOME/images``.
+
 For example, in order to build a MySQL image for Ubuntu Xenial operating
 system in development mode:
 
