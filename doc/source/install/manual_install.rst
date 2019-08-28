@@ -195,9 +195,7 @@ Prepare Trove configuration files
 There are several configuration files for Trove:
 
 - api-paste.ini and trove.conf — For trove-api service
-- trove-taskmanager.conf — For trove-taskmanager service
 - trove-guestagent.conf — For trove-guestagent service
-- trove-conductor.conf — For trove-conductor service
 - <datastore_manager>.cloudinit — Userdata for VMs during provisioning
 
 Cloud-init scripts are userdata that is being used for different datastore types like mysql/percona, cassandra, mongodb, redis, couchbase while provisioning new compute instances.
@@ -349,19 +347,19 @@ Run trove-api:
 
 .. code-block:: bash
 
-    $ trove-api --config-file=${TROVE_CONF_DIR}/trove-api.conf &
+    $ trove-api --config-file=${TROVE_CONF_DIR}/trove.conf &
 
 Run trove-taskmanager:
 
 .. code-block:: bash
 
-    $ trove-taskmanager --config-file=${TROVE_CONF_DIR}/trove-taskamanger.conf &
+    $ trove-taskmanager --config-file=${TROVE_CONF_DIR}/trove.conf &
 
 Run trove-conductor:
 
 .. code-block:: bash
 
-   $ trove-conductor --config-file=${TROVE_CONF_DIR}/trove-conductor.conf &
+   $ trove-conductor --config-file=${TROVE_CONF_DIR}/trove.conf &
 
 =================
 Trove interaction

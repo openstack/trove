@@ -229,9 +229,7 @@ we inspect the configuration parameters and disable secure RPC
 messaging by adding this line into the configuration files::
 
     amrith@amrith-work:/etc/trove$ grep enable_secure_rpc_messaging *.conf
-    trove-conductor.conf:enable_secure_rpc_messaging = False
     trove.conf:enable_secure_rpc_messaging = False
-    trove-taskmanager.conf:enable_secure_rpc_messaging = False
 
 The first thing we observe is that heartbeat messages from the
 existing instance are still properly handled by the conductor and the
@@ -313,9 +311,7 @@ The configuration file for this instance is::
 We can now shutdown the control plane again and enable the secure RPC
 capability. Observe that we've just commented out the lines (below)::
 
-    trove-conductor.conf:# enable_secure_rpc_messaging = False
     trove.conf:# enable_secure_rpc_messaging = False
-    trove-taskmanager.conf:# enable_secure_rpc_messaging = False
 
 And create another database instance::
 

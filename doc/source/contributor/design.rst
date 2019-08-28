@@ -46,7 +46,7 @@ performing operations on the Database instance.
 * A service that listens on a RabbitMQ topic
 * Entry point - trove/bin/trove-taskmanager
 * Runs as a RpcService configured by
-  etc/trove/trove-taskmanager.conf.sample which defines
+  etc/trove/trove.conf.sample which defines
   trove.taskmanager.manager.Manager as the manager - basically this is
   the entry point for requests arriving through the queue
 * As described above, requests for this component are pushed to MQ
@@ -109,7 +109,7 @@ bus and performs the relevant operation.
   "trove-conductor".
 * Entry point - trove/bin/trove-conductor
 * Runs as RpcService configured by
-  etc/trove/trove-conductor.conf.sample which defines
+  etc/trove/trove.conf.sample which defines
   trove.conductor.manager.Manager as the manager. This is the entry
   point for requests arriving on the queue.
 * As guestagent above, requests are pushed to MQ from another component

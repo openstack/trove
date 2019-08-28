@@ -1,5 +1,4 @@
-2. In the ``/etc/trove`` directory, edit the ``trove.conf``,
-   ``trove-taskmanager.conf`` and ``trove-conductor.conf`` files and
+2. In the ``/etc/trove`` directory, edit the ``trove.conf`` file and
    complete the following steps:
 
    * Provide appropriate values for the following settings:
@@ -56,7 +55,7 @@
       username = trove
       password = TROVE_PASS
 
-5. Edit the ``trove-taskmanager.conf`` file so it includes the required
+5. Edit the ``trove.conf`` file so it includes the required
    settings to connect to the OpenStack Compute service as shown below.
    Include ConfigDrive settings so that configuration is injected
    into the Guest VM. And finally, if using Nova Network, set the

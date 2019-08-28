@@ -79,8 +79,6 @@ export RELEASE=${RELEASE:-$DISTRO_RELEASE}
 # Set up variables for the CONF files - this has to happen after loading trovestack.rc, since
 # TROVE_CONF_DIR is defined there - these will be used by devstack too
 export TROVE_CONF=$TROVE_CONF_DIR/trove.conf
-export TROVE_TASKMANAGER_CONF=$TROVE_CONF_DIR/trove-taskmanager.conf
-export TROVE_CONDUCTOR_CONF=$TROVE_CONF_DIR/trove-conductor.conf
 export TROVE_GUESTAGENT_CONF=$TROVE_CONF_DIR/trove-guestagent.conf
 export TROVE_API_PASTE_INI=$TROVE_CONF_DIR/api-paste.ini
 export TEST_CONF=$TROVE_CONF_DIR/test.conf

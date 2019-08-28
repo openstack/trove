@@ -21,8 +21,6 @@ TRIPLEO_IMAGES_BRANCH=${TRIPLEO_IMAGES_BRANCH:-master}
 # Set up configuration directory and files
 TROVE_CONF_DIR=${TROVE_CONF_DIR:-/etc/trove}
 TROVE_CONF=${TROVE_CONF:-${TROVE_CONF_DIR}/trove.conf}
-TROVE_TASKMANAGER_CONF=${TROVE_TASKMANAGER_CONF:-${TROVE_CONF_DIR}/trove-taskmanager.conf}
-TROVE_CONDUCTOR_CONF=${TROVE_CONDUCTOR_CONF:-${TROVE_CONF_DIR}/trove-conductor.conf}
 TROVE_GUESTAGENT_CONF=${TROVE_GUESTAGENT_CONF:-${TROVE_CONF_DIR}/trove-guestagent.conf}
 TROVE_API_PASTE_INI=${TROVE_API_PASTE_INI:-${TROVE_CONF_DIR}/api-paste.ini}
 
@@ -60,6 +58,7 @@ else
     TROVE_HOST_GATEWAY=${NETWORK_GATEWAY:-10.0.0.1}
 fi
 TROVE_SHARE_NETWORKS=$(trueorfalse TRUE TROVE_SHARE_NETWORKS)
+TROVE_MGMT_KEYPAIR_NAME=${TROVE_MGMT_KEYPAIR_NAME:-"trove-mgmt"}
 
 # Support entry points installation of console scripts
 if [[ -d $TROVE_DIR/bin ]]; then

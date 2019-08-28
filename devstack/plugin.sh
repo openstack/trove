@@ -65,7 +65,6 @@ function create_trove_accounts {
             --os-password $SERVICE_PASSWORD \
             --os-project-name $SERVICE_PROJECT_NAME
 
-
         local trove_service=$(get_or_create_service "trove" \
             "database" "Trove Service")
         get_or_create_endpoint $trove_service \
@@ -187,6 +186,28 @@ function _config_trove_apache_wsgi {
     tail_log trove-api /var/log/${APACHE_NAME}/trove-api.log
 }
 
+function _config_nova_keypair {
+    export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
+
+    if [[ ! -f ${SSH_DIR}/id_rsa.pub ]]; then
+        mkdir -p ${SSH_DIR}
+        /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
+        # This is to allow guest agent ssh into the controller in dev mode.
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+    else
+        # This is to allow guest agent ssh into the controller in dev mode.
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+        sort ${SSH_DIR}/authorized_keys | uniq > ${SSH_DIR}/authorized_keys.uniq
+        mv ${SSH_DIR}/authorized_keys.uniq ${SSH_DIR}/authorized_keys
+        chmod 600 ${SSH_DIR}/authorized_keys
+    fi
+
+    echo "Creating Trove management keypair ${TROVE_MGMT_KEYPAIR_NAME}"
+    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
+      keypair create --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
+
+    iniset $TROVE_CONF DEFAULT nova_keypair ${TROVE_MGMT_KEYPAIR_NAME}
+}
 # configure_trove() - Set config files, create data dirs, etc
 function configure_trove {
     setup_develop $TROVE_DIR
@@ -204,99 +225,62 @@ function configure_trove {
 
     # (Re)create trove conf files
     rm -f $TROVE_CONF
-    rm -f $TROVE_TASKMANAGER_CONF
-    rm -f $TROVE_CONDUCTOR_CONF
 
     TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
 
-    # (Re)create trove api conf file if needed
-    if is_service_enabled tr-api; then
-        # Set common configuration values (but only if they're defined)
-        iniset_conditional $TROVE_CONF DEFAULT max_accepted_volume_size $TROVE_MAX_ACCEPTED_VOLUME_SIZE
-        iniset_conditional $TROVE_CONF DEFAULT max_instances_per_tenant $TROVE_MAX_INSTANCES_PER_TENANT
-        iniset_conditional $TROVE_CONF DEFAULT max_volumes_per_tenant $TROVE_MAX_VOLUMES_PER_TENANT
+    # Set common configuration values (but only if they're defined)
+    iniset_conditional $TROVE_CONF DEFAULT max_accepted_volume_size $TROVE_MAX_ACCEPTED_VOLUME_SIZE
+    iniset_conditional $TROVE_CONF DEFAULT max_instances_per_tenant $TROVE_MAX_INSTANCES_PER_TENANT
+    iniset_conditional $TROVE_CONF DEFAULT max_volumes_per_tenant $TROVE_MAX_VOLUMES_PER_TENANT
+    iniset_conditional $TROVE_CONF DEFAULT agent_call_low_timeout $TROVE_AGENT_CALL_LOW_TIMEOUT
+    iniset_conditional $TROVE_CONF DEFAULT agent_call_high_timeout $TROVE_AGENT_CALL_HIGH_TIMEOUT
+    iniset_conditional $TROVE_CONF DEFAULT resize_time_out $TROVE_RESIZE_TIME_OUT
+    iniset_conditional $TROVE_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
+    iniset_conditional $TROVE_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
 
-        iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
-        iniset $TROVE_CONF DEFAULT control_exchange trove
-        iniset $TROVE_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
+    # For message queue
+    iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
+    iniset $TROVE_CONF DEFAULT control_exchange trove
+    iniset $TROVE_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
+    # For database
+    iniset $TROVE_CONF database connection `database_connection_url trove`
+    # For logging
+    setup_trove_logging $TROVE_CONF
 
+    iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
+    configure_keystone_authtoken_middleware $TROVE_CONF trove
 
-        iniset $TROVE_CONF database connection `database_connection_url trove`
-        iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
-        setup_trove_logging $TROVE_CONF
-        iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
+    iniset $TROVE_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
 
-        configure_auth_token_middleware $TROVE_CONF trove
-        iniset $TROVE_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
-        iniset $TROVE_CONF DEFAULT nova_proxy_admin_user trove
-        iniset $TROVE_CONF DEFAULT nova_proxy_admin_tenant_name $SERVICE_PROJECT_NAME
-        iniset $TROVE_CONF DEFAULT nova_proxy_admin_pass $SERVICE_PASSWORD
-        iniset $TROVE_CONF DEFAULT nova_proxy_admin_user_domain_name default
-        iniset $TROVE_CONF DEFAULT nova_proxy_admin_project_domain_name default
-        iniset $TROVE_CONF DEFAULT os_region_name $REGION_NAME
-        iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
-        iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
-        iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
-    fi
+    iniset $TROVE_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
+    iniset $TROVE_CONF DEFAULT nova_proxy_admin_user trove
+    iniset $TROVE_CONF DEFAULT nova_proxy_admin_tenant_name $SERVICE_PROJECT_NAME
+    iniset $TROVE_CONF DEFAULT nova_proxy_admin_pass $SERVICE_PASSWORD
+    iniset $TROVE_CONF DEFAULT nova_proxy_admin_user_domain_name default
+    iniset $TROVE_CONF DEFAULT nova_proxy_admin_project_domain_name default
+    iniset $TROVE_CONF DEFAULT os_region_name $REGION_NAME
+    iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
+
+    iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
+    iniset $TROVE_CONF cassandra tcp_ports 22,7000,7001,7199,9042,9160
+    iniset $TROVE_CONF couchbase tcp_ports 22,8091,8092,4369,11209-11211,21100-21199
+    iniset $TROVE_CONF couchdb tcp_ports 22,5984
+    iniset $TROVE_CONF db2 tcp_ports 22,50000
+    iniset $TROVE_CONF mariadb tcp_ports 22,3306,4444,4567,4568
+    iniset $TROVE_CONF mongodb tcp_ports 22,2500,27017,27019
+    iniset $TROVE_CONF mysql tcp_ports 22,3306
+    iniset $TROVE_CONF percona tcp_ports 22,3306
+    iniset $TROVE_CONF postgresql tcp_ports 22,5432
+    iniset $TROVE_CONF pxc tcp_ports 22,3306,4444,4567,4568
+    iniset $TROVE_CONF redis tcp_ports 22,6379,16379
+    iniset $TROVE_CONF vertica tcp_ports 22,5433,5434,5444,5450,4803
 
     # configure apache related files
     if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
         echo "Configuring Trove to use mod-wsgi and Apache"
         _config_trove_apache_wsgi
-    fi
-
-    # (Re)create trove taskmanager conf file if needed
-    if is_service_enabled tr-tmgr; then
-        # Use these values only if they're set
-        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT agent_call_low_timeout $TROVE_AGENT_CALL_LOW_TIMEOUT
-        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT agent_call_high_timeout $TROVE_AGENT_CALL_HIGH_TIMEOUT
-        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT resize_time_out $TROVE_RESIZE_TIME_OUT
-        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
-        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
-
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT rpc_backend "rabbit"
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT control_exchange trove
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
-
-        iniset $TROVE_TASKMANAGER_CONF database connection `database_connection_url trove`
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_user trove
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_tenant_name $SERVICE_PROJECT_NAME
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_pass $SERVICE_PASSWORD
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_user_domain_name default
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_project_domain_name default
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT os_region_name $REGION_NAME
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
-
-        iniset $TROVE_TASKMANAGER_CONF cassandra tcp_ports 22,7000,7001,7199,9042,9160
-        iniset $TROVE_TASKMANAGER_CONF couchbase tcp_ports 22,8091,8092,4369,11209-11211,21100-21199
-        iniset $TROVE_TASKMANAGER_CONF couchdb tcp_ports 22,5984
-        iniset $TROVE_TASKMANAGER_CONF db2 tcp_ports 22,50000
-        iniset $TROVE_TASKMANAGER_CONF mariadb tcp_ports 22,3306,4444,4567,4568
-        iniset $TROVE_TASKMANAGER_CONF mongodb tcp_ports 22,2500,27017,27019
-        iniset $TROVE_TASKMANAGER_CONF mysql tcp_ports 22,3306
-        iniset $TROVE_TASKMANAGER_CONF percona tcp_ports 22,3306
-        iniset $TROVE_TASKMANAGER_CONF postgresql tcp_ports 22,5432
-        iniset $TROVE_TASKMANAGER_CONF pxc tcp_ports 22,3306,4444,4567,4568
-        iniset $TROVE_TASKMANAGER_CONF redis tcp_ports 22,6379,16379
-        iniset $TROVE_TASKMANAGER_CONF vertica tcp_ports 22,5433,5434,5444,5450,4803
-
-        setup_trove_logging $TROVE_TASKMANAGER_CONF
-    fi
-
-    # (Re)create trove conductor conf file if needed
-    if is_service_enabled tr-cond; then
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT rpc_backend "rabbit"
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
-
-        iniset $TROVE_CONDUCTOR_CONF database connection `database_connection_url trove`
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT control_exchange trove
-
-        setup_trove_logging $TROVE_CONDUCTOR_CONF
     fi
 
     # Use these values only if they're set
@@ -306,14 +290,21 @@ function configure_trove {
     # Set up Guest Agent conf
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rpc_backend "rabbit"
     iniset $TROVE_GUESTAGENT_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$TROVE_HOST_GATEWAY:5672/
-
     iniset $TROVE_GUESTAGENT_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     iniset $TROVE_GUESTAGENT_CONF DEFAULT control_exchange trove
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_dir /var/log/trove/
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_file trove-guestagent.log
-
     setup_trove_logging $TROVE_GUESTAGENT_CONF
+
+    # To avoid 'Connection timed out' error of sudo command inside the guest agent
+    CLOUDINIT_PATH=/etc/trove/cloudinit/${TROVE_DATASTORE_TYPE}.cloudinit
+    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
+    sudo touch "$CLOUDINIT_PATH"
+    sudo tee $CLOUDINIT_PATH >/dev/null <<'EOF'
+#cloud-config
+manage_etc_hosts: "localhost"
+EOF
 }
 
 # install_trove() - Collect source and prepare
@@ -532,12 +523,6 @@ function finalize_trove_network {
     iniset $TROVE_CONF DEFAULT black_list_regex ""
     iniset $TROVE_CONF DEFAULT management_networks ${mgmt_net_id}
     iniset $TROVE_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
-
-    iniset $TROVE_TASKMANAGER_CONF DEFAULT network_label_regex ${PRIVATE_NETWORK_NAME}
-    iniset $TROVE_TASKMANAGER_CONF DEFAULT ip_regex ""
-    iniset $TROVE_TASKMANAGER_CONF DEFAULT black_list_regex ""
-    iniset $TROVE_TASKMANAGER_CONF DEFAULT management_networks ${mgmt_net_id}
-    iniset $TROVE_TASKMANAGER_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
 }
 
 # start_trove() - Start running processes, including screen
@@ -549,8 +534,8 @@ function start_trove {
     else
         run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF --debug"
     fi
-    run_process tr-tmgr "$TROVE_BIN_DIR/trove-taskmanager --config-file=$TROVE_TASKMANAGER_CONF --debug"
-    run_process tr-cond "$TROVE_BIN_DIR/trove-conductor --config-file=$TROVE_CONDUCTOR_CONF --debug"
+    run_process tr-tmgr "$TROVE_BIN_DIR/trove-taskmanager --config-file=$TROVE_CONF --debug"
+    run_process tr-cond "$TROVE_BIN_DIR/trove-conductor --config-file=$TROVE_CONF --debug"
 }
 
 # stop_trove() - Stop running processes
@@ -579,6 +564,7 @@ function configure_tempest_for_trove {
 
 # _setup_minimal_image() - build and register in Trove a vm image with mysql
 #                        - datastore can be set via env variables
+# (lxkong): This function is deprecated in favor of trovestack script.
 function _setup_minimal_image {
     ##### Prerequisites:
     ##### - SSH KEYS has to be created on controller
@@ -718,13 +704,12 @@ if is_service_enabled trove; then
         install_trove
         install_python_troveclient
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
-        echo_summary "Configuring Trove"
-        configure_trove
-
         if is_service_enabled key; then
             create_trove_accounts
         fi
 
+        echo_summary "Configuring Trove"
+        configure_trove
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
         # Initialize trove
         init_trove
@@ -738,6 +723,8 @@ if is_service_enabled trove; then
         else
             echo "finalize_trove_network: Neutron is not enabled. Nothing to do."
         fi
+
+        _config_nova_keypair
 
         # Start the trove API and trove taskmgr components
         echo_summary "Starting Trove"

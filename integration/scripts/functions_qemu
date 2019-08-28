@@ -125,9 +125,7 @@ function clean_instances() {
     for i in $LIST; do sudo virsh destroy $i; done
 }
 
-# Trove doesn't support to specify keypair when creating the db instance, the
-# ssh keys are injected when the image is built. This could be removed when
-# we support keypair in the future.
+# In dev mode, guest agent needs to ssh into the controller to download code.
 function manage_ssh_keys() {
     if [ -d ${SSH_DIR} ]; then
         echo "${SSH_DIR} already exists"
