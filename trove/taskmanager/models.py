@@ -448,10 +448,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.info("Created instance %s successfully.", self.id)
             TroveInstanceCreate(instance=self,
                                 instance_size=flavor['ram']).notify()
-        except PollTimeOut as ex:
-            LOG.error("Failed to create instance %s. "
-                      "Timeout waiting for instance to become active. "
-                      "No usage create-event was sent.", self.id)
+        except (TroveError, PollTimeOut) as ex:
+            LOG.exception("Failed to create instance %s.", self.id)
             self.update_statuses_on_time_out()
             error_message = "%s" % ex
             error_details = traceback.format_exc()
@@ -669,30 +667,27 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         mysql_models.RootHistory.create(self.context, self.id)
 
     def update_statuses_on_time_out(self):
-
         if CONF.update_status_on_fail:
             # Updating service status
             service = InstanceServiceStatus.find_by(instance_id=self.id)
-            service.set_status(ServiceStatuses.
-                               FAILED_TIMEOUT_GUESTAGENT)
+            service.set_status(ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
             service.save()
-            LOG.error("Service status: %(status)s\n"
-                      "Service error description: %(desc)s",
-                      {'status': ServiceStatuses.
-                       FAILED_TIMEOUT_GUESTAGENT.api_status,
-                       'desc': ServiceStatuses.
-                       FAILED_TIMEOUT_GUESTAGENT.description})
+            LOG.error(
+                "Service status: %s, service error description: %s",
+                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT.api_status,
+                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT.description
+            )
+
             # Updating instance status
             db_info = DBInstance.find_by(id=self.id, deleted=False)
-            db_info.set_task_status(InstanceTasks.
-                                    BUILDING_ERROR_TIMEOUT_GA)
+            db_info.set_task_status(InstanceTasks.BUILDING_ERROR_TIMEOUT_GA)
             db_info.save()
-            LOG.error("Trove instance status: %(action)s\n"
-                      "Trove instance status description: %(text)s",
-                      {'action': InstanceTasks.
-                       BUILDING_ERROR_TIMEOUT_GA.action,
-                       'text': InstanceTasks.
-                       BUILDING_ERROR_TIMEOUT_GA.db_text})
+            LOG.error(
+                "Trove instance status: %s, Trove instance status "
+                "description: %s",
+                InstanceTasks.BUILDING_ERROR_TIMEOUT_GA.action,
+                InstanceTasks.BUILDING_ERROR_TIMEOUT_GA.db_text
+            )
 
     def _service_is_active(self):
         """
@@ -726,11 +721,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 server_fault_message = server.fault.get('message', 'Unknown')
             except AttributeError:
                 pass
-            server_message = "\nServer error: %s" % server_fault_message
-            raise TroveError(_("Server not active, status: %(status)s "
-                               "%(srv_msg)s") %
-                             {'status': server_status,
-                              'srv_msg': server_message})
+            raise TroveError(
+                _("Server not active, status: %(status)s, fault message: "
+                  "%(srv_msg)s") %
+                {'status': server_status, 'srv_msg': server_fault_message}
+            )
         return False
 
     def _build_sg_rules_mapping(self, rule_ports):
