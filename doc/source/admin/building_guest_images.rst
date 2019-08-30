@@ -125,10 +125,9 @@ Build image using trovestack
 ----------------------------
 
 Trove provides a script called ``trovestack`` that could do most of the
-management and test tasks. Refer to the "Build guest agent image" section
-in
-`trovestack document <https://github.com/openstack/trove/blob/master/integration/README.md>`_
-for how to build trove guest agent images.
+management and test tasks. Refer to
+`trovestack document <https://docs.openstack.org/trove/latest/admin/trovestack.html#build-guest-agent-image>`_
+for the steps to build trove guest agent images.
 
 -----------------------------
 Disk Image Builder 'Elements'

@@ -24,7 +24,7 @@ Before running ``trovestack`` command, go to the scripts folder:
 
 .. code-block:: console
 
-    git clone https://github.com/openstack/trove
+    git clone https://opendev.org/openstack/trove
     cd trove/integration/scripts
 
 Build guest agent image
@@ -54,14 +54,8 @@ The trove guest agent image could be created by running the following command:
   image at the building time. Now ``dev_mode=false`` is still in experimental
   and not considered production ready yet.
 
-* If you build the image on host1 but the trove controller service is running
-  on host2, you need to set ``dev_mode=false`` and set ``CONTROLLER_IP`` as the
-  IP address of trove controller service host. As the cloud administrator, you
-  also need to create a Nova keypair and set ``nova_keypair`` option in Trove
-  config file in order to ssh into the guest agent.
-
 For example, in order to build a MySQL image for Ubuntu Xenial operating
-system:
+system in development mode:
 
 .. code-block:: console
 
@@ -77,5 +71,5 @@ image in Glance and register a new datastore or version in Trove using
       --public \
       --disk-format qcow2 \
       --container-format bare \
-      --file ~/images/ubuntu_mysql.qcow2
+      --file ~/images/ubuntu-mysql.qcow2
     $ trove-manage datastore_version_update mysql 5.7.1 mysql $image_id "" 1
