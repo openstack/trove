@@ -207,8 +207,6 @@ class CreateInstanceTest(trove_testtools.TestCase):
             datastore_version_id=self.datastore_version.id,
             deleted=False
         )
-        self.backup.size = 1.1
-        self.backup.save()
         self.backup_id = self.backup.id
         self.orig_client = models.create_nova_client
         models.create_nova_client = nova.fake_create_nova_client
@@ -243,6 +241,8 @@ class CreateInstanceTest(trove_testtools.TestCase):
         super(CreateInstanceTest, self).tearDown()
 
     def test_exception_on_invalid_backup_size(self):
+        self.backup.size = 1.1
+        self.backup.save()
         self.assertEqual(self.backup.id, self.backup_id)
         exc = self.assertRaises(
             exception.BackupTooLarge, models.Instance.create,
