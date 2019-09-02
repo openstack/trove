@@ -283,7 +283,7 @@ common_opts = [
                 deprecated_name='hostname_require_ipv4'),
     cfg.BoolOpt('trove_security_groups_support', default=True,
                 help='Whether Trove should add Security Groups on create.'),
-    cfg.StrOpt('trove_security_group_name_prefix', default='SecGroup',
+    cfg.StrOpt('trove_security_group_name_prefix', default='trove_sg',
                help='Prefix to use when creating Security Groups.'),
     cfg.StrOpt('trove_security_group_rule_cidr', default='0.0.0.0/0',
                help='CIDR to use when creating Security Group Rules.'),
@@ -425,7 +425,11 @@ common_opts = [
                 deprecated_name='default_neutron_networks',
                 help='List of IDs for management networks which should be '
                      'attached to the instance regardless of what NICs '
-                     'are specified in the create API call.'),
+                     'are specified in the create API call. Currently only '
+                     'one management network is allowed.'),
+    cfg.ListOpt('management_security_groups', default=[],
+                help='List of the security group IDs that are applied on the '
+                     'management port of the database instance.'),
     cfg.IntOpt('max_header_line', default=16384,
                help='Maximum line size of message headers to be accepted. '
                     'max_header_line may need to be increased when using '

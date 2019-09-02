@@ -1,0 +1,11 @@
+---
+features:
+  - The cloud admin is able to apply a security group to management port(with
+    purpose of communicating with control plane and other management tasks) of
+    the Trove instance, by setting the ``management_security_groups`` config
+    option. The cloud admin is responsible for managing the security group
+    rules. The security group and its rules need to be created before deploying
+    Trove.
+upgrade:
+  - The management security group won't affect the Trove instances created
+    before upgrade.

@@ -407,6 +407,61 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             None, mock_get_injected_files(), {'group': 'sg-id'})
 
     @patch.object(BaseInstance, 'update_db')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_dns_entry')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'get_injected_files')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_secgroup')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
+    @patch.object(template, 'SingleInstanceConfigTemplate')
+    @patch(
+        "trove.taskmanager.models.FreshInstanceTasks._create_management_port"
+    )
+    def test_create_instance_with_mgmt_port(self,
+                                            mock_create_mgmt_port,
+                                            mock_single_instance_template,
+                                            mock_guest_prepare,
+                                            mock_build_volume_info,
+                                            mock_create_secgroup,
+                                            mock_create_server,
+                                            mock_get_injected_files,
+                                            *args):
+        self.patch_conf_property('management_networks', ['fake-mgmt-uuid'])
+        mock_create_secgroup.return_value = ['fake-sg']
+        mock_create_mgmt_port.return_value = 'fake-port-id'
+
+        mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
+        config_content = {'config_contents': 'some junk'}
+        mock_single_instance_template.return_value.config_contents = (
+            config_content)
+        overrides = Mock()
+
+        self.freshinstancetasks.create_instance(
+            mock_flavor, 'mysql-image-id',
+            None, None, 'mysql',
+            'mysql-server', 2,
+            None, None, None,
+            [{'net-id': 'fake-net-uuid'}, {'net-id': 'fake-mgmt-uuid'}],
+            overrides, None, None,
+            'volume_type', None,
+            {'group': 'sg-id'}
+        )
+
+        mock_create_secgroup.assert_called_with('mysql')
+        mock_create_mgmt_port.assert_called_once_with('fake-mgmt-uuid',
+                                                      ['fake-sg'])
+        mock_build_volume_info.assert_called_with('mysql', volume_size=2,
+                                                  volume_type='volume_type')
+        mock_guest_prepare.assert_called_with(
+            768, mock_build_volume_info(), 'mysql-server', None, None, None,
+            config_content, None, overrides, None, None, None)
+        mock_create_server.assert_called_with(
+            8, 'mysql-image-id', ['fake-sg'],
+            'mysql', mock_build_volume_info()['block_device'], None,
+            [{'net-id': 'fake-net-uuid'}, {'port-id': 'fake-port-id'}],
+            mock_get_injected_files(), {'group': 'sg-id'})
+
+    @patch.object(BaseInstance, 'update_db')
     @patch.object(taskmanager_models, 'create_cinder_client')
     @patch.object(taskmanager_models.FreshInstanceTasks, 'device_path',
                   new_callable=PropertyMock,

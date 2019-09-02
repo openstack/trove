@@ -186,28 +186,6 @@ function _config_trove_apache_wsgi {
     tail_log trove-api /var/log/${APACHE_NAME}/trove-api.log
 }
 
-function _config_nova_keypair {
-    export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
-
-    if [[ ! -f ${SSH_DIR}/id_rsa.pub ]]; then
-        mkdir -p ${SSH_DIR}
-        /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
-        # This is to allow guest agent ssh into the controller in dev mode.
-        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
-    else
-        # This is to allow guest agent ssh into the controller in dev mode.
-        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
-        sort ${SSH_DIR}/authorized_keys | uniq > ${SSH_DIR}/authorized_keys.uniq
-        mv ${SSH_DIR}/authorized_keys.uniq ${SSH_DIR}/authorized_keys
-        chmod 600 ${SSH_DIR}/authorized_keys
-    fi
-
-    echo "Creating Trove management keypair ${TROVE_MGMT_KEYPAIR_NAME}"
-    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
-      keypair create --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
-
-    iniset $TROVE_CONF DEFAULT nova_keypair ${TROVE_MGMT_KEYPAIR_NAME}
-}
 # configure_trove() - Set config files, create data dirs, etc
 function configure_trove {
     setup_develop $TROVE_DIR
@@ -477,15 +455,6 @@ function finalize_trove_network {
     mgmt_net_id=$(openstack network show ${TROVE_MGMT_NETWORK_NAME} -c id -f value)
     echo "Created Trove management network ${TROVE_MGMT_NETWORK_NAME}(${mgmt_net_id})"
 
-    # Create security group for trove management network. For testing purpose,
-    # we allow everything. In production, the security group should be managed
-    # by the cloud admin.
-    SG_NAME=trove-mgmt
-    openstack security group create --project ${trove_service_project_id} ${SG_NAME}
-    openstack security group rule create --proto icmp --project ${trove_service_project_id} ${SG_NAME}
-    openstack security group rule create --protocol tcp --dst-port 1:65535 --project ${trove_service_project_id} ${SG_NAME}
-    openstack security group rule create --protocol udp --dst-port 1:65535 --project ${trove_service_project_id} ${SG_NAME}
-
     # Share the private network to other projects for testing purpose. We make
     # the private network accessible to control plane below so that we could
     # reach the private network for integration tests without floating ips
@@ -501,7 +470,7 @@ function finalize_trove_network {
     # recommended to config the router in the cloud infrastructure for the
     # communication between Trove control plane and service VMs.
     INTERFACE=trove-mgmt
-    MGMT_PORT_ID=$(openstack port create --project ${trove_service_project_id} --security-group ${SG_NAME} --device-owner trove --network ${TROVE_MGMT_NETWORK_NAME} --host=$(hostname) -c id -f value ${INTERFACE}-port)
+    MGMT_PORT_ID=$(openstack port create --project ${trove_service_project_id} --security-group ${TROVE_MGMT_SECURITY_GROUP} --device-owner trove --network ${TROVE_MGMT_NETWORK_NAME} --host=$(hostname) -c id -f value ${INTERFACE}-port)
     MGMT_PORT_MAC=$(openstack port show -c mac_address -f value $MGMT_PORT_ID)
     MGMT_PORT_IP=$(openstack port show -f value -c fixed_ips $MGMT_PORT_ID | awk '{FS=",| "; gsub(",",""); gsub("'\''",""); for(i = 1; i <= NF; ++i) {if ($i ~ /^ip_address/) {n=index($i, "="); if (substr($i, n+1) ~ "\\.") print substr($i, n+1)}}}')
     sudo ovs-vsctl -- --may-exist add-port ${OVS_BRIDGE:-br-int} $INTERFACE -- set Interface $INTERFACE type=internal -- set Interface $INTERFACE external-ids:iface-status=active -- set Interface $INTERFACE external-ids:attached-mac=$MGMT_PORT_MAC -- set Interface $INTERFACE external-ids:iface-id=$MGMT_PORT_ID -- set Interface $INTERFACE external-ids:skip_cleanup=true
@@ -697,6 +666,45 @@ function _setup_minimal_image {
     fi
 }
 
+function _config_nova_keypair {
+    export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
+
+    if [[ ! -f ${SSH_DIR}/id_rsa.pub ]]; then
+        mkdir -p ${SSH_DIR}
+        /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
+        # This is to allow guest agent ssh into the controller in dev mode.
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+    else
+        # This is to allow guest agent ssh into the controller in dev mode.
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+        sort ${SSH_DIR}/authorized_keys | uniq > ${SSH_DIR}/authorized_keys.uniq
+        mv ${SSH_DIR}/authorized_keys.uniq ${SSH_DIR}/authorized_keys
+        chmod 600 ${SSH_DIR}/authorized_keys
+    fi
+
+    echo "Creating Trove management keypair ${TROVE_MGMT_KEYPAIR_NAME}"
+    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
+      keypair create --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
+
+    iniset $TROVE_CONF DEFAULT nova_keypair ${TROVE_MGMT_KEYPAIR_NAME}
+}
+
+function _config_mgmt_security_group {
+    local sgid
+
+    echo "Creating Trove management security group."
+    sgid=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove security group create ${TROVE_MGMT_SECURITY_GROUP} -f value -c id)
+
+    # Allow ICMP
+    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
+        security group rule create --proto icmp $sgid
+    # Allow SSH
+    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
+        security group rule create --protocol tcp --dst-port 22 $sgid
+
+    iniset $TROVE_CONF DEFAULT management_security_groups $sgid
+}
+
 # Dispatcher for trove plugin
 if is_service_enabled trove; then
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
@@ -714,17 +722,12 @@ if is_service_enabled trove; then
         # Initialize trove
         init_trove
 
+        _config_nova_keypair
+        _config_mgmt_security_group
+
         # finish the last step in trove network configuration
         echo_summary "Finalizing Trove Network Configuration"
-
-        if is_service_enabled neutron; then
-            echo "finalize_trove_network: Neutron is enabled."
-            finalize_trove_network
-        else
-            echo "finalize_trove_network: Neutron is not enabled. Nothing to do."
-        fi
-
-        _config_nova_keypair
+        finalize_trove_network
 
         # Start the trove API and trove taskmgr components
         echo_summary "Starting Trove"
