@@ -75,9 +75,8 @@ function create_trove_accounts {
     fi
 }
 
-# _cleanup_trove_apache_wsgi - Removes all the WSGI related files and
-# restart apache.
-function _cleanup_trove_apache_wsgi {
+# Removes all the WSGI related files and restart apache.
+function cleanup_trove_apache_wsgi {
     sudo rm -rf $TROVE_WSGI_DIR
     sudo rm -f $(apache_site_config_for trove-api)
     restart_apache_server
@@ -98,7 +97,7 @@ function cleanup_trove {
 
     if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
         echo "Cleaning up Trove's WSGI setup"
-        _cleanup_trove_apache_wsgi
+        cleanup_trove_apache_wsgi
     fi
 }
 
@@ -165,9 +164,8 @@ function configure_nova_kvm {
     echo "configure_nova_kvm: using virt_type: ${virt_type} for cpu: ${cpu}."
 }
 
-# _config_trove_apache_wsgi() - Setup WSGI config files for Trove and
-# enable the site
-function _config_trove_apache_wsgi {
+# Setup WSGI config files for Trove and enable the site
+function config_trove_apache_wsgi {
     local trove_apache_conf
 
     sudo mkdir -p ${TROVE_WSGI_DIR}
@@ -258,7 +256,7 @@ function configure_trove {
     # configure apache related files
     if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
         echo "Configuring Trove to use mod-wsgi and Apache"
-        _config_trove_apache_wsgi
+        config_trove_apache_wsgi
     fi
 
     # Use these values only if they're set
@@ -317,54 +315,12 @@ function install_python_troveclient {
     fi
 }
 
-# init_trove() - Initializes Trove Database as a Service
-function init_trove {
+function init_trove_db {
     # (Re)Create trove db
     recreate_database trove
 
     # Initialize the trove database
     $TROVE_MANAGE db_sync
-
-    # build and upload sample Trove mysql instance if not set otherwise.
-    # We recommend to use trovestack tooling for image build.
-    TROVE_DISABLE_IMAGE_SETUP=`echo ${TROVE_DISABLE_IMAGE_SETUP,,}`
-    if [[ ${TROVE_DISABLE_IMAGE_SETUP} != "true" ]]; then
-        echo "Setup datastore image."
-        _setup_minimal_image
-    else
-        echo "Skip datastore image building."
-    fi
-    [ -z "$TROVE_GUEST_IMAGE_URL" ] && return 0
-
-    # Find the glance id for the trove guest image
-    # The image is uploaded by stack.sh -- see $IMAGE_URLS handling
-    GUEST_IMAGE_NAME=$(basename "$TROVE_GUEST_IMAGE_URL")
-    GUEST_IMAGE_NAME=${GUEST_IMAGE_NAME%.*}
-
-    TOKEN=$(openstack token issue -c id -f value)
-    TROVE_GUEST_IMAGE_ID=$(openstack --os-token $TOKEN --os-url $GLANCE_SERVICE_PROTOCOL://$GLANCE_HOSTPORT image list | grep "${GUEST_IMAGE_NAME}" | get_field 1)
-    if [ -z "$TROVE_GUEST_IMAGE_ID" ]; then
-        # If no glance id is found, skip remaining setup
-        echo "Datastore ${TROVE_DATASTORE_TYPE} will not be created: guest image ${GUEST_IMAGE_NAME} not found."
-        return 1
-    fi
-
-    # Now that we have the guest image id, initialize appropriate datastores / datastore versions
-    $TROVE_MANAGE datastore_update "$TROVE_DATASTORE_TYPE" ""
-    $TROVE_MANAGE datastore_version_update "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" "$TROVE_DATASTORE_TYPE" \
-        "$TROVE_GUEST_IMAGE_ID" "$TROVE_DATASTORE_PACKAGE" 1
-    $TROVE_MANAGE datastore_version_update "$TROVE_DATASTORE_TYPE" "inactive_version" "inactive_manager" "$TROVE_GUEST_IMAGE_ID" "" 0
-    $TROVE_MANAGE datastore_update "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION"
-    $TROVE_MANAGE datastore_update "Inactive_Datastore" ""
-
-    # Some datastores provide validation rules.
-    # if one is provided, configure it.
-    if [ -f "${TROVE_DIR}/trove/templates/${TROVE_DATASTORE_TYPE}"/validation-rules.json ]; then
-        echo "Configuring validation rules for ${TROVE_DATASTORE_TYPE}"
-        $TROVE_MANAGE db_load_datastore_config_parameters \
-            "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
-            "${TROVE_DIR}/trove/templates/${TROVE_DATASTORE_TYPE}"/validation-rules.json
-    fi
 }
 
 function create_mgmt_subnet_v4 {
@@ -380,7 +336,7 @@ function create_mgmt_subnet_v4 {
 
 # Create private IPv6 subnet
 # Note: Trove is not fully tested in IPv6.
-function _create_subnet_v6 {
+function create_subnet_v6 {
     local project_id=$1
     local net_id=$2
     local name=$3
@@ -426,13 +382,13 @@ function setup_mgmt_network() {
     fi
     # Trove doesn't support IPv6 for now.
 #    if [[ "$IP_VERSION" =~ .*6 ]]; then
-#        NEW_IPV6_SUBNET_ID=$(_create_subnet_v6 ${PROJECT_ID} ${network_id} ${IPV6_SUBNET_NAME})
+#        NEW_IPV6_SUBNET_ID=$(create_subnet_v6 ${PROJECT_ID} ${network_id} ${IPV6_SUBNET_NAME})
 #        openstack router add subnet $ROUTER_ID $NEW_IPV6_SUBNET_ID
 #    fi
 }
 
 # Set up Trove management network and make configuration change.
-function finalize_trove_network {
+function config_trove_network {
     echo "Finalizing Neutron networking for Trove"
     echo "Dumping current network parameters:"
     echo "  SERVICE_HOST: $SERVICE_HOST"
@@ -531,117 +487,38 @@ function configure_tempest_for_trove {
     fi
 }
 
-# _setup_minimal_image() - build and register in Trove a vm image with mysql
-#                        - datastore can be set via env variables
-# (lxkong): This function is deprecated in favor of trovestack script.
-function _setup_minimal_image {
-    ##### Prerequisites:
-    ##### - SSH KEYS has to be created on controller
-    ##### - trove will access controller ip to get trove source code by using HOST_SCP_USERNAME and an ssh key
-    ##### - we assume tripleo elements and all other elements have been downloaded
-
-    echo "Exporting image-related environmental variables"
-    PRIMARY_IP=$(ip route get 8.8.8.8 | head -1 | awk '{print $7}')
-    export CONTROLLER_IP=${CONTROLLER_IP:-$PRIMARY_IP}
-    export HOST_USERNAME=${HOST_USERNAME:-'stack'}
-    export HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-'stack'}
-    export GUEST_USERNAME=${GUEST_USERNAME:-'ubuntu'}
-    export PATH_TROVE=${PATH_TROVE:-'/opt/stack/trove'}
-    export ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
-    export TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:-'/opt/stack/trove/integration/scripts'}
-    export TROVE_DATASTORE_TYPE=${TROVE_DATASTORE_TYPE:-'mysql'}
-    export TROVE_DATASTORE_VERSION=${TROVE_DATASTORE_VERSION:-'5.7'}
-    export TROVE_DATASTORE_PACKAGE=${TROVE_DATASTORE_PACKAGE:-"${TROVE_DATASTORE_TYPE}-${TROVE_DATASTORE_VERSION}"}
-    export SSH_DIR=${SSH_DIR:-'/opt/stack/.ssh'}
-    export GUEST_LOGDIR=${GUEST_LOGDIR:-'/var/log/trove/'}
-    export ESCAPED_GUEST_LOGDIR=$(echo $GUEST_LOGDIR | sed 's/\//\\\//g')
-    export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
-    export DISTRO="ubuntu"
-    export VM=${VM:-"/opt/stack/images/${DISTRO}_${TROVE_DATASTORE_TYPE}/${DISTRO}_${TROVE_DATASTORE_TYPE}"}
-
-    if [ -d "$TROVESTACK_SCRIPTS/files/elements" ]; then
-        export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
-    else
-        export ELEMENTS_PATH=.
+# Use trovestack to create guest image and register the image in the datastore.
+function create_guest_image {
+    TROVE_DISABLE_IMAGE_SETUP=`echo ${TROVE_DISABLE_IMAGE_SETUP,,}`
+    if [[ ${TROVE_DISABLE_IMAGE_SETUP} == "true" ]]; then
+        echo "Skip creating guest image."
+        return 0
     fi
 
-    if [ ! -z "$PATH_DISKIMAGEBUILDER" ]; then
-        export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER/elements
-    elif [ -d "/usr/local/lib/python2.7/dist-packages/diskimage_builder" ]; then
-        PATH_DISKIMG="/usr/local/lib/python2.7/dist-packages/diskimage_builder"
-        export ELEMENTS_PATH+=:$PATH_DISKIMG/elements
-    fi
+    echo "Starting to create guest image..."
 
-    if [ ! -z "$PATH_TRIPLEO_ELEMENTS" ]; then
-        export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
-    else
-        git_clone $TRIPLEO_IMAGES_REPO $TRIPLEO_IMAGES_DIR $TRIPLEO_IMAGES_BRANCH
-        setup_develop $TRIPLEO_IMAGES_DIR
+    $DEST/trove/integration/scripts/trovestack build-image ${TROVE_DATASTORE_TYPE} ${TROVE_IMAGE_OS} ${TROVE_IMAGE_OS_RELEASE} true
 
-        export ELEMENTS_PATH+=:$TRIPLEO_IMAGES_DIR/elements
-    fi
-
-    export QEMU_IMG_OPTIONS="--qemu-img-options compat=1.1"
-    export RELEASE=${RELEASE:-'xenial'}
-    export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
-    export DIB_CLOUD_INIT_ETC_HOSTS=true
-    export DIB_RELEASE=${RELEASE:-'xenial'}
-
-    # https://cloud-images.ubuntu.com/releases is more stable than the daily
-    # builds(https://cloud-images.ubuntu.com/xenial/current/),
-    # e.g. sometimes SHA256SUMS file is missing in the daily builds
-    declare -A releasemapping=( ["xenial"]="16.04" ["bionic"]="18.04")
-    export DIB_CLOUD_IMAGES="https://cloud-images.ubuntu.com/releases/${DIB_RELEASE}/release/"
-    export BASE_IMAGE_FILE="ubuntu-${releasemapping[${DIB_RELEASE}]}-server-cloudimg-amd64-root.tar.gz"
-
-    export TROVE_GUESTAGENT_CONF=${TROVE_GUESTAGENT_CONF:-'/etc/trove/trove-guestagent.conf'}
-
-    if [[ -d ${SSH_DIR} && -f ${SSH_DIR}/id_rsa.pub ]]; then
-        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
-        sort ${SSH_DIR}/authorized_keys | uniq > ${SSH_DIR}/authorized_keys.uniq
-        mv ${SSH_DIR}/authorized_keys.uniq ${SSH_DIR}/authorized_keys
-    else
-        mkdir -p ${SSH_DIR}
-        /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q -N ""
-        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
-        chmod 600 ${SSH_DIR}/authorized_keys
-    fi
-
-    # Make sure the guest agent has permission to ssh into the devstack host
-    # in order to download trove code during the service initialization.
-    home_keys=$HOME/.ssh/authorized_keys
-    cat ${SSH_DIR}/id_rsa.pub >> ${home_keys}
-    sort ${home_keys} | uniq > ${home_keys}.uniq
-    mv ${home_keys}.uniq ${home_keys}
-
-    echo "Run disk image create to actually create a new image"
-    disk-image-create -a amd64 -o "${VM}" -x ${QEMU_IMG_OPTIONS} ${DISTRO} \
-        vm cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${RELEASE}-guest \
-        ${DISTRO}-${TROVE_DATASTORE_TYPE} ${DISTRO}-${RELEASE}-${TROVE_DATASTORE_TYPE}
-
-    QCOW_IMAGE="$VM.qcow2"
-
-    if [ ! -f $QCOW_IMAGE ]; then
-        echo "Image file was not found at $QCOW_IMAGE. Probably it was not created."
+    image_name=${TROVE_IMAGE_OS}-${TROVE_DATASTORE_TYPE}
+    image_file=$HOME/images/${image_name}.qcow2
+    if [ ! -f ${image_file} ]; then
+        echo "Image file was not found at ${image_file}. Probably it was not created."
         return 1
     fi
 
     ACTIVE=1
     INACTIVE=0
 
-    echo "Add image to glance"
-    GLANCE_OUT=$(openstack --os-url $GLANCE_SERVICE_PROTOCOL://$GLANCE_HOSTPORT \
-        image create $DISTRO-${TROVE_DATASTORE_TYPE}-${TROVE_DATASTORE_VERSION} \
-        --public --disk-format qcow2 --container-format bare --file $QCOW_IMAGE)
-    glance_image_id=$(echo "$GLANCE_OUT" | grep '| id ' | awk '{print $4}')
+    echo "Add the image to glance"
+    glance_image_id=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} \
+      --os-project-name service --os-username trove \
+      image create ${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}-${TROVE_DATASTORE_TYPE} \
+      --disk-format qcow2 --container-format bare --property hw_rng_model='virtio' --file ${image_file} \
+      -c id -f value)
 
-    echo "Create datastore specific entry in Trove AFAIK one per datastore, do not need when changing image"
+    echo "Register the image in datastore"
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE ""
-
-    echo "Connect datastore entry to glance image"
     $TROVE_MANAGE datastore_version_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION $TROVE_DATASTORE_TYPE $glance_image_id "" $ACTIVE
-
-    echo "Set default datastore version"
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION
 
     # just for tests
@@ -649,24 +526,22 @@ function _setup_minimal_image {
     $TROVE_MANAGE datastore_update Test_Datastore_1 ""
 
     echo "Add validation rules if available"
-    if [ -f "$PATH_TROVE"/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]; then
+    if [ -f $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]; then
         $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
-            "$PATH_TROVE"/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
+            $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
     fi
 
-    echo "Generate cloudinit"
-    CLOUDINIT_PATH=/etc/trove/cloudinit/mysql.cloudinit
-
-    if [ ! -f $CLOUDINIT_PATH ]; then
-        sudo mkdir -p $(dirname $CLOUDINIT_PATH)
-
-        sudo echo "#!/usr/bin/env bash" | sudo tee $CLOUDINIT_PATH
-        PUBKEY=`cat ${SSH_DIR}/id_rsa.pub`
-        sudo echo "echo '${PUBKEY}' > /home/${GUEST_USERNAME}/.ssh/authorized_keys" | sudo tee --append $CLOUDINIT_PATH
-    fi
+    # To avoid 'Connection timed out' error of sudo command inside the guest agent.
+    CLOUDINIT_PATH=/etc/trove/cloudinit/${TROVE_DATASTORE_TYPE}.cloudinit
+    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
+    sudo touch "$CLOUDINIT_PATH"
+    sudo tee $CLOUDINIT_PATH >/dev/null <<'EOF'
+#cloud-config
+manage_etc_hosts: "localhost"
+EOF
 }
 
-function _config_nova_keypair {
+function config_nova_keypair {
     export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
 
     if [[ ! -f ${SSH_DIR}/id_rsa.pub ]]; then
@@ -689,7 +564,14 @@ function _config_nova_keypair {
     iniset $TROVE_CONF DEFAULT nova_keypair ${TROVE_MGMT_KEYPAIR_NAME}
 }
 
-function _config_mgmt_security_group {
+function config_cinder_volume_type {
+    volume_type=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} \
+      --os-project-name service --os-username trove \
+      volume type list -c Name -f value | awk 'NR==1 {print}')
+
+    iniset $TROVE_CONF DEFAULT cinder_volume_type ${volume_type}
+}
+function config_mgmt_security_group {
     local sgid
 
     echo "Creating Trove management security group."
@@ -719,17 +601,13 @@ if is_service_enabled trove; then
         echo_summary "Configuring Trove"
         configure_trove
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
-        # Initialize trove
-        init_trove
+        init_trove_db
+        config_nova_keypair
+        config_cinder_volume_type
+        config_mgmt_security_group
+        config_trove_network
+        create_guest_image
 
-        _config_nova_keypair
-        _config_mgmt_security_group
-
-        # finish the last step in trove network configuration
-        echo_summary "Finalizing Trove Network Configuration"
-        finalize_trove_network
-
-        # Start the trove API and trove taskmgr components
         echo_summary "Starting Trove"
         start_trove
 
