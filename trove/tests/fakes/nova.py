@@ -264,7 +264,7 @@ class FakeServers(object):
         """Can this FakeServers, with its context, see some resource?"""
         server = self.db[id]
         return (self.context.is_admin or
-                server.owner.tenant == self.context.tenant)
+                server.owner.tenant == self.context.project_id)
 
     def create(self, name, image_id, flavor_ref, files=None, userdata=None,
                block_device_mapping_v2=None, security_groups=None,
@@ -281,12 +281,6 @@ class FakeServers(object):
         if availability_zone == 'BAD_ZONE':
             raise nova_exceptions.ClientException("The requested availability "
                                                   "zone is not available.")
-
-        if nics:
-            if 'port-id' in nics[0] and nics[0]['port-id'] == "UNKNOWN":
-                raise nova_exceptions.ClientException("The requested "
-                                                      "port-id is not "
-                                                      "available.")
 
         server.schedule_status("ACTIVE", 1)
         LOG.info("FAKE_SERVERS_DB : %s", str(FAKE_SERVERS_DB))
@@ -439,7 +433,7 @@ class FakeVolumes(object):
         """Can this FakeVolumes, with its context, see some resource?"""
         server = self.db[id]
         return (self.context.is_admin or
-                server.owner.tenant == self.context.tenant)
+                server.owner.tenant == self.context.project_id)
 
     def get(self, id):
         if id not in self.db:

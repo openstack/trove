@@ -23,7 +23,7 @@ def create_links(resource_path, request, id):
     link_info = {
         'host': request.host,
         'version': request.url_version,
-        'tenant_id': context.tenant,
+        'tenant_id': context.project_id,
         'resource_path': resource_path,
         'id': id,
     }

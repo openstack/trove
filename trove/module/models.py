@@ -65,10 +65,12 @@ class Modules(object):
             # plus the 'all' tenant ones
             query_opts['visible'] = True
             db_info = DBModule.query().filter_by(**query_opts)
-            db_info = db_info.filter(or_(DBModule.tenant_id == context.tenant,
-                                         DBModule.tenant_id.is_(None)))
+            db_info = db_info.filter(
+                or_(DBModule.tenant_id == context.project_id,
+                    DBModule.tenant_id.is_(None))
+            )
             if db_info.count() == 0:
-                LOG.debug("No modules found for tenant %s", context.tenant)
+                LOG.debug("No modules found for tenant %s", context.project_id)
         modules = db_info.all()
         return modules
 
@@ -83,12 +85,12 @@ class Modules(object):
         query_opts = {'deleted': False,
                       'auto_apply': True}
         db_info = DBModule.query().filter_by(**query_opts)
-        db_info = Modules.add_tenant_filter(db_info, context.tenant)
+        db_info = Modules.add_tenant_filter(db_info, context.project_id)
         db_info = Modules.add_datastore_filter(db_info, datastore_id)
         db_info = Modules.add_ds_version_filter(db_info, datastore_version_id)
         if db_info.count() == 0:
             LOG.debug("No auto-apply modules found for tenant %s",
-                      context.tenant)
+                      context.project_id)
         modules = db_info.all()
         return modules
 
@@ -123,7 +125,8 @@ class Modules(object):
             query_opts = {'deleted': False}
             db_info = DBModule.query().filter_by(**query_opts)
             if not context.is_admin:
-                db_info = Modules.add_tenant_filter(db_info, context.tenant)
+                db_info = Modules.add_tenant_filter(db_info,
+                                                    context.project_id)
             db_info = db_info.filter(DBModule.id.in_(module_ids))
             modules = db_info.all()
         return modules
@@ -285,7 +288,7 @@ class Module(object):
                 module = DBModule.find_by(id=module_id, deleted=False)
             else:
                 module = DBModule.find_by(
-                    id=module_id, tenant_id=context.tenant, visible=True,
+                    id=module_id, tenant_id=context.project_id, visible=True,
                     deleted=False)
         except exception.ModelNotFoundError:
             # See if we have the module in the 'all' tenant section

@@ -36,7 +36,7 @@ def trove_client(context, region_name=None):
     if CONF.trove_url:
         url = '%(url)s%(tenant)s' % {
             'url': normalize_url(CONF.trove_url),
-            'tenant': context.tenant}
+            'tenant': context.project_id}
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.trove_service_type,
@@ -44,7 +44,7 @@ def trove_client(context, region_name=None):
                            endpoint_type=CONF.trove_endpoint_type)
 
     client = TroveClient.Client(context.user, context.auth_token,
-                                project_id=context.tenant,
+                                project_id=context.project_id,
                                 auth_url=CONF.trove_auth_url)
     client.client.auth_token = context.auth_token
     client.client.management_url = url

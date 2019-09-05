@@ -330,7 +330,8 @@ class Manager(periodic_task.PeriodicTasks):
         master_instance_tasks = BuiltInstanceTasks.load(context, slave_of_id)
         server_group = master_instance_tasks.server_group
         scheduler_hints = srv_grp.ServerGroup.convert_to_hint(server_group)
-        LOG.debug("Using scheduler hints for locality: %s", scheduler_hints)
+        LOG.info("Using scheduler hints %s for creating instance %s",
+                 scheduler_hints, instance_id)
 
         try:
             for replica_index in range(0, len(ids)):
@@ -371,7 +372,8 @@ class Manager(periodic_task.PeriodicTasks):
                          image_id, databases, users, datastore_manager,
                          packages, volume_size, backup_id, availability_zone,
                          root_password, nics, overrides, slave_of_id,
-                         cluster_config, volume_type, modules, locality):
+                         cluster_config, volume_type, modules, locality,
+                         access=None):
         if slave_of_id:
             self._create_replication_slave(context, instance_id, name,
                                            flavor, image_id, databases, users,
@@ -384,17 +386,24 @@ class Manager(periodic_task.PeriodicTasks):
             if type(instance_id) in [list]:
                 raise AttributeError(_(
                     "Cannot create multiple non-replica instances."))
-            instance_tasks = FreshInstanceTasks.load(context, instance_id)
 
             scheduler_hints = srv_grp.ServerGroup.build_scheduler_hint(
-                context, locality, instance_id)
-            instance_tasks.create_instance(flavor, image_id, databases, users,
-                                           datastore_manager, packages,
-                                           volume_size, backup_id,
-                                           availability_zone, root_password,
-                                           nics, overrides, cluster_config,
-                                           None, volume_type, modules,
-                                           scheduler_hints)
+                context, locality, instance_id
+            )
+            LOG.info("Using scheduler hints %s for creating instance %s",
+                     scheduler_hints, instance_id)
+
+            instance_tasks = FreshInstanceTasks.load(context, instance_id)
+            instance_tasks.create_instance(
+                flavor, image_id, databases, users,
+                datastore_manager, packages,
+                volume_size, backup_id,
+                availability_zone, root_password,
+                nics, overrides, cluster_config,
+                None, volume_type, modules,
+                scheduler_hints, access=access
+            )
+
             timeout = (CONF.restore_usage_timeout if backup_id
                        else CONF.usage_timeout)
             instance_tasks.wait_for_instance(timeout, flavor)
@@ -403,7 +412,8 @@ class Manager(periodic_task.PeriodicTasks):
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id, availability_zone,
                         root_password, nics, overrides, slave_of_id,
-                        cluster_config, volume_type, modules, locality):
+                        cluster_config, volume_type, modules, locality,
+                        access=None):
         with EndNotification(context,
                              instance_id=(instance_id[0]
                                           if isinstance(instance_id, list)
@@ -414,7 +424,7 @@ class Manager(periodic_task.PeriodicTasks):
                                   backup_id, availability_zone,
                                   root_password, nics, overrides, slave_of_id,
                                   cluster_config, volume_type, modules,
-                                  locality)
+                                  locality, access=access)
 
     def upgrade(self, context, instance_id, datastore_version_id):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)

@@ -11,11 +11,15 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import netaddr
+from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import exception
 from trove.common import remote
 
 CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 MGMT_NETWORKS = None
 
 
@@ -47,3 +51,99 @@ def reset_management_networks():
     global MGMT_NETWORKS
 
     MGMT_NETWORKS = None
+
+
+def create_port(client, name, description, network_id, security_groups,
+                is_public=False):
+    port_body = {
+        "port": {
+            "name": name,
+            "description": description,
+            "network_id": network_id,
+            "security_groups": security_groups
+        }
+    }
+    port = client.create_port(body=port_body)
+    port_id = port['port']['id']
+
+    if is_public:
+        public_network_id = get_public_network(client)
+        if not public_network_id:
+            raise exception.PublicNetworkNotFound()
+
+        fip_body = {
+            "floatingip": {
+                'floating_network_id': public_network_id,
+                'port_id': port_id,
+            }
+        }
+        client.create_floatingip(fip_body)
+
+    return port_id
+
+
+def delete_port(client, id):
+    ret = client.list_floatingips(port_id=id)
+    if len(ret['floatingips']) > 0:
+        for fip in ret['floatingips']:
+            try:
+                client.delete_floatingip(fip['id'])
+            except Exception as e:
+                LOG.error(
+                    'Failed to delete floating IP for port %s, error: %s',
+                    id, str(e)
+                )
+
+    client.delete_port(id)
+
+
+def get_public_network(client):
+    """Get public network ID.
+
+    If not given in the config file, try to query all the public networks and
+    use the first one in the list.
+    """
+    if CONF.network.public_network_id:
+        return CONF.network.public_network_id
+
+    kwargs = {'router:external': True}
+    ret = client.list_networks(**kwargs)
+
+    if len(ret.get('networks', [])) == 0:
+        return None
+
+    return ret['networks'][0].get('id')
+
+
+def create_security_group(client, name, instance_id):
+    body = {
+        'security_group': {
+            'name': name,
+            'description': 'Security group for trove instance %s' % instance_id
+        }
+    }
+    ret = client.create_security_group(body=body)
+    return ret['security_group']['id']
+
+
+def create_security_group_rule(client, sg_id, protocol, ports, remote_ips):
+    for remote_ip in remote_ips:
+        ip = netaddr.IPNetwork(remote_ip)
+        ethertype = 'IPv4' if ip.version == 4 else 'IPv6'
+
+        for port_or_range in set(ports):
+            from_, to_ = port_or_range[0], port_or_range[-1]
+
+            body = {
+                "security_group_rule": {
+                    "direction": "ingress",
+                    "ethertype": ethertype,
+                    "protocol": protocol,
+                    "security_group_id": sg_id,
+                    "port_range_min": int(from_),
+                    "port_range_max": int(to_),
+                    "remote_ip_prefix": remote_ip
+                }
+            }
+
+            client.create_security_group_rule(body)

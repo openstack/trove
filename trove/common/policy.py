@@ -69,7 +69,7 @@ def __authorize(context, rule, target=None):
        :raises:         :class:`PolicyNotAuthorized` if verification fails.
 
     """
-    target = target or {'tenant': context.tenant}
+    target = target or {'tenant': context.project_id}
     return get_enforcer().authorize(
         rule, target, context.to_dict(), do_raise=True,
         exc=trove_exceptions.PolicyNotAuthorized, action=rule)

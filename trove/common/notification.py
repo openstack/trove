@@ -364,7 +364,7 @@ class DBaaSAPINotification(object):
                                 'server_type': 'api',
                                 'client_ip': request.remote_addr,
                                 'server_ip': request.host,
-                                'tenant_id': context.tenant,
+                                'tenant_id': context.project_id,
                                 })
         elif 'request_id' not in kwargs:
             raise TroveError(_("Notification %s must include 'request'"

@@ -204,7 +204,7 @@ class RateLimitingMiddleware(wsgi.TroveMiddleware):
 
         tenant_id = None
         if context:
-            tenant_id = context.tenant
+            tenant_id = context.project_id
 
         delay, error = self._limiter.check_for_delay(verb, url, tenant_id)
 

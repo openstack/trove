@@ -20,19 +20,16 @@ from six.moves import configparser as config_parser
 
 import trove
 from trove.common import extensions
-from trove.extensions.routes.account import Account
 from trove.extensions.routes.mgmt import Mgmt
 from trove.extensions.routes.mysql import Mysql
 from trove.tests.unittests import trove_testtools
 
 DEFAULT_EXTENSION_MAP = {
-    'Account': [Account, extensions.ExtensionDescriptor],
     'Mgmt': [Mgmt, extensions.ExtensionDescriptor],
     'MYSQL': [Mysql, extensions.ExtensionDescriptor]
 }
 
 EP_TEXT = '''
-account = trove.extensions.routes.account:Account
 mgmt = trove.extensions.routes.mgmt:Mgmt
 mysql = trove.extensions.routes.mysql:Mysql
 invalid = trove.tests.unittests.api.common.test_extensions:InvalidExtension

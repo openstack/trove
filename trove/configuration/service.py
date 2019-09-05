@@ -66,7 +66,7 @@ class ConfigurationsController(wsgi.Controller):
         configuration_items = models.Configuration.load_items(context, id)
 
         configuration.instance_count = instances_models.DBInstance.find_all(
-            tenant_id=context.tenant,
+            tenant_id=context.project_id,
             configuration_id=configuration.id,
             deleted=False).count()
 
@@ -154,7 +154,7 @@ class ConfigurationsController(wsgi.Controller):
             context, request=req)
         with StartNotification(context, configuration_id=id):
             instances = instances_models.DBInstance.find_all(
-                tenant_id=context.tenant,
+                tenant_id=context.project_id,
                 configuration_id=id,
                 deleted=False).all()
             if instances:
@@ -221,7 +221,7 @@ class ConfigurationsController(wsgi.Controller):
         LOG.debug("Re-applying configuration group '%s' to all instances.",
                   configuration_id)
         single_instances = instances_models.DBInstance.find_all(
-            tenant_id=context.tenant,
+            tenant_id=context.project_id,
             configuration_id=configuration_id,
             cluster_id=None,
             deleted=False).all()

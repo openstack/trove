@@ -70,7 +70,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
         deltas = {'instances': num_instances, 'volumes': req_volume_size}
 
         # quota check
-        check_quotas(context.tenant, deltas)
+        check_quotas(context.project_id, deltas)
 
         # Checking networks are same for the cluster
         cluster_models.validate_instance_nics(context, instances)
@@ -122,7 +122,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
                                         datastore_version)
         # Updating Cluster Task
         db_info = cluster_models.DBCluster.create(
-            name=name, tenant_id=context.tenant,
+            name=name, tenant_id=context.project_id,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL,
             configuration_id=configuration)

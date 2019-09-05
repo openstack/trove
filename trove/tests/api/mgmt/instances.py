@@ -159,11 +159,19 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
         vol_support = CONFIG.get(datastore['type'], 'mysql')['volume_support']
         if vol_support:
             body.update({'size': 13})
+
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            nics = [{'net-id': shared_network}]
+
         response = self.client.instances.create(
             'test_SERVER_ERROR',
             instance_info.dbaas_flavor_href,
             body,
-            [])
+            [], [],
+            nics=nics
+        )
+
         poll_until(lambda: self.client.instances.get(response.id),
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)

@@ -29,22 +29,8 @@ class NetworkDriver(object):
         """
 
     @abc.abstractmethod
-    def create_security_group(self, name, description):
-        """
-        Creates the security group with given name and description
-        """
-
-    @abc.abstractmethod
     def delete_security_group(self, sec_group_id):
         """Deletes the security group by given ID."""
-
-    @abc.abstractmethod
-    def add_security_group_rule(self, sec_group_id, protocol,
-                                from_port, to_port, cidr):
-        """
-        Adds the rule identified by the security group ID,
-        transport protocol, port range: from -> to, CIDR.
-        """
 
     @abc.abstractmethod
     def delete_security_group_rule(self, sec_group_rule_id):

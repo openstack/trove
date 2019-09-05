@@ -46,47 +46,8 @@ class SecurityGroup(DatabaseModelBase):
 
     @property
     def instance_id(self):
-        return SecurityGroupInstanceAssociation\
-            .get_instance_id_by_security_group_id(self.id)
-
-    @classmethod
-    def create_sec_group(cls, name, description, context, region_name):
-        try:
-            remote_sec_group = RemoteSecurityGroup.create(
-                name, description, context, region_name)
-
-            if not remote_sec_group:
-                raise exception.SecurityGroupCreationError(
-                    _("Failed to create Security Group."))
-            else:
-                return cls.create(
-                    id=remote_sec_group.data()['id'],
-                    name=name,
-                    description=description,
-                    user=context.user,
-                    tenant_id=context.tenant)
-
-        except exception.SecurityGroupCreationError:
-            LOG.exception("Failed to create remote security group.")
-            raise
-
-    @classmethod
-    def create_for_instance(cls, instance_id, context, region_name):
-        # Create a new security group
-        name = "%s_%s" % (CONF.trove_security_group_name_prefix, instance_id)
-        description = _("Security Group for %s") % instance_id
-        sec_group = cls.create_sec_group(name, description, context,
-                                         region_name)
-
-        # Currently this locked down by default, since we don't create any
-        # default security group rules for the security group.
-
-        # Create security group instance association
-        SecurityGroupInstanceAssociation.create(
-            security_group_id=sec_group["id"],
-            instance_id=instance_id)
-
-        return sec_group
+        return SecurityGroupInstanceAssociation.\
+            get_instance_id_by_security_group_id(self.id)
 
     @classmethod
     def get_security_group_by_id_or_instance_id(cls, id, tenant_id):
@@ -127,11 +88,8 @@ class SecurityGroup(DatabaseModelBase):
                 if sec_group:
                     sec_group.delete(context, region_name)
                 association.delete()
-        except (exception.ModelNotFoundError,
-                exception.TroveError):
-            LOG.info('Security Group with id: %(id)s '
-                     'already had been deleted',
-                     {'id': instance_id})
+        except (exception.ModelNotFoundError, exception.TroveError):
+            pass
 
 
 class SecurityGroupRule(DatabaseModelBase):
@@ -139,36 +97,6 @@ class SecurityGroupRule(DatabaseModelBase):
                     'from_port', 'to_port', 'cidr', 'created',
                     'updated', 'deleted', 'deleted_at']
     _table_name = 'security_group_rules'
-
-    @classmethod
-    def create_sec_group_rule(cls, sec_group, protocol, from_port,
-                              to_port, cidr, context, region_name):
-        try:
-            remote_rule_id = RemoteSecurityGroup.add_rule(
-                sec_group_id=sec_group['id'],
-                protocol=protocol,
-                from_port=from_port,
-                to_port=to_port,
-                cidr=cidr,
-                context=context,
-                region_name=region_name)
-
-            if not remote_rule_id:
-                raise exception.SecurityGroupRuleCreationError(
-                    "Failed to create Remote Security Group Rule")
-            else:
-                # Create db record
-                return cls.create(
-                    id=remote_rule_id,
-                    protocol=protocol,
-                    from_port=from_port,
-                    to_port=to_port,
-                    cidr=cidr,
-                    group_id=sec_group['id'])
-
-        except exception.SecurityGroupRuleCreationError:
-            LOG.exception("Failed to create remote security group rule.")
-            raise
 
     def get_security_group(self, tenant_id):
         return SecurityGroup.find_by(id=self.group_id,
@@ -227,28 +155,10 @@ class RemoteSecurityGroup(NetworkRemoteModelBase):
             self._data_object = security_group
 
     @classmethod
-    def create(cls, name, description, context, region_name):
-        """Creates a new Security Group."""
-        driver = cls.get_driver(context, region_name)
-        sec_group = driver.create_security_group(
-            name=name, description=description)
-        return RemoteSecurityGroup(security_group=sec_group)
-
-    @classmethod
     def delete(cls, sec_group_id, context, region_name):
         """Deletes a Security Group."""
         driver = cls.get_driver(context, region_name)
         driver.delete_security_group(sec_group_id)
-
-    @classmethod
-    def add_rule(cls, sec_group_id, protocol, from_port,
-                 to_port, cidr, context, region_name):
-        """Adds a new rule to an existing security group."""
-        driver = cls.get_driver(context, region_name)
-        sec_group_rule = driver.add_security_group_rule(
-            sec_group_id, protocol, from_port, to_port, cidr)
-
-        return sec_group_rule.id
 
     @classmethod
     def delete_rule(cls, sec_group_rule_id, context, region_name):

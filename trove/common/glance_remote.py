@@ -37,7 +37,7 @@ def glance_client(context, region_name=None):
     if CONF.glance_url:
         endpoint_url = '%(url)s%(tenant)s' % {
             'url': normalize_url(CONF.glance_url),
-            'tenant': context.tenant}
+            'tenant': context.project_id}
     else:
         endpoint_url = get_endpoint(
             context.service_catalog, service_type=CONF.glance_service_type,

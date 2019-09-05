@@ -249,8 +249,9 @@ class InstanceController(wsgi.Controller):
         server = models.load_instance_with_info(models.DetailInstance,
                                                 context, id)
         self.authorize_instance_action(context, 'show', server)
-        return wsgi.Result(views.InstanceDetailView(server,
-                                                    req=req).data(), 200)
+        return wsgi.Result(
+            views.InstanceDetailView(server, req=req).data(), 200
+        )
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
@@ -340,7 +341,7 @@ class InstanceController(wsgi.Controller):
             backup_id = None
 
         availability_zone = body['instance'].get('availability_zone')
-        nics = body['instance'].get('nics')
+        nics = body['instance'].get('nics', [])
 
         slave_of_id = body['instance'].get('replica_of',
                                            # also check for older name
@@ -360,7 +361,9 @@ class InstanceController(wsgi.Controller):
                     'Cannot specify locality when adding replicas to existing '
                     'master.')
                 raise exception.BadRequest(message=dupe_locality_msg)
+
         region_name = body['instance'].get('region_name', CONF.os_region_name)
+        access = body['instance'].get('access', None)
 
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
@@ -372,7 +375,8 @@ class InstanceController(wsgi.Controller):
                                           volume_type=volume_type,
                                           modules=modules,
                                           locality=locality,
-                                          region_name=region_name)
+                                          region_name=region_name,
+                                          access=access)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

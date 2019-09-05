@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from mock import Mock
 from mock import patch
 
@@ -50,13 +51,13 @@ class ApiTest(trove_testtools.TestCase):
 
     @patch.object(task_api.API, '_transform_obj', Mock(return_value='flv-id'))
     def test_create_instance(self):
-        flavor = Mock()
         self.api.create_instance(
-            'inst-id', 'inst-name', flavor, 'img-id', {'name': 'db1'},
+            'inst-id', 'inst-name', mock.ANY, 'img-id', {'name': 'db1'},
             {'name': 'usr1'}, 'mysql', None, 1, backup_id='bk-id',
             availability_zone='az', root_password='pwd', nics=['nic-id'],
             overrides={}, slave_of_id='slv-id', cluster_config={},
             volume_type='type', modules=['mod-id'], locality='affinity')
+
         self._verify_rpc_prepare_before_cast()
         self._verify_cast(
             'create_instance', availability_zone='az', backup_id='bk-id',
@@ -65,7 +66,7 @@ class ApiTest(trove_testtools.TestCase):
             instance_id='inst-id', locality='affinity', modules=['mod-id'],
             name='inst-name', nics=['nic-id'], overrides={}, packages=None,
             root_password='pwd', slave_of_id='slv-id', users={'name': 'usr1'},
-            volume_size=1, volume_type='type')
+            volume_size=1, volume_type='type', access=None)
 
     def test_detach_replica(self):
         self.api.detach_replica('some-instance-id')

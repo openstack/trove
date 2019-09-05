@@ -119,7 +119,7 @@ class InstanceTasks(object):
                                              'guestagent timeout.',
                                              is_error=True)
     BUILDING_ERROR_PORT = InstanceTask(0x5c, 'BUILDING',
-                                       'Build error: Management port.',
+                                       'Build error: Port.',
                                        is_error=True)
 
 # Dissuade further additions at run-time.

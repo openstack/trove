@@ -48,11 +48,11 @@ class Configurations(object):
             if db_info.count() == 0:
                 LOG.debug("No configurations found for admin user")
         else:
-            db_info = DBConfiguration.find_all(tenant_id=context.tenant,
+            db_info = DBConfiguration.find_all(tenant_id=context.project_id,
                                                deleted=False)
             if db_info.count() == 0:
                 LOG.debug("No configurations found for tenant %s",
-                          context.tenant)
+                          context.project_id)
 
         limit = utils.pagination_limit(context.limit,
                                        Configurations.DEFAULT_LIMIT)
@@ -133,7 +133,7 @@ class Configuration(object):
                 return DBConfiguration.find_by(id=id, deleted=False)
             else:
                 return DBConfiguration.find_by(id=id,
-                                               tenant_id=context.tenant,
+                                               tenant_id=context.project_id,
                                                deleted=False)
         except ModelNotFoundError:
             msg = _("Configuration group with ID %s could not be found.") % id

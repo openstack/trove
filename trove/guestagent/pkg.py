@@ -292,7 +292,7 @@ class DebianPackagerMixin(BasePackagerMixin):
         if selections:
             with NamedTemporaryFile(delete=False) as f:
                 fname = f.name
-                f.write(selections)
+                f.write(encodeutils.safe_encode(selections))
             try:
                 utils.execute("debconf-set-selections", fname,
                               run_as_root=True, root_helper="sudo")

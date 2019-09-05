@@ -100,7 +100,7 @@ class Backup(object):
             try:
                 db_info = DBBackup.create(name=name,
                                           description=description,
-                                          tenant_id=context.tenant,
+                                          tenant_id=context.project_id,
                                           state=BackupState.NEW,
                                           instance_id=instance_id,
                                           parent_id=parent_id or
@@ -124,7 +124,7 @@ class Backup(object):
                            }
             api.API(context).create_backup(backup_info, instance_id)
             return db_info
-        return run_with_quotas(context.tenant,
+        return run_with_quotas(context.project_id,
                                {'backups': 1},
                                _create_resources)
 
@@ -188,7 +188,7 @@ class Backup(object):
         filters = [DBBackup.deleted == 0]
 
         if not all_projects:
-            filters.append(DBBackup.tenant_id == context.tenant)
+            filters.append(DBBackup.tenant_id == context.project_id)
         if instance_id:
             filters.append(DBBackup.instance_id == instance_id)
 
@@ -215,7 +215,7 @@ class Backup(object):
                                     deleted=False)
         else:
             query = query.filter_by(instance_id=instance_id,
-                                    tenant_id=context.tenant,
+                                    tenant_id=context.project_id,
                                     deleted=False)
         return cls._paginate(context, query)
 
@@ -278,7 +278,7 @@ class Backup(object):
             cls.verify_swift_auth_token(context)
             api.API(context).delete_backup(backup_id)
 
-        return run_with_quotas(context.tenant,
+        return run_with_quotas(context.project_id,
                                {'backups': -1},
                                _delete_resources)
 
@@ -288,9 +288,9 @@ class Backup(object):
             client = create_swift_client(context)
             client.get_account()
         except ClientException:
-            raise exception.SwiftAuthError(tenant_id=context.tenant)
+            raise exception.SwiftAuthError(tenant_id=context.project_id)
         except exception.NoServiceEndpoint:
-            raise exception.SwiftNotFound(tenant_id=context.tenant)
+            raise exception.SwiftNotFound(tenant_id=context.project_id)
         except ConnectionError:
             raise exception.SwiftConnectionError()
 
@@ -365,4 +365,4 @@ class DBBackup(DatabaseModelBase):
             if e.http_status == 404:
                 return False
             else:
-                raise exception.SwiftAuthError(tenant_id=context.tenant)
+                raise exception.SwiftAuthError(tenant_id=context.project_id)

@@ -87,7 +87,7 @@ class CassandraCluster(models.Cluster):
 
         # Updating Cluster Task.
         db_info = models.DBCluster.create(
-            name=name, tenant_id=context.tenant,
+            name=name, tenant_id=context.project_id,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL,
             configuration_id=configuration)
@@ -126,7 +126,7 @@ class CassandraCluster(models.Cluster):
         num_new_instances = len(instances)
         deltas = {'instances': num_new_instances, 'volumes': req_volume_size}
         models.assert_homogeneous_cluster(instances)
-        check_quotas(context.tenant, deltas)
+        check_quotas(context.project_id, deltas)
 
         # Checking networks are same for the cluster
         models.validate_instance_nics(context, instances)

@@ -104,13 +104,13 @@ class DatabaseModelBase(models.ModelBase):
                                                {"s_name": cls.__name__})
 
         if ((context and not context.is_admin and hasattr(model, 'tenant_id')
-             and model.tenant_id != context.tenant)):
+             and model.tenant_id != context.project_id)):
             log_fmt = ("Tenant %(s_tenant)s tried to access "
                        "%(s_name)s, owned by %(s_owner)s.")
             exc_fmt = _("Tenant %(s_tenant)s tried to access "
                         "%(s_name)s, owned by %(s_owner)s.")
             msg_content = {
-                "s_tenant": context.tenant,
+                "s_tenant": context.project_id,
                 "s_name": cls.__name__,
                 "s_owner": model.tenant_id}
             LOG.error(log_fmt, msg_content)

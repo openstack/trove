@@ -405,31 +405,14 @@ class BackupUpdateError(TroveError):
     message = _("Unable to update Backup table in database.")
 
 
-class SecurityGroupCreationError(TroveError):
-
-    message = _("Failed to create Security Group.")
-
-
 class SecurityGroupDeletionError(TroveError):
 
     message = _("Failed to delete Security Group.")
 
 
-class SecurityGroupRuleCreationError(TroveError):
-
-    message = _("Failed to create Security Group Rule.")
-
-
 class SecurityGroupRuleDeletionError(TroveError):
 
     message = _("Failed to delete Security Group Rule.")
-
-
-class MalformedSecurityGroupRuleError(TroveError):
-
-    message = _("Error creating security group rules."
-                " Malformed port(s). Port must be an integer."
-                " FromPort = %(from)s greater than ToPort = %(to)s.")
 
 
 class BackupNotCompleteError(TroveError):
@@ -607,6 +590,10 @@ class ClusterNetworksNotEqual(TroveError):
 
 class NetworkNotFound(TroveError):
     message = _("Network Resource %(uuid)s cannot be found.")
+
+
+class PublicNetworkNotFound(TroveError):
+    message = _("Public network cannot be found.")
 
 
 class ClusterVolumeSizeRequired(TroveError):

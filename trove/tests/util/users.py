@@ -89,14 +89,6 @@ class Users(object):
     def find_all_users_who_satisfy(self, requirements, black_list=None):
         """Returns a list of all users who satisfy the given requirements."""
         black_list = black_list or []
-        print("Searching for a user who meets requirements %s in our list..."
-              % requirements)
-        print("Users:")
-        for user in self.users:
-            print("\t" + str(user))
-        print("Black list")
-        for item in black_list:
-            print("\t" + str(item))
         return (user for user in self.users
                 if user.auth_user not in black_list and
                 user.requirements.satisfies(requirements))

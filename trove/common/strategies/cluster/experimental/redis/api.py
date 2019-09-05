@@ -74,7 +74,7 @@ class RedisCluster(models.Cluster):
         # Check quotas
         quota_request = {'instances': num_instances,
                          'volumes': total_volume_allocation}
-        check_quotas(context.tenant, quota_request)
+        check_quotas(context.project_id, quota_request)
 
         # Creating member instances
         return [inst_models.Instance.create(context,
@@ -112,7 +112,7 @@ class RedisCluster(models.Cluster):
         # Updating Cluster Task
 
         db_info = models.DBCluster.create(
-            name=name, tenant_id=context.tenant,
+            name=name, tenant_id=context.project_id,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL)
 

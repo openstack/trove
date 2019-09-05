@@ -123,7 +123,7 @@ def cinder_client(context, region_name=None):
     if CONF.cinder_url:
         url = '%(cinder_url)s%(tenant)s' % {
             'cinder_url': normalize_url(CONF.cinder_url),
-            'tenant': context.tenant}
+            'tenant': context.project_id}
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.cinder_service_type,
@@ -131,7 +131,7 @@ def cinder_client(context, region_name=None):
                            endpoint_type=CONF.cinder_endpoint_type)
 
     client = CinderClient.Client(context.user, context.auth_token,
-                                 project_id=context.tenant,
+                                 project_id=context.project_id,
                                  auth_url=CONF.trove_auth_url,
                                  insecure=CONF.cinder_api_insecure)
     client.client.auth_token = context.auth_token
@@ -143,7 +143,7 @@ def swift_client(context, region_name=None):
     if CONF.swift_url:
         # swift_url has a different format so doesn't need to be normalized
         url = '%(swift_url)s%(tenant)s' % {'swift_url': CONF.swift_url,
-                                           'tenant': context.tenant}
+                                           'tenant': context.project_id}
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.swift_service_type,
@@ -152,7 +152,7 @@ def swift_client(context, region_name=None):
 
     client = Connection(preauthurl=url,
                         preauthtoken=context.auth_token,
-                        tenant_name=context.tenant,
+                        tenant_name=context.project_id,
                         snet=CONF.backup_use_snet,
                         insecure=CONF.swift_api_insecure)
     return client

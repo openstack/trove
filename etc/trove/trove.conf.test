@@ -5,6 +5,7 @@ remote_nova_client = trove.tests.fakes.nova.fake_create_nova_client
 remote_guest_client = trove.tests.fakes.guestagent.fake_create_guest_client
 remote_swift_client = trove.tests.fakes.swift.fake_create_swift_client
 remote_cinder_client = trove.tests.fakes.nova.fake_create_cinder_client
+remote_neutron_client = trove.tests.fakes.neutron.fake_create_neutron_client
 
 # Fake out the RPC implementation
 transport_url = 'fake:/'
@@ -17,20 +18,15 @@ trove_dns_support = True
 dns_driver = trove.tests.fakes.dns.FakeDnsDriver
 dns_instance_entry_factory = trove.tests.fakes.dns.FakeDnsInstanceEntryFactory
 
-
 # This will remove some of the verbose logging when trying to diagnose tox issues
 default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN
 
 log_file = trovetest.log
-
 use_stderr = False
-
-# Show debugging output in logs (sets DEBUG log level output)
 debug = True
 
 # Address to bind the API server
 bind_host = 0.0.0.0
-
 # Port the bind the API server to
 bind_port = 8779
 
@@ -49,7 +45,6 @@ nova_proxy_admin_user = admin
 nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 nova_proxy_admin_tenant_id =
 trove_auth_url = http://0.0.0.0/identity/v2.0
-
 os_region_name = RegionOne
 nova_compute_service_type = compute
 nova_service_name = Compute Service
@@ -105,6 +100,7 @@ control_exchange = trove
 paste_config_file=api-paste.ini.test
 
 [mysql]
+root_on_create = False
 volume_support = True
 device_path = /dev/vdb
 

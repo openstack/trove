@@ -20,7 +20,6 @@ import unittest
 import uuid
 
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
@@ -39,7 +38,6 @@ from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util.check import AttrCheck
 from trove.tests.util import create_dbaas_client
-from trove.tests.util import create_nova_client
 from trove.tests.util import dns_checker
 from trove.tests.util import iso_time
 from trove.tests.util import test_config
@@ -377,25 +375,60 @@ class CreateInstanceFail(object):
         self.delete_async(result.id)
 
     @test
-    def test_create_with_bad_nics(self):
-        instance_name = "instance-failure-with-bad-nics"
+    def test_create_with_invalid_net_id(self):
+        instance_name = "instance-failure-with-invalid-net"
         if VOLUME_SUPPORT:
             volume = {'size': CONFIG.get('trove_volume_size', 1)}
         else:
             volume = None
         databases = []
-        bad_nic = [{"port-id": "UNKNOWN", "net-id": "1234",
-                    "v4-fixed-ip": "1.2.3.4"}]
-        result = dbaas.instances.create(instance_name,
-                                        instance_info.dbaas_flavor_href,
-                                        volume, databases, nics=bad_nic)
+        bad_nic = [{"net-id": "1234"}]
 
-        poll_until(self.instance_in_error(result.id))
-        instance = dbaas.instances.get(result.id)
-        assert_equal("ERROR", instance.status)
+        assert_raises(
+            exceptions.BadRequest,
+            dbaas.instances.create,
+            instance_name, instance_info.dbaas_flavor_href,
+            volume, databases, nics=bad_nic
+        )
+        assert_equal(400, dbaas.last_http_code)
 
-        self.delete_async(result.id)
+    @test
+    def test_create_with_multiple_net_id(self):
+        instance_name = "instance_failure_with_multiple_net_id"
+        volume = {'size': CONFIG.get('trove_volume_size', 1)}
+        databases = []
+        multi_nics = [
+            {"net-id": str(uuid.uuid4())},
+            {"net-id": str(uuid.uuid4())}
+        ]
 
+        assert_raises(
+            exceptions.BadRequest,
+            dbaas.instances.create,
+            instance_name, instance_info.dbaas_flavor_href,
+            volume, databases, nics=multi_nics
+        )
+        assert_equal(400, dbaas.last_http_code)
+
+    @test
+    def test_create_with_port_id(self):
+        instance_name = "instance-failure-with-port-id"
+        if VOLUME_SUPPORT:
+            volume = {'size': CONFIG.get('trove_volume_size', 1)}
+        else:
+            volume = None
+        databases = []
+        bad_nic = [{"port-id": "1234"}]
+
+        assert_raises(
+            exceptions.BadRequest,
+            dbaas.instances.create,
+            instance_name, instance_info.dbaas_flavor_href,
+            volume, databases, nics=bad_nic
+        )
+        assert_equal(400, dbaas.last_http_code)
+
+    @test
     def test_create_failure_with_empty_flavor(self):
         instance_name = "instance-failure-with-empty-flavor"
         databases = []
@@ -439,18 +472,6 @@ class CreateInstanceFail(object):
         assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
                       volume, databases,
-                      nics=instance_info.nics)
-        assert_equal(501, dbaas.last_http_code)
-
-    def test_create_failure_with_volume_size_and_disabled_for_datastore(self):
-        instance_name = "instance-failure-volume-size_and_volume_disabled"
-        databases = []
-        datastore = 'redis'
-        assert_equal(CONFIG.get(datastore, 'redis')['volume_support'], False)
-        volume = {'size': 2}
-        assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
-                      instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases, datastore=datastore,
                       nics=instance_info.nics)
         assert_equal(501, dbaas.last_http_code)
 
@@ -786,91 +807,6 @@ class CreateInstanceFlavors(object):
     @test
     def test_create_with_str_flavor(self):
         self._create_with_flavor('custom')
-
-
-@test(depends_on_classes=[InstanceSetup], groups=[GROUP_NEUTRON])
-class CreateInstanceWithNeutron(unittest.TestCase):
-
-    @time_out(TIMEOUT_INSTANCE_CREATE)
-    def setUp(self):
-        if not CONFIG.values.get('neutron_enabled'):
-            raise SkipTest("neutron is not enabled, skipping")
-
-        user = test_config.users.find_user(
-            Requirements(is_admin=False, services=["nova", "trove"]))
-        self.nova_client = create_nova_client(user)
-        self.dbaas_client = create_dbaas_client(user)
-
-        self.result = None
-        self.instance_name = ("TEST_INSTANCE_CREATION_WITH_NICS"
-                              + str(uuid.uuid4()))
-        databases = []
-        self.default_cidr = CONFIG.values.get('shared_network_subnet', None)
-        if VOLUME_SUPPORT:
-            volume = {'size': CONFIG.get('trove_volume_size', 1)}
-        else:
-            volume = None
-
-        self.result = self.dbaas_client.instances.create(
-            self.instance_name,
-            instance_info.dbaas_flavor_href,
-            volume, databases,
-            nics=instance_info.nics)
-        self.instance_id = self.result.id
-
-        def verify_instance_is_active():
-            result = self.dbaas_client.instances.get(self.instance_id)
-            if result.status == "ACTIVE":
-                return True
-            else:
-                assert_equal("BUILD", result.status)
-                return False
-
-        poll_until(verify_instance_is_active)
-
-    def tearDown(self):
-        if self.result.id is not None:
-            self.dbaas_client.instances.delete(self.result.id)
-            while True:
-                try:
-                    self.dbaas_client.instances.get(self.result.id)
-                except exceptions.NotFound:
-                    return True
-                time.sleep(1)
-
-    def check_ip_within_network(self, ip, network):
-        octet_list = str(ip).split(".")
-
-        octets, mask = str(network).split("/")
-        octet_list_ = octets.split(".")
-
-        for i in range(int(mask) / 8):
-            if octet_list[i] != octet_list_[i]:
-                return False
-
-        return True
-
-    def test_ip_within_cidr(self):
-        nova_instance = None
-        for server in self.nova_client.servers.list():
-            if str(server.name) == self.instance_name:
-                nova_instance = server
-                break
-
-        if nova_instance is None:
-            fail("instance created with neutron enabled is not found in nova")
-
-        for address in nova_instance.addresses['private']:
-            ip = address['addr']
-            assert_true(self.check_ip_within_network(ip, self.default_cidr))
-
-        # black list filtered ip not visible via troveclient
-        trove_instance = self.dbaas_client.instances.get(self.result.id)
-
-        for ip in trove_instance.ip:
-            if str(ip).startswith('10.'):
-                assert_true(self.check_ip_within_network(ip, "10.0.0.0/24"))
-                assert_false(self.check_ip_within_network(ip, "10.0.1.0/24"))
 
 
 @test(depends_on_classes=[CreateInstance],

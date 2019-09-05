@@ -40,21 +40,6 @@ class TestAdminRequired(object):
         self.dbaas = create_dbaas_client(self.user)
 
     @test
-    def test_accounts_show(self):
-        """A regular user may not view the details of any account."""
-        assert_raises(Unauthorized, self.dbaas.accounts.show, 0)
-
-    @test
-    def test_hosts_index(self):
-        """A regular user may not view the list of hosts."""
-        assert_raises(Unauthorized, self.dbaas.hosts.index)
-
-    @test
-    def test_hosts_get(self):
-        """A regular user may not view the details of any host."""
-        assert_raises(Unauthorized, self.dbaas.hosts.get, 0)
-
-    @test
     def test_mgmt_show(self):
         """
         A regular user may not view the management details
@@ -80,11 +65,6 @@ class TestAdminRequired(object):
     def test_mgmt_instance_reset_task_status(self):
         """A regular user may not perform an instance task status reset."""
         assert_raises(Unauthorized, self.dbaas.management.reset_task_status, 0)
-
-    @test
-    def test_storage_index(self):
-        """A regular user may not view the list of storage available."""
-        assert_raises(Unauthorized, self.dbaas.storage.index)
 
     @test
     def test_diagnostics_get(self):

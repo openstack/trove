@@ -43,6 +43,10 @@ class MalformedJson(object):
         volume = None
         if VOLUME_SUPPORT:
             volume = {"size": 1}
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            nics = [{'net-id': shared_network}]
+
         self.instance = self.dbaas.instances.create(
             name="qe_instance",
             flavor_id=instance_info.dbaas_flavor_href,
@@ -50,7 +54,9 @@ class MalformedJson(object):
             datastore_version=instance_info.dbaas_datastore_version,
             volume=volume,
             databases=[{"name": "firstdb", "character_set": "latin2",
-                        "collate": "latin2_general_ci"}])
+                        "collate": "latin2_general_ci"}],
+            nics=nics
+        )
 
     @after_class
     def tearDown(self):

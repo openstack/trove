@@ -185,16 +185,19 @@ class MethodInspector(object):
 
 def build_polling_task(retriever, condition=lambda value: value,
                        sleep_time=1, time_out=0):
+    """Run a function in a loop with backoff on error.
+
+    The condition function runs based on the retriever function result.
+    """
 
     def poll_and_check():
         obj = retriever()
         if condition(obj):
             raise loopingcall.LoopingCallDone(retvalue=obj)
 
-    return loopingcall.BackOffLoopingCall(
-        f=poll_and_check).start(initial_delay=False,
-                                starting_interval=sleep_time,
-                                max_interval=30, timeout=time_out)
+    call = loopingcall.BackOffLoopingCall(f=poll_and_check)
+    return call.start(initial_delay=False, starting_interval=sleep_time,
+                      max_interval=30, timeout=time_out)
 
 
 def wait_for_task(polling_task):

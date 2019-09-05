@@ -27,16 +27,21 @@ LOG = logging.getLogger(__name__)
 class ServerGroup(object):
 
     @classmethod
-    def load(cls, context, compute_id):
+    def load(cls, context, instance_id):
         client = create_nova_client(context)
         server_group = None
+        expected_name = "locality_%s" % instance_id
         try:
             for sg in client.server_groups.list():
-                if compute_id in sg.members:
+                if sg.name == expected_name:
                     server_group = sg
         except Exception:
-            LOG.exception("Could not load server group for compute %s",
-                          compute_id)
+            LOG.exception("Could not load server group for instance %s",
+                          instance_id)
+
+        if not server_group:
+            LOG.info('No server group found for instance %s', instance_id)
+
         return server_group
 
     @classmethod
@@ -58,9 +63,9 @@ class ServerGroup(object):
         # it has no members
         if server_group:
             if force or len(server_group.members) <= 1:
+                LOG.info("Deleting server group %s", server_group.id)
                 client = create_nova_client(context)
                 client.server_groups.delete(server_group.id)
-                LOG.debug("Deleted server group %s.", server_group.id)
             else:
                 LOG.debug("Skipping delete of server group %(id)s "
                           "(members: %(members)s).",

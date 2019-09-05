@@ -68,7 +68,9 @@ class DefaultRootLogger(object):
 
     def __init__(self, enable_backtrace=False):
         super(DefaultRootLogger, self).__init__()
-        handler = DefaultRootHandler.activate(enable_backtrace=False)
+        handler = DefaultRootHandler.activate(
+            enable_backtrace=enable_backtrace
+        )
 
         handler.acquire()
         if handler not in logging.getLogger('').handlers:

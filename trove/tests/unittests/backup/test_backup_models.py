@@ -62,7 +62,7 @@ class BackupCreateTest(trove_testtools.TestCase):
         super(BackupCreateTest, self).tearDown()
         if self.created:
             models.DBBackup.find_by(
-                tenant_id=self.context.tenant).delete()
+                tenant_id=self.context.project_id).delete()
 
     @patch.object(api.API, 'get_client', MagicMock(return_value=MagicMock()))
     def test_create(self):
@@ -274,7 +274,7 @@ class BackupORMTest(trove_testtools.TestCase):
         super(BackupORMTest, self).setUp()
         util.init_db()
         self.context, self.instance_id = _prep_conf(timeutils.utcnow())
-        self.backup = models.DBBackup.create(tenant_id=self.context.tenant,
+        self.backup = models.DBBackup.create(tenant_id=self.context.project_id,
                                              name=BACKUP_NAME,
                                              state=BACKUP_STATE,
                                              instance_id=self.instance_id,
@@ -286,7 +286,7 @@ class BackupORMTest(trove_testtools.TestCase):
     def tearDown(self):
         super(BackupORMTest, self).tearDown()
         if not self.deleted:
-            models.DBBackup.find_by(tenant_id=self.context.tenant).delete()
+            models.DBBackup.find_by(tenant_id=self.context.project_id).delete()
 
     def test_list(self):
         backups, marker = models.Backup.list(self.context)
@@ -294,7 +294,7 @@ class BackupORMTest(trove_testtools.TestCase):
         self.assertEqual(1, len(backups))
 
     def test_list_for_instance(self):
-        models.DBBackup.create(tenant_id=self.context.tenant,
+        models.DBBackup.create(tenant_id=self.context.project_id,
                                name=BACKUP_NAME_2,
                                state=BACKUP_STATE,
                                instance_id=self.instance_id,
@@ -306,26 +306,26 @@ class BackupORMTest(trove_testtools.TestCase):
         self.assertEqual(2, len(backups))
 
     def test_get_last_completed(self):
-        models.DBBackup.create(tenant_id=self.context.tenant,
+        models.DBBackup.create(tenant_id=self.context.project_id,
                                name=BACKUP_NAME_3,
                                state=BACKUP_STATE_COMPLETED,
                                instance_id=self.instance_id,
                                size=2.0,
                                deleted=False)
-        models.DBBackup.create(tenant_id=self.context.tenant,
+        models.DBBackup.create(tenant_id=self.context.project_id,
                                name=BACKUP_NAME_4,
                                state=BACKUP_STATE_COMPLETED,
                                instance_id=self.instance_id,
                                size=2.0,
                                deleted=False)
-        models.DBBackup.create(tenant_id=self.context.tenant,
+        models.DBBackup.create(tenant_id=self.context.project_id,
                                name=BACKUP_NAME_5,
                                state=BACKUP_STATE_COMPLETED,
                                instance_id=self.instance_id,
                                parent_id='parent_uuid',
                                size=2.0,
                                deleted=False)
-        models.DBBackup.create(tenant_id=self.context.tenant,
+        models.DBBackup.create(tenant_id=self.context.project_id,
                                name=BACKUP_NAME_6,
                                state=BACKUP_STATE_COMPLETED,
                                instance_id=self.instance_id,
@@ -414,13 +414,13 @@ class BackupORMTest(trove_testtools.TestCase):
     def test_check_swift_object_exist_client_exception(self):
         with patch.object(remote, 'get_endpoint', return_value=None),\
             patch.object(remote, 'Connection',
-                         side_effect=ClientException(self.context.tenant)):
+                         side_effect=ClientException(self.context.project_id)):
             self.assertRaises(exception.SwiftAuthError,
                               self.backup.check_swift_object_exist,
                               self.context)
 
     def test_check_swift_object_exist_client_exception_404(self):
-        e = ClientException(self.context.tenant)
+        e = ClientException(self.context.project_id)
         e.http_status = 404
         with patch.object(remote, 'get_endpoint', return_value=None),\
             patch.object(remote, 'Connection',
@@ -431,7 +431,7 @@ class BackupORMTest(trove_testtools.TestCase):
     def test_swift_auth_token_client_exception(self):
         with patch.object(remote, 'get_endpoint', return_value=None),\
             patch.object(remote, 'Connection',
-                         side_effect=ClientException(self.context.tenant)):
+                         side_effect=ClientException(self.context.project_id)):
             self.assertRaises(exception.SwiftAuthError,
                               models.Backup.verify_swift_auth_token,
                               self.context)
@@ -453,7 +453,7 @@ class PaginationTests(trove_testtools.TestCase):
         self.context, self.instance_id = _prep_conf(timeutils.utcnow())
         # Create a bunch of backups
         bkup_info = {
-            'tenant_id': self.context.tenant,
+            'tenant_id': self.context.project_id,
             'state': BACKUP_STATE,
             'instance_id': self.instance_id,
             'size': 2.0,
@@ -511,7 +511,7 @@ class OrderingTests(trove_testtools.TestCase):
         now = timeutils.utcnow()
         self.context, self.instance_id = _prep_conf(now)
         info = {
-            'tenant_id': self.context.tenant,
+            'tenant_id': self.context.project_id,
             'state': BACKUP_STATE,
             'instance_id': self.instance_id,
             'size': 2.0,

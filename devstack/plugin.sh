@@ -240,18 +240,18 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
 
     iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
-    iniset $TROVE_CONF cassandra tcp_ports 22,7000,7001,7199,9042,9160
-    iniset $TROVE_CONF couchbase tcp_ports 22,8091,8092,4369,11209-11211,21100-21199
-    iniset $TROVE_CONF couchdb tcp_ports 22,5984
-    iniset $TROVE_CONF db2 tcp_ports 22,50000
-    iniset $TROVE_CONF mariadb tcp_ports 22,3306,4444,4567,4568
-    iniset $TROVE_CONF mongodb tcp_ports 22,2500,27017,27019
-    iniset $TROVE_CONF mysql tcp_ports 22,3306
-    iniset $TROVE_CONF percona tcp_ports 22,3306
-    iniset $TROVE_CONF postgresql tcp_ports 22,5432
-    iniset $TROVE_CONF pxc tcp_ports 22,3306,4444,4567,4568
-    iniset $TROVE_CONF redis tcp_ports 22,6379,16379
-    iniset $TROVE_CONF vertica tcp_ports 22,5433,5434,5444,5450,4803
+    iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
+    iniset $TROVE_CONF couchbase tcp_ports 8091,8092,4369,11209-11211,21100-21199
+    iniset $TROVE_CONF couchdb tcp_ports 5984
+    iniset $TROVE_CONF db2 tcp_ports 50000
+    iniset $TROVE_CONF mariadb tcp_ports 3306,4444,4567,4568
+    iniset $TROVE_CONF mongodb tcp_ports 2500,27017,27019
+    iniset $TROVE_CONF mysql tcp_ports 3306
+    iniset $TROVE_CONF percona tcp_ports 3306
+    iniset $TROVE_CONF postgresql tcp_ports 5432
+    iniset $TROVE_CONF pxc tcp_ports 3306,4444,4567,4568
+    iniset $TROVE_CONF redis tcp_ports 6379,16379
+    iniset $TROVE_CONF vertica tcp_ports 5433,5434,5444,5450,4803
 
     # configure apache related files
     if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
@@ -457,10 +457,10 @@ function start_trove {
         enable_apache_site trove-api
         restart_apache_server
     else
-        run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF --debug"
+        run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF"
     fi
-    run_process tr-tmgr "$TROVE_BIN_DIR/trove-taskmanager --config-file=$TROVE_CONF --debug"
-    run_process tr-cond "$TROVE_BIN_DIR/trove-conductor --config-file=$TROVE_CONF --debug"
+    run_process tr-tmgr "$TROVE_BIN_DIR/trove-taskmanager --config-file=$TROVE_CONF"
+    run_process tr-cond "$TROVE_BIN_DIR/trove-conductor --config-file=$TROVE_CONF"
 }
 
 # stop_trove() - Stop running processes

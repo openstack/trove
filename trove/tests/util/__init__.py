@@ -98,7 +98,6 @@ def create_dbaas_client(user):
         from troveclient.compat import auth
 
         class FakeAuth(auth.Authenticator):
-
             def authenticate(self):
                 class FakeCatalog(object):
                     def __init__(self, auth):

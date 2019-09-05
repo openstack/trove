@@ -107,7 +107,7 @@ class MongoDbCluster(models.Cluster):
             all_instances, mongo_conf.volume_support)
 
         deltas = {'instances': delta_instances, 'volumes': req_volume_size}
-        check_quotas(context.tenant, deltas)
+        check_quotas(context.project_id, deltas)
 
         # Checking networks are same for the cluster
         models.validate_instance_nics(context, instances)
@@ -121,7 +121,7 @@ class MongoDbCluster(models.Cluster):
                    for instance in instances]
 
         db_info = models.DBCluster.create(
-            name=name, tenant_id=context.tenant,
+            name=name, tenant_id=context.project_id,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL)
 
@@ -297,7 +297,7 @@ class MongoDbCluster(models.Cluster):
         volume_size = a_member.volume_size
         if volume_size:
             deltas['volumes'] = volume_size * num_members_per_shard
-        check_quotas(self.context.tenant, deltas)
+        check_quotas(self.context.project_id, deltas)
         new_replica_set_name = "rs" + str(num_unique_shards + 1)
         new_shard_id = utils.generate_uuid()
         dsv_manager = (datastore_models.DatastoreVersion.
@@ -622,7 +622,7 @@ class MongoDbCluster(models.Cluster):
         deltas = {'instances': len(instances),
                   'volumes': sum([instance['volume_size']
                                   for instance in instances])}
-        check_quotas(context.tenant, deltas)
+        check_quotas(context.project_id, deltas)
 
     @staticmethod
     def _check_instances(context, instances, datastore_version,

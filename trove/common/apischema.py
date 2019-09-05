@@ -123,8 +123,13 @@ volume = {
 
 nics = {
     "type": "array",
+    "maxItems": 1,
     "items": {
         "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "net-id": uuid
+        }
     }
 }
 
@@ -396,7 +401,23 @@ instance = {
                     "nics": nics,
                     "modules": module_list,
                     "region_name": non_empty_string,
-                    "locality": non_empty_string
+                    "locality": non_empty_string,
+                    "access": {
+                        "type": "object",
+                        "properties": {
+                            "is_public": {"type": "boolean"},
+                            "allowed_cidrs": {
+                                "type": "array",
+                                "uniqueItems": True,
+                                "items": {
+                                    "type": "string",
+                                    "pattern": "^([0-9]{1,3}\.){3}[0-9]{1,3}"
+                                               "(\/([0-9]|[1-2][0-9]|3[0-2]))?"
+                                               "$"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

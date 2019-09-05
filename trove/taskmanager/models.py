@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import os.path
 import time
 import traceback
@@ -39,13 +40,13 @@ from trove.common.exception import BackupCreationError
 from trove.common.exception import GuestError
 from trove.common.exception import GuestTimeout
 from trove.common.exception import InvalidModelError
-from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.exception import VolumeCreationFailure
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common.instance import ServiceStatuses
+from trove.common import neutron
 from trove.common.notification import (
     DBaaSInstanceRestart,
     DBaaSInstanceUpgrade,
@@ -59,7 +60,6 @@ import trove.common.remote as remote
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
-from trove.common.remote import create_neutron_client
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.common import template
@@ -67,8 +67,6 @@ from trove.common import timeutils
 from trove.common import utils
 from trove.common.utils import try_recover
 from trove.extensions.mysql import models as mysql_models
-from trove.extensions.security_group.models import SecurityGroup
-from trove.extensions.security_group.models import SecurityGroupRule
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
 from trove.instance.models import DBInstance
@@ -425,15 +423,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # If volume has "available" status, delete it manually.
         try:
             if self.volume_id:
-                volume_client = create_cinder_client(self.context)
-                volume = volume_client.volumes.get(self.volume_id)
+                volume = self.volume_client.volumes.get(self.volume_id)
                 if volume.status == "available":
-                    LOG.info("Deleting volume %(v)s for instance: %(i)s.",
-                             {'v': self.volume_id, 'i': self.id})
                     volume.delete()
-        except Exception:
-            LOG.exception("Error deleting volume of instance %(id)s.",
-                          {'id': self.db_info.id})
+        except Exception as e:
+            LOG.warning("Failed to delete volume for instance %s, error: %s",
+                        self.id, six.text_type(e))
 
         LOG.debug("End _delete_resource for instance %s", self.id)
 
@@ -466,83 +461,116 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     self.id, error_message, error_details,
                     skip_delta=CONF.usage_sleep_time + 1)
 
-    def _create_management_port(self, network, default_sgs=[]):
-        """Create port in the management network."""
-        security_groups = default_sgs
-        if len(CONF.management_security_groups) > 0:
-            security_groups = CONF.management_security_groups
+    def _create_port(self, network, security_groups, is_mgmt=False,
+                     is_public=False):
+        name = 'trove-%s' % self.id
+        type = 'Management' if is_mgmt else 'User'
+        description = '%s port for trove instance %s' % (type, self.id)
 
         try:
-            neutron_client = create_neutron_client(self.context)
-
-            body = {
-                'port': {
-                    'name': 'trove-%s' % self.id,
-                    'description': ('Management port for Trove instance %s'
-                                    % self.id),
-                    'network_id': network,
-                    'admin_state_up': True,
-                    'security_groups': security_groups
-                }
-            }
-            port = neutron_client.create_port(body)
-            return port['port']['id']
+            port_id = neutron.create_port(
+                self.neutron_client, name,
+                description, network,
+                security_groups,
+                is_public=is_public
+            )
         except Exception:
-            error = "Failed to create management port."
+            error = ("Failed to create %s port for instance %s"
+                     % (type, self.id))
             LOG.exception(error)
             self.update_db(
                 task_status=inst_models.InstanceTasks.BUILDING_ERROR_PORT
             )
             raise TroveError(message=error)
 
+        return port_id
+
+    def _prepare_networks_for_instance(self, datastore_manager, nics,
+                                       access=None):
+        """Prepare the networks for the trove instance.
+
+        the params are all passed from trove-taskmanager.
+
+        Exception is raised if any error happens.
+        """
+        LOG.info("Preparing networks for the instance %s", self.id)
+        security_group = None
+        networks = copy.deepcopy(nics)
+        access = access or {}
+
+        if CONF.trove_security_groups_support:
+            security_group = self._create_secgroup(
+                datastore_manager,
+                access.get('allowed_cidrs', [])
+            )
+            LOG.info(
+                "Security group %s created for instance %s",
+                security_group, self.id
+            )
+
+        # Create management port
+        if CONF.management_networks:
+            port_sgs = [security_group] if security_group else []
+            if len(CONF.management_security_groups) > 0:
+                port_sgs = CONF.management_security_groups
+            # The management network is always the last one
+            networks.pop(-1)
+            port_id = self._create_port(
+                CONF.management_networks[-1],
+                port_sgs,
+                is_mgmt=True
+            )
+            LOG.info("Management port %s created for instance: %s", port_id,
+                     self.id)
+            networks.append({"port-id": port_id})
+
+        # Create port in the user defined network, associate floating IP if
+        # needed
+        if len(networks) > 1 or not CONF.management_networks:
+            network = networks.pop(0).get("net-id")
+            port_sgs = [security_group] if security_group else []
+            port_id = self._create_port(
+                network,
+                port_sgs,
+                is_mgmt=False,
+                is_public=access.get('is_public', False)
+            )
+            LOG.info("User port %s created for instance %s", port_id,
+                     self.id)
+            networks.insert(0, {"port-id": port_id})
+
+        LOG.info(
+            "Finished to prepare networks for the instance %s, networks: %s",
+            self.id, networks
+        )
+        return networks
+
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
                         backup_id, availability_zone, root_password, nics,
                         overrides, cluster_config, snapshot, volume_type,
-                        modules, scheduler_hints):
-        # It is the caller's responsibility to ensure that
-        # FreshInstanceTasks.wait_for_instance is called after
-        # create_instance to ensure that the proper usage event gets sent
+                        modules, scheduler_hints, access=None):
+        """Create trove instance.
 
-        LOG.info("Creating instance %s.", self.id)
-        security_groups = None
+        It is the caller's responsibility to ensure that
+        FreshInstanceTasks.wait_for_instance is called after
+        create_instance to ensure that the proper usage event gets sent
+        """
+        LOG.info(
+            "Creating instance %s, nics: %s, access: %s",
+            self.id, nics, access
+        )
 
-        if CONF.trove_security_groups_support:
-            try:
-                security_groups = self._create_secgroup(datastore_manager)
-            except Exception as e:
-                log_fmt = "Error creating security group for instance: %s"
-                exc_fmt = _("Error creating security group for instance: %s")
-                err = inst_models.InstanceTasks.BUILDING_ERROR_SEC_GROUP
-                self._log_and_raise(e, log_fmt, exc_fmt, self.id, err)
-            else:
-                LOG.info("Successfully created security group %s for "
-                         "instance: %s", security_groups, self.id)
-
-            if CONF.management_networks:
-                # The management network is always the last one
-                nics.pop(-1)
-                port_id = self._create_management_port(
-                    CONF.management_networks[-1],
-                    security_groups
-                )
-
-                LOG.info("Management port %s created for instance: %s",
-                         port_id, self.id)
-                nics.append({"port-id": port_id})
-
+        networks = self._prepare_networks_for_instance(
+            datastore_manager, nics, access=access
+        )
         files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         volume_info = self._create_server_volume(
-            flavor['id'],
-            image_id,
-            security_groups,
-            datastore_manager,
-            volume_size,
-            availability_zone,
-            nics,
-            files,
-            cinder_volume_type,
+            flavor['id'], image_id,
+            datastore_manager, volume_size,
+            availability_zone, networks,
+            files, cinder_volume_type,
             scheduler_hints
         )
 
@@ -785,11 +813,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                           'to_': str(to_)})
         return final
 
-    def _create_server_volume(self, flavor_id, image_id,
-                              security_groups, datastore_manager,
-                              volume_size, availability_zone,
-                              nics, files, volume_type,
-                              scheduler_hints):
+    def _create_server_volume(self, flavor_id, image_id, datastore_manager,
+                              volume_size, availability_zone, nics, files,
+                              volume_type, scheduler_hints):
         LOG.debug("Begin _create_server_volume for id: %s", self.id)
         server = None
         volume_info = self._build_volume_info(datastore_manager,
@@ -797,11 +823,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                               volume_type=volume_type)
         block_device_mapping_v2 = volume_info['block_device']
         try:
-            server = self._create_server(flavor_id, image_id, security_groups,
-                                         datastore_manager,
-                                         block_device_mapping_v2,
-                                         availability_zone, nics, files,
-                                         scheduler_hints)
+            server = self._create_server(
+                flavor_id, image_id,
+                datastore_manager,
+                block_device_mapping_v2,
+                availability_zone, nics, files,
+                scheduler_hints
+            )
             server_id = server.id
             # Save server ID.
             self.update_db(compute_instance_id=server_id)
@@ -863,7 +891,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         volume_client = create_cinder_client(self.context, self.region_name)
         volume_desc = ("datastore volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
-            volume_size, name="datastore-%s" % self.id,
+            volume_size, name="trove-%s" % self.id,
             description=volume_desc,
             volume_type=volume_type)
 
@@ -932,10 +960,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 userdata = f.read()
         return userdata
 
-    def _create_server(self, flavor_id, image_id, security_groups,
-                       datastore_manager, block_device_mapping_v2,
-                       availability_zone, nics, files={},
-                       scheduler_hints=None):
+    def _create_server(self, flavor_id, image_id, datastore_manager,
+                       block_device_mapping_v2, availability_zone,
+                       nics, files={}, scheduler_hints=None):
         userdata = self._prepare_userdata(datastore_manager)
         name = self.hostname or self.name
         bdmap_v2 = block_device_mapping_v2
@@ -943,11 +970,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         key_name = CONF.nova_keypair
 
         server = self.nova_client.servers.create(
-            name, image_id, flavor_id, files=files, userdata=userdata,
-            security_groups=security_groups, block_device_mapping_v2=bdmap_v2,
-            availability_zone=availability_zone, nics=nics,
+            name, image_id, flavor_id, key_name=key_name, nics=nics,
+            block_device_mapping_v2=bdmap_v2,
+            files=files, userdata=userdata,
+            availability_zone=availability_zone,
             config_drive=config_drive, scheduler_hints=scheduler_hints,
-            key_name=key_name)
+        )
         LOG.debug("Created new compute instance %(server_id)s "
                   "for database instance %(id)s",
                   {'server_id': server.id, 'id': self.id})
@@ -1015,47 +1043,35 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.debug("%(gt)s: DNS not enabled for instance: %(id)s",
                       {'gt': greenthread.getcurrent(), 'id': self.id})
 
-    def _create_secgroup(self, datastore_manager):
-        security_group = SecurityGroup.create_for_instance(
-            self.id, self.context, self.region_name)
-        tcp_ports = CONF.get(datastore_manager).tcp_ports
-        udp_ports = CONF.get(datastore_manager).udp_ports
-        icmp = CONF.get(datastore_manager).icmp
-        self._create_rules(security_group, tcp_ports, 'tcp')
-        self._create_rules(security_group, udp_ports, 'udp')
-        if icmp:
-            self._create_rules(security_group, None, 'icmp')
-        return [security_group["name"]]
+    def _create_secgroup(self, datastore_manager, allowed_cidrs):
+        name = "%s-%s" % (CONF.trove_security_group_name_prefix, self.id)
 
-    def _create_rules(self, s_group, ports, protocol):
-        err = inst_models.InstanceTasks.BUILDING_ERROR_SEC_GROUP
-        err_msg = _("Failed to create security group rules for instance "
-                    "%(instance_id)s: Invalid port format - "
-                    "FromPort = %(from)s, ToPort = %(to)s")
+        try:
+            sg_id = neutron.create_security_group(
+                self.neutron_client, name, self.id
+            )
 
-        def set_error_and_raise(port_or_range):
-            from_port, to_port = port_or_range
-            self.update_db(task_status=err)
-            msg = err_msg % {'instance_id': self.id, 'from': from_port,
-                             'to': to_port}
-            raise MalformedSecurityGroupRuleError(message=msg)
+            if not allowed_cidrs:
+                allowed_cidrs = [CONF.trove_security_group_rule_cidr]
+            tcp_ports = CONF.get(datastore_manager).tcp_ports
+            udp_ports = CONF.get(datastore_manager).udp_ports
 
-        cidr = CONF.trove_security_group_rule_cidr
+            neutron.create_security_group_rule(
+                self.neutron_client, sg_id, 'tcp', tcp_ports, allowed_cidrs
+            )
+            neutron.create_security_group_rule(
+                self.neutron_client, sg_id, 'udp', udp_ports, allowed_cidrs
+            )
+        except Exception:
+            message = ("Failed to create security group for instance %s"
+                       % self.id)
+            LOG.exception(message)
+            self.update_db(
+                task_status=inst_models.InstanceTasks.BUILDING_ERROR_SEC_GROUP
+            )
+            raise TroveError(message=message)
 
-        if protocol == 'icmp':
-            SecurityGroupRule.create_sec_group_rule(
-                s_group, 'icmp', None, None,
-                cidr, self.context, self.region_name)
-        else:
-            for port_or_range in set(ports):
-                try:
-                    from_, to_ = (None, None)
-                    from_, to_ = port_or_range[0], port_or_range[-1]
-                    SecurityGroupRule.create_sec_group_rule(
-                        s_group, protocol, int(from_), int(to_),
-                        cidr, self.context, self.region_name)
-                except (ValueError, TroveError):
-                    set_error_and_raise([from_, to_])
+        return sg_id
 
 
 class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
@@ -1064,7 +1080,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     """
 
     def _delete_resources(self, deleted_at):
-        LOG.debug("Begin _delete_resources for instance %s", self.id)
+        LOG.info("Starting to delete resources for instance %s", self.id)
+
+        # Stop db
         server_id = self.db_info.compute_instance_id
         old_server = self.nova_client.servers.get(server_id)
         try:
@@ -1078,79 +1096,98 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                           "any resources.", self.id)
                 self.guest.stop_db()
         except Exception as e:
-            LOG.exception("Failed to stop the datastore before attempting "
-                          "to delete instance id %s, error: %s", self.id,
-                          six.text_type(e))
+            LOG.warning("Failed to stop the datastore before attempting "
+                        "to delete instance id %s, error: %s", self.id,
+                        six.text_type(e))
 
+        # Nova VM
         try:
+            LOG.info("Deleting server for instance %s", self.id)
             self.server.delete()
         except Exception as e:
-            LOG.exception("Failed to delete compute server %s", self.server.id,
-                          six.text_type(e))
+            LOG.warning("Failed to delete compute server %s", self.server.id,
+                        six.text_type(e))
 
+        # Neutron ports
         try:
-            neutron_client = create_neutron_client(self.context)
-            ret = neutron_client.list_ports(name='trove-%s' % self.id)
-            if ret.get("ports", []):
-                neutron_client.delete_port(ret["ports"][0]["id"])
+            ret = self.neutron_client.list_ports(name='trove-%s' % self.id)
+            ports = ret.get("ports", [])
+            for port in ports:
+                LOG.info("Deleting port %s for instance %s", port["id"],
+                         self.id)
+                neutron.delete_port(self.neutron_client, port["id"])
         except Exception as e:
-            LOG.error("Failed to delete management port of instance %s, "
-                      "error: %s", self.id, six.text_type(e))
+            LOG.warning("Failed to delete ports for instance %s, "
+                        "error: %s", self.id, six.text_type(e))
 
+        # Neutron security groups
+        try:
+            name = "%s-%s" % (CONF.trove_security_group_name_prefix, self.id)
+            ret = self.neutron_client.list_security_groups(name=name)
+            sgs = ret.get("security_groups", [])
+            for sg in sgs:
+                LOG.info("Deleting security group %s for instance %s",
+                         sg["id"], self.id)
+                self.neutron_client.delete_security_group(sg["id"])
+        except Exception as e:
+            LOG.warning("Failed to delete security groups for instance %s, "
+                        "error: %s", self.id, six.text_type(e))
+
+        # DNS resources, e.g. Designate
         try:
             dns_support = CONF.trove_dns_support
-            LOG.debug("trove dns support = %s", dns_support)
             if dns_support:
                 dns_api = create_dns_client(self.context)
                 dns_api.delete_instance_entry(instance_id=self.id)
         except Exception as e:
-            LOG.error("Failed to delete dns entry of instance %s, error: %s",
-                      self.id, six.text_type(e))
+            LOG.warning("Failed to delete dns entry of instance %s, error: %s",
+                        self.id, six.text_type(e))
 
+        # Nova server group
         try:
             srv_grp.ServerGroup.delete(self.context, self.server_group)
         except Exception as e:
-            LOG.error("Failed to delete server group for %s, error: %s",
-                      self.id, six.text_type(e))
+            LOG.warning("Failed to delete server group for %s, error: %s",
+                        self.id, six.text_type(e))
 
         def server_is_finished():
             try:
                 server = self.nova_client.servers.get(server_id)
                 if not self.server_status_matches(['SHUTDOWN', 'ACTIVE'],
                                                   server=server):
-                    LOG.error("Server %(server_id)s entered ERROR status "
-                              "when deleting instance %(instance_id)s!",
-                              {'server_id': server.id, 'instance_id': self.id})
+                    LOG.warning("Server %(server_id)s entered ERROR status "
+                                "when deleting instance %(instance_id)s!",
+                                {'server_id': server.id,
+                                 'instance_id': self.id})
                 return False
             except nova_exceptions.NotFound:
                 return True
 
         try:
+            LOG.info("Waiting for server %s removal for instance %s",
+                     server_id, self.id)
             utils.poll_until(server_is_finished, sleep_time=2,
                              time_out=CONF.server_delete_time_out)
         except PollTimeOut:
-            LOG.error("Failed to delete instance %(instance_id)s: "
-                      "Timeout deleting compute server %(server_id)s",
-                      {'instance_id': self.id, 'server_id': server_id})
+            LOG.warning("Failed to delete instance %(instance_id)s: "
+                        "Timeout deleting compute server %(server_id)s",
+                        {'instance_id': self.id, 'server_id': server_id})
 
         # If volume has been resized it must be manually removed
         try:
             if self.volume_id:
-                volume_client = create_cinder_client(self.context,
-                                                     self.region_name)
-                volume = volume_client.volumes.get(self.volume_id)
+                volume = self.volume_client.volumes.get(self.volume_id)
                 if volume.status == "available":
-                    LOG.info("Deleting volume %(v)s for instance: %(i)s.",
-                             {'v': self.volume_id, 'i': self.id})
                     volume.delete()
         except Exception as e:
-            LOG.error("Failed to delete volume of instance %s, error: %s",
-                      self.id, six.text_type(e))
+            LOG.warning("Failed to delete volume for instance %s, error: %s",
+                        self.id, six.text_type(e))
 
         TroveInstanceDelete(instance=self,
                             deleted_at=timeutils.isotime(deleted_at),
                             server=old_server).notify()
-        LOG.debug("End _delete_resources for instance %s", self.id)
+
+        LOG.info("Finished to delete resources for instance %s", self.id)
 
     def server_status_matches(self, expected_status, server=None):
         if not server:
@@ -1205,7 +1242,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                               self.id)
                 raise
 
-        return run_with_quotas(self.context.tenant, {'backups': 1},
+        return run_with_quotas(self.context.project_id, {'backups': 1},
                                _get_replication_snapshot)
 
     def detach_replica(self, master, for_failover=False):

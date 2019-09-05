@@ -20,12 +20,9 @@ from trove.tests.api import databases
 from trove.tests.api import datastores
 from trove.tests.api import instances
 from trove.tests.api import instances_actions
-from trove.tests.api.mgmt import accounts
 from trove.tests.api.mgmt import admin_required
 from trove.tests.api.mgmt import datastore_versions
-from trove.tests.api.mgmt import hosts
 from trove.tests.api.mgmt import instances as mgmt_instances
-from trove.tests.api.mgmt import storage
 from trove.tests.api import replication
 from trove.tests.api import root
 from trove.tests.api import user_access
@@ -121,9 +118,6 @@ proboscis.register(groups=["simple_blackbox"],
                    depends_on_groups=simple_black_box_groups)
 
 black_box_mgmt_groups = [
-    accounts.GROUP,
-    hosts.GROUP,
-    storage.GROUP,
     instances_actions.GROUP_REBOOT,
     admin_required.GROUP,
     mgmt_instances.GROUP,

@@ -17,12 +17,9 @@ from trove.common import extensions
 from trove.extensions.mgmt.clusters.service import MgmtClusterController
 from trove.extensions.mgmt.configuration import service as conf_service
 from trove.extensions.mgmt.datastores.service import DatastoreVersionController
-from trove.extensions.mgmt.host.instance import service as hostservice
-from trove.extensions.mgmt.host.service import HostController
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.extensions.mgmt.quota.service import QuotaController
 from trove.extensions.mgmt.upgrade.service import UpgradeController
-from trove.extensions.mgmt.volume.service import StorageController
 
 
 class Mgmt(extensions.ExtensionDescriptor):
@@ -61,31 +58,11 @@ class Mgmt(extensions.ExtensionDescriptor):
             member_actions={'action': 'POST'})
         resources.append(clusters)
 
-        hosts = extensions.ResourceExtension(
-            '{tenant_id}/mgmt/hosts',
-            HostController(),
-            member_actions={})
-        resources.append(hosts)
-
         quota = extensions.ResourceExtension(
             '{tenant_id}/mgmt/quotas',
             QuotaController(),
             member_actions={})
         resources.append(quota)
-
-        storage = extensions.ResourceExtension(
-            '{tenant_id}/mgmt/storage',
-            StorageController(),
-            member_actions={})
-        resources.append(storage)
-
-        host_instances = extensions.ResourceExtension(
-            'instances',
-            hostservice.HostInstanceController(),
-            parent={'member_name': 'host',
-                    'collection_name': '{tenant_id}/mgmt/hosts'},
-            collection_actions={'action': 'POST'})
-        resources.append(host_instances)
 
         upgrade = extensions.ResourceExtension(
             '{tenant_id}/mgmt/instances/{instance_id}/upgrade',

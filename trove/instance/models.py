@@ -565,7 +565,7 @@ def load_instance_with_info(cls, context, id, cluster_id=None):
               {'instance_id': id, 'service_status': service_status.status})
     instance = cls(context, db_info, service_status)
     load_guest_info(instance, context, id)
-    load_server_group_info(instance, context, db_info.compute_instance_id)
+    load_server_group_info(instance, context)
     return instance
 
 
@@ -581,8 +581,9 @@ def load_guest_info(instance, context, id):
     return instance
 
 
-def load_server_group_info(instance, context, compute_id):
-    server_group = srv_grp.ServerGroup.load(context, compute_id)
+def load_server_group_info(instance, context):
+    instance_id = instance.slave_of_id if instance.slave_of_id else instance.id
+    server_group = srv_grp.ServerGroup.load(context, instance_id)
     if server_group:
         instance.locality = srv_grp.ServerGroup.get_locality(server_group)
 
@@ -675,8 +676,9 @@ class BaseInstance(SimpleInstance):
                        task_status=InstanceTasks.NONE)
         self.set_servicestatus_deleted()
         self.set_instance_fault_deleted()
-        # Delete associated security group
+
         if CONF.trove_security_groups_support:
+            # Delete associated security group for backward compatibility
             SecurityGroup.delete_for_instance(self.db_info.id, self.context,
                                               self.db_info.region_id)
 
@@ -736,8 +738,8 @@ class BaseInstance(SimpleInstance):
     def server_group(self):
         # The server group could be empty, so we need a flag to cache it
         if not self._server_group_loaded:
-            self._server_group = srv_grp.ServerGroup.load(
-                self.context, self.db_info.compute_instance_id)
+            self._server_group = srv_grp.ServerGroup.load(self.context,
+                                                          self.id)
             self._server_group_loaded = True
         return self._server_group
 
@@ -868,7 +870,7 @@ class Instance(BuiltInstance):
                availability_zone=None, nics=None,
                configuration_id=None, slave_of_id=None, cluster_config=None,
                replica_count=None, volume_type=None, modules=None,
-               locality=None, region_name=None):
+               locality=None, region_name=None, access=None):
 
         region_name = region_name or CONF.os_region_name
 
@@ -1052,7 +1054,8 @@ class Instance(BuiltInstance):
             root_password = None
             for instance_index in range(0, instance_count):
                 db_info = DBInstance.create(
-                    name=name, flavor_id=flavor_id, tenant_id=context.tenant,
+                    name=name, flavor_id=flavor_id,
+                    tenant_id=context.project_id,
                     volume_size=volume_size,
                     datastore_version_id=datastore_version.id,
                     task_status=InstanceTasks.BUILDING,
@@ -1062,7 +1065,7 @@ class Instance(BuiltInstance):
                     region_id=region_name)
                 LOG.debug("Tenant %(tenant)s created new Trove instance "
                           "%(db)s in region %(region)s.",
-                          {'tenant': context.tenant, 'db': db_info.id,
+                          {'tenant': context.project_id, 'db': db_info.id,
                            'region': region_name})
 
                 instance_id = db_info.id
@@ -1109,13 +1112,14 @@ class Instance(BuiltInstance):
                 volume_size, backup_id, availability_zone, root_password,
                 nics, overrides, slave_of_id, cluster_config,
                 volume_type=volume_type, modules=module_list,
-                locality=locality)
+                locality=locality, access=access)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password, locality=locality)
 
         with StartNotification(context, **call_args):
-            return run_with_quotas(context.tenant, deltas, _create_resources)
+            return run_with_quotas(context.project_id, deltas,
+                                   _create_resources)
 
     @classmethod
     def add_instance_modules(cls, context, instance_id, modules):
@@ -1507,7 +1511,7 @@ class Instances(object):
             raise TypeError(_("Argument context not defined."))
         client = create_nova_client(context)
         servers = client.servers.list()
-        query_opts = {'tenant_id': context.tenant,
+        query_opts = {'tenant_id': context.project_id,
                       'deleted': False}
         if not include_clustered:
             query_opts['cluster_id'] = None
@@ -1731,7 +1735,7 @@ def module_instance_count(context, module_id, include_clustered=False):
     if not include_clustered:
         filters.append(DBInstance.cluster_id.is_(None))
     if not context.is_admin:
-        filters.append(DBInstance.tenant_id == context.tenant)
+        filters.append(DBInstance.tenant_id == context.project_id)
     query = query.group_by(module_models.DBInstanceModule.md5)
     query = query.add_columns(*columns)
     query = query.filter(*filters)

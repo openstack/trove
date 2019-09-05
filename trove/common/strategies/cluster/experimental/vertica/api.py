@@ -96,7 +96,7 @@ class VerticaCluster(models.Cluster):
 
         deltas = {'instances': num_instances, 'volumes': req_volume_size}
 
-        check_quotas(context.tenant, deltas)
+        check_quotas(context.project_id, deltas)
 
         flavor_id = instances[0]['flavor_id']
         volume_size = instances[0].get('volume_size', None)
@@ -149,7 +149,7 @@ class VerticaCluster(models.Cluster):
                 num_instances=vertica_conf.cluster_member_count)
 
         db_info = models.DBCluster.create(
-            name=name, tenant_id=context.tenant,
+            name=name, tenant_id=context.project_id,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL)
 

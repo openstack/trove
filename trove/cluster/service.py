@@ -143,8 +143,10 @@ class ClusterController(wsgi.Controller):
         # for all tenants.
         # * As far as I can tell this is the only call which actually uses the
         #   passed-in 'tenant_id' for anything.
-        if not context.is_admin and context.tenant != tenant_id:
-            raise exception.TroveOperationAuthError(tenant_id=context.tenant)
+        if not context.is_admin and context.project_id != tenant_id:
+            raise exception.TroveOperationAuthError(
+                tenant_id=context.project_id
+            )
 
         # The rule checks that the currently authenticated tenant can perform
         # the 'cluster-list' action.
