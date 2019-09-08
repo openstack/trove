@@ -10,7 +10,7 @@ Creates, lists all, and deletes users.
 Enable root user
 ~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/root
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/root
 
 Enables the root user for a database instance and returns the root password.
 
@@ -38,7 +38,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -53,7 +53,7 @@ Response Example
 Show root-enabled status for database instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/root
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}/root
 
 Shows root-enabled status for a database instance.
 
@@ -73,7 +73,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -88,7 +88,7 @@ Response Example
 Disable root user
 ~~~~~~~~~~~~~~~~~
 
-.. rest_method::  DELETE /v1.0/{accountId}/instances/{instanceId}/root
+.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}/root
 
 Disables the root user.
 
@@ -105,7 +105,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 
@@ -113,7 +113,7 @@ Request
 Delete user
 ~~~~~~~~~~~
 
-.. rest_method::  DELETE /v1.0/{accountId}/instances/{instanceId}/users/{name}
+.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}/users/{name}
 
 Deletes a user for a database instance.
 
@@ -130,7 +130,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
    - name: user_name
 
 
@@ -139,7 +139,7 @@ Request
 Create user
 ~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/users
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/users
 
 Creates a user for a database instance.
 
@@ -244,7 +244,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 Request Example
 ---------------
@@ -258,7 +258,7 @@ Request Example
 List database instance users
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/users
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}/users
 
 Lists the users in a database instance and the associated databases for that
 user.
@@ -293,7 +293,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example

@@ -10,7 +10,7 @@ Resizes instances and volumes and restarts instances.
 Restart instance
 ~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/action
 
 Restarts the database service for an instance.
 
@@ -34,7 +34,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -49,7 +49,7 @@ Request Example
 Resize instance
 ~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/action
 
 Resizes the memory for an instance.
 
@@ -70,7 +70,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -85,7 +85,7 @@ Request Example
 Resize instance volume
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/action
 
 Resizes the volume that is attached to an instance.
 
@@ -109,7 +109,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -124,7 +124,7 @@ Request Example
 Promote instance to replica source
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/action
 
 Promotes a replica.
 
@@ -158,7 +158,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -173,7 +173,7 @@ Request Example
 Delete replication base instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/action
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/action
 
 Deletes the base instance in a replication set.
 
@@ -211,7 +211,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example

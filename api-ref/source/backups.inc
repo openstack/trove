@@ -10,7 +10,7 @@ List, show details, create and delete backups.
 List database backups
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/backups
+.. rest_method::  GET /v1.0/{project_id}/backups
 
 List all database backups information for a project. You can filter results by
 using query string parameters. The following filters are supported:
@@ -32,7 +32,7 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Parameters
@@ -69,10 +69,10 @@ Response Example
 List database backups for an instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/backups
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}/backups
 
 List all database backups for the specified instance. This is equivalent to
-``GET /v1.0/{accountId}/backups?instance_id={instanceId}``.
+``GET /v1.0/{project_id}/backups?instance_id={instanceId}``.
 
 Normal response codes: 200
 
@@ -87,7 +87,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Parameters
@@ -124,7 +124,7 @@ Response Example
 Show database backup details
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/backups/{backupId}
+.. rest_method::  GET /v1.0/{project_id}/backups/{backupId}
 
 Show detailes of a backup.
 
@@ -140,7 +140,7 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
-   - accountId: accountId
+   - project_id: project_id
    - backupId: backup_id
 
 
@@ -177,7 +177,7 @@ Response Example
 Create database backup
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/backups
+.. rest_method::  POST /v1.0/{project_id}/backups
 
 Creates a database backup for instance.
 
@@ -198,7 +198,7 @@ Request
    - parent_id: backup_parentId
    - incremental: backup_incremental
    - description: backup_description
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -241,7 +241,7 @@ Response Example
 Delete database backup
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  DELETE /v1.0/{accountId}/backups/{backupId}
+.. rest_method::  DELETE /v1.0/{project_id}/backups/{backupId}
 
 Deletes a database backup.
 
@@ -258,4 +258,4 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - backupId: backup_id
-   - accountId: accountId
+   - project_id: project_id

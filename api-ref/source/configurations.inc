@@ -10,7 +10,7 @@ Creates and lists all configuration groups.
 Create configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/configurations
+.. rest_method::  POST /v1.0/{project_id}/configurations
 
 Creates a configuration group.
 
@@ -29,7 +29,7 @@ Request
    - datastore: datastore
    - values: values
    - name: name
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -51,7 +51,7 @@ Response Example
 List configuration groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/configurations
+.. rest_method::  GET /v1.0/{project_id}/configurations
 
 Lists all configuration groups.
 
@@ -70,7 +70,7 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -85,7 +85,7 @@ Response Example
 List configuration group instances
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/configurations/{configId}/instances
+.. rest_method::  GET /v1.0/{project_id}/configurations/{configId}/instances
 
 Lists the instances associated with the specified configuration group.
 
@@ -102,7 +102,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - configId: configId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -117,7 +117,7 @@ Response Example
 Delete configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  DELETE /v1.0/{accountId}/configurations/{configId}
+.. rest_method::  DELETE /v1.0/{project_id}/configurations/{configId}
 
 Deletes a configuration group.
 
@@ -134,7 +134,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - configId: configId
-   - accountId: accountId
+   - project_id: project_id
 
 
 
@@ -142,7 +142,7 @@ Request
 Patch configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{accountId}/configurations/{configId}
+.. rest_method::  PATCH /v1.0/{project_id}/configurations/{configId}
 
 Sets new values for a configuration group.
 
@@ -160,7 +160,7 @@ Request
 
    - values: values
    - configId: configId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -182,7 +182,7 @@ Response Example
 Show configuration group details
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/configurations/{configId}
+.. rest_method::  GET /v1.0/{project_id}/configurations/{configId}
 
 Lists details about a configuration group, including its values.
 
@@ -199,7 +199,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - configId: configId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -214,7 +214,7 @@ Response Example
 Update configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PUT /v1.0/{accountId}/configurations/{configId}
+.. rest_method::  PUT /v1.0/{project_id}/configurations/{configId}
 
 Sets new values for a configuration group. Also lets you change the name and
 description of the configuration group.
@@ -234,7 +234,7 @@ Request
    - description: description
    - name: name
    - configId: configId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example

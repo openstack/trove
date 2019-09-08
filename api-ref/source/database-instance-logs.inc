@@ -10,7 +10,7 @@ List, show details, enable, disable, publish, and discard logs for instances.
 List instance logs
 ~~~~~~~~~~~~~~~~~~
 
-.. rest_method:: GET /v1.0/{accountId}/instances/{instanceId}/log
+.. rest_method:: GET /v1.0/{project_id}/instances/{instanceId}/log
 
 Listing all logs for an instance.
 
@@ -32,7 +32,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Parameters
@@ -63,7 +63,7 @@ Response Example
 Show instance log details
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method:: POST /v1.0/{accountId}/instances/{instanceId}/log
+.. rest_method:: POST /v1.0/{project_id}/instances/{instanceId}/log
 
 Show details for a instance log.
 
@@ -81,7 +81,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
    - name: log_name
 
 
@@ -120,7 +120,7 @@ Response Example
 Enable instance log
 ~~~~~~~~~~~~~~~~~~~
 
-.. rest_method:: POST /v1.0/{accountId}/instances/{instanceId}/log
+.. rest_method:: POST /v1.0/{project_id}/instances/{instanceId}/log
 
 Enable a log type for a instance.
 
@@ -138,7 +138,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
    - name: log_name
    - enable: log_enable_action
 
@@ -178,7 +178,7 @@ Response Example
 Disable instance log
 ~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method:: POST /v1.0/{accountId}/instances/{instanceId}/log
+.. rest_method:: POST /v1.0/{project_id}/instances/{instanceId}/log
 
 Disable a log type for a instance.
 
@@ -196,7 +196,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
    - name: log_name
    - disable: log_disable_action
 
@@ -236,7 +236,7 @@ Response Example
 Publish instance log
 ~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method:: POST /v1.0/{accountId}/instances/{instanceId}/log
+.. rest_method:: POST /v1.0/{project_id}/instances/{instanceId}/log
 
 Publish a log type for a instance.
 
@@ -256,7 +256,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
    - name: log_name
    - publish: log_publish_action
 
@@ -296,7 +296,7 @@ Response Example
 Discard instance log
 ~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method:: POST /v1.0/{accountId}/instances/{instanceId}/log
+.. rest_method:: POST /v1.0/{project_id}/instances/{instanceId}/log
 
 Discard all previously published logs for a instance.
 
@@ -314,7 +314,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
    - name: log_name
    - discard: log_discard_action
 

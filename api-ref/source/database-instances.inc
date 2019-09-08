@@ -13,7 +13,7 @@ root is enabled, for instances.
 List database instances
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances
+.. rest_method::  GET /v1.0/{project_id}/instances
 
 Lists information, including status, for all database instances.
 
@@ -31,7 +31,7 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -46,7 +46,7 @@ Response Example
 Show database instance details
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}
 
 Shows database instance details.
 
@@ -82,7 +82,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -97,24 +97,15 @@ Response Example
 Create database instance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances
+.. rest_method::  POST /v1.0/{project_id}/instances
 
 Creates a database instance.
 
-Asynchronously provisions a database instance. You must specify a
-flavor and a volume size. The service provisions the instance with
-a volume of the requested size, which serves as storage for the
-database instance.
-
- **Notes**
-
-- You can create only one database instance per POST request.
-
-- You can create a database instance with one or more databases. You
-  can also associate users with each database.
-
-- The port on which the database instance is listening is database
-  specific.
+Asynchronously provisions a database instance. You must specify a flavor ID, a
+volume size and the tenant network ID. The service provisions the instance with
+a volume of the requested size, which serves as storage for the database
+instance. The database service can only be access within the tenant network,
+unless the ``access`` parameter is defined.
 
 Normal response codes: 200
 
@@ -128,36 +119,39 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
-   - users: users
-   - users.name: user_name1
-   - users.password: user_password
-   - users.host: user_host
-   - users.databases: user_databases
-   - users.databases.name: user_database_name
-   - datastore: datastore1
-   - datastore.type: datastore_type
-   - datastore.version: datastore_version
-   - name: instanceName1
-   - flavorRef: flavorRef
-   - volume: volume
-   - volume.size: volume_size
-   - volume.type: volume_type
-   - modules: modules
-   - modules.id: module_id
-   - restorePoint: restore_point
-   - restorePoint.backupRef: restore_point_backupref
-   - availability_zone: availability_zone
-   - nics: nics
-   - replica_of: replica_of
-   - replica_count: replica_count
-   - locality: locality
-   - region_name: region_name
-   - databases: databases
-   - databases.characterSet: characterSet
-   - databases.collate: collate
-   - instance: instance
-   - configuration: configuration
-   - accountId: accountId
+    - project_id: project_id
+    - users: users
+    - users.name: user_name1
+    - users.password: user_password
+    - users.host: user_host
+    - users.databases: user_databases
+    - users.databases.name: user_database_name
+    - datastore: datastore1
+    - datastore.type: datastore_type
+    - datastore.version: datastore_version
+    - name: instanceName1
+    - flavorRef: flavorRef
+    - volume: volume
+    - volume.size: volume_size
+    - volume.type: volume_type
+    - modules: modules
+    - modules.id: module_id
+    - restorePoint: restore_point
+    - restorePoint.backupRef: restore_point_backupref
+    - availability_zone: availability_zone
+    - nics: nics
+    - replica_of: replica_of
+    - replica_count: replica_count
+    - locality: locality
+    - region_name: region_name
+    - databases: databases
+    - databases.characterSet: characterSet
+    - databases.collate: collate
+    - instance: instance
+    - configuration: configuration
+    - access: access
+    - access.is_public: access_is_public
+    - access.allowed_cidrs: access_allowed_cidrs
 
 
 Request Example
@@ -233,7 +227,7 @@ Response Example
 Attach configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PUT /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
 Attaches a configuration group to an instance.
 
@@ -252,7 +246,7 @@ Request
 
    - configuration: configuration
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -267,7 +261,7 @@ Request Example
 Detach configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PUT /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
 Detaches a configuration group from an instance.
 
@@ -290,7 +284,7 @@ Request
 
    - configuration: configuration
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 Request Example
 ---------------
@@ -304,7 +298,7 @@ Request Example
 Detach replica
 ~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  PATCH /v1.0/{project_id}/instances/{instanceId}
 
 Detaches a replica from its replication source.
 
@@ -331,7 +325,7 @@ Request
    - replica_of: replica_of
    - slave_of: slave_of
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -346,7 +340,7 @@ Request Example
 Update instance name
 ~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  PATCH /v1.0/{project_id}/instances/{instanceId}
 
 Update the instance name.
 
@@ -366,7 +360,7 @@ Request
    - instance: instance
    - name: instanceName
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -381,7 +375,7 @@ Request Example
 Upgrade datastore version
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  PATCH /v1.0/{project_id}/instances/{instanceId}
 
 Upgrade datastore version.
 
@@ -405,7 +399,7 @@ Request
    - instance: instance
    - datastore_version: datastore_version
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -420,7 +414,7 @@ Request Example
 Delete database instance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  DELETE /v1.0/{accountId}/instances/{instanceId}
+.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}
 
 Deletes a database instance, including any associated data.
 
@@ -442,7 +436,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 
@@ -450,7 +444,7 @@ Request
 List configuration defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/configuration
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}/configuration
 
 Lists the configuration defaults for an instance.
 
@@ -467,7 +461,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example

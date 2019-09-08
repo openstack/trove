@@ -11,7 +11,7 @@ shows parameter details for a data store version.
 Show configuration parameter details
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/datastores/versions/{datastore_version_id}/parameters/{parameter_name}
+.. rest_method::  GET /v1.0/{project_id}/datastores/versions/{datastore_version_id}/parameters/{parameter_name}
 
 Displays details for a configuration parameter associated with a data store
 version.
@@ -33,7 +33,7 @@ Request
 
    - parameter_name: parameter_name
    - datastore_version_id: datastore_version_id
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -48,7 +48,7 @@ Response Example
 List datastore versions
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/datastores/{datastore_name}/versions
+.. rest_method::  GET /v1.0/{project_id}/datastores/{datastore_name}/versions
 
 Lists the available versions of a data store.
 
@@ -65,7 +65,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - datastore_name: datastore_name
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
@@ -80,7 +80,7 @@ Response Example
 List configuration parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/datastores/versions/{datastore_version_id}/parameters
+.. rest_method::  GET /v1.0/{project_id}/datastores/versions/{datastore_version_id}/parameters
 
 Lists the available configuration parameters for a data store version.
 
@@ -101,7 +101,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - datastore_version_id: datastore_version_id
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example

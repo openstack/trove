@@ -1,10 +1,4 @@
 # variables in path
-accountId:
-  description: |
-    The account ID of the owner of the instance.
-  in: path
-  required: false
-  type: string
 backup_id:
   description: |
     The ID of the backup.
@@ -54,6 +48,12 @@ parameter_name:
   in: path
   required: false
   type: string
+project_id:
+  description: |
+    The project ID of the instance owner.
+  in: path
+  required: true
+  type: string
 user_name:
   description: |
       The name of the user.
@@ -61,6 +61,26 @@ user_name:
   required: false
   type: string
 # variables in body
+access:
+  description: |
+    A ``access`` object defines how the database service is exposed.
+  in: body
+  required: false
+  type: object
+access_allowed_cidrs:
+  description: |
+    A list of IPv4, IPv6 or mix of both CIDRs that restrict access to the
+    database service. ``0.0.0.0/0`` is used by default if this parameter is not
+    provided.
+  in: body
+  required: false
+  type: array
+access_is_public:
+  description: |
+    Whether the database service is exposed to the public.
+  in: body
+  required: false
+  type: boolean
 availability_zone:
   description: |
     The availability zone of the instance.
@@ -582,7 +602,7 @@ nics:
   description: |
      Network interfaces for database service inside Nova instances.
      ``NOTE:`` For backward compatibility, this parameter uses the same schema
-     as novaclient creating servers, but only ``net-id`` is supported ans can
+     as novaclient creating servers, but only ``net-id`` is supported and can
      only be specified once. This parameter is required in service tenant
      deployment model.
   in: body

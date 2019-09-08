@@ -10,7 +10,7 @@ Creates, lists all, and deletes databases.
 Delete database
 ~~~~~~~~~~~~~~~
 
-.. rest_method::  DELETE /v1.0/{accountId}/instances/{instanceId}/databases/{databaseName}
+.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}/databases/{databaseName}
 
 Deletes a database.
 
@@ -31,7 +31,7 @@ Request
 
    - instanceId: instanceId
    - databaseName: databaseName
-   - accountId: accountId
+   - project_id: project_id
 
 
 
@@ -39,7 +39,7 @@ Request
 Create database
 ~~~~~~~~~~~~~~~
 
-.. rest_method::  POST /v1.0/{accountId}/instances/{instanceId}/databases
+.. rest_method::  POST /v1.0/{project_id}/instances/{instanceId}/databases
 
 Creates a database within an instance.
 
@@ -59,7 +59,7 @@ Request
    - collate: collate
    - name: name
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Request Example
@@ -74,7 +74,7 @@ Request Example
 List instance databases
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  GET /v1.0/{accountId}/instances/{instanceId}/databases
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}/databases
 
 Lists databases for an instance.
 
@@ -96,7 +96,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - instanceId: instanceId
-   - accountId: accountId
+   - project_id: project_id
 
 
 Response Example
