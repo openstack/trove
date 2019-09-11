@@ -139,48 +139,6 @@ Trove instance:
 Create your first Trove instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#.  Switch to a non-admin user, choose a Nova flavor ID for the Trove
-    instance.
-
-    .. code-block:: console
-
-        $ source ~/devstack/openrc demo demo
-        $ openstack flavor list
-        +----+---------------+-------+------+-----------+-------+-----------+
-        | ID | Name          |   RAM | Disk | Ephemeral | VCPUs | Is Public |
-        +----+---------------+-------+------+-----------+-------+-----------+
-        | 1  | m1.tiny       |   512 |    1 |         0 |     1 | True      |
-        | 2  | m1.small      |  2048 |   20 |         0 |     1 | True      |
-        | 3  | m1.medium     |  4096 |   40 |         0 |     2 | True      |
-        | 4  | m1.large      |  8192 |   80 |         0 |     4 | True      |
-        | 5  | m1.xlarge     | 16384 |  160 |         0 |     8 | True      |
-        | 6  | mysql-minimum |   512 |    5 |         0 |     1 | True      |
-        | c1 | cirros256     |   256 |    1 |         0 |     1 | True      |
-        | d1 | ds512M        |   512 |    5 |         0 |     1 | True      |
-        | d2 | ds1G          |  1024 |   10 |         0 |     1 | True      |
-        | d3 | ds2G          |  2048 |   10 |         0 |     2 | True      |
-        | d4 | ds4G          |  4096 |   20 |         0 |     4 | True      |
-        +----+---------------+-------+------+-----------+-------+-----------+
-        $ flavorid=6
-
-#.  Choose a private network on which the database service can be accessed.
-
-    .. code-block:: console
-
-        $ openstack network list --internal
-        +--------------------------------------+---------+----------------------------------------------------------------------------+
-        | ID                                   | Name    | Subnets                                                                    |
-        +--------------------------------------+---------+----------------------------------------------------------------------------+
-        | a0f3cf12-3562-4064-aa34-61d37265e867 | private | 377e791f-2631-4d8e-93cd-036344b24b3f, 7e04abb4-7c16-4b92-8865-7831ecf3ee66 |
-        +--------------------------------------+---------+----------------------------------------------------------------------------+
-        # netid=a0f3cf12-3562-4064-aa34-61d37265e867
-
-#.  Create the Trove instance.
-
-    .. code-block:: console
-
-        $ openstack database instance create my-first-trove-instance $flavorid \
-          --size 1 \
-          --nic net-id=$netid \
-          --datastore mysql --datastore_version 5.7 \
-          --databases test --users test_user:password
+Refer to
+`Create and access a database <https://docs.openstack.org/trove/latest/user/create-db.html>`_
+for the detailed steps.

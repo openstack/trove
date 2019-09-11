@@ -7,7 +7,7 @@ Assume that you have installed the Database service and populated your
 data store with images for the type and versions of databases that you
 want, and that you can create and access a database.
 
-This example shows you how to create and access a MySQL 5.5 database.
+This example shows you how to create and access a MySQL 5.7 database.
 
 Create and access a database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -87,90 +87,81 @@ Create and access a database
 #. **Create a database instance**
 
    This example creates a database instance with the following
-   characteristics:
+   parameters:
 
    -  Name of the instance: ``mysql_instance_1``
-
    -  Database flavor: ``6``
-
-   In addition, this command specifies these options for the instance:
-
-   -  A volume size of ``5`` (5 GB).
-
-   -  The ``myDB`` database.
-
+   -  A volume size of ``5`` (5 GB)
+   -  A database named ``test``
    -  The database is based on the ``mysql`` data store and the
-      ``mysql-5.5`` datastore\_version.
-
+      ``5.7`` datastore version
    -  The ``userA`` user with the ``password`` password.
+   -  A Neutron network ``8799cf10-01ef-40e2-b04e-06da7cfa5668`` to allocate
+      the database IP address (for internal access).
+   -  Expose the instance to the public via ``--is-public`` (for external
+      access). Ignore this parameter if you don't want to expose database
+      service to the public internet.
+   -  Only the IP addresses coming from ``202.37.199.1/24`` or ``10.1.0.1/24``
+      are allowed to access the database service.
 
    .. code-block:: console
 
-      $ openstack database instance create mysql_instance_1 6 --size 5 --databases myDB \
-          --users userA:password --datastore_version mysql-5.5 \
-          --datastore mysql
-      +-------------------+---------------------------------------------------------------------------------------t-----------------------------------------------------------------------------------------------------------------+
-      |      Property     |                                                                                                  Value                                                                                                  |
-      +-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-      |      created      |                                                                                           2014-05-29T21:26:21                                                                                           |
-      |     datastore     |                                                                              {u'version': u'mysql-5.5', u'type': u'mysql'}                                                                              |
-      | datastore_version |                                                                                                mysql-5.5                                                                                                |
-      |       flavor      | {u'id': u'6', u'links': [{u'href': u'https://controller:8779/v1.0/46d0bc4fc32e4b9e8520f8fc62199f58/flavors/6', u'rel': u'self'}, {u'href': u'https://controller:8779/flavors/6', u'rel': u'bookmark'}]} |
-      |         id        |                                                                                   5599dad6-731e-44df-bb60-488da3da9cfe                                                                                  |
-      |        name       |                                                                                             mysql_instance_1                                                                                            |
-      |       status      |                                                                                                  BUILD                                                                                                  |
-      |      updated      |                                                                                           2014-05-29T21:26:21                                                                                           |
-      |       volume      |                                                                                               {u'size': 5}                                                                                              |
-      +-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+      $ openstack database instance create mysql_instance_1 \
+          6 \
+          --size 5 \
+          --nic net-id=8799cf10-01ef-40e2-b04e-06da7cfa5668 \
+          --databases test --users userA:password \
+          --datastore mysql --datastore_version 5.7 \
+          --is-public \
+          --allowed-cidr 10.1.0.1/24 \
+          --allowed-cidr 202.37.199.1/24
+      +-------------------+--------------------------------------+
+      | Field             | Value                                |
+      +-------------------+--------------------------------------+
+      | created           | 2019-09-11T09:19:18                  |
+      | datastore         | mysql                                |
+      | datastore_version | 5.7                                  |
+      | flavor            | 6                                    |
+      | id                | 4bca2f27-f986-419e-ab4a-df1db399d590 |
+      | name              | mysql_instance_1                     |
+      | region            | RegionOne                            |
+      | status            | BUILD                                |
+      | updated           | 2019-09-11T09:19:18                  |
+      | volume            | 5                                    |
+      +-------------------+--------------------------------------+
 
 #. **Get the IP address of the database instance**
 
-   First, use the :command:`openstack database instance list` command to list all instances and
-   their IDs:
+   Both internal and external IP addresses can be shown by running:
 
    .. code-block:: console
 
-      $ openstack database instance list
-      +--------------------------------------+------------------+-----------+-------------------+--------+-----------+------+
-      |                  id                  |       name       | datastore | datastore_version | status | flavor_id | size |
-      +--------------------------------------+------------------+-----------+-------------------+--------+-----------+------+
-      | 5599dad6-731e-44df-bb60-488da3da9cfe | mysql_instance_1 |   mysql   |     mysql-5.5     | BUILD  |     6     |  5   |
-      +--------------------------------------+------------------+-----------+-------------------+--------+-----------+------+
-
-   This command returns the instance ID of your new instance.
-
-   You can now pass in the instance ID with the :command:`openstack database instance show` command
-   to get the IP address of the instance. In this example, replace
-   ``INSTANCE_ID`` with ``5599dad6-731e-44df-bb60-488da3da9cfe``.
-
-   .. code-block:: console
-
-      $ openstack database instance show INSTANCE_ID
-
+      $ openstack database instance show 4bca2f27-f986-419e-ab4a-df1db399d590
       +-------------------+--------------------------------------+
-      |      Property     |                Value                 |
+      | Field             | Value                                |
       +-------------------+--------------------------------------+
-      |      created      |         2014-05-29T21:26:21          |
-      |     datastore     |                mysql                 |
-      | datastore_version |              mysql-5.5               |
-      |       flavor      |                  6                   |
-      |         id        | 5599dad6-731e-44df-bb60-488da3da9cfe |
-      |         ip        |             172.16.200.2             |
-      |        name       |           mysql_instance_1           |
-      |       status      |                BUILD                 |
-      |      updated      |         2014-05-29T21:26:54          |
-      |       volume      |                  5                   |
+      | created           | 2019-09-11T07:14:37                  |
+      | datastore         | mysql                                |
+      | datastore_version | 5.7                                  |
+      | flavor            | 6                                    |
+      | id                | 4bca2f27-f986-419e-ab4a-df1db399d590 |
+      | ip                | 10.1.0.14, 172.24.5.15               |
+      | name              | mysql_instance_1                     |
+      | region            | RegionOne                            |
+      | status            | ACTIVE                               |
+      | updated           | 2019-09-11T07:14:47                  |
+      | volume            | 5                                    |
+      | volume_used       | 0.12                                 |
       +-------------------+--------------------------------------+
-
-   This command returns the IP address of the database instance.
 
 #. **Access the new database**
 
-   You can now access the new database you just created (myDB) by using
+   You can now access the new database you just created by using
    typical database access commands. In this MySQL example, replace
-   ``IP_ADDRESS`` with ``172.16.200.2``.
+   ``IP_ADDRESS`` with either 10.1.0.14 or 172.24.5.15 according to where the
+   command is running. Make sure your IP address is in the allowed CIDRs
+   specified in the above command.
 
    .. code-block:: console
 
-      $ mysql -u userA -p password -h IP_ADDRESS myDB
-
+      $ mysql -h IP_ADDRESS -uuserA -ppassword
