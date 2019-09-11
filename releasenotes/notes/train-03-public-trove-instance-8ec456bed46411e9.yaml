@@ -1,0 +1,7 @@
+---
+features:
+  - Users can create ``public`` trove instance that has a floating IP attached
+    but have the ability to define what CIDRs could access the user's database
+    service. Refer to the
+    `API doc <https://developer.openstack.org/api-ref/database/>`_
+    for more details.
