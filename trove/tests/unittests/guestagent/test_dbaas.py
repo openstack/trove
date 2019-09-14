@@ -468,13 +468,13 @@ class MySqlAdminTest(trove_testtools.TestCase):
 
     def test_change_passwords(self):
         user = [{"name": "test_user", "host": "%", "password": "password"}]
-        expected = ("SET PASSWORD FOR 'test_user'@'%' = 'password';")
+        expected = ("SET PASSWORD FOR 'test_user'@'%' = PASSWORD('password');")
         with patch.object(self.mock_client, 'execute') as mock_execute:
             self.mySqlAdmin.change_passwords(user)
             self._assert_execute_call(expected, mock_execute)
 
     def test_update_attributes_password(self):
-        expected = ("SET PASSWORD FOR 'test_user'@'%' = 'password';")
+        expected = ("SET PASSWORD FOR 'test_user'@'%' = PASSWORD('password');")
         user = MagicMock()
         user.name = "test_user"
         user.host = "%"
@@ -1409,7 +1409,7 @@ class MySqlAppTest(trove_testtools.TestCase):
             self.mySqlApp.secure_root()
         update_root_password, _ = self.mock_execute.call_args_list[0]
         update_expected = ("SET PASSWORD FOR 'root'@'localhost' = "
-                           "'some_password';")
+                           "PASSWORD('some_password');")
 
         remove_root, _ = self.mock_execute.call_args_list[1]
         remove_expected = ("DELETE FROM mysql.user WHERE "

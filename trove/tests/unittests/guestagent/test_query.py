@@ -403,7 +403,7 @@ class SetPasswordTest(QueryTestBase):
         uu = sql_query.SetPassword(user=username, host=hostname,
                                    new_password=new_password)
         self.assertEqual("SET PASSWORD FOR 'root'@'localhost' = "
-                         "'new_password';", str(uu))
+                         "PASSWORD('new_password');", str(uu))
 
 
 class DropUserTest(QueryTestBase):
