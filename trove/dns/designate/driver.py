@@ -21,7 +21,6 @@ import base64
 import hashlib
 
 from designateclient import client
-from designateclient.v1.records import Record
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from oslo_log import log as logging
@@ -38,9 +37,6 @@ CONF = cfg.CONF
 
 DNS_TENANT_ID = CONF.dns_account_id
 DNS_AUTH_URL = CONF.dns_auth_url
-DNS_ENDPOINT_URL = CONF.dns_endpoint_url
-DNS_SERVICE_TYPE = CONF.dns_service_type
-DNS_REGION = CONF.dns_region
 DNS_USERNAME = CONF.dns_username
 DNS_PASSKEY = CONF.dns_passkey
 DNS_TTL = CONF.dns_ttl
@@ -50,18 +46,6 @@ DNS_USER_DOMAIN_ID = CONF.dns_user_domain_id
 DNS_PROJECT_DOMAIN_ID = CONF.dns_project_domain_id
 
 LOG = logging.getLogger(__name__)
-
-
-class DesignateObjectConverter(object):
-
-    @staticmethod
-    def domain_to_zone(domain):
-        return DesignateDnsZone(id=domain.id, name=domain.name)
-
-    def record_to_entry(self, record, dns_zone):
-        return driver.DnsEntry(name=record.name, content=record.data,
-                               type=record.type, ttl=record.ttl,
-                               priority=record.priority, dns_zone=dns_zone)
 
 
 def create_designate_client(api_version='2'):
@@ -75,74 +59,6 @@ def create_designate_client(api_version='2'):
                                     project_domain_id=DNS_PROJECT_DOMAIN_ID)
     sesh = session.Session(auth=auth)
     return client.Client(api_version, session=sesh)
-
-
-class DesignateDriver(driver.DnsDriver):
-
-    def __init__(self):
-        self.dns_client = create_designate_client(api_version='1')
-        self.converter = DesignateObjectConverter()
-        self.default_dns_zone = DesignateDnsZone(id=DNS_DOMAIN_ID,
-                                                 name=DNS_DOMAIN_NAME)
-
-    def create_entry(self, entry, content):
-        """Creates the entry in the driver at the given dns zone."""
-        dns_zone = entry.dns_zone or self.default_dns_zone
-        if not dns_zone.id:
-            raise TypeError(_("The entry's dns_zone must have an ID "
-                              "specified."))
-        name = entry.name
-        LOG.debug("Creating DNS entry %s.", name)
-        client = self.dns_client
-        # Record name has to end with a '.' by dns standard
-        record = Record(name=entry.name + '.',
-                        type=entry.type,
-                        data=content,
-                        ttl=entry.ttl,
-                        priority=entry.priority)
-        client.records.create(dns_zone.id, record)
-
-    def delete_entry(self, name, type, dns_zone=None):
-        """Deletes an entry with the given name and type from a dns zone."""
-        dns_zone = dns_zone or self.default_dns_zone
-        records = self._get_records(dns_zone)
-        matching_record = [rec for rec in records
-                           if rec.name == name + '.' and rec.type == type]
-        if not matching_record:
-            raise exception.DnsRecordNotFound(name=name)
-        LOG.debug("Deleting DNS entry %s.", name)
-        self.dns_client.records.delete(dns_zone.id, matching_record[0].id)
-
-    def get_entries_by_content(self, content, dns_zone=None):
-        """Retrieves all entries in a DNS zone with matching content field."""
-        records = self._get_records(dns_zone)
-        return [self.converter.record_to_entry(record, dns_zone)
-                for record in records if record.data == content]
-
-    def get_entries_by_name(self, name, dns_zone):
-        records = self._get_records(dns_zone)
-        return [self.converter.record_to_entry(record, dns_zone)
-                for record in records if record.name == name]
-
-    def get_dns_zones(self, name=None):
-        """Returns all dns zones (optionally filtered by the name argument."""
-        domains = self.dns_client.domains.list()
-        return [self.converter.domain_to_zone(domain)
-                for domain in domains if not name or domain.name == name]
-
-    def modify_content(self, name, content, dns_zone):
-        # We dont need this in trove for now
-        raise NotImplementedError(_("Not implemented for Designate DNS."))
-
-    def rename_entry(self, content, name, dns_zone):
-        # We dont need this in trove for now
-        raise NotImplementedError(_("Not implemented for Designate DNS."))
-
-    def _get_records(self, dns_zone):
-        dns_zone = dns_zone or self.default_dns_zone
-        if not dns_zone:
-            raise TypeError(_('DNS domain is must be specified'))
-        return self.dns_client.records.list(dns_zone.id)
 
 
 class DesignateDriverV2(driver.DnsDriver):

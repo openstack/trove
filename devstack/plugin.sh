@@ -285,6 +285,8 @@ EOF
 
 # install_trove() - Collect source and prepare
 function install_trove {
+    install_package jq
+
     echo "Changing stack user sudoers"
     echo "stack ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/60_stack_sh_allow_all
 
@@ -539,6 +541,79 @@ function create_guest_image {
 #cloud-config
 manage_etc_hosts: "localhost"
 EOF
+}
+
+# Set up Trove management network and make configuration change.
+function config_trove_network {
+    echo "Finalizing Neutron networking for Trove"
+    echo "Dumping current network parameters:"
+    echo "  SERVICE_HOST: $SERVICE_HOST"
+    echo "  BRIDGE_IP: $BRIDGE_IP"
+    echo "  PUBLIC_NETWORK_GATEWAY: $PUBLIC_NETWORK_GATEWAY"
+    echo "  NETWORK_GATEWAY: $NETWORK_GATEWAY"
+    echo "  IPV4_ADDRS_SAFE_TO_USE: $IPV4_ADDRS_SAFE_TO_USE"
+    echo "  IPV6_ADDRS_SAFE_TO_USE: $IPV6_ADDRS_SAFE_TO_USE"
+    echo "  FIXED_RANGE: $FIXED_RANGE"
+    echo "  FLOATING_RANGE: $FLOATING_RANGE"
+    echo "  SUBNETPOOL_PREFIX_V4: $SUBNETPOOL_PREFIX_V4"
+    echo "  SUBNETPOOL_SIZE_V4: $SUBNETPOOL_SIZE_V4"
+    echo "  SUBNETPOOL_V4_ID: $SUBNETPOOL_V4_ID"
+    echo "  ROUTER_GW_IP: $ROUTER_GW_IP"
+    echo "  TROVE_MGMT_SUBNET_RANGE: ${TROVE_MGMT_SUBNET_RANGE}"
+
+    # Save xtrace setting
+    local XTRACE
+    XTRACE=$(set +o | grep xtrace)
+    set -x
+
+    echo "Creating Trove management network/subnet for Trove service project."
+    trove_service_project_id=$(openstack project show $SERVICE_PROJECT_NAME -c id -f value)
+    setup_mgmt_network ${trove_service_project_id} ${TROVE_MGMT_NETWORK_NAME} ${TROVE_MGMT_SUBNET_NAME} ${TROVE_MGMT_SUBNET_RANGE}
+    mgmt_net_id=$(openstack network show ${TROVE_MGMT_NETWORK_NAME} -c id -f value)
+    echo "Created Trove management network ${TROVE_MGMT_NETWORK_NAME}(${mgmt_net_id})"
+
+    # Share the private network to other projects for testing purpose. We make
+    # the private network accessible to control plane below so that we could
+    # reach the private network for integration tests without floating ips
+    # associated, no matter which user the tests are using.
+    shared=$(openstack network show ${PRIVATE_NETWORK_NAME} -c shared -f value)
+    if [[ "$shared" == "False" ]]; then
+        openstack network set ${PRIVATE_NETWORK_NAME} --share
+    fi
+    sudo ip route replace ${IPV4_ADDRS_SAFE_TO_USE} via $ROUTER_GW_IP
+
+    # Make sure we can reach the management port of the service VM, this
+    # configuration is only for testing purpose. In production, it's
+    # recommended to config the router in the cloud infrastructure for the
+    # communication between Trove control plane and service VMs.
+    INTERFACE=trove-mgmt
+    MGMT_PORT_ID=$(openstack port create --project ${trove_service_project_id} --security-group ${TROVE_MGMT_SECURITY_GROUP} --device-owner trove --network ${TROVE_MGMT_NETWORK_NAME} --host=$(hostname) -c id -f value ${INTERFACE}-port)
+    MGMT_PORT_MAC=$(openstack port show -c mac_address -f value $MGMT_PORT_ID)
+    MGMT_PORT_IP=$(openstack port show -f value -c fixed_ips $MGMT_PORT_ID)
+    MGMT_PORT_IP=${MGMT_PORT_IP//u\'/\'}
+    MGMT_PORT_IP=$(echo ${MGMT_PORT_IP//\'/\"} | jq -r '.[0].ip_address')
+    sudo ovs-vsctl -- --may-exist add-port ${OVS_BRIDGE:-br-int} $INTERFACE -- set Interface $INTERFACE type=internal -- set Interface $INTERFACE external-ids:iface-status=active -- set Interface $INTERFACE external-ids:attached-mac=$MGMT_PORT_MAC -- set Interface $INTERFACE external-ids:iface-id=$MGMT_PORT_ID -- set Interface $INTERFACE external-ids:skip_cleanup=true
+    sudo ip link set dev $INTERFACE address $MGMT_PORT_MAC
+    mask=$(echo ${TROVE_MGMT_SUBNET_RANGE} | awk -F'/' '{print $2}')
+    sudo ip addr add ${MGMT_PORT_IP}/${mask} dev $INTERFACE
+    sudo ip link set $INTERFACE up
+
+    echo "Neutron network list:"
+    openstack network list
+    echo "Neutron subnet list:"
+    openstack subnet list
+    echo "ip route:"
+    sudo ip route
+
+    # Now make sure the conf settings are right
+    iniset $TROVE_CONF DEFAULT network_label_regex ${PRIVATE_NETWORK_NAME}
+    iniset $TROVE_CONF DEFAULT ip_regex ""
+    iniset $TROVE_CONF DEFAULT black_list_regex ""
+    iniset $TROVE_CONF DEFAULT management_networks ${mgmt_net_id}
+    iniset $TROVE_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
+
+    # Restore xtrace setting
+    $XTRACE
 }
 
 function config_nova_keypair {
