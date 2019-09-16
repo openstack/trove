@@ -821,18 +821,31 @@ function cmd_test_init() {
 }
 
 function cmd_build_image() {
+    exclaim "Params for cmd_build_image function: $@"
+
     local IMAGE_DATASTORE_TYPE=${1:-'mysql'}
     local IMAGE_GUEST_OS=${2:-'ubuntu'}
     local IMAGE_GUEST_RELEASE=${3:-'xenial'}
     local DEV_MODE=${4:-'true'}
+    local guest_username=${5:-"ubuntu"}
+    local output=$6
 
-    exclaim "Ensuring we have all packages needed to build image."
+    if [[ -z "$output" ]]; then
+        image_name="trove-${IMAGE_GUEST_OS}-${IMAGE_GUEST_RELEASE}-${IMAGE_DATASTORE_TYPE}"
+        image_folder=$HOME/images
+        output="${image_folder}/${image_name}"
+    fi
+    # Always rebuild the image.
+    sudo rm -f $output
+    sudo mkdir -p $(dirname $output); sudo chmod 777 -R $(dirname $output)
+
+    echo "Ensuring we have all packages needed to build image."
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap
     sudo -H $HTTP_PROXY pip install diskimage-builder
 
     exclaim "Use diskimage-builder to actually build the Trove Guest Agent Image."
-    build_guest_image $IMAGE_DATASTORE_TYPE $IMAGE_GUEST_OS $IMAGE_GUEST_RELEASE $DEV_MODE
+    build_guest_image $IMAGE_DATASTORE_TYPE $IMAGE_GUEST_OS $IMAGE_GUEST_RELEASE $DEV_MODE ${guest_username} $output
 }
 
 function cmd_build_and_upload_image() {
@@ -856,7 +869,7 @@ function cmd_build_and_upload_image() {
       glance_imageid=$(openstack $CLOUD_ADMIN_ARG image list | grep "$datastore_type" | awk 'NR==1 {print}' | awk '{print $2}')
 
       if [[ -z $glance_imageid ]]; then
-          build_guest_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username}
+          cmd_build_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username}
 
           image_folder=$HOME/images
           qcow_image=`find $image_folder -name '*.qcow2'`
@@ -1276,7 +1289,7 @@ function cmd_gate_tests() {
 
     local DATASTORE_TYPE=${1:-'mysql'}
     local TEST_GROUP=${2:-${DATASTORE_TYPE}}
-    local HOST_SCP_USERNAME=${3:-$USER}
+    local HOST_SCP_USERNAME=${3:-$(whoami)}
     local GUEST_USERNAME=${4:-'ubuntu'}
     local CONTROLLER_IP=${5:-$ACTUAL_HOSTNAME}
     # We're not using devstack-gate in Zuul v3 job

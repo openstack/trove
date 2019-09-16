@@ -38,10 +38,23 @@ The trove guest agent image could be created by running the following command:
         ${datastore_type} \
         ${guest_os} \
         ${guest_os_release} \
-        ${dev_mode}
+        ${dev_mode} \
+        ${guest_username} \
+        ${imagepath}
 
 * Currently, only ``guest_os=ubuntu`` and ``guest_os_release=xenial`` are fully
   tested and supported.
+
+* Default input values:
+
+  .. code-block:: ini
+
+      datastore_type=mysql
+      guest_os=ubuntu
+      guest_os_release=xenial
+      dev_mode=true
+      guest_username=ubuntu
+      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}.qcow2
 
 * ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
   necessary to build the image on the trove controller host, because the host

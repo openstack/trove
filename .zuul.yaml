@@ -10,43 +10,42 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        # Non-voting until job is fixed, remove it if it works,
-        # it's part of openstack-cover-jobs template.
         - openstack-tox-cover:
             voting: false
+        - openstack-tox-pylint
+        - trove-tox-bandit-baseline:
+            voting: false
+        - trove-tox-fakemodetests
         - trove-functional-mysql
-        - trove-scenario-mariadb-single:
-            voting: false
-        - trove-scenario-mariadb-multi:
-            voting: false
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
         - trove-scenario-postgresql-single:
             voting: false
         - trove-scenario-postgresql-multi:
             voting: false
-        - trove-scenario-pxc-single:
+        - trove-scenario-mariadb-single:
             voting: false
-        - trove-scenario-pxc-multi:
+        - trove-scenario-mariadb-multi:
             voting: false
         - trove-scenario-redis-single:
             voting: false
         - trove-scenario-redis-multi:
             voting: false
-        - trove-tox-fakemodetests
-        - trove-tox-bandit-baseline:
+        - trove-tempest-ipv6-only:
             voting: false
-        - openstack-tox-pylint
-        - trove-tempest-ipv6-only
+    promote:
+      jobs:
+        - publish-trove-guest-image-mysql-ubuntu-xenial
     gate:
       queue: trove
       jobs:
+        - openstack-tox-pylint
+        - trove-tox-fakemodetests
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
-        - trove-tox-fakemodetests
-        - openstack-tox-pylint
-        - trove-tempest-ipv6-only
+        - trove-tempest-ipv6-only:
+            voting: false
     experimental:
       jobs:
         - trove-grenade
@@ -58,6 +57,8 @@
         - trove-scenario-mongodb-multi
         - trove-scenario-percona-single
         - trove-scenario-percona-multi
+        - trove-scenario-pxc-single
+        - trove-scenario-pxc-multi
 
 - job:
     name: trove-legacy-dsvm-base
@@ -341,3 +342,25 @@
       - ^trove/hacking/.*$
       - ^trove/tests/scenario/.*$
       - ^trove/tests/unittests/.*$
+
+- job:
+    name: publish-trove-guest-image
+    parent: publish-openstack-artifacts
+    run: playbooks/image-build/run.yaml
+    post-run: playbooks/image-build/post.yaml
+    required-projects:
+      - openstack/diskimage-builder
+      - openstack/trove
+      - openstack/tripleo-image-elements
+
+- job:
+    name: publish-trove-guest-image-mysql-ubuntu-xenial
+    parent: publish-trove-guest-image
+    description: |
+      Build and publish Ubuntu Xenial based Trove guest image to
+      tarballs.openstack.org.
+    vars:
+      datastore_type: mysql
+      guest_os: ubuntu
+      guest_os_release: xenial
+      guest_username: ubuntu

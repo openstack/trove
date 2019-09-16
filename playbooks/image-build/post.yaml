@@ -1,0 +1,12 @@
+- hosts: all
+  name: Copy image
+  tasks:
+    - synchronize:
+        src: "{{ ansible_user_dir }}/images"
+        dest: "{{ zuul.executor.work_root }}/artifacts/"
+        mode: pull
+        verify_host: true
+        rsync_opts:
+          - --include="trove-*.qcow2"
+          - --exclude=*
+          - --prune-empty-dirs
