@@ -44,8 +44,6 @@
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
-        - trove-tempest-ipv6-only:
-            voting: false
     experimental:
       jobs:
         - trove-grenade
