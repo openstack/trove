@@ -5,7 +5,7 @@ set -o xtrace
 
 [ -n "${RELEASE}" ] || die "RELEASE must be set to either trusty or xenial"
 
-apt-get --allow-unauthenticated -y install software-properties-common
+apt-get --allow-unauthenticated -y install software-properties-common python3-pip
 
 get_key_robust EA312927
 
