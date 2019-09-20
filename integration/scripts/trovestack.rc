@@ -50,8 +50,6 @@ PATH_OPENSTACKCLIENT=$DEST/python-openstackclient
 PATH_PYTHON_SWIFTCLIENT=$DEST/python-swiftclient
 PATH_PYTHON_TROVECLIENT=$DEST/python-troveclient
 PATH_TROVE_DASHBOARD=$DEST/trove-dashboard
-PATH_DISKIMAGEBUILDER_ELEMENTS=$(python -c 'import os, diskimage_builder, pkg_resources;print(os.path.abspath(pkg_resources.resource_filename(diskimage_builder.__name__, "elements")))')
-PATH_TRIPLEO_ELEMENTS=$DEST/tripleo-image-elements
 
 # Save the state of TROVE_BRANCH first, since it's used in trovestack
 TROVE_BRANCH_ORIG=${TROVE_BRANCH}
@@ -91,7 +89,6 @@ SERVICE_PASSWORD=${SERVICE_PASSWORD:-"secretservice"}
 
 # Swift hash used by devstack.
 SWIFT_HASH=12go358snjw24501
-
 # Swift Disk Image
 SWIFT_DATA_DIR=${DATA_DIR}/swift
 SWIFT_DISK_IMAGE=${SWIFT_DATA_DIR}/drives/images/swift.img

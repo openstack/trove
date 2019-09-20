@@ -5,13 +5,13 @@
         path: '{{ ansible_user_dir }}/images'
         state: directory
     - name: Build Trove guest image
-      shell: >
-        ./trovestack build-image
-          {{ datastore_type }}
-          {{ guest_os }}
-          {{ guest_os_release }}
-          false
-          {{ guest_username }}
+      shell: >-
+        ./trovestack build-image \
+          {{ datastore_type }} \
+          {{ guest_os }} \
+          {{ guest_os_release }} \
+          false \
+          {{ guest_username }} \
           {{ ansible_user_dir }}/images/trove-{{ zuul.branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}.qcow2
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/integration/scripts"
