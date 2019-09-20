@@ -33,9 +33,6 @@
             voting: false
         - trove-tempest-ipv6-only:
             voting: false
-    promote:
-      jobs:
-        - publish-trove-guest-image-mysql-ubuntu-xenial
     gate:
       queue: trove
       jobs:
@@ -57,6 +54,11 @@
         - trove-scenario-percona-multi
         - trove-scenario-pxc-single
         - trove-scenario-pxc-multi
+    periodic:
+      jobs:
+        - publish-trove-guest-image-mysql-ubuntu-xenial:
+            branches:
+              - master
 
 - job:
     name: trove-legacy-dsvm-base
