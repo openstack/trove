@@ -54,7 +54,7 @@ The trove guest agent image could be created by running the following command:
       guest_os_release=xenial
       dev_mode=true
       guest_username=ubuntu
-      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}.qcow2
+      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}
 
 * ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
   necessary to build the image on the trove controller host, because the host

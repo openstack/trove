@@ -12,7 +12,7 @@
           {{ guest_os_release }} \
           false \
           {{ guest_username }} \
-          {{ ansible_user_dir }}/images/trove-{{ zuul.branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}.qcow2
+          {{ ansible_user_dir }}/images/trove-{{ zuul.branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/integration/scripts"
       tags:
