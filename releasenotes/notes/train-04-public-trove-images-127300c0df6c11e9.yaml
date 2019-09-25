@@ -1,0 +1,4 @@
+---
+features:
+  - Trove now publishes images of some specific databases on
+    http://tarballs.openstack.org/trove/images/ for testing purpose.
