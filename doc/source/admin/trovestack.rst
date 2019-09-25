@@ -30,6 +30,12 @@ Before running ``trovestack`` command, go to the scripts folder:
 Build guest agent image
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+.. note::
+
+    For testing purpose, the Trove guest images of some specific databases are
+    periodically built and published in
+    http://tarballs.openstack.org/trove/images/.
+
 The trove guest agent image could be created by running the following command:
 
 .. code-block:: console
