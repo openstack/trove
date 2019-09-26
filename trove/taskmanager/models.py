@@ -774,8 +774,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         """
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         status = service.get_status()
-        LOG.debug("Service status of instance %(instance)s is %(status)s",
-                  {"instance": self.id, "status": status})
         if (status == rd_instance.ServiceStatuses.RUNNING or
            status == rd_instance.ServiceStatuses.INSTANCE_READY):
                 return True
@@ -788,7 +786,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         c_id = self.db_info.compute_instance_id
         server = self.nova_client.servers.get(c_id)
         server_status = server.status
-        LOG.debug("Server status of instance %s is %s", self.id, server_status)
         if server_status in [InstanceStatus.ERROR,
                              InstanceStatus.FAILED]:
             server_fault_message = 'No fault found'
