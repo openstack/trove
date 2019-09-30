@@ -7,6 +7,4 @@
         mode: pull
         verify_host: true
         rsync_opts:
-          - --include="trove-*.qcow2"
-          - --exclude=*
-          - --prune-empty-dirs
+          - "--exclude=/*/*/"
