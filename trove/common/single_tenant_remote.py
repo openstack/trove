@@ -13,50 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cinderclient.v2 import client as CinderClient
+from keystoneauth1 import loading
+from keystoneauth1 import session
+from neutronclient.v2_0 import client as NeutronClient
+from novaclient.client import Client as NovaClient
+import swiftclient
 
 from trove.common import cfg
 from trove.common.remote import normalize_url
 
-from keystoneauth1 import loading
-from keystoneauth1 import session
-
-from cinderclient.v2 import client as CinderClient
-from neutronclient.v2_0 import client as NeutronClient
-from novaclient.client import Client as NovaClient
-
 CONF = cfg.CONF
-
 _SESSION = None
-
-
-"""
-trove.conf
-...
-
-The following should be set in the trove CONF file for this
-single_tenant_remote config to work correctly.
-
-nova_proxy_admin_user =
-nova_proxy_admin_pass =
-nova_proxy_admin_tenant_name =
-nova_proxy_admin_tenant_id =
-nova_proxy_admin_user_domain_name =
-nova_proxy_admin_project_domain_name =
-trove_auth_url =
-nova_compute_service_type =
-nova_compute_url =
-cinder_service_type =
-os_region_name =
-
-remote_nova_client = \
- trove.common.single_tenant_remote.nova_client_trove_admin
-remote_cinder_client = \
- trove.common.single_tenant_remote.cinder_client_trove_admin
-remote_neutron_client = \
- trove.common.single_tenant_remote.neutron_client_trove_admin
-...
-
-"""
 
 
 def get_keystone_session():
@@ -141,5 +109,20 @@ def neutron_client_trove_admin(context, region_name=None):
 
     if CONF.neutron_url:
         client.management_url = CONF.neutron_url
+
+    return client
+
+
+def swift_client_trove_admin(context, region_name=None):
+    ks_session = get_keystone_session()
+    client = swiftclient.Connection(
+        session=ks_session,
+        insecure=CONF.swift_api_insecure,
+        os_options={
+            'region_name': region_name or CONF.os_region_name,
+            'service_type': CONF.swift_service_type,
+            'endpoint_type': CONF.swift_endpoint_type
+        }
+    )
 
     return client

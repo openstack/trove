@@ -45,7 +45,7 @@ class MgmtDataStoreVersion(object):
         self.images = []
         if test_config.glance_client is not None:
             glance_user = test_config.users.find_user(
-                Requirements(services=["glance"]))
+                Requirements(is_admin=True, services=["glance"]))
             self.glance_client = create_glance_client(glance_user)
             images = self.glance_client.images.list()
             for image in images:
