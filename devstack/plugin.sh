@@ -200,7 +200,7 @@ function configure_trove {
     cp $TROVE_LOCAL_API_PASTE_INI $TROVE_API_PASTE_INI
 
     # (Re)create trove conf files
-    rm -f $TROVE_CONF
+    rm -f $TROVE_CONF $TROVE_GUESTAGENT_CONF
 
     TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
 
@@ -238,6 +238,7 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_swift_client trove.common.single_tenant_remote.swift_client_trove_admin
 
     iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
     iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
@@ -271,6 +272,16 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_dir /var/log/trove/
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_file trove-guestagent.log
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_user trove
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_tenant_name $SERVICE_PROJECT_NAME
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_pass $SERVICE_PASSWORD
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_user_domain_name default
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_project_domain_name default
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT os_region_name $REGION_NAME
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_swift_client trove.common.single_tenant_remote.swift_client_trove_admin
     setup_trove_logging $TROVE_GUESTAGENT_CONF
 
     # To avoid 'Connection timed out' error of sudo command inside the guest agent
