@@ -17,9 +17,9 @@
 
 
 from novaclient import exceptions as nova_exceptions
+from trove.common.clients import create_nova_client
 from trove.common import exception
 from trove.common.models import NovaRemoteModelBase
-from trove.common.remote import create_nova_client
 
 
 class Flavor(object):

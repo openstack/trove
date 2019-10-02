@@ -1083,10 +1083,11 @@ class TestInstanceListing(object):
         assert_equal(200, self.other_client.last_http_code)
         admin_ids = [instance.id for instance in dbaas.instances.list()]
         assert_equal(200, dbaas.last_http_code)
-        assert_equal(len(daffy_ids), 0)
+
         assert_not_equal(sorted(admin_ids), sorted(daffy_ids))
         assert_raises(exceptions.NotFound,
                       self.other_client.instances.get, instance_info.id)
+
         for id in admin_ids:
             assert_equal(daffy_ids.count(id), 0)
 

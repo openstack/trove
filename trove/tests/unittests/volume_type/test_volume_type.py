@@ -16,7 +16,7 @@
 
 import mock
 
-from trove.common import remote
+from trove.common import clients
 from trove.tests.unittests import trove_testtools
 from trove.volume_type import models
 
@@ -38,7 +38,7 @@ class TestVolumeType(trove_testtools.TestCase):
         self.assertEqual(cinder_volume_type.description,
                          volume_type.description)
 
-    @mock.patch.object(remote, 'create_cinder_client')
+    @mock.patch.object(clients, 'create_cinder_client')
     def test_volume_types(self, mock_client):
         mock_context = mock.MagicMock()
         mock_types = [mock.MagicMock(), mock.MagicMock()]

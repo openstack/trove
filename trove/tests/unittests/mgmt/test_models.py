@@ -23,9 +23,9 @@ from oslo_config import cfg
 from testtools.matchers import Equals, Is, Not
 
 from trove.backup.models import Backup
+from trove.common import clients
 from trove.common import exception
 from trove.common import instance as rd_instance
-from trove.common import remote
 from trove.datastore import models as datastore_models
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.guestagent.api import API
@@ -76,7 +76,7 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
         self.flavor_mgr = MagicMock(spec=FlavorManager)
         self.client.flavors = self.flavor_mgr
         self.admin_client_patch = patch.object(
-            remote, 'create_admin_nova_client', return_value=self.client)
+            clients, 'create_admin_nova_client', return_value=self.client)
         self.addCleanup(self.admin_client_patch.stop)
         self.admin_client_patch.start()
         CONF.set_override('host', '127.0.0.1')

@@ -14,8 +14,8 @@
 
 import mock
 
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.datastore import models as datastore_models
 from trove.tests.unittests.datastore.base import TestDatastoreBase
 
@@ -150,7 +150,7 @@ class TestDatastoreVersionMetadata(TestDatastoreBase):
                        '_datastore_version_find')
     @mock.patch.object(datastore_models.DatastoreVersionMetadata,
                        'list_datastore_version_volume_type_associations')
-    @mock.patch.object(remote, 'create_cinder_client')
+    @mock.patch.object(clients, 'create_cinder_client')
     def _mocked_allowed_datastore_version_volume_types(self,
                                                        trove_volume_types,
                                                        mock_cinder_client,

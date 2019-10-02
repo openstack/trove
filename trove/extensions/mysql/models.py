@@ -18,10 +18,10 @@ Model classes that extend the instances functionality for MySQL instances.
 """
 
 from trove.common import cfg
+from trove.common.clients import create_guest_client
 from trove.common.db.mysql import models as guest_models
 from trove.common import exception
 from trove.common.notification import StartNotification
-from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.extensions.common.models import load_and_verify
 from trove.extensions.common.models import RootHistory

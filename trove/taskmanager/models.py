@@ -32,6 +32,10 @@ from trove.cluster.models import Cluster
 from trove.cluster.models import DBCluster
 from trove.cluster import tasks
 from trove.common import cfg
+from trove.common import clients
+from trove.common.clients import create_cinder_client
+from trove.common.clients import create_dns_client
+from trove.common.clients import create_guest_client
 from trove.common import crypto_utils as cu
 from trove.common import exception
 from trove.common.exception import BackupCreationError
@@ -53,10 +57,6 @@ from trove.common.notification import (
     TroveInstanceCreate,
     TroveInstanceModifyVolume,
     TroveInstanceModifyFlavor)
-import trove.common.remote as remote
-from trove.common.remote import create_cinder_client
-from trove.common.remote import create_dns_client
-from trove.common.remote import create_guest_client
 from trove.common.strategies.cluster import strategy
 from trove.common import template
 from trove.common import timeutils
@@ -424,6 +424,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         error_message = ''
         error_details = ''
         try:
+            LOG.info("Waiting for instance %s up and running", self.id)
             utils.poll_until(self._service_is_active,
                              sleep_time=CONF.usage_sleep_time,
                              time_out=timeout)
@@ -1417,7 +1418,7 @@ class BackupTasks(object):
     @classmethod
     def delete_files_from_swift(cls, context, filename):
         container = CONF.backup_swift_container
-        client = remote.create_swift_client(context)
+        client = clients.create_swift_client(context)
         obj = client.head_object(container, filename)
         if 'x-static-large-object' in obj:
             # Static large object

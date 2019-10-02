@@ -21,9 +21,9 @@ from swiftclient.client import ClientException
 
 from trove.backup.state import BackupState
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.remote import create_swift_client
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
@@ -285,7 +285,7 @@ class Backup(object):
     @classmethod
     def verify_swift_auth_token(cls, context):
         try:
-            client = create_swift_client(context)
+            client = clients.create_swift_client(context)
             client.get_account()
         except ClientException:
             raise exception.SwiftAuthError(tenant_id=context.project_id)
@@ -348,7 +348,7 @@ class DBBackup(DatabaseModelBase):
             parts = self.location.split('/')
             obj = parts[-1]
             container = parts[-2]
-            client = create_swift_client(context)
+            client = clients.create_swift_client(context)
             LOG.debug("Checking if backup exists in %s", self.location)
             resp = client.head_object(container, obj)
             if verify_checksum:

@@ -20,13 +20,13 @@ from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 import trove.common.apischema as apischema
 from trove.common import cfg
+from trove.common.clients import create_guest_client
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import pagination
 from trove.common import policy
-from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
@@ -362,7 +362,9 @@ class InstanceController(wsgi.Controller):
                     'master.')
                 raise exception.BadRequest(message=dupe_locality_msg)
 
-        region_name = body['instance'].get('region_name', CONF.os_region_name)
+        region_name = body['instance'].get(
+            'region_name', CONF.service_credentials.region_name
+        )
         access = body['instance'].get('access', None)
 
         instance = models.Instance.create(context, name, flavor_id,

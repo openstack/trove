@@ -20,11 +20,11 @@ from trove.cluster import models
 from trove.cluster.tasks import ClusterTasks
 from trove.cluster.views import ClusterView
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.notification import DBaaSClusterGrow
 from trove.common.notification import StartNotification
-from trove.common import remote
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import base
 from trove.common import utils
@@ -637,7 +637,7 @@ class MongoDbCluster(models.Cluster):
         if len(set(flavor_ids)) != 1:
             raise exception.ClusterFlavorsNotEqual()
         flavor_id = flavor_ids[0]
-        nova_client = remote.create_nova_client(context)
+        nova_client = clients.create_nova_client(context)
         try:
             flavor = nova_client.flavors.get(flavor_id)
         except nova_exceptions.NotFound:

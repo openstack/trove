@@ -18,7 +18,7 @@ import six
 
 from oslo_log import log as logging
 
-from trove.common.remote import create_nova_client
+from trove.common.clients import create_nova_client
 
 
 LOG = logging.getLogger(__name__)

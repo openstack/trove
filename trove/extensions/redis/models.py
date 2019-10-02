@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-from trove.common.remote import create_guest_client
+from trove.common.clients import create_guest_client
 from trove.extensions.common.models import load_and_verify
 from trove.extensions.common.models import Root
 

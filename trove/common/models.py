@@ -18,8 +18,8 @@
 from oslo_utils.importutils import import_class
 
 from trove.common import cfg
+from trove.common import clients
 from trove.common.i18n import _
-from trove.common import remote
 
 CONF = cfg.CONF
 
@@ -114,18 +114,18 @@ class NovaRemoteModelBase(RemoteModelBase):
 
     @classmethod
     def get_client(cls, context, region_name):
-        return remote.create_nova_client(context, region_name)
+        return clients.create_nova_client(context, region_name)
 
 
 class SwiftRemoteModelBase(RemoteModelBase):
 
     @classmethod
     def get_client(cls, context, region_name):
-        return remote.create_swift_client(context, region_name)
+        return clients.create_swift_client(context, region_name)
 
 
 class CinderRemoteModelBase(RemoteModelBase):
 
     @classmethod
     def get_client(cls, context):
-        return remote.create_cinder_client(context)
+        return clients.create_cinder_client(context)

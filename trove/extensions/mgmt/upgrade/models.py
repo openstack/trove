@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.common.remote import guest_client
+from trove.common.clients import guest_client
 
 
 class UpgradeMessageSender(object):

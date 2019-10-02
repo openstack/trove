@@ -68,8 +68,6 @@ common_opts = [
                 help='Set the service and instance task statuses to ERROR '
                      'when an instance fails to become active within the '
                      'configured usage_timeout.'),
-    cfg.StrOpt('os_region_name', default='RegionOne',
-               help='Region name of this node. Used when searching catalog.'),
     cfg.URIOpt('nova_compute_url', help='URL without the tenant segment.'),
     cfg.StrOpt('nova_compute_service_type', default='compute',
                help='Service type to use when searching catalog.'),
@@ -111,8 +109,6 @@ common_opts = [
                help='Service type to use when searching catalog.'),
     cfg.StrOpt('glance_endpoint_type', default='publicURL',
                help='Service endpoint type to use when searching catalog.'),
-    cfg.URIOpt('trove_auth_url', default='http://0.0.0.0/identity/v2.0',
-               help='Trove authentication URL.'),
     cfg.StrOpt('trove_url', help='URL without the tenant segment.'),
     cfg.StrOpt('trove_service_type', default='database',
                help='Service type to use when searching catalog.'),
@@ -332,28 +328,28 @@ common_opts = [
                help='Maximum size (in bytes) of each segment of the backup '
                'file.'),
     cfg.StrOpt('remote_dns_client',
-               default='trove.common.remote.dns_client',
+               default='trove.common.clients.dns_client',
                help='Client to send DNS calls to.'),
     cfg.StrOpt('remote_guest_client',
-               default='trove.common.remote.guest_client',
+               default='trove.common.clients.guest_client',
                help='Client to send Guest Agent calls to.'),
     cfg.StrOpt('remote_nova_client',
-               default='trove.common.remote.nova_client',
+               default='trove.common.clients.nova_client',
                help='Client to send Nova calls to.'),
     cfg.StrOpt('remote_neutron_client',
-               default='trove.common.remote.neutron_client',
+               default='trove.common.clients.neutron_client',
                help='Client to send Neutron calls to.'),
     cfg.StrOpt('remote_cinder_client',
-               default='trove.common.remote.cinder_client',
+               default='trove.common.clients.cinder_client',
                help='Client to send Cinder calls to.'),
     cfg.StrOpt('remote_swift_client',
-               default='trove.common.remote.swift_client',
+               default='trove.common.clients.swift_client',
                help='Client to send Swift calls to.'),
     cfg.StrOpt('remote_trove_client',
                default='trove.common.trove_remote.trove_client',
                help='Client to send Trove calls to.'),
     cfg.StrOpt('remote_glance_client',
-               default='trove.common.glance_remote.glance_client',
+               default='trove.common.clients.glance_client',
                help='Client to send Glance calls to.'),
     cfg.StrOpt('exists_notification_transformer',
                help='Transformer for exists notifications.'),
@@ -375,19 +371,6 @@ common_opts = [
                          'db2': 'e040cd37-263d-4869-aaa6-c62aa97523b5',
                          'mariadb': '7a4f82cc-10d2-4bc6-aadc-d9aacc2a3cb5'},
                 help='Unique ID to tag notification events.'),
-    cfg.StrOpt('nova_proxy_admin_user', default='',
-               help="Admin username used to connect to Nova.", secret=True),
-    cfg.StrOpt('nova_proxy_admin_pass', default='',
-               help="Admin password used to connect to Nova.", secret=True),
-    cfg.StrOpt('nova_proxy_admin_tenant_id', default='',
-               help="Admin tenant ID used to connect to Nova.", secret=True),
-    cfg.StrOpt('nova_proxy_admin_tenant_name', default='',
-               help="Admin tenant name used to connect to Nova.", secret=True),
-    cfg.StrOpt('nova_proxy_admin_user_domain_name', default='Default',
-               help="User domain of the admin user used to connect to Nova."),
-    cfg.StrOpt('nova_proxy_admin_project_domain_name', default='Default',
-               help="Project domain of the admin user used to connect to "
-                    "Nova."),
     cfg.StrOpt('network_label_regex', default='^private$',
                help='Regular expression to match Trove network labels.'),
     cfg.StrOpt('ip_regex', default=None,
@@ -1572,6 +1555,45 @@ network_opts = [
     )
 ]
 
+service_credentials_group = cfg.OptGroup(
+    'service_credentials',
+    help="Options related to Trove service credentials."
+)
+service_credentials_opts = [
+    cfg.URIOpt('auth_url', default='https://0.0.0.0/identity/v3',
+               deprecated_name='trove_auth_url',
+               deprecated_group='DEFAULT',
+               help='Keystone authentication URL.'),
+    cfg.StrOpt('username', default='',
+               help="Trove service user name.",
+               deprecated_name='nova_proxy_admin_user',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('password', default='', secret=True,
+               help="Trove service user password.",
+               deprecated_name='nova_proxy_admin_pass',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('project_id', default='',
+               deprecated_name='nova_proxy_admin_tenant_id',
+               deprecated_group='DEFAULT',
+               help="Trove service project ID."),
+    cfg.StrOpt('project_name', default='',
+               deprecated_name='nova_proxy_admin_tenant_name',
+               deprecated_group='DEFAULT',
+               help="Trove service project name."),
+    cfg.StrOpt('user_domain_name', default='Default',
+               deprecated_name='nova_proxy_admin_user_domain_name',
+               deprecated_group='DEFAULT',
+               help="Keystone domain name of the Trove service user."),
+    cfg.StrOpt('project_domain_name', default='Default',
+               deprecated_name='nova_proxy_admin_project_domain_name',
+               deprecated_group='DEFAULT',
+               help="Keystone domain name of the Trove service project."),
+    cfg.StrOpt('region_name', default='RegionOne',
+               deprecated_name='os_region_name',
+               deprecated_group='DEFAULT',
+               help="Keystone region name of the Trove service project."),
+]
+
 CONF = cfg.CONF
 
 CONF.register_opts(path_opts)
@@ -1593,6 +1615,7 @@ CONF.register_group(vertica_group)
 CONF.register_group(db2_group)
 CONF.register_group(mariadb_group)
 CONF.register_group(network_group)
+CONF.register_group(service_credentials_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
@@ -1607,6 +1630,7 @@ CONF.register_opts(vertica_opts, vertica_group)
 CONF.register_opts(db2_opts, db2_group)
 CONF.register_opts(mariadb_opts, mariadb_group)
 CONF.register_opts(network_opts, network_group)
+CONF.register_opts(service_credentials_opts, service_credentials_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
 

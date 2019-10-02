@@ -18,8 +18,8 @@ from oslo_log import log as logging
 
 from trove.common import apischema
 from trove.common.auth import admin_context
+from trove.common import clients
 from trove.common import exception
-from trove.common import glance_remote
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models
@@ -52,7 +52,7 @@ class DatastoreVersionController(wsgi.Controller):
                  {'tenant': tenant_id, 'version': version_name,
                   'datastore': datastore_name})
 
-        client = glance_remote.create_glance_client(context)
+        client = clients.create_glance_client(context)
         try:
             client.images.get(image_id)
         except glance_exceptions.HTTPNotFound:
@@ -118,7 +118,7 @@ class DatastoreVersionController(wsgi.Controller):
         if type(packages) is list:
             packages = ','.join(packages)
 
-        client = glance_remote.create_glance_client(context)
+        client = clients.create_glance_client(context)
         try:
             client.images.get(image_id)
         except glance_exceptions.HTTPNotFound:

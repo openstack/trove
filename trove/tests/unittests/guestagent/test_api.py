@@ -17,9 +17,9 @@ import oslo_messaging as messaging
 from oslo_messaging.rpc.client import RemoteError
 from testtools.matchers import Is
 
+from trove.common.clients import guest_client
 import trove.common.context as context
 from trove.common import exception
-from trove.common.remote import guest_client
 from trove.guestagent import api
 from trove import rpc
 from trove.tests.unittests import trove_testtools

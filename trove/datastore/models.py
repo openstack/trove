@@ -18,9 +18,9 @@
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common.clients import create_nova_client
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.remote import create_nova_client
 from trove.common import timeutils
 from trove.common import utils
 from trove.db import get_db_api
