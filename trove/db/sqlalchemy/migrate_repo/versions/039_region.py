@@ -32,4 +32,5 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
     instances = Table('instances', meta, autoload=True)
     instances.create_column(Column('region_id', String(255)))
-    instances.update().values(region_id=CONF.os_region_name).execute()
+    instances.update().values(
+        region_id=CONF.service_credentials.region_name).execute()

@@ -168,9 +168,9 @@ Options in trove.conf
         nova_proxy_admin_tenant_id = f472127c03f6410899225e26a3c1d22c
         nova_proxy_admin_user_domain_name = default
         nova_proxy_admin_project_domain_name = default
-        remote_nova_client = trove.common.single_tenant_remote.nova_client_trove_admin
-        remote_cinder_client = trove.common.single_tenant_remote.cinder_client_trove_admin
-        remote_neutron_client = trove.common.single_tenant_remote.neutron_client_trove_admin
+        remote_nova_client = trove.common.clients_admin.nova_client_trove_admin
+        remote_cinder_client = trove.common.clients_admin.cinder_client_trove_admin
+        remote_neutron_client = trove.common.clients_admin.neutron_client_trove_admin
         os_region_name = RegionOne
 
 #.  Management config options.

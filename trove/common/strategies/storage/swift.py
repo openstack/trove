@@ -21,8 +21,8 @@ from oslo_log import log as logging
 import six
 
 from trove.common import cfg
+from trove.common.clients import create_swift_client
 from trove.common.i18n import _
-from trove.common.remote import create_swift_client
 from trove.common.strategies.storage import base
 
 LOG = logging.getLogger(__name__)

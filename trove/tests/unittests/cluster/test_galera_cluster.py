@@ -21,8 +21,8 @@ from novaclient import exceptions as nova_exceptions
 from trove.cluster.models import Cluster
 from trove.cluster.models import ClusterTasks
 from trove.cluster.models import DBCluster
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.common.strategies.cluster.experimental.galera_common import (
     api as galera_api)
 from trove.common.strategies.cluster.experimental.galera_common import (
@@ -85,7 +85,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           [], {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_flavor_not_specified(self, mock_client):
         instances = self.instances
         instances[0]['flavor_id'] = None
@@ -97,7 +97,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_invalid_flavor_specified(self,
                                              mock_client):
         instances = [{'flavor_id': '1234'},
@@ -116,7 +116,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_volume_no_specified(self,
                                         mock_client):
         instances = self.instances
@@ -131,7 +131,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     @patch.object(galera_api, 'CONF')
     def test_create_storage_specified_with_no_volume_support(self,
                                                              mock_conf,
@@ -150,7 +150,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     @patch.object(galera_api, 'CONF')
     def test_create_storage_not_specified_and_no_ephemeral_flavor(self,
                                                                   mock_conf,
@@ -181,7 +181,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_volume_not_equal(self, mock_client):
         instances = self.instances
         instances[0]['volume_size'] = 2
@@ -200,8 +200,8 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(DBCluster, 'create')
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
-    @patch.object(remote, 'create_nova_client')
-    @patch.object(remote, 'create_neutron_client')
+    @patch.object(clients, 'create_nova_client')
+    @patch.object(clients, 'create_neutron_client')
     def test_create(self, mock_neutron_client, mock_nova_client,
                     mock_check_quotas, mock_task_api, mock_db_create,
                     mock_ins_create, mock_find_all):
@@ -223,7 +223,7 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(DBCluster, 'create')
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_over_limit(self, mock_client, mock_check_quotas,
                                mock_task_api, mock_db_create, mock_ins_create):
         instances = [{'volume_size': 1, 'flavor_id': '1234'},
@@ -247,7 +247,7 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(DBCluster, 'create')
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_with_ephemeral_flavor(self, mock_client, mock_check_quotas,
                                           mock_task_api, mock_db_create,
                                           mock_ins_create, mock_conf,
@@ -312,8 +312,8 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(inst_models.Instance, 'create')
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
-    @patch.object(remote, 'create_nova_client')
-    @patch.object(remote, 'create_neutron_client')
+    @patch.object(clients, 'create_nova_client')
+    @patch.object(clients, 'create_neutron_client')
     def test_grow(self, mock_neutron_client, mock_nova_client,
                   mock_check_quotas, mock_task_api,
                   mock_inst_create, mock_conf, mock_update):
@@ -331,8 +331,8 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(galera_api, 'CONF')
     @patch.object(inst_models.Instance, 'create')
     @patch.object(QUOTAS, 'check_quotas')
-    @patch.object(remote, 'create_nova_client')
-    @patch.object(remote, 'create_neutron_client')
+    @patch.object(clients, 'create_nova_client')
+    @patch.object(clients, 'create_neutron_client')
     def test_grow_exception(self, mock_neutron_client, mock_nova_client,
                             mock_check_quotas, mock_inst_create,
                             mock_conf, mock_update):

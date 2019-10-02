@@ -17,9 +17,9 @@
 """Model classes that form the core of volume-support functionality"""
 
 from cinderclient import exceptions as cinder_exception
+from trove.common import clients
 from trove.common import exception as trove_exception
 from trove.common import models
-from trove.common import remote
 
 
 class VolumeType(object):
@@ -36,7 +36,7 @@ class VolumeType(object):
             raise trove_exception.InvalidModelError(
                 "client or context must be provided to load a volume_type")
         if not client:
-            client = remote.create_cinder_client(context)
+            client = clients.create_cinder_client(context)
         try:
             volume_type = client.volume_types.get(volume_type_id)
         except cinder_exception.NotFound:
@@ -65,7 +65,8 @@ class VolumeType(object):
 class VolumeTypes(models.CinderRemoteModelBase):
 
     def __init__(self, context):
-        volume_types = remote.create_cinder_client(context).volume_types.list()
+        volume_types = clients.create_cinder_client(
+            context).volume_types.list()
         self.volume_types = [VolumeType(volume_type=item)
                              for item in volume_types]
 

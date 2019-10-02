@@ -24,14 +24,14 @@ from mock import PropertyMock
 from neutronclient.common import exceptions as neutron_exceptions
 
 from trove.cluster import models
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.tests.unittests import trove_testtools
 
 
 class TestModels(trove_testtools.TestCase):
 
-    @patch.object(remote, 'create_nova_client', return_value=MagicMock())
+    @patch.object(clients, 'create_nova_client', return_value=MagicMock())
     def test_validate_instance_flavors(self, create_nova_cli_mock):
         patch.object(
             create_nova_cli_mock.return_value, 'flavors',
@@ -173,7 +173,7 @@ class TestModels(trove_testtools.TestCase):
         assert_same_instance_volumes.assert_called_once_with(
             test_instances, required_size=required_volume_size)
 
-    @patch.object(remote, 'create_neutron_client', return_value=MagicMock())
+    @patch.object(clients, 'create_neutron_client', return_value=MagicMock())
     def test_validate_instance_nics(self, create_neutron_cli_mock):
 
         test_instances = [

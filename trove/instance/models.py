@@ -28,18 +28,18 @@ from sqlalchemy import func
 
 from trove.backup.models import Backup
 from trove.common import cfg
+from trove.common.clients import create_cinder_client
+from trove.common.clients import create_dns_client
+from trove.common.clients import create_glance_client
+from trove.common.clients import create_guest_client
+from trove.common.clients import create_neutron_client
+from trove.common.clients import create_nova_client
 from trove.common import crypto_utils as cu
 from trove.common import exception
-from trove.common.glance_remote import create_glance_client
 from trove.common.i18n import _
 from trove.common import instance as tr_instance
 from trove.common import neutron
 from trove.common import notification
-from trove.common.remote import create_cinder_client
-from trove.common.remote import create_dns_client
-from trove.common.remote import create_guest_client
-from trove.common.remote import create_neutron_client
-from trove.common.remote import create_nova_client
 from trove.common import server_group as srv_grp
 from trove.common import template
 from trove.common import timeutils
@@ -858,8 +858,6 @@ class BaseInstance(SimpleInstance):
         return self._neutron_client
 
     def reset_task_status(self):
-        LOG.info("Resetting task status to NONE on instance %s.",
-                 self.id)
         self.update_db(task_status=InstanceTasks.NONE)
 
     @property
@@ -958,7 +956,9 @@ class Instance(BuiltInstance):
                 raise exception.TroveError(
                     "Flavors differ between regions"
                     " %(local)s and %(remote)s." %
-                    {'local': CONF.os_region_name, 'remote': region_name})
+                    {'local': CONF.service_credentials.region_name,
+                     'remote': region_name}
+                )
         except nova_exceptions.NotFound:
             raise exception.TroveError(
                 "Flavors %(flavor)s not found in region %(remote)s."
@@ -973,7 +973,9 @@ class Instance(BuiltInstance):
                 raise exception.TroveError(
                     "Datastore versions differ between regions "
                     "%(local)s and %(remote)s." %
-                    {'local': CONF.os_region_name, 'remote': region_name})
+                    {'local': CONF.service_credentials.region_name,
+                     'remote': region_name}
+                )
         except exception.NotFound:
             raise exception.TroveError(
                 "Datastore Version %(dsv)s not found in region %(remote)s."
@@ -989,7 +991,8 @@ class Instance(BuiltInstance):
             raise exception.TroveError(
                 "Images for Datastore %(ds)s do not match "
                 "between regions %(local)s and %(remote)s." %
-                {'ds': datastore.name, 'local': CONF.os_region_name,
+                {'ds': datastore.name,
+                 'local': CONF.service_credentials.region_name,
                  'remote': region_name})
 
     @classmethod
@@ -1000,7 +1003,7 @@ class Instance(BuiltInstance):
                replica_count=None, volume_type=None, modules=None,
                locality=None, region_name=None, access=None):
 
-        region_name = region_name or CONF.os_region_name
+        region_name = region_name or CONF.service_credentials.region_name
 
         call_args = {
             'name': name,
@@ -1036,7 +1039,7 @@ class Instance(BuiltInstance):
 
         # If a different region is specified for the instance, ensure
         # that the flavor and image are the same in both regions
-        if region_name and region_name != CONF.os_region_name:
+        if region_name and region_name != CONF.service_credentials.region_name:
             cls._validate_remote_datastore(context, region_name, flavor,
                                            datastore, datastore_version)
 
@@ -1695,8 +1698,8 @@ class Instances(object):
                     db.addresses = {}
                 else:
                     try:
-                        if (not db.region_id
-                                or db.region_id == CONF.os_region_name):
+                        region = CONF.service_credentials.region_name
+                        if (not db.region_id or db.region_id == region):
                             server = find_server(db.id, db.compute_instance_id)
                         else:
                             nova_client = create_nova_client(

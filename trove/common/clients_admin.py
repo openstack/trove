@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from cinderclient.v2 import client as CinderClient
+import glanceclient
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from neutronclient.v2_0 import client as NeutronClient
@@ -21,24 +22,25 @@ from novaclient.client import Client as NovaClient
 import swiftclient
 
 from trove.common import cfg
-from trove.common.remote import normalize_url
+from trove.common.clients import normalize_url
 
 CONF = cfg.CONF
 _SESSION = None
 
 
 def get_keystone_session():
+    """Get trove service credential auth session."""
     global _SESSION
 
     if not _SESSION:
         loader = loading.get_plugin_loader('password')
         auth = loader.load_from_options(
-            username=CONF.nova_proxy_admin_user,
-            password=CONF.nova_proxy_admin_pass,
-            project_name=CONF.nova_proxy_admin_tenant_name,
-            user_domain_name=CONF.nova_proxy_admin_user_domain_name,
-            project_domain_name=CONF.nova_proxy_admin_project_domain_name,
-            auth_url=CONF.trove_auth_url)
+            username=CONF.service_credentials.username,
+            password=CONF.service_credentials.password,
+            project_name=CONF.service_credentials.project_name,
+            user_domain_name=CONF.service_credentials.user_domain_name,
+            project_domain_name=CONF.service_credentials.project_domain_name,
+            auth_url=CONF.service_credentials.auth_url)
         _SESSION = session.Session(auth=auth)
 
     return _SESSION
@@ -58,14 +60,14 @@ def nova_client_trove_admin(context, region_name=None, password=None):
         CONF.nova_client_version,
         session=ks_session,
         service_type=CONF.nova_compute_service_type,
-        region_name=region_name or CONF.os_region_name,
+        region_name=region_name or CONF.service_credentials.region_name,
         insecure=CONF.nova_api_insecure,
         endpoint_type=CONF.nova_compute_endpoint_type)
 
-    if CONF.nova_compute_url and CONF.nova_proxy_admin_tenant_id:
+    if CONF.nova_compute_url and CONF.service_credentials.project_id:
         client.client.endpoint_override = "%s/%s/" % (
             normalize_url(CONF.nova_compute_url),
-            CONF.nova_proxy_admin_tenant_id)
+            CONF.service_credentials.project_id)
 
     return client
 
@@ -81,13 +83,14 @@ def cinder_client_trove_admin(context, region_name=None):
     client = CinderClient.Client(
         session=ks_session,
         service_type=CONF.cinder_service_type,
-        region_name=region_name or CONF.os_region_name,
+        region_name=region_name or CONF.service_credentials.region_name,
         insecure=CONF.cinder_api_insecure,
         endpoint_type=CONF.cinder_endpoint_type)
 
-    if CONF.cinder_url and CONF.nova_proxy_admin_tenant_id:
+    if CONF.cinder_url and CONF.service_credentials.project_id:
         client.client.management_url = "%s/%s/" % (
-            normalize_url(CONF.cinder_url), CONF.nova_proxy_admin_tenant_id)
+            normalize_url(CONF.cinder_url),
+            CONF.service_credentials.project_id)
 
     return client
 
@@ -103,7 +106,7 @@ def neutron_client_trove_admin(context, region_name=None):
     client = NeutronClient.Client(
         session=ks_session,
         service_type=CONF.neutron_service_type,
-        region_name=region_name or CONF.os_region_name,
+        region_name=region_name or CONF.service_credentials.region_name,
         insecure=CONF.neutron_api_insecure,
         endpoint_type=CONF.neutron_endpoint_type)
 
@@ -119,10 +122,23 @@ def swift_client_trove_admin(context, region_name=None):
         session=ks_session,
         insecure=CONF.swift_api_insecure,
         os_options={
-            'region_name': region_name or CONF.os_region_name,
+            'region_name': region_name or CONF.service_credentials.region_name,
             'service_type': CONF.swift_service_type,
             'endpoint_type': CONF.swift_endpoint_type
         }
+    )
+
+    return client
+
+
+def glance_client_trove_admin(context, region_name=None):
+    ks_session = get_keystone_session()
+    client = glanceclient.Client(
+        version=CONF.glance_client_version,
+        session=ks_session,
+        region_name=region_name or CONF.service_credentials.region_name,
+        service_type=CONF.glance_service_type,
+        interface=CONF.glance_endpoint_type
     )
 
     return client

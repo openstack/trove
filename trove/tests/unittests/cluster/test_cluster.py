@@ -21,8 +21,8 @@ from trove.cluster.models import Cluster
 from trove.cluster.models import ClusterTasks
 from trove.cluster.models import DBCluster
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.common.strategies.cluster.experimental.mongodb import (
     api as mongodb_api)
 from trove.common import utils
@@ -66,12 +66,12 @@ class ClusterTest(trove_testtools.TestCase):
                           {'volume_size': 1, 'flavor_id': '1234'},
                           {'volume_size': 1, 'flavor_id': '1234'}]
         self.volume_support = CONF.get(self.dv.manager).volume_support
-        self.remote_nova = remote.create_nova_client
+        self.remote_nova = clients.create_nova_client
 
     def tearDown(self):
         super(ClusterTest, self).tearDown()
         CONF.get(self.dv.manager).volume_support = self.volume_support
-        remote.create_nova_client = self.remote_nova
+        clients.create_nova_client = self.remote_nova
 
     def test_create_empty_instances(self):
         self.assertRaises(exception.ClusterNumInstancesNotSupported,
@@ -83,7 +83,7 @@ class ClusterTest(trove_testtools.TestCase):
                           [],
                           {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_unequal_flavors(self, mock_client):
         instances = self.instances
         instances[0]['flavor_id'] = '4567'
@@ -96,7 +96,7 @@ class ClusterTest(trove_testtools.TestCase):
                           instances,
                           {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_unequal_volumes(self,
                                     mock_client):
         instances = self.instances
@@ -112,7 +112,7 @@ class ClusterTest(trove_testtools.TestCase):
                           instances,
                           {}, None, None)
 
-    @patch.object(remote, 'create_nova_client')
+    @patch.object(clients, 'create_nova_client')
     def test_create_storage_not_specified(self,
                                           mock_client):
         class FakeFlavor(object):

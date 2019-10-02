@@ -21,8 +21,8 @@ from novaclient import exceptions as nova_exceptions
 from trove.cluster import models
 from trove.cluster import tasks
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.common.strategies.cluster.experimental.mongodb import api
 from trove.instance import models as inst_models
 from trove.instance import tasks as inst_tasks
@@ -75,7 +75,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
         self.manager = mock.Mock()
         self.cluster.manager = self.manager
         self.volume_support = CONF.get('mongodb').volume_support
-        self.remote_nova = remote.create_nova_client
+        self.remote_nova = clients.create_nova_client
         self.instances = [
             {'volume_size': 1, 'flavor_id': '1234',
              'nics': [{"net-id": "foo-bar"}],
@@ -114,7 +114,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instance, {}, None, None)
 
-    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(clients, 'create_nova_client')
     def test_create_invalid_flavor_specified(self, mock_client):
         (mock_client.return_value.flavors.get) = mock.Mock(
             side_effect=nova_exceptions.NotFound(
@@ -127,7 +127,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           self.instances, {}, None, None)
 
-    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(clients, 'create_nova_client')
     def test_create_flavor_not_equal(self, mock_client):
         instances = self.instances
         instances[0]['flavor_id'] = '4321'
@@ -141,7 +141,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(clients, 'create_nova_client')
     def test_create_volume_not_equal(self, mock_client):
         instances = self.instances
         instances[0]['volume_size'] = 2
@@ -155,7 +155,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(clients, 'create_nova_client')
     def test_create_volume_not_specified(self, mock_client):
         instances = [
             {'flavor_id': '1234',
@@ -177,7 +177,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           instances, {}, None, None)
 
-    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(clients, 'create_nova_client')
     @mock.patch.object(api, 'CONF')
     def test_create_storage_specified_with_no_volume_support(self,
                                                              mock_conf,
@@ -197,8 +197,8 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(task_api, 'load')
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
-    @mock.patch.object(remote, 'create_neutron_client')
-    @mock.patch.object(remote, 'create_nova_client')
+    @mock.patch.object(clients, 'create_neutron_client')
+    @mock.patch.object(clients, 'create_nova_client')
     @mock.patch.object(api, 'check_quotas')
     def test_create_validate_volumes_deltas(self, mock_check_quotas, *args):
         extended_properties = {
@@ -217,8 +217,8 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
-    @mock.patch.object(remote, 'create_nova_client')
-    @mock.patch.object(remote, 'create_neutron_client')
+    @mock.patch.object(clients, 'create_nova_client')
+    @mock.patch.object(clients, 'create_neutron_client')
     def test_create(self, mock_neutron_client, mock_nova_client,
                     mock_check_quotas, mock_db_create,
                     mock_ins_create, mock_task_api):
@@ -284,8 +284,8 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
-    @mock.patch.object(remote, 'create_nova_client')
-    @mock.patch.object(remote, 'create_neutron_client')
+    @mock.patch.object(clients, 'create_nova_client')
+    @mock.patch.object(clients, 'create_neutron_client')
     @mock.patch.object(api, 'CONF')
     def test_create_with_lower_configsvr(self, mock_conf, mock_neutron_client,
                                          mock_nova_client, ock_check_quotas,
@@ -311,8 +311,8 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
-    @mock.patch.object(remote, 'create_nova_client')
-    @mock.patch.object(remote, 'create_neutron_client')
+    @mock.patch.object(clients, 'create_nova_client')
+    @mock.patch.object(clients, 'create_neutron_client')
     @mock.patch.object(api, 'CONF')
     def test_create_with_higher_configsvr(self, mock_conf, mock_neutron_client,
                                           mock_nova_client, mock_check_quotas,
@@ -338,8 +338,8 @@ class MongoDBClusterTest(trove_testtools.TestCase):
     @mock.patch.object(inst_models.Instance, 'create')
     @mock.patch.object(models.DBCluster, 'create')
     @mock.patch.object(QUOTAS, 'check_quotas')
-    @mock.patch.object(remote, 'create_nova_client')
-    @mock.patch.object(remote, 'create_neutron_client')
+    @mock.patch.object(clients, 'create_nova_client')
+    @mock.patch.object(clients, 'create_neutron_client')
     @mock.patch.object(api, 'CONF')
     def test_create_with_higher_mongos(self, mock_conf, mock_neutron_client,
                                        mock_nova_client, mock_check_quotas,
