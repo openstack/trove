@@ -28,6 +28,11 @@ try:
 except ImportError:
     EVENT_AVAILABLE = False
 
+import glanceclient
+from keystoneauth1.identity import v3
+from keystoneauth1 import session
+from neutronclient.v2_0 import client as neutron_client
+from novaclient import client as nova_client
 from proboscis.asserts import assert_true
 from proboscis.asserts import Check
 from proboscis.asserts import fail
@@ -141,41 +146,50 @@ def create_dbaas_client(user):
     return TestClient(dbaas)
 
 
-def create_nova_client(user, service_type=None):
-    """Creates a rich client for the Nova API using the test config."""
-    if test_config.nova_client is None:
-        raise SkipTest("No nova_client info specified in the Test Config "
-                       "so this test will be skipped.")
-    from novaclient.client import Client
-    if not service_type:
-        service_type = test_config.nova_client['nova_service_type']
-    openstack = Client(CONF.nova_client_version,
-                       username=user.auth_user,
+def create_keystone_session(user):
+    auth = v3.Password(username=user.auth_user,
                        password=user.auth_key,
-                       user_domain_name='Default',
                        project_id=user.tenant_id,
-                       auth_url=test_config.nova_client['auth_url'],
-                       service_type=service_type, os_cache=False,
-                       cacert=test_config.values.get('cacert', None))
+                       user_domain_name='Default',
+                       project_domain_name='Default',
+                       auth_url=test_config.auth_url)
+    return session.Session(auth=auth)
+
+
+def create_nova_client(user, service_type=None):
+    if not service_type:
+        service_type = CONF.nova_compute_service_type
+    openstack = nova_client.Client(
+        CONF.nova_client_version,
+        username=user.auth_user,
+        password=user.auth_key,
+        user_domain_name='Default',
+        project_id=user.tenant_id,
+        auth_url=CONFIG.auth_url,
+        service_type=service_type, os_cache=False,
+        cacert=test_config.values.get('cacert', None)
+    )
+
     return TestClient(openstack)
 
 
-def create_glance_client(user):
-    """Creates a rich client for the Glance API using the test config."""
-    if test_config.glance_client is None:
-        raise SkipTest("No glance_client info specified in the Test Config "
-                       "so this test will be skipped.")
-    from glanceclient import Client
-    from keystoneauth1.identity import v3
-    from keystoneauth1 import session
+def create_neutron_client(user):
+    sess = create_keystone_session(user)
+    client = neutron_client.Client(
+        session=sess,
+        service_type=CONF.neutron_service_type,
+        region_name=CONFIG.trove_client_region_name,
+        insecure=CONF.neutron_api_insecure,
+        endpoint_type=CONF.neutron_endpoint_type
+    )
 
-    auth = v3.Password(username=user.auth_user,
-                       password=user.auth_key,
-                       user_domain_name='Default',
-                       project_id=user.tenant_id,
-                       auth_url=test_config.glance_client['auth_url'])
-    session = session.Session(auth=auth)
-    glance = Client(CONF.glance_client_version, session=session)
+    return TestClient(client)
+
+
+def create_glance_client(user):
+    sess = create_keystone_session(user)
+    glance = glanceclient.Client(CONF.glance_client_version, session=sess)
+
     return TestClient(glance)
 
 

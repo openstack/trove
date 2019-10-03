@@ -36,9 +36,9 @@ from trove.common import timeutils
 from trove.common import utils
 from trove.common.utils import poll_until, build_polling_task
 from trove.tests.config import CONFIG
+from trove.tests import util as test_util
 from trove.tests.util.check import AttrCheck
 from trove.tests.util import create_dbaas_client
-from trove.tests.util import create_nova_client
 from trove.tests.util.users import Requirements
 
 CONF = cfg.CONF
@@ -354,6 +354,7 @@ class TestRunner(object):
         self._admin_client = None
         self._swift_client = None
         self._nova_client = None
+        self._neutron_client = None
         self._test_helper = None
         self._servers = {}
 
@@ -492,7 +493,7 @@ class TestRunner(object):
         user = CONFIG.users.find_user(requirements)
         os_options = {'region_name': CONFIG.trove_client_region_name}
         return swiftclient.client.Connection(
-            authurl=CONFIG.nova_client['auth_url'],
+            authurl=CONFIG.auth_url,
             user=user.auth_user,
             key=user.auth_key,
             tenant_name=user.tenant,
@@ -501,7 +502,21 @@ class TestRunner(object):
 
     @property
     def nova_client(self):
-        return create_nova_client(self.instance_info.admin_user)
+        if self._nova_client is None:
+            self._nova_client = test_util.create_nova_client(
+                self.instance_info.admin_user
+            )
+
+        return self._nova_client
+
+    @property
+    def neutron_client(self):
+        if self._neutron_client is None:
+            self._neutron_client = test_util.create_neutron_client(
+                self.instance_info.admin_user
+            )
+
+        return self._neutron_client
 
     def register_debug_inst_ids(self, inst_ids):
         """Method to 'register' an instance ID (or list of instance IDs)

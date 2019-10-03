@@ -170,11 +170,15 @@ class TroveCommonTraits(TroveBaseTraits):
             if 'instance_type' not in self.payload:
                 flavor = instance.nova_client.flavors.get(instance.flavor_id)
                 self.payload['instance_size'] = flavor.ram
-            if self.server is None:
-                self.server = instance.nova_client.servers.get(
-                    instance.server_id)
-            self.payload['availability_zone'] = getattr(
-                self.server, 'OS-EXT-AZ:availability_zone', None)
+            if self.server is None and instance.server_id:
+                try:
+                    self.server = instance.nova_client.servers.get(
+                        instance.server_id)
+                except Exception:
+                    pass
+            if self.server:
+                self.payload['availability_zone'] = getattr(
+                    self.server, 'OS-EXT-AZ:availability_zone', None)
             if CONF.get(instance.datastore_version.manager).volume_support:
                 self.payload.update({
                     'volume_size': instance.volume_size,

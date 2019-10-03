@@ -20,10 +20,8 @@ import traceback
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from eventlet.timeout import Timeout
-from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 from oslo_utils import netutils
-import six
 from swiftclient.client import ClientException
 
 from trove.backup import models as bkup_models
@@ -54,13 +52,11 @@ from trove.common.notification import (
     StartNotification,
     TroveInstanceCreate,
     TroveInstanceModifyVolume,
-    TroveInstanceModifyFlavor,
-    TroveInstanceDelete)
+    TroveInstanceModifyFlavor)
 import trove.common.remote as remote
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
-from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.common import template
 from trove.common import timeutils
@@ -416,21 +412,10 @@ class ClusterTasks(Cluster):
 
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
-
-    def _delete_resources(self, deleted_at):
-        LOG.debug("Begin _delete_resources for instance %s", self.id)
-
-        # If volume has "available" status, delete it manually.
-        try:
-            if self.volume_id:
-                volume = self.volume_client.volumes.get(self.volume_id)
-                if volume.status == "available":
-                    volume.delete()
-        except Exception as e:
-            LOG.warning("Failed to delete volume for instance %s, error: %s",
-                        self.id, six.text_type(e))
-
-        LOG.debug("End _delete_resource for instance %s", self.id)
+    """
+    FreshInstanceTasks contains the tasks related an instance that not
+    associated with a compute server.
+    """
 
     def wait_for_instance(self, timeout, flavor):
         # Make sure the service becomes active before sending a usage
@@ -1076,124 +1061,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
 class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     """
-    Performs the various asynchronous instance related tasks.
+    BuiltInstanceTasks contains the tasks related an instance that already
+    associated with a compute server.
     """
-
-    def _delete_resources(self, deleted_at):
-        LOG.info("Starting to delete resources for instance %s", self.id)
-
-        # Stop db
-        server_id = self.db_info.compute_instance_id
-        old_server = self.nova_client.servers.get(server_id)
-        try:
-            # The server may have already been marked as 'SHUTDOWN'
-            # but check for 'ACTIVE' in case of any race condition
-            # We specifically don't want to attempt to stop db if
-            # the server is in 'ERROR' or 'FAILED" state, as it will
-            # result in a long timeout
-            if self.server_status_matches(['ACTIVE', 'SHUTDOWN'], server=self):
-                LOG.debug("Stopping datastore on instance %s before deleting "
-                          "any resources.", self.id)
-                self.guest.stop_db()
-        except Exception as e:
-            LOG.warning("Failed to stop the datastore before attempting "
-                        "to delete instance id %s, error: %s", self.id,
-                        six.text_type(e))
-
-        # Nova VM
-        try:
-            LOG.info("Deleting server for instance %s", self.id)
-            self.server.delete()
-        except Exception as e:
-            LOG.warning("Failed to delete compute server %s", self.server.id,
-                        six.text_type(e))
-
-        # Neutron ports
-        try:
-            ret = self.neutron_client.list_ports(name='trove-%s' % self.id)
-            ports = ret.get("ports", [])
-            for port in ports:
-                LOG.info("Deleting port %s for instance %s", port["id"],
-                         self.id)
-                neutron.delete_port(self.neutron_client, port["id"])
-        except Exception as e:
-            LOG.warning("Failed to delete ports for instance %s, "
-                        "error: %s", self.id, six.text_type(e))
-
-        # Neutron security groups
-        try:
-            name = "%s-%s" % (CONF.trove_security_group_name_prefix, self.id)
-            ret = self.neutron_client.list_security_groups(name=name)
-            sgs = ret.get("security_groups", [])
-            for sg in sgs:
-                LOG.info("Deleting security group %s for instance %s",
-                         sg["id"], self.id)
-                self.neutron_client.delete_security_group(sg["id"])
-        except Exception as e:
-            LOG.warning("Failed to delete security groups for instance %s, "
-                        "error: %s", self.id, six.text_type(e))
-
-        # DNS resources, e.g. Designate
-        try:
-            dns_support = CONF.trove_dns_support
-            if dns_support:
-                dns_api = create_dns_client(self.context)
-                dns_api.delete_instance_entry(instance_id=self.id)
-        except Exception as e:
-            LOG.warning("Failed to delete dns entry of instance %s, error: %s",
-                        self.id, six.text_type(e))
-
-        # Nova server group
-        try:
-            srv_grp.ServerGroup.delete(self.context, self.server_group)
-        except Exception as e:
-            LOG.warning("Failed to delete server group for %s, error: %s",
-                        self.id, six.text_type(e))
-
-        def server_is_finished():
-            try:
-                server = self.nova_client.servers.get(server_id)
-                if not self.server_status_matches(['SHUTDOWN', 'ACTIVE'],
-                                                  server=server):
-                    LOG.warning("Server %(server_id)s entered ERROR status "
-                                "when deleting instance %(instance_id)s!",
-                                {'server_id': server.id,
-                                 'instance_id': self.id})
-                return False
-            except nova_exceptions.NotFound:
-                return True
-
-        try:
-            LOG.info("Waiting for server %s removal for instance %s",
-                     server_id, self.id)
-            utils.poll_until(server_is_finished, sleep_time=2,
-                             time_out=CONF.server_delete_time_out)
-        except PollTimeOut:
-            LOG.warning("Failed to delete instance %(instance_id)s: "
-                        "Timeout deleting compute server %(server_id)s",
-                        {'instance_id': self.id, 'server_id': server_id})
-
-        # If volume has been resized it must be manually removed
-        try:
-            if self.volume_id:
-                volume = self.volume_client.volumes.get(self.volume_id)
-                if volume.status == "available":
-                    volume.delete()
-        except Exception as e:
-            LOG.warning("Failed to delete volume for instance %s, error: %s",
-                        self.id, six.text_type(e))
-
-        TroveInstanceDelete(instance=self,
-                            deleted_at=timeutils.isotime(deleted_at),
-                            server=old_server).notify()
-
-        LOG.info("Finished to delete resources for instance %s", self.id)
-
-    def server_status_matches(self, expected_status, server=None):
-        if not server:
-            server = self.server
-        return server.status.upper() in (
-            status.upper() for status in expected_status)
 
     def resize_volume(self, new_size):
         LOG.info("Resizing volume for instance %(instance_id)s from "

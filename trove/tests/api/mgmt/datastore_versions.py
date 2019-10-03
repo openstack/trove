@@ -43,13 +43,13 @@ class MgmtDataStoreVersion(object):
         self.user = CONFIG.users.find_user(reqs)
         self.client = create_dbaas_client(self.user)
         self.images = []
-        if test_config.glance_client is not None:
-            glance_user = test_config.users.find_user(
-                Requirements(is_admin=True, services=["glance"]))
-            self.glance_client = create_glance_client(glance_user)
-            images = self.glance_client.images.list()
-            for image in images:
-                self.images.append(image.id)
+
+        glance_user = test_config.users.find_user(
+            Requirements(is_admin=True, services=["glance"]))
+        self.glance_client = create_glance_client(glance_user)
+        images = self.glance_client.images.list()
+        for image in images:
+            self.images.append(image.id)
 
     def _find_ds_version_by_name(self, ds_version_name):
         ds_versions = self.client.mgmt_datastore_versions.list()
