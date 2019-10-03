@@ -19,11 +19,12 @@ from datetime import datetime
 from datetime import timedelta
 import os.path
 import re
-from sqlalchemy import func
+import six
 
 from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
+from sqlalchemy import func
 
 from trove.backup.models import Backup
 from trove.common import cfg
@@ -31,9 +32,9 @@ from trove.common import crypto_utils as cu
 from trove.common import exception
 from trove.common.glance_remote import create_glance_client
 from trove.common.i18n import _
-import trove.common.instance as tr_instance
+from trove.common import instance as tr_instance
 from trove.common import neutron
-from trove.common.notification import StartNotification
+from trove.common import notification
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
@@ -664,9 +665,136 @@ class BaseInstance(SimpleInstance):
                                deltas,
                                _delete_resources)
 
+    def server_status_matches(self, expected_status, server=None):
+        if not server:
+            server = self.server
+
+        return server.status.upper() in (
+            status.upper() for status in expected_status)
+
     def _delete_resources(self, deleted_at):
-        """Implemented in subclass."""
-        pass
+        """Delete the openstack resources related to an instance.
+
+        Deleting the instance should not break or raise exceptions because
+        the end users want their instances to be deleted anyway. Cloud operator
+        should consider the way to clean up orphan resources afterwards, e.g.
+        using the naming convention.
+        """
+        LOG.info("Starting to delete resources for instance %s", self.id)
+
+        old_server = None
+        if self.server_id:
+            # Stop db
+            try:
+                old_server = self.nova_client.servers.get(self.server_id)
+
+                # The server may have already been marked as 'SHUTDOWN'
+                # but check for 'ACTIVE' in case of any race condition
+                # We specifically don't want to attempt to stop db if
+                # the server is in 'ERROR' or 'FAILED" state, as it will
+                # result in a long timeout
+                if self.server_status_matches(['ACTIVE', 'SHUTDOWN'],
+                                              server=self):
+                    LOG.debug("Stopping datastore on instance %s before "
+                              "deleting any resources.", self.id)
+                    self.guest.stop_db()
+            except Exception as e:
+                LOG.warning("Failed to stop the database before attempting "
+                            "to delete trove instance %s, error: %s", self.id,
+                            six.text_type(e))
+
+            # Nova VM
+            if old_server:
+                try:
+                    LOG.info("Deleting server for instance %s", self.id)
+                    self.server.delete()
+                except Exception as e:
+                    LOG.warning("Failed to delete compute server %s",
+                                self.server_id, six.text_type(e))
+
+        # Neutron ports (floating IP)
+        try:
+            ret = self.neutron_client.list_ports(name='trove-%s' % self.id)
+            ports = ret.get("ports", [])
+            for port in ports:
+                LOG.info("Deleting port %s for instance %s", port["id"],
+                         self.id)
+                neutron.delete_port(self.neutron_client, port["id"])
+        except Exception as e:
+            LOG.warning("Failed to delete ports for instance %s, "
+                        "error: %s", self.id, six.text_type(e))
+
+        # Neutron security groups
+        try:
+            name = "%s-%s" % (CONF.trove_security_group_name_prefix, self.id)
+            ret = self.neutron_client.list_security_groups(name=name)
+            sgs = ret.get("security_groups", [])
+            for sg in sgs:
+                LOG.info("Deleting security group %s for instance %s",
+                         sg["id"], self.id)
+                self.neutron_client.delete_security_group(sg["id"])
+        except Exception as e:
+            LOG.warning("Failed to delete security groups for instance %s, "
+                        "error: %s", self.id, six.text_type(e))
+
+        # DNS resources, e.g. Designate
+        try:
+            dns_support = CONF.trove_dns_support
+            if dns_support:
+                dns_api = create_dns_client(self.context)
+                dns_api.delete_instance_entry(instance_id=self.id)
+        except Exception as e:
+            LOG.warning("Failed to delete dns entry of instance %s, error: %s",
+                        self.id, six.text_type(e))
+
+        # Nova server group
+        try:
+            srv_grp.ServerGroup.delete(self.context, self.server_group)
+        except Exception as e:
+            LOG.warning("Failed to delete server group for %s, error: %s",
+                        self.id, six.text_type(e))
+
+        def server_is_finished():
+            try:
+                server = self.nova_client.servers.get(self.server_id)
+                if not self.server_status_matches(['SHUTDOWN', 'ACTIVE'],
+                                                  server=server):
+                    LOG.warning("Server %(vm_id)s entered ERROR status "
+                                "when deleting instance %(instance_id)s!",
+                                {'vm_id': self.server_id,
+                                 'instance_id': self.id})
+                return False
+            except nova_exceptions.NotFound:
+                return True
+
+        if old_server:
+            try:
+                LOG.info("Waiting for compute server %s removal for "
+                         "instance %s", self.server_id, self.id)
+                utils.poll_until(server_is_finished, sleep_time=2,
+                                 time_out=CONF.server_delete_time_out)
+            except exception.PollTimeOut:
+                LOG.warning("Failed to delete instance %(instance_id)s: "
+                            "Timeout deleting compute server %(vm_id)s",
+                            {'instance_id': self.id, 'vm_id': self.server_id})
+
+        # If volume has been resized it must be manually removed
+        try:
+            if self.volume_id:
+                volume = self.volume_client.volumes.get(self.volume_id)
+                if volume.status == "available":
+                    volume.delete()
+        except Exception as e:
+            LOG.warning("Failed to delete volume for instance %s, error: %s",
+                        self.id, six.text_type(e))
+
+        notification.TroveInstanceDelete(
+            instance=self,
+            deleted_at=timeutils.isotime(deleted_at),
+            server=old_server
+        ).notify()
+
+        LOG.info("Finished to delete resources for instance %s", self.id)
 
     def delete_async(self):
         deleted_at = timeutils.utcnow()
@@ -1117,7 +1245,7 @@ class Instance(BuiltInstance):
             return SimpleInstance(context, db_info, service_status,
                                   root_password, locality=locality)
 
-        with StartNotification(context, **call_args):
+        with notification.StartNotification(context, **call_args):
             return run_with_quotas(context.project_id, deltas,
                                    _create_resources)
 

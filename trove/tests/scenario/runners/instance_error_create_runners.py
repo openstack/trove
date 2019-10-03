@@ -120,3 +120,10 @@ class InstanceErrorCreateRunner(TestRunner):
             self.assert_all_gone(delete_ids, expected_states[-1])
         else:
             raise SkipTest("Cleanup is not required.")
+
+        # All the neutron ports should be removed.
+        if self.error_inst_id:
+            ports = self.neutron_client.list_ports(
+                name='trove-%s' % self.error_inst_id
+            )
+            self.assert_equal(0, len(ports.get("ports", [])))

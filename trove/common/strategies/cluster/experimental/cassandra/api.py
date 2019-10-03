@@ -21,8 +21,7 @@ from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import base
-from trove.common.strategies.cluster.experimental.cassandra.taskmanager import(
-    CassandraClusterTasks)
+from trove.common.strategies.cluster.experimental.cassandra import taskmanager
 from trove.common import utils
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance import models as inst_models
@@ -133,7 +132,8 @@ class CassandraCluster(models.Cluster):
 
         # Creating member instances.
         num_instances = len(
-            CassandraClusterTasks.find_cluster_node_ids(cluster_id))
+            taskmanager.CassandraClusterTasks.find_cluster_node_ids(cluster_id)
+        )
         new_instances = []
         for instance_idx, instance in enumerate(instances, num_instances + 1):
             instance_az = instance.get('availability_zone', None)
