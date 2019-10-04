@@ -23,7 +23,7 @@ from swiftclient.client import ClientException
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.remote import create_swift_client
+from trove.common import remote
 from trove.common import stream_codecs
 from trove.common import timeutils
 from trove.guestagent.common import operating_system
@@ -130,7 +130,7 @@ class GuestLog(object):
     def swift_client(self):
         if not self._cached_swift_client or (
                 self._cached_context != self.context):
-            self._cached_swift_client = create_swift_client(self.context)
+            self._cached_swift_client = remote.swift_client(self.context)
             self._cached_context = self.context
         return self._cached_swift_client
 
