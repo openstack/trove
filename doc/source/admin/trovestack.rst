@@ -80,6 +80,9 @@ The trove guest agent image could be created by running the following command:
     environment, it should be the ``stack`` user.
   * ``GUEST_WORKING_DIR``: The place to save the guest image, default value is
     ``$HOME/images``.
+  * ``TROVE_BRANCH``: only used in dev mode. The branch name of Trove code
+    repository, by default it's master, use other branches as needed such as
+    stable/train.
 
 For example, in order to build a MySQL image for Ubuntu Xenial operating
 system in development mode:
