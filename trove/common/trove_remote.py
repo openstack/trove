@@ -16,8 +16,8 @@
 from oslo_utils.importutils import import_class
 
 from trove.common import cfg
-from trove.common.remote import get_endpoint
-from trove.common.remote import normalize_url
+from trove.common.clients import get_endpoint
+from trove.common.clients import normalize_url
 
 from troveclient.v1 import client as TroveClient
 
@@ -26,7 +26,7 @@ CONF = cfg.CONF
 
 """
 NOTE(mwj, Apr 2016):
-This module is separated from remote.py because remote.py is used
+This module is separated from clients.py because clients.py is used
 on the Trove guest, but the trove client is not installed on the guest,
 so the imports here would fail.
 """
@@ -38,14 +38,15 @@ def trove_client(context, region_name=None):
             'url': normalize_url(CONF.trove_url),
             'tenant': context.project_id}
     else:
+        region = region_name or CONF.service_credentials.region_name
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.trove_service_type,
-                           endpoint_region=region_name or CONF.os_region_name,
+                           endpoint_region=region,
                            endpoint_type=CONF.trove_endpoint_type)
 
     client = TroveClient.Client(context.user, context.auth_token,
                                 project_id=context.project_id,
-                                auth_url=CONF.trove_auth_url)
+                                auth_url=CONF.service_credentials.auth_url)
     client.client.auth_token = context.auth_token
     client.client.management_url = url
     return client

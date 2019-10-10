@@ -19,13 +19,13 @@ from oslo_utils import importutils
 
 from trove.backup.models import Backup
 import trove.common.cfg as cfg
+from trove.common import clients
 from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common.exception import ReplicationSlaveAttachError
 from trove.common.exception import TroveError
 from trove.common.i18n import _
 from trove.common.notification import DBaaSQuotas, EndNotification
-from trove.common import remote
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.datastore.models import DatastoreVersion
@@ -44,9 +44,9 @@ class Manager(periodic_task.PeriodicTasks):
     def __init__(self):
         super(Manager, self).__init__(CONF)
         self.admin_context = TroveContext(
-            user=CONF.nova_proxy_admin_user,
-            tenant=CONF.nova_proxy_admin_tenant_id,
-            user_domain_name=CONF.nova_proxy_admin_user_domain_name)
+            user=CONF.service_credentials.username,
+            tenant=CONF.service_credentials.project_id,
+            user_domain_name=CONF.service_credentials.user_domain_name)
         if CONF.exists_notification_transformer:
             self.exists_transformer = importutils.import_object(
                 CONF.exists_notification_transformer,
@@ -482,7 +482,7 @@ class Manager(periodic_task.PeriodicTasks):
     if CONF.quota_notification_interval:
         @periodic_task.periodic_task(spacing=CONF.quota_notification_interval)
         def publish_quota_notifications(self, context):
-            nova_client = remote.create_nova_client(self.admin_context)
+            nova_client = clients.create_nova_client(self.admin_context)
             for tenant in nova_client.tenants.list():
                 for quota in QUOTAS.get_all_quotas_by_tenant(tenant.id):
                     usage = QUOTAS.get_quota_usage(quota)

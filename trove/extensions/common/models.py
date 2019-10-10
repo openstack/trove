@@ -15,9 +15,9 @@
 
 from oslo_log import log as logging
 
+from trove.common.clients import create_guest_client
 from trove.common.db import models as guest_models
 from trove.common import exception
-from trove.common.remote import create_guest_client
 from trove.common import timeutils
 from trove.db import get_db_api
 from trove.instance import models as base_models

@@ -16,10 +16,10 @@ from eventlet.timeout import Timeout
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common.clients import create_nova_client
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.i18n import _
-from trove.common.remote import create_nova_client
 from trove.common.strategies.cluster import base as cluster_base
 from trove.common.template import ClusterConfigTemplate
 from trove.common import utils

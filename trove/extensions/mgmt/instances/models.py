@@ -16,9 +16,9 @@ import datetime
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common import remote
 from trove.common import timeutils
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as instance_models
@@ -31,7 +31,9 @@ CONF = cfg.CONF
 def load_mgmt_instances(context, deleted=None, client=None,
                         include_clustered=None):
     if not client:
-        client = remote.create_nova_client(context, CONF.os_region_name)
+        client = clients.create_nova_client(
+            context, CONF.service_credentials.region_name
+        )
     try:
         mgmt_servers = client.rdservers.list()
     except AttributeError:
@@ -55,7 +57,9 @@ def load_mgmt_instance(cls, context, id, include_deleted):
         instance = instance_models.load_instance(
             cls, context, id, needs_server=True,
             include_deleted=include_deleted)
-        client = remote.create_nova_client(context, CONF.os_region_name)
+        client = clients.create_nova_client(
+            context, CONF.service_credentials.region_name
+        )
         try:
             server = client.rdservers.get(instance.server_id)
         except AttributeError:
@@ -118,7 +122,7 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
     @classmethod
     def load(cls, context, id, include_deleted=False):
         instance = load_mgmt_instance(cls, context, id, include_deleted)
-        client = remote.create_cinder_client(context)
+        client = clients.create_cinder_client(context)
         try:
             instance.volume = client.volumes.get(instance.volume_id)
         except Exception:
@@ -249,7 +253,7 @@ class NovaNotificationTransformer(NotificationTransformer):
     def __init__(self, **kwargs):
         super(NovaNotificationTransformer, self).__init__(**kwargs)
         self.context = kwargs['context']
-        self.nova_client = remote.create_admin_nova_client(self.context)
+        self.nova_client = clients.create_admin_nova_client(self.context)
         self._flavor_cache = {}
 
     def _lookup_flavor(self, flavor_id):

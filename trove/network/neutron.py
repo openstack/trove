@@ -15,8 +15,8 @@
 from neutronclient.common import exceptions as neutron_exceptions
 from oslo_log import log as logging
 
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.network import base
 
 LOG = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class NeutronDriver(base.NetworkDriver):
 
     def __init__(self, context, region_name):
         try:
-            self.client = remote.create_neutron_client(context, region_name)
+            self.client = clients.create_neutron_client(context, region_name)
         except neutron_exceptions.NeutronClientException as e:
             raise exception.TroveError(str(e))
 

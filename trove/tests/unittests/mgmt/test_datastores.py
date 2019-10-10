@@ -15,8 +15,8 @@
 from mock import Mock, patch
 from glanceclient import exc as glance_exceptions
 
+from trove.common import clients
 from trove.common import exception
-from trove.common import glance_remote
 from trove.datastore import models
 from trove.extensions.mgmt.datastores.service import DatastoreVersionController
 from trove.tests.unittests import trove_testtools
@@ -48,7 +48,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
     def tearDown(self):
         super(TestDatastoreVersion, self).tearDown()
 
-    @patch.object(glance_remote, 'create_glance_client')
+    @patch.object(clients, 'create_glance_client')
     def test_version_create(self, mock_glance_client):
         body = {"version": {
             "datastore_name": "test_ds",
@@ -62,7 +62,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             self.req, body, self.tenant_id)
         self.assertEqual(202, output.status)
 
-    @patch.object(glance_remote, 'create_glance_client')
+    @patch.object(clients, 'create_glance_client')
     @patch.object(models.DatastoreVersion, 'load')
     def test_fail_already_exists_version_create(self, mock_load,
                                                 mock_glance_client):
@@ -79,7 +79,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             "A datastore version with the name 'test_new_vr' already exists",
             self.version_controller.create, self.req, body, self.tenant_id)
 
-    @patch.object(glance_remote, 'create_glance_client')
+    @patch.object(clients, 'create_glance_client')
     def test_fail_image_not_found_version_create(self, mock_glance_client):
         mock_glance_client.return_value.images.get = Mock(
             side_effect=glance_exceptions.HTTPNotFound())
@@ -112,7 +112,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             exception.DatastoreVersionNotFound,
             err_msg, models.DatastoreVersion.load_by_uuid, ds_version1.id)
 
-    @patch.object(glance_remote, 'create_glance_client')
+    @patch.object(clients, 'create_glance_client')
     def test_version_update(self, mock_client):
         body = {"image": "c022f4dc-76ed-4e3f-a25e-33e031f43f8b"}
         output = self.version_controller.edit(self.req, body,
@@ -125,7 +125,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             self.ds_version2.id)
         self.assertEqual(body['image'], test_ds_version.image_id)
 
-    @patch.object(glance_remote, 'create_glance_client')
+    @patch.object(clients, 'create_glance_client')
     def test_version_update_fail_image_not_found(self, mock_glance_client):
         mock_glance_client.return_value.images.get = Mock(
             side_effect=glance_exceptions.HTTPNotFound())

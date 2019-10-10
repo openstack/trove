@@ -195,16 +195,20 @@ function configure_trove {
 
     # Create the trove conf dir and cache dirs if they don't exist
     sudo install -d -o $STACK_USER ${TROVE_CONF_DIR}
-
     # Copy api-paste file over to the trove conf dir
     cp $TROVE_LOCAL_API_PASTE_INI $TROVE_API_PASTE_INI
-
+    # configure apache related files
+    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
+        echo "Configuring Trove to use mod-wsgi and Apache"
+        config_trove_apache_wsgi
+    fi
     # (Re)create trove conf files
     rm -f $TROVE_CONF $TROVE_GUESTAGENT_CONF
 
     TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
 
-    # Set common configuration values (but only if they're defined)
+    ################################################################ trove conf
+    setup_trove_logging $TROVE_CONF
     iniset_conditional $TROVE_CONF DEFAULT max_accepted_volume_size $TROVE_MAX_ACCEPTED_VOLUME_SIZE
     iniset_conditional $TROVE_CONF DEFAULT max_instances_per_tenant $TROVE_MAX_INSTANCES_PER_TENANT
     iniset_conditional $TROVE_CONF DEFAULT max_volumes_per_tenant $TROVE_MAX_VOLUMES_PER_TENANT
@@ -214,33 +218,30 @@ function configure_trove {
     iniset_conditional $TROVE_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
     iniset_conditional $TROVE_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
 
-    # For message queue
+    configure_keystone_authtoken_middleware $TROVE_CONF trove
+    iniset $TROVE_CONF service_credentials username trove
+    iniset $TROVE_CONF service_credentials user_domain_name Default
+    iniset $TROVE_CONF service_credentials project_domain_name Default
+    iniset $TROVE_CONF service_credentials password $SERVICE_PASSWORD
+    iniset $TROVE_CONF service_credentials project_name $SERVICE_PROJECT_NAME
+    iniset $TROVE_CONF service_credentials region_name $REGION_NAME
+    iniset $TROVE_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
+
+    iniset $TROVE_CONF database connection `database_connection_url trove`
+
     iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
     iniset $TROVE_CONF DEFAULT control_exchange trove
     iniset $TROVE_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
-    # For database
-    iniset $TROVE_CONF database connection `database_connection_url trove`
-    # For logging
-    setup_trove_logging $TROVE_CONF
-
     iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
-    configure_keystone_authtoken_middleware $TROVE_CONF trove
-
     iniset $TROVE_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
-
-    iniset $TROVE_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
-    iniset $TROVE_CONF DEFAULT nova_proxy_admin_user trove
-    iniset $TROVE_CONF DEFAULT nova_proxy_admin_tenant_name $SERVICE_PROJECT_NAME
-    iniset $TROVE_CONF DEFAULT nova_proxy_admin_pass $SERVICE_PASSWORD
-    iniset $TROVE_CONF DEFAULT nova_proxy_admin_user_domain_name default
-    iniset $TROVE_CONF DEFAULT nova_proxy_admin_project_domain_name default
-    iniset $TROVE_CONF DEFAULT os_region_name $REGION_NAME
-    iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_swift_client trove.common.single_tenant_remote.swift_client_trove_admin
-
     iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
+
+    iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
+    iniset $TROVE_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
+
     iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
     iniset $TROVE_CONF couchbase tcp_ports 8091,8092,4369,11209-11211,21100-21199
     iniset $TROVE_CONF couchdb tcp_ports 5984
@@ -254,35 +255,31 @@ function configure_trove {
     iniset $TROVE_CONF redis tcp_ports 6379,16379
     iniset $TROVE_CONF vertica tcp_ports 5433,5434,5444,5450,4803
 
-    # configure apache related files
-    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
-        echo "Configuring Trove to use mod-wsgi and Apache"
-        config_trove_apache_wsgi
-    fi
+    ################################################################ trove guest agent conf
+    setup_trove_logging $TROVE_GUESTAGENT_CONF
 
-    # Use these values only if they're set
     iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
     iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT command_process_timeout $TROVE_COMMAND_PROCESS_TIMEOUT
-
-    # Set up Guest Agent conf
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rpc_backend "rabbit"
     iniset $TROVE_GUESTAGENT_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$TROVE_HOST_GATEWAY:5672/
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     iniset $TROVE_GUESTAGENT_CONF DEFAULT control_exchange trove
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_dir /var/log/trove/
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_file trove-guestagent.log
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_user trove
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_tenant_name $SERVICE_PROJECT_NAME
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_pass $SERVICE_PASSWORD
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_user_domain_name default
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_project_domain_name default
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT os_region_name $REGION_NAME
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_nova_client trove.common.single_tenant_remote.nova_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_cinder_client trove.common.single_tenant_remote.cinder_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_neutron_client trove.common.single_tenant_remote.neutron_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_swift_client trove.common.single_tenant_remote.swift_client_trove_admin
-    setup_trove_logging $TROVE_GUESTAGENT_CONF
+
+    iniset $TROVE_GUESTAGENT_CONF service_credentials username trove
+    iniset $TROVE_GUESTAGENT_CONF service_credentials user_domain_name Default
+    iniset $TROVE_GUESTAGENT_CONF service_credentials project_domain_name Default
+    iniset $TROVE_GUESTAGENT_CONF service_credentials password $SERVICE_PASSWORD
+    iniset $TROVE_GUESTAGENT_CONF service_credentials project_name $SERVICE_PROJECT_NAME
+    iniset $TROVE_GUESTAGENT_CONF service_credentials region_name $REGION_NAME
+    iniset $TROVE_GUESTAGENT_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
+
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
     # To avoid 'Connection timed out' error of sudo command inside the guest agent
     CLOUDINIT_PATH=/etc/trove/cloudinit/${TROVE_DATASTORE_TYPE}.cloudinit

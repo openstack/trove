@@ -113,7 +113,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         self.assertIn('123.123.123.123', ip)
         self.assertIn('15.123.123.123', ip)
 
-    @patch('trove.common.remote.create_neutron_client')
+    @patch('trove.common.clients.create_neutron_client')
     def test_filter_management_ip_addresses(self, mock_neutron_client):
         CONF.network_label_regex = ''
         CONF.management_networks = ['fake-net-id']

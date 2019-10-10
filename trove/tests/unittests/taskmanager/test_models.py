@@ -36,7 +36,6 @@ from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.instance import ServiceStatuses
 from trove.common.notification import TroveInstanceModifyVolume
-from trove.common import remote
 import trove.common.template as template
 from trove.common import timeutils
 from trove.common import utils
@@ -396,7 +395,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
     @patch.object(template, 'SingleInstanceConfigTemplate')
-    @patch('trove.common.remote.neutron_client')
+    @patch('trove.common.clients.neutron_client')
     def test_create_instance_with_mgmt_port(self,
                                             mock_neutron_client,
                                             mock_single_instance_template,
@@ -1050,10 +1049,6 @@ class BackupTasksTest(trove_testtools.TestCase):
         self.backup.updated = 'today'
         self.backup.size = 2.0
         self.backup.state = state.BackupState.NEW
-        self.container_content = (None,
-                                  [{'name': 'first'},
-                                   {'name': 'second'},
-                                   {'name': 'third'}])
         self.bm_backup_patches = patch.multiple(
             backup_models.Backup,
             delete=MagicMock(return_value=None),
@@ -1066,21 +1061,6 @@ class BackupTasksTest(trove_testtools.TestCase):
         self.bm_DBBackup_mock = self.bm_DBBackup_patch.start()
         self.addCleanup(self.bm_DBBackup_patch.stop)
         self.backup.delete = MagicMock(return_value=None)
-        self.swift_client = MagicMock()
-        self.create_swift_client_patch = patch.object(
-            remote, 'create_swift_client',
-            MagicMock(return_value=self.swift_client))
-        self.create_swift_client_mock = self.create_swift_client_patch.start()
-        self.addCleanup(self.create_swift_client_patch.stop)
-
-        self.swift_client.head_container = MagicMock(
-            side_effect=ClientException("foo"))
-        self.swift_client.head_object = MagicMock(
-            side_effect=ClientException("foo"))
-        self.swift_client.get_container = MagicMock(
-            return_value=self.container_content)
-        self.swift_client.delete_object = MagicMock(return_value=None)
-        self.swift_client.delete_container = MagicMock(return_value=None)
 
     def tearDown(self):
         super(BackupTasksTest, self).tearDown()
@@ -1092,34 +1072,25 @@ class BackupTasksTest(trove_testtools.TestCase):
         self.backup.delete.assert_any_call()
 
     @patch('trove.taskmanager.models.LOG')
-    def test_delete_backup_fail_delete_manifest(self, mock_logging):
-        with patch.object(self.swift_client, 'delete_object',
-                          side_effect=ClientException("foo")):
-            with patch.object(self.swift_client, 'head_object',
-                              return_value={}):
-                self.assertRaises(
-                    TroveError,
-                    taskmanager_models.BackupTasks.delete_backup,
-                    'dummy context', self.backup.id)
-                self.assertFalse(backup_models.Backup.delete.called)
-                self.assertEqual(
-                    state.BackupState.DELETE_FAILED,
-                    self.backup.state,
-                    "backup should be in DELETE_FAILED status")
+    @patch('trove.common.clients.create_swift_client')
+    def test_delete_backup_fail_delete_manifest(self, mock_swift_client,
+                                                mock_logging):
+        client_mock = MagicMock()
+        client_mock.head_object.return_value = {}
+        client_mock.delete_object.side_effect = ClientException("foo")
+        mock_swift_client.return_value = client_mock
 
-    @patch('trove.taskmanager.models.LOG')
-    def test_delete_backup_fail_delete_segment(self, mock_logging):
-        with patch.object(self.swift_client, 'delete_object',
-                          side_effect=ClientException("foo")):
-            self.assertRaises(
-                TroveError,
-                taskmanager_models.BackupTasks.delete_backup,
-                'dummy context', self.backup.id)
-            self.assertFalse(backup_models.Backup.delete.called)
-            self.assertEqual(
-                state.BackupState.DELETE_FAILED,
-                self.backup.state,
-                "backup should be in DELETE_FAILED status")
+        self.assertRaises(
+            TroveError,
+            taskmanager_models.BackupTasks.delete_backup,
+            'dummy context', self.backup.id
+        )
+        self.assertFalse(backup_models.Backup.delete.called)
+        self.assertEqual(
+            state.BackupState.DELETE_FAILED,
+            self.backup.state,
+            "backup should be in DELETE_FAILED status"
+        )
 
     def test_parse_manifest(self):
         manifest = 'container/prefix'

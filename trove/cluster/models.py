@@ -22,6 +22,7 @@ from novaclient import exceptions as nova_exceptions
 from trove.cluster.tasks import ClusterTask
 from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.notification import (
@@ -36,7 +37,6 @@ from trove.common.notification import DBaaSInstanceAttachConfiguration
 from trove.common.notification import DBaaSInstanceDetachConfiguration
 from trove.common.notification import EndNotification
 from trove.common.notification import StartNotification
-from trove.common import remote
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.common import utils
@@ -112,9 +112,9 @@ class Cluster(object):
 
     @classmethod
     def get_guest(cls, instance):
-        return remote.create_guest_client(instance.context,
-                                          instance.db_info.id,
-                                          instance.datastore_version.manager)
+        return clients.create_guest_client(instance.context,
+                                           instance.db_info.id,
+                                           instance.datastore_version.manager)
 
     @classmethod
     def load_all(cls, context, tenant_id):
@@ -572,7 +572,7 @@ def validate_instance_flavors(context, instances,
             if region_name in nova_cli_cache:
                 nova_client = nova_cli_cache[region_name]
             else:
-                nova_client = remote.create_nova_client(
+                nova_client = clients.create_nova_client(
                     context, region_name)
                 nova_cli_cache[region_name] = nova_client
 
@@ -670,7 +670,7 @@ def validate_instance_nics(context, instances):
         return
     instance_nic = instance_nics[0]
     try:
-        neutron_client = remote.create_neutron_client(context)
+        neutron_client = clients.create_neutron_client(context)
         neutron_client.find_resource('network', instance_nic)
     except neutron_exceptions.NotFound:
         raise exception.NetworkNotFound(uuid=instance_nic)

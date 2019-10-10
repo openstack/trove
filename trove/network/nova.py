@@ -17,8 +17,8 @@
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 from trove.network import base
 
 LOG = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class NovaNetwork(base.NetworkDriver):
 
     def __init__(self, context, region_name):
         try:
-            self.client = remote.create_nova_client(
+            self.client = clients.create_nova_client(
                 context, region_name)
         except nova_exceptions.ClientException as e:
             raise exception.TroveError(str(e))

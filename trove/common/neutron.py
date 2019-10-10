@@ -15,8 +15,8 @@ import netaddr
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
-from trove.common import remote
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def get_management_networks(context):
 
     MGMT_NETWORKS = []
     if len(CONF.management_networks) > 0:
-        neutron_client = remote.create_neutron_client(context)
+        neutron_client = clients.create_neutron_client(context)
 
         for net_id in CONF.management_networks:
             MGMT_NETWORKS.append(

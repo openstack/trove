@@ -22,7 +22,6 @@ from trove.backup import models
 from trove.backup import state
 from trove.common import context
 from trove.common import exception
-from trove.common import remote
 from trove.common import timeutils
 from trove.common import utils
 from trove.db.models import DatabaseModelBase
@@ -401,48 +400,50 @@ class BackupORMTest(trove_testtools.TestCase):
 
         self.assertRaises(ValueError, _set_bad_filename)
 
-    def test_check_swift_object_exist_integrity_error(self):
-        mock_client = MagicMock()
-        mock_client.head_object.return_value = {'etag': ''}
-        with patch.object(remote, 'get_endpoint', return_value=None),\
-            patch.object(remote, 'Connection',
-                         return_value=mock_client):
-            self.assertRaises(exception.RestoreBackupIntegrityError,
-                              self.backup.check_swift_object_exist,
-                              self.context, True)
+    @patch('trove.common.clients.create_swift_client')
+    def test_check_swift_object_exist_integrity_error(self, mock_swift_client):
+        mock_swift_client.return_value.head_object.return_value = {'etag': ''}
 
-    def test_check_swift_object_exist_client_exception(self):
-        with patch.object(remote, 'get_endpoint', return_value=None),\
-            patch.object(remote, 'Connection',
-                         side_effect=ClientException(self.context.project_id)):
-            self.assertRaises(exception.SwiftAuthError,
-                              self.backup.check_swift_object_exist,
-                              self.context)
+        self.assertRaises(exception.RestoreBackupIntegrityError,
+                          self.backup.check_swift_object_exist,
+                          self.context, True)
 
-    def test_check_swift_object_exist_client_exception_404(self):
+    @patch('trove.common.clients.create_swift_client')
+    def test_check_swift_object_exist_client_exception(self,
+                                                       mock_swift_client):
+        mock_swift_client.side_effect = ClientException(
+            self.context.project_id
+        )
+        self.assertRaises(exception.SwiftAuthError,
+                          self.backup.check_swift_object_exist,
+                          self.context)
+
+    @patch('trove.common.clients.create_swift_client')
+    def test_check_swift_object_exist_client_exception_404(self,
+                                                           mock_swift_client):
         e = ClientException(self.context.project_id)
         e.http_status = 404
-        with patch.object(remote, 'get_endpoint', return_value=None),\
-            patch.object(remote, 'Connection',
-                         side_effect=e):
-            self.assertFalse(
-                self.backup.check_swift_object_exist(self.context))
+        mock_swift_client.side_effect = e
 
-    def test_swift_auth_token_client_exception(self):
-        with patch.object(remote, 'get_endpoint', return_value=None),\
-            patch.object(remote, 'Connection',
-                         side_effect=ClientException(self.context.project_id)):
-            self.assertRaises(exception.SwiftAuthError,
-                              models.Backup.verify_swift_auth_token,
-                              self.context)
+        self.assertFalse(self.backup.check_swift_object_exist(self.context))
 
-    def test_swift_auth_token_no_service_endpoint(self):
-        with patch.object(remote, 'get_endpoint', return_value=None),\
-            patch.object(remote, 'Connection',
-                         side_effect=exception.NoServiceEndpoint):
-            self.assertRaises(exception.SwiftNotFound,
-                              models.Backup.verify_swift_auth_token,
-                              self.context)
+    @patch('trove.common.clients.create_swift_client')
+    def test_swift_auth_token_client_exception(self, mock_swift_client):
+        mock_swift_client.side_effect = ClientException(
+            self.context.project_id
+        )
+
+        self.assertRaises(exception.SwiftAuthError,
+                          models.Backup.verify_swift_auth_token,
+                          self.context)
+
+    @patch('trove.common.clients.create_swift_client')
+    def test_swift_auth_token_no_service_endpoint(self, mock_swift_client):
+        mock_swift_client.side_effect = exception.NoServiceEndpoint
+
+        self.assertRaises(exception.SwiftNotFound,
+                          models.Backup.verify_swift_auth_token,
+                          self.context)
 
 
 class PaginationTests(trove_testtools.TestCase):
