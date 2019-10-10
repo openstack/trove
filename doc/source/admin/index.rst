@@ -9,4 +9,3 @@
    building_guest_images
    database_module_usage
    secure_oslo_messaging
-   trovestack

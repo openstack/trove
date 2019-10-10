@@ -16,23 +16,15 @@ Building Guest Images for OpenStack Trove
 Overview
 ========
 
-When Trove receives a command to create a guest instance, it does so
-by launching a Nova instance based on the appropriate guest image that
-is stored in Glance.
+When Trove receives a command to create a database instance, it does so by
+launching a Nova instance based on the appropriate guest image that is
+stored in Glance. This document shows you the steps to build the guest images.
 
-To operate Trove it is vital to have a properly constructed guest
-image, and while tools are provided that help you build them,
-the Trove project itself does not distribute guest images. This
-document shows you how to build guest images for use with Trove.
+.. note::
 
-It is assumed that you have a working OpenStack deployment with the
-key services like Keystone, Glance, Swift, Cinder, Nova and networking
-through either Nova Networks or Neutron where you will deploy the
-guest images. It is also assumed that you have Trove functioning and
-all the Trove services operating normally. If you don't have these
-prerequisites, this document won't help you get them. Consult the
-appropriate documentation for installing and configuring OpenStack for
-that.
+    For testing purpose, the Trove guest images of some specific databases are
+    periodically built and published in
+    http://tarballs.openstack.org/trove/images/ in Trove upstream CI.
 
 High Level Overview of a Trove Guest Instance
 =============================================
@@ -83,168 +75,112 @@ The Trove Guest Agent runs inside the Trove Guest Instance.
 Injected Configuration for the Guest Agent
 ------------------------------------------
 
-When TaskManager launches the guest VM it injects the specific settings
-for the guest into the VM, into the file /etc/trove/conf.d/guest_info.conf.
-The file is injected one of three ways.
+When TaskManager launches the guest VM it injects config files into the
+VM, including:
 
-If ``use_nova_server_config_drive=True``, it is injected via ConfigDrive.
-Otherwise it is passed to the nova create call as the 'files' parameter and
-will be injected based on the configuration of Nova; the Nova default is to
-discard the files. If the settings in guest_info.conf are not present on the
-guest Guest Agent will fail to start up.
+* ``/etc/trove/conf.d/guest_info.conf``: Contains some information about
+  the guest, e.g. the guest identifier, the tenant ID, etc.
+* ``/etc/trove/conf.d/trove-guestagent.conf``: The config file for the
+  guest agent service.
 
 ------------------------------
 Persistent Storage, Networking
 ------------------------------
 
 The database stores data on persistent storage on Cinder (if
-configured, see trove.conf and the volume_support parameter) or
-ephemeral storage on the Nova instance. The database service is accessible
-over the tenant network provided when creating the database instance.
+``CONF.volume_support=True``) or ephemeral storage on the Nova instance. The
+database service is accessible over the tenant network provided when creating
+the database instance.
 
-The cloud administrator is able to config a management
+The cloud administrator is able to config management
 networks(``CONF.management_networks``) that is invisible to the cloud tenants,
-database instance can talk to the control plane services(e.g. the message
-queue) via that network.
+but used for communication between database instance and the control plane
+services(e.g. the message queue).
 
-Building Guest Images using DIB
-===============================
-
-A Trove Guest Image can be built with any tool that produces an image
-accepted by Nova. In this document we describe how to build guest
-images using the
-`'Disk Image Builder' (DIB) <https://docs.openstack.org/diskimage-builder/latest/>`_
-tool, and we focus on building qemu images.
-
-DIB uses a chroot'ed environment to construct the image. The goal is
-to build a bare machine that has all the components required for
-launch by Nova.
-
-----------------------------
-Build image using trovestack
-----------------------------
-
-Trove provides a script called ``trovestack`` that could do most of the
-management and test tasks. Refer to
-`trovestack document <https://docs.openstack.org/trove/latest/admin/trovestack.html#build-guest-agent-image>`_
-for the steps to build trove guest agent images.
+Building Guest Images
+=====================
 
 -----------------------------
-Disk Image Builder 'Elements'
+Build images using trovestack
 -----------------------------
 
-DIB Elements are 'executed' by the disk-image-create command to
-produce the guest image.  An element consists of a number of bash
-scripts that are executed by DIB in a specific order to generate the
-image. You provide the names of the elements that you would like
-executed, in order, on the command line to disk-image-create.
+``trovestack`` is the recommended tooling provided by Trove community to build
+the guest images. Before running ``trovestack`` command, go to the scripts
+folder:
 
-DIB comes with some
-`built-in elements <https://docs.openstack.org/diskimage-builder/latest/elements.html>`_.
-In addition, projects like
-`TripleO <https://github.com/openstack/tripleo-image-elements>`_ provide
-elements as well.
+.. code-block:: console
 
-Trove also provides a set of its own elements. In keeping with the philosophy
-of making elements 'layered', Trove provides two sets of elements. The first
-implements the guest agent for various operating systems and the second
-implements the database for these operating systems.
+    git clone https://opendev.org/openstack/trove
+    cd trove/integration/scripts
 
--------------------------------------------------------------------
-Contributing Reference Elements When Implementing a New 'Datastore'
--------------------------------------------------------------------
+The trove guest agent image could be created by running the following command:
 
-When contributing a new datastore, you should contribute elements
-that will allow any user of Trove to be able to build a guest image
-for that datastore.
+.. code-block:: console
 
-Considerations in Building a Guest Image
-========================================
+    $ ./trovestack build-image \
+        ${datastore_type} \
+        ${guest_os} \
+        ${guest_os_release} \
+        ${dev_mode} \
+        ${guest_username} \
+        ${imagepath}
 
-In building a guest image, there are several considerations that one
-must take into account. Some of the ones that we have encountered are
-described below.
+* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=xenial`` are fully
+  tested and supported.
 
----------------------------------------
-Speed of Launch and Start-up Activities
----------------------------------------
+* Default input values:
 
-The actions performed on first boot can be very expensive and may
-impact the time taken to launch a new guest instance. So, for example,
-guest images that don't have the database software pre-installed and
-instead download and install during launch could take longer to
-launch.
+  .. code-block:: ini
 
-In building a guest image, therefore care should be taken to ensure
-that activities performed on first boot are traded off against the
-demands for start-time.
+      datastore_type=mysql
+      guest_os=ubuntu
+      guest_os_release=xenial
+      dev_mode=true
+      guest_username=ubuntu
+      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}
 
----------------------------------------------------------
-Database licensing, and Database Software Download Issues
----------------------------------------------------------
+* ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
+  necessary to build the image on the trove controller host, because the host
+  and the guest VM need to ssh into each other without password. In this mode,
+  when the trove guest agent code is changed, the image doesn't need to be
+  rebuilt which is convenient for debugging. Trove guest agent will ssh into
+  the controller node and download trove code during the service initialization.
 
-Some database software downloads are licensed and manual steps are
-required in order to obtain the installable software. In other
-instances, no repositories may be setup to serve images of a
-particular database.  In these cases, it is suggested that an extra
-step be used to build the guest image.
+* if ``dev_mode=false``, the trove code for guest agent is injected into the
+  image at the building time. Now ``dev_mode=false`` is still in experimental
+  and not considered production ready yet.
 
-User Manually Downloads Database Software
------------------------------------------
+* Some other global variables:
 
-The user manually downloads the database software in a suitable format
-and places it in a specified location on the machine that will be used
-to build the guest image.
+  * ``HOST_SCP_USERNAME``: Only used in dev mode, this is the user name used by
+    guest agent to connect to the controller host, e.g. in devstack
+    environment, it should be the ``stack`` user.
+  * ``GUEST_WORKING_DIR``: The place to save the guest image, default value is
+    ``$HOME/images``.
+  * ``TROVE_BRANCH``: Only used in dev mode. The branch name of Trove code
+    repository, by default it's master, use other branches as needed such as
+    stable/train.
 
-An environment variable 'DATASTORE_PKG_LOCATION' is set to point
-to this location. It can be a single file (for example new_db.deb)
-or a folder (for example new_db_files) depending on what the elements
-expect. In the latter case, the folder would need to contain all the
-files that the elements need in order to install the database software
-(a folder would typically be used only if more than one file was
-required).
+For example, in order to build a MySQL image for Ubuntu Xenial operating
+system in development mode:
 
-Use an extra-data.d Folder
---------------------------
+.. code-block:: console
 
-Use an extra-data.d folder for the element and copy the file
-into the image
+    $ ./trovestack build-image mysql ubuntu xenial true
 
-Steps in extra-data.d are run first, and outside the DIB chroot'ed
-environment. The step here can copy the installable from
-DATASTORE_PKG_LOCATION into the image
-(typically into TMP_HOOKS_PATH).
+Once the image build is finished, the cloud administrator needs to register the
+image in Glance and register a new datastore or version in Trove using
+``trove-manage`` command, e.g. after building an image for MySQL 5.7.1:
 
-For example, if DATASTORE_PKG_LOCATION contains the full path to an
-installation package, an element in this folder could contain the
-following line:
+.. code-block:: console
 
-.. code-block:: bash
+    $ openstack image create ubuntu-mysql-5.7.1-dev \
+      --public \
+      --disk-format qcow2 \
+      --container-format bare \
+      --file ~/images/ubuntu-xenial-mysql.qcow2
+    $ trove-manage datastore_version_update mysql 5.7.1 mysql $image_id "" 1
 
-  dd if=${DATASTORE_PKG_LOCATION} of=${TMP_HOOKS_PATH}/new_db.deb
-
-Use an install.d Step to Install the Software
----------------------------------------------
-
-A standard install.d step can now install the software from
-TMP_HOOKS_DIR.
-
-For example, an element in this folder could contain:
-
-.. code-block:: bash
-
-  dpkg -i ${TMP_HOOKS_PATH}/new_db.deb
-
-Once elements have been set up that expect a package to be available,
-the guest image can be created by executing the following:
-
-.. code-block:: bash
-
-  DATASTORE_PKG_LOCATION=/path/to/new_db.deb ./script_to_call_dib.sh
-
-Assuming the elements for new_db are available in the trove
-repository, this would equate to:
-
-.. code-block:: bash
-
-  DATASTORE_PKG_LOCATION=/path/to/new_db.deb ./trovestack kick-start new_db
+If you see anything error or need help for the image creation, please ask help
+either in ``#openstack-trove`` IRC channel or sending emails to
+openstack-discuss@lists.openstack.org mailing list.
