@@ -436,8 +436,8 @@ function configure_tempest_for_trove {
 
 # Use trovestack to create guest image and register the image in the datastore.
 function create_guest_image {
-    TROVE_DISABLE_IMAGE_SETUP=`echo ${TROVE_DISABLE_IMAGE_SETUP,,}`
-    if [[ ${TROVE_DISABLE_IMAGE_SETUP} == "true" ]]; then
+    TROVE_ENABLE_IMAGE_BUILD=`echo ${TROVE_ENABLE_IMAGE_BUILD,,}`
+    if [[ ${TROVE_ENABLE_IMAGE_BUILD} == "false" ]]; then
         echo "Skip creating guest image."
         return 0
     fi
