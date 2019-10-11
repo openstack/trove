@@ -36,6 +36,8 @@ function build_vm() {
         export HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-$(whoami)}
         export HOST_USERNAME=${HOST_SCP_USERNAME}
         export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
+        export DEST=${DEST:-'/opt/stack'}
+        export TROVE_BRANCH=${TROVE_BRANCH:-'master'}
         manage_ssh_keys
     fi
 

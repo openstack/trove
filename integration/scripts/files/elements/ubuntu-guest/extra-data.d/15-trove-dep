@@ -8,7 +8,7 @@ set -o xtrace
 
 source $_LIB/die
 
-BRANCH_OVERRIDE=${BRANCH_OVERRIDE:-default}
+TROVE_BRANCH=${TROVE_BRANCH:-'master'}
 REQUIREMENTS_FILE=${TROVESTACK_SCRIPTS}/../../requirements.txt
 
 [ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
@@ -30,13 +30,10 @@ if [ -f "${DEST}/requirements/${UC_FILE}" ]; then
         of="${TMP_HOOKS_PATH}/${UC_FILE}"
 else
     UC_DIR=$(pwd)
-    UC_BRANCH=${BRANCH_OVERRIDE}
-    if [ "${UC_BRANCH}" == "default" ]; then
-        UC_BRANCH=master
-    fi
+    UC_BRANCH=${TROVE_BRANCH##stable/}
 
     set +e
-    curl -o "${UC_DIR}/${UC_FILE}" "https://opendev.org/openstack/requirements/raw/branch/${UC_BRANCH}/${UC_FILE}"
+    curl -L -o "${UC_DIR}/${UC_FILE}" "https://releases.openstack.org/constraints/upper/${UC_BRANCH}"
     set -e
 
     if [ -f "${UC_DIR}/${UC_FILE}" ]; then

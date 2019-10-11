@@ -447,7 +447,12 @@ function create_guest_image {
 
     echo "Starting to create guest image..."
 
-    $DEST/trove/integration/scripts/trovestack build-image ${TROVE_DATASTORE_TYPE} ${TROVE_IMAGE_OS} ${TROVE_IMAGE_OS_RELEASE} true
+    TROVE_BRANCH=${TROVE_BRANCH} $DEST/trove/integration/scripts/trovestack \
+      build-image \
+      ${TROVE_DATASTORE_TYPE} \
+      ${TROVE_IMAGE_OS} \
+      ${TROVE_IMAGE_OS_RELEASE} \
+      true
 
     image_name="trove-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}-${TROVE_DATASTORE_TYPE}"
     image_file=$HOME/images/${image_name}.qcow2
