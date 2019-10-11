@@ -107,9 +107,6 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
     SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
     SWIFT_REPLICAS=1
 
-    # Trove
-    TROVE_DISABLE_IMAGE_SETUP=False
-
 Take a look at the
 `options <https://opendev.org/openstack/trove/src/branch/master/devstack/settings>`_
 you could use to customize the Trove installation.
