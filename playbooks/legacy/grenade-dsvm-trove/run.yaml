@@ -36,6 +36,7 @@
           export DEVSTACK_GATE_TROVE=1
           export TEMPEST_CONCURRENCY=2
           export BRANCH_OVERRIDE=default
+          export DEVSTACK_GATE_USE_PYTHON3=True
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
           fi
