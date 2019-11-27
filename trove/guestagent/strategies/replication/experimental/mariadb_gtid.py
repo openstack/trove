@@ -17,16 +17,10 @@
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import mysql_base
 
-AGENT = BackupAgent()
 CONF = cfg.CONF
-
-REPL_BACKUP_NAMESPACE = 'trove.guestagent.strategies.backup' \
-                        '.experimental.mariadb_impl'
-
 LOG = logging.getLogger(__name__)
 
 
@@ -35,17 +29,27 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
 
     @property
     def repl_backup_runner(self):
-        return backup.get_backup_strategy('MariaDBInnoBackupEx',
-                                          REPL_BACKUP_NAMESPACE)
+        return backup.get_backup_strategy(
+            CONF.mariadb.backup_strategy,
+            CONF.mariadb.backup_namespace
+        )
 
     @property
     def repl_incr_backup_runner(self):
-        return backup.get_backup_strategy('MariaDBInnoBackupExIncremental',
-                                          REPL_BACKUP_NAMESPACE)
+        strategy = CONF.mariadb.backup_incremental_strategy.get(
+            CONF.mariadb.backup_strategy, CONF.mariadb.backup_strategy
+        )
+
+        return backup.get_backup_strategy(
+            strategy,
+            CONF.mariadb.backup_namespace
+        )
 
     @property
     def repl_backup_extra_opts(self):
-        return CONF.backup_runner_options.get('MariaDBInnoBackupEx', '')
+        return CONF.backup_runner_options.get(
+            CONF.mariadb.backup_strategy, ''
+        )
 
     def connect_to_master(self, service, snapshot):
         logging_config = snapshot['log_position']

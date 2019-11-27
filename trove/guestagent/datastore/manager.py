@@ -111,8 +111,8 @@ class Manager(periodic_task.PeriodicTasks):
         try:
             return repl_strategy.get_instance(self.manager)
         except Exception as ex:
-            LOG.debug("Cannot get replication instance for '%(manager)s': "
-                      "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
+            LOG.warning("Cannot get replication instance for '%(manager)s': "
+                        "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
 
         return None
 
@@ -315,6 +315,7 @@ class Manager(periodic_task.PeriodicTasks):
         except Exception as ex:
             LOG.exception("An error occurred applying modules: "
                           "%s", str(ex))
+
         # The following block performs single-instance initialization.
         # Failures will be recorded, but won't stop the provisioning
         # or change the instance state.

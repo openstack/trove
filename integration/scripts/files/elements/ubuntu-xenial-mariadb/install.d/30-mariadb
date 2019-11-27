@@ -18,13 +18,14 @@ curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup |
 wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
 dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
 
-apt-get update
+apt-get install -y -qq apt-transport-https ca-certificates
+apt-get update -qq
 
 # Disable password prompt
 debconf-set-selections <<< "mariadb-server mysql-server/root_password password ''"
 debconf-set-selections <<< "mariadb-server mysql-server/root_password_again password ''"
 
-apt-get install -y --allow-unauthenticated mariadb-server mariadb-client galera-4 libmariadb3 mariadb-backup mariadb-common percona-xtrabackup-24
+apt-get install -y -qq --allow-unauthenticated mariadb-server mariadb-client galera-4 libmariadb3 mariadb-backup mariadb-common
 
 cat <<EOF >/etc/mysql/conf.d/no_perf_schema.cnf
 [mysqld]

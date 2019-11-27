@@ -107,6 +107,7 @@ class MysqlReplicationBase(base.Replication):
                 incremental_runner=self.repl_incr_backup_runner)
         else:
             LOG.debug("Using existing backup created for previous replica.")
+
         LOG.debug("Replication snapshot %(snapshot_id)s used for replica "
                   "number %(replica_number)d.",
                   {'snapshot_id': snapshot_id,

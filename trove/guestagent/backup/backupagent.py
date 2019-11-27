@@ -123,14 +123,13 @@ class BackupAgent(object):
                                     sent=timeutils.utcnow_ts(
                                         microsecond=True),
                                     **backup_state)
-            LOG.debug("Updated state for %s to %s.",
-                      backup_id, backup_state)
+            LOG.info("Updated state for %s to %s.", backup_id, backup_state)
 
     def execute_backup(self, context, backup_info,
                        runner=RUNNER, extra_opts=EXTRA_OPTS,
                        incremental_runner=INCREMENTAL_RUNNER):
 
-        LOG.debug("Running backup %(id)s.", backup_info)
+        LOG.info("Running backup %(id)s.", backup_info)
         storage = get_storage_strategy(
             CONF.storage_strategy,
             CONF.storage_namespace)(context)
@@ -154,12 +153,8 @@ class BackupAgent(object):
                                       parent_metadata, extra_opts)
 
     def execute_restore(self, context, backup_info, restore_location):
-
         try:
-            LOG.debug("Getting Restore Runner %(type)s.", backup_info)
             restore_runner = self._get_restore_runner(backup_info['type'])
-
-            LOG.debug("Getting Storage Strategy.")
             storage = get_storage_strategy(
                 CONF.storage_strategy,
                 CONF.storage_namespace)(context)
@@ -168,16 +163,15 @@ class BackupAgent(object):
                                     checksum=backup_info['checksum'],
                                     restore_location=restore_location)
             backup_info['restore_location'] = restore_location
-            LOG.debug("Restoring instance from backup %(id)s to "
-                      "%(restore_location)s.", backup_info)
+
+            LOG.info("Restoring instance from backup %(id)s to "
+                     "%(restore_location)s", backup_info)
             content_size = runner.restore()
-            LOG.debug("Restore from backup %(id)s completed successfully "
-                      "to %(restore_location)s.", backup_info)
-            LOG.debug("Restore size: %s.", content_size)
-
+            LOG.info("Restore from backup %(id)s completed successfully "
+                     "to %(restore_location)s", backup_info)
+            LOG.debug("Restore size: %s", content_size)
         except Exception:
-            LOG.exception("Error restoring backup %(id)s.", backup_info)
+            LOG.exception("Error restoring backup %(id)s", backup_info)
             raise
-
         else:
-            LOG.debug("Restored backup %(id)s.", backup_info)
+            LOG.debug("Restored backup %(id)s", backup_info)

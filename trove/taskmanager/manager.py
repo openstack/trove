@@ -330,8 +330,8 @@ class Manager(periodic_task.PeriodicTasks):
         master_instance_tasks = BuiltInstanceTasks.load(context, slave_of_id)
         server_group = master_instance_tasks.server_group
         scheduler_hints = srv_grp.ServerGroup.convert_to_hint(server_group)
-        LOG.info("Using scheduler hints %s for creating instance %s",
-                 scheduler_hints, instance_id)
+        LOG.debug("Using scheduler hints %s for creating instance %s",
+                  scheduler_hints, instance_id)
 
         try:
             for replica_index in range(0, len(ids)):
@@ -344,14 +344,17 @@ class Manager(periodic_task.PeriodicTasks):
                     snapshot = instance_tasks.get_replication_master_snapshot(
                         context, slave_of_id, flavor, replica_backup_id,
                         replica_number=replica_number)
+
                     replica_backup_id = snapshot['dataset']['snapshot_id']
                     replica_backup_created = (replica_backup_id is not None)
+
                     instance_tasks.create_instance(
                         flavor, image_id, databases, users, datastore_manager,
                         packages, volume_size, replica_backup_id,
                         availability_zone, root_passwords[replica_index],
                         nics, overrides, None, snapshot, volume_type,
                         modules, scheduler_hints)
+
                     replicas.append(instance_tasks)
                 except Exception:
                     # if it's the first replica, then we shouldn't continue
@@ -390,8 +393,8 @@ class Manager(periodic_task.PeriodicTasks):
             scheduler_hints = srv_grp.ServerGroup.build_scheduler_hint(
                 context, locality, instance_id
             )
-            LOG.info("Using scheduler hints %s for creating instance %s",
-                     scheduler_hints, instance_id)
+            LOG.debug("Using scheduler hints %s for creating instance %s",
+                      scheduler_hints, instance_id)
 
             instance_tasks = FreshInstanceTasks.load(context, instance_id)
             instance_tasks.create_instance(
