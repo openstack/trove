@@ -184,7 +184,8 @@ class MySqlManager(manager.Manager):
         return self.mysql_admin().disable_root()
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        LOG.info("Restoring database from backup %s.", backup_info['id'])
+        LOG.info("Restoring database from backup %s, backup_info: %s",
+                 backup_info['id'], backup_info)
         try:
             backup.restore(context, backup_info, restore_location)
         except Exception:
@@ -202,9 +203,12 @@ class MySqlManager(manager.Manager):
         app = self.mysql_app(self.mysql_app_status.get())
         app.install_if_needed(packages)
         if device_path:
-            # stop and do not update database
+            LOG.info('Prepare the storage for %s', device_path)
+
             app.stop_db(
-                do_not_start_on_reboot=self.volume_do_not_start_on_reboot)
+                do_not_start_on_reboot=self.volume_do_not_start_on_reboot
+            )
+
             device = volume.VolumeDevice(device_path)
             # unmount if device is already mounted
             device.unmount_device(device_path)
@@ -219,13 +223,15 @@ class MySqlManager(manager.Manager):
                                    service.MYSQL_OWNER,
                                    recursive=False, as_root=True)
 
-            LOG.debug("Mounted the volume at %s.", mount_point)
+            LOG.debug("Mounted the volume at %s", mount_point)
             # We need to temporarily update the default my.cnf so that
             # mysql will start after the volume is mounted. Later on it
             # will be changed based on the config template
             # (see MySqlApp.secure()) and restart.
             app.set_data_dir(mount_point + '/data')
             app.start_mysql()
+
+            LOG.info('Finish to prepare the storage for %s', device_path)
         if backup_info:
             self._perform_restore(backup_info, context,
                                   mount_point + "/data", app)
@@ -337,7 +343,8 @@ class MySqlManager(manager.Manager):
 
     def get_replication_snapshot(self, context, snapshot_info,
                                  replica_source_config=None):
-        LOG.debug("Getting replication snapshot.")
+        LOG.info("Getting replication snapshot, snapshot_info: %s",
+                 snapshot_info)
         app = self.mysql_app(self.mysql_app_status.get())
 
         self.replication.enable_as_master(app, replica_source_config)

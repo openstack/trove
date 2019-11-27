@@ -57,7 +57,7 @@ class MySQLRestoreMixin(object):
     def mysql_is_not_running(self):
         try:
             utils.execute_with_timeout("/usr/bin/pgrep", "mysqld")
-            LOG.info("MySQL is still running.")
+            LOG.debug("MySQL is still running.")
             return False
         except exception.ProcessExecutionError:
             LOG.debug("MySQL is not running.")
@@ -218,7 +218,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         utils.clean_out(self.restore_location)
 
     def _run_prepare(self):
-        LOG.debug("Running innobackupex prepare: %s.", self.prepare_cmd)
+        LOG.info("Running innobackupex prepare: %s.", self.prepare_cmd)
         self.prep_retcode = utils.execute(self.prepare_cmd, shell=True)
         LOG.info("Innobackupex prepare finished successfully.")
 
@@ -247,7 +247,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         LOG.debug('Checking return code of xbstream restore process.')
         return_code = self.process.wait()
         if return_code != 0:
-            LOG.erro('xbstream exited with %s', return_code)
+            LOG.error('xbstream exited with %s', return_code)
             return False
 
         LOG.debug('Checking xbstream restore process stderr output.')

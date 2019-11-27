@@ -6,8 +6,6 @@ socket = /var/run/mysqld/mysqld.sock
 nice = 0
 
 [mysqld]
-ignore_builtin_innodb
-plugin_load=innodb=ha_innodb.so
 user = mysql
 port = 3306
 basedir = /usr

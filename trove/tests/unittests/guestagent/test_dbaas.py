@@ -158,7 +158,7 @@ class DbaasTest(trove_testtools.TestCase):
         with patch.object(mysql_common_service.utils, 'execute',
                           return_value=(secret_content, None)):
             mysql_common_service.clear_expired_password()
-            self.assertEqual(2, mysql_common_service.utils.execute.call_count)
+            self.assertEqual(3, mysql_common_service.utils.execute.call_count)
             self.assertEqual(1, mock_remove.call_count)
 
     @patch.object(operating_system, 'remove')
@@ -166,7 +166,7 @@ class DbaasTest(trove_testtools.TestCase):
         with patch.object(mysql_common_service.utils, 'execute',
                           return_value=('', None)):
             mysql_common_service.clear_expired_password()
-            self.assertEqual(1, mysql_common_service.utils.execute.call_count)
+            self.assertEqual(2, mysql_common_service.utils.execute.call_count)
             mock_remove.assert_not_called()
 
     @patch.object(operating_system, 'remove')
@@ -184,16 +184,14 @@ class DbaasTest(trove_testtools.TestCase):
             self.assertEqual(2, mysql_common_service.utils.execute.call_count)
             mock_remove.assert_not_called()
 
-    @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     @patch.object(operating_system, 'remove')
     @patch.object(mysql_common_service.utils, 'execute',
-                  side_effect=ProcessExecutionError)
+                  side_effect=[ProcessExecutionError, (None, None)])
     def test_fail_retrieve_secret_content_clear_expired_password(self,
                                                                  mock_execute,
-                                                                 mock_remove,
-                                                                 mock_logging):
+                                                                 mock_remove):
         mysql_common_service.clear_expired_password()
-        self.assertEqual(1, mock_execute.call_count)
+        self.assertEqual(2, mock_execute.call_count)
         mock_remove.assert_not_called()
 
     @patch.object(operating_system, 'read_file',

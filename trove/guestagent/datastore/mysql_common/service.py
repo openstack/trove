@@ -95,20 +95,28 @@ def clear_expired_password():
         out, err = utils.execute("cat", secret_file,
                                  run_as_root=True, root_helper="sudo")
     except exception.ProcessExecutionError:
-        LOG.exception("/root/.mysql_secret does not exist.")
-        return
-    m = re.match('# The random password set for the root user at .*: (.*)',
-                 out)
-    if m:
-        try:
-            out, err = utils.execute("mysqladmin", "-p%s" % m.group(1),
-                                     "password", "", run_as_root=True,
-                                     root_helper="sudo")
-        except exception.ProcessExecutionError:
-            LOG.exception("Cannot change mysql password.")
-            return
-        operating_system.remove(secret_file, force=True, as_root=True)
-        LOG.debug("Expired password removed.")
+        LOG.warning("/root/.mysql_secret does not exist.")
+    else:
+        m = re.match('# The random password set for the root user at .*: (.*)',
+                     out)
+        if m:
+            try:
+                out, err = utils.execute("mysqladmin", "-p%s" % m.group(1),
+                                         "password", "", run_as_root=True,
+                                         root_helper="sudo")
+            except exception.ProcessExecutionError:
+                LOG.exception("Cannot change mysql password.")
+                return
+            operating_system.remove(secret_file, force=True, as_root=True)
+            LOG.debug("Expired password removed.")
+
+    # The root user password will be changed in app.secure_root() later on
+    LOG.debug('Initializae the root password to empty')
+    try:
+        utils.execute("mysqladmin", "--user=root", "password", "",
+                      run_as_root=True, root_helper="sudo")
+    except Exception:
+        LOG.exception("Failed to initializae the root password")
 
 
 def load_mysqld_options():
@@ -145,17 +153,19 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
 
     def _get_actual_db_status(self):
         try:
-            out, err = utils.execute_with_timeout(
+            utils.execute_with_timeout(
                 "/usr/bin/mysqladmin",
                 "ping", run_as_root=True, root_helper="sudo",
                 log_output_on_error=True)
-            LOG.info("MySQL Service Status is RUNNING.")
+            LOG.debug("MySQL Service Status is RUNNING.")
             return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
-            LOG.exception("Failed to get database status.")
+            LOG.warning("Failed to get database status.")
             try:
-                out, err = utils.execute_with_timeout("/bin/ps", "-C",
-                                                      "mysqld", "h")
+                out, _ = utils.execute_with_timeout(
+                    "/bin/ps", "-C", "mysqld", "h",
+                    log_output_on_error=True
+                )
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
@@ -163,7 +173,7 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
                          {'pid': pid})
                 return rd_instance.ServiceStatuses.BLOCKED
             except exception.ProcessExecutionError:
-                LOG.exception("Process execution failed.")
+                LOG.warning("Process execution failed.")
                 mysql_args = load_mysqld_options()
                 pid_file = mysql_args.get('pid_file',
                                           ['/var/run/mysqld/mysqld.pid'])[0]
@@ -298,6 +308,7 @@ class BaseMySqlAdmin(object):
                                               mydb.character_set,
                                               mydb.collate)
                 t = text(str(cd))
+                LOG.debug('Creating database, command: %s', str(cd))
                 client.execute(t)
 
     def create_user(self, users):
@@ -319,6 +330,7 @@ class BaseMySqlAdmin(object):
                     g = sql_query.Grant(permissions='ALL', database=mydb.name,
                                         user=user.name, host=user.host)
                     t = text(str(g))
+                    LOG.debug('Creating user, command: %s', str(g))
                     client.execute(t)
 
     def delete_database(self, database):
@@ -569,10 +581,11 @@ class BaseKeepAliveConnection(interfaces.PoolListener):
             else:
                 raise
         # MariaDB seems to timeout the client in a different
-        # way than MySQL and PXC, which manifests itself as
-        # an invalid packet sequence.  Handle it as well.
+        # way than MySQL and PXC
         except pymysql_err.InternalError as ex:
             if "Packet sequence number wrong" in str(ex):
+                raise exc.DisconnectionError()
+            elif 'Connection was killed' in str(ex):
                 raise exc.DisconnectionError()
             else:
                 raise
@@ -717,6 +730,7 @@ class BaseMySqlApp(object):
     def secure(self, config_contents):
         LOG.debug("Securing MySQL now.")
         clear_expired_password()
+
         LOG.debug("Generating admin password.")
         admin_password = utils.generate_random_password()
         engine = sqlalchemy.create_engine(

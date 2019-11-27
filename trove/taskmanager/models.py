@@ -424,7 +424,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         error_message = ''
         error_details = ''
         try:
-            LOG.info("Waiting for instance %s up and running", self.id)
+            LOG.info("Waiting for instance %s up and running with "
+                     "timeout %ss", self.id, timeout)
             utils.poll_until(self._service_is_active,
                              sleep_time=CONF.usage_sleep_time,
                              time_out=timeout)
@@ -621,7 +622,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 if backup:
                     backup_id = backup.id
         else:
-            LOG.debug('Skipping replication backup, as none is required.')
+            LOG.debug('Will skip replication master backup')
+
         snapshot_info = {
             'name': "Replication snapshot for %s" % self.id,
             'description': "Backup image used to initialize "
@@ -1094,7 +1096,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         self.guest.create_backup(backup_info)
 
     def backup_required_for_replication(self):
-        LOG.debug("Seeing if replication backup is required for instance %s.",
+        LOG.debug("Check if replication backup is required for instance %s.",
                   self.id)
         return self.guest.backup_required_for_replication()
 
@@ -1106,7 +1108,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 rep_source_config = self._render_replica_source_config(flavor)
                 result = self.guest.get_replication_snapshot(
                     snapshot_info, rep_source_config.config_contents)
-                LOG.debug("Got replication snapshot from guest successfully.")
+
+                LOG.info("Finnished getting replication snapshot for "
+                         "instance %s", self.id)
                 return result
             except Exception:
                 LOG.exception("Failed to get replication snapshot from %s.",

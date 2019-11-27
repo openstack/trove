@@ -563,7 +563,7 @@ function cmd_set_datastore() {
         VERSION="5.6"
     elif [ "$DATASTORE_TYPE" == "mariadb" ]; then
         PACKAGES=${PACKAGES:-"mariadb-server"}
-        VERSION="10.1"
+        VERSION="10.4"
     elif [ "$DATASTORE_TYPE" == "mongodb" ]; then
         PACKAGES=${PACKAGES:-"mongodb-org"}
         VERSION="3.2"

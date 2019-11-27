@@ -318,7 +318,8 @@ register(
 register(
     ["mariadb_supported"],
     single=[common_groups,
-            backup_incremental_groups,
+            backup_groups,
+            # backup_incremental_groups,
             configuration_groups,
             database_actions_groups,
             root_actions_groups,
