@@ -1050,6 +1050,7 @@ function cmd_int_tests() {
         args="$@"
     fi
 
+    # Referenced in test script
     export TROVE_TEST_SSH_USER=${TROVE_TEST_SSH_USER:-"ubuntu"}
     export TROVE_TEST_SSH_KEY_FILE=${TROVE_TEST_SSH_KEY_FILE:-"$HOME/.ssh/id_rsa"}
 
@@ -1285,47 +1286,16 @@ function cmd_kick_start() {
 }
 
 function cmd_gate_tests() {
-    ACTUAL_HOSTNAME=$(hostname -I | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1)
-
     local DATASTORE_TYPE=${1:-'mysql'}
     local TEST_GROUP=${2:-${DATASTORE_TYPE}}
     local HOST_SCP_USERNAME=${3:-$(whoami)}
     local GUEST_USERNAME=${4:-'ubuntu'}
-    local CONTROLLER_IP=${5:-$ACTUAL_HOSTNAME}
     # We're not using devstack-gate in Zuul v3 job
     if [[ $GATE_JOB_VER == "v2" ]]; then
-        local ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
+        local ESCAPED_PATH_TROVE=${5:-'\/opt\/stack\/new\/trove'}
     fi
 
     exclaim "Running cmd_gate_tests ..."
-
-    # Sometimes in the gate the ACTUAL_HOSTNAME is blank - this code attempts to debug it
-    if [[ -z "${CONTROLLER_IP// }" ]]; then
-        echo "*** CONTROLLER_IP is blank, trying to determine actual hostname"
-        local hostname_part=$(hostname -I)
-        echo "Hostname pass 1: '$hostname_part'"
-        hostname_part=$(echo $hostname_part | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g')
-        echo "Hostname pass 2: '$hostname_part'"
-        hostname_part_no_ip6=$hostname_part
-        hostname_part=$(echo $hostname_part | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g')
-        echo "Hostname pass 3: '$hostname_part'"
-        if [[ -z "${hostname_part// }" ]]; then
-            # This seems to occur when the actual hostname ends with '.1'
-            # If this happens, take the first one that doesn't start with '192' or '172'
-            hostname_part=$(echo $hostname_part_no_ip6 | sed 's/1[79]2\.[0-9]*\.[0-9]*\.1\b//g')
-            echo "Hostname pass 3a: '$hostname_part'"
-        fi
-        hostname_part=$(echo $hostname_part | sed 's/ /\n/g')
-        echo "Hostname pass 4: '$hostname_part'"
-        hostname_part=$(echo $hostname_part | sed '/^$/d')
-        echo "Hostname pass 5: '$hostname_part'"
-        hostname_part=$(echo $hostname_part | sort -bu)
-        echo "Hostname pass 6: '$hostname_part'"
-        hostname_part=$(echo $hostname_part | head -1)
-        echo "Hostname pass 7: '$hostname_part'"
-        CONTROLLER_IP=$hostname_part
-        echo "*** CONTROLLER_IP was blank (CONTROLLER_IP now set to '$CONTROLLER_IP')"
-    fi
 
     export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/gate-tests-report/}
     export TROVE_REPORT_DIR=$HOME/gate-tests-report/
@@ -1337,37 +1307,13 @@ function cmd_gate_tests() {
     # This var is used to ssh into the db instance during the test.
     export TROVE_TEST_SSH_KEY_FILE=${SSH_DIR}/id_rsa
 
-    # To avoid 'Connection timed out' error of sudo command
-    CLOUDINIT_PATH=/etc/trove/cloudinit/${DATASTORE_TYPE}.cloudinit
-    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
-    sudo touch "$CLOUDINIT_PATH"
-    sudo tee $CLOUDINIT_PATH >/dev/null <<'EOF'
-#cloud-config
-manage_etc_hosts: "localhost"
-EOF
-
     # Fix iptables rules that prevent amqp connections from the devstack box to the guests
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
 
     sudo chown -R $(whoami) /etc/trove
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_host $CONTROLLER_IP
-    cd $TROVESTACK_SCRIPTS
-    sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
 
     local RESTART_TROVE=false
     cmd_kick_start "${DATASTORE_TYPE}" "${RESTART_TROVE}"
-
-    # TODO(zhaochao): in fact, devstack also use CONTROLLER_IP to construct the endpoint urls
-    # so we could safely remove the following lines in the future(they're kept now for not
-    # introducing too many changes.
-    if [[ $GATE_JOB_VER == "v2" ]]; then
-        # Update the local swift endpoint in the catalog to use the CONTROLLER_IP instead of 127.0.0.1
-        SWIFT_ENDPOINTS=$(openstack $CLOUD_ADMIN_ARG endpoint list --service swift -c ID -f value)
-        openstack $CLOUD_ADMIN_ARG endpoint create swift public 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
-        openstack $CLOUD_ADMIN_ARG endpoint create swift internal 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
-        openstack $CLOUD_ADMIN_ARG endpoint create swift admin 'http://'$CONTROLLER_IP':8080' --region RegionOne
-        echo $SWIFT_ENDPOINTS | xargs -n 1 openstack $CLOUD_ADMIN_ARG endpoint delete
-    fi
 
     cmd_int_tests --group=$TEST_GROUP
 }

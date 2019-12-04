@@ -13,10 +13,9 @@ source $_LIB/die
 
 [ -n "${GUEST_USERNAME}" ] || die "GUEST_USERNAME needs to be set to the user for the guest image"
 [ -n "${HOST_SCP_USERNAME}" ] || die "HOST_SCP_USERNAME needs to be set to the user for the host instance"
-[ -n "${CONTROLLER_IP}" ] || die "CONTROLLER_IP needs to be set to the ip address that guests will use to contact the controller"
 [ -n "${ESCAPED_PATH_TROVE}" ] || die "ESCAPED_PATH_TROVE needs to be set to the path to the trove directory on the trovestack host"
 [ -n "${TROVESTACK_SCRIPTS}" ] || die "TROVESTACK_SCRIPTS needs to be set to the trove/integration/scripts dir"
 [ -n "${ESCAPED_GUEST_LOGDIR}" ] || die "ESCAPED_GUEST_LOGDIR must be set to the escaped guest log dir"
 
-sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/GUEST_LOGDIR/${ESCAPED_GUEST_LOGDIR}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;s/CONTROLLER_IP/${CONTROLLER_IP}/g;s/PATH_TROVE/${ESCAPED_PATH_TROVE}/g" ${TROVESTACK_SCRIPTS}/files/trove-guest.systemd.conf > ${TMP_HOOKS_PATH}/trove-guest.service
+sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/GUEST_LOGDIR/${ESCAPED_GUEST_LOGDIR}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;s/PATH_TROVE/${ESCAPED_PATH_TROVE}/g" ${TROVESTACK_SCRIPTS}/files/trove-guest.systemd.conf > ${TMP_HOOKS_PATH}/trove-guest.service
 

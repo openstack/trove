@@ -26,8 +26,6 @@ function build_vm() {
     # In dev mode, the trove guest agent needs to download trove code from
     # trove-taskmanager host during service initialization.
     if [[ "${dev_mode}" == "true" ]]; then
-        host_ip=$(ip route get 8.8.8.8 | head -1 | awk '{print $7}')
-        export CONTROLLER_IP=${CONTROLLER_IP:-${host_ip}}
         export PATH_TROVE=${PATH_TROVE}
         export ESCAPED_PATH_TROVE=$(echo ${PATH_TROVE} | sed 's/\//\\\//g')
         export GUEST_LOGDIR=${GUEST_LOGDIR:-"/var/log/trove/"}

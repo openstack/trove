@@ -1,8 +1,0 @@
-#!/bin/sh
-
-set -e
-set -o xtrace
-
-export DEBIAN_FRONTEND=noninteractive
-
-apt-get -y install mongodb-org=3.2.11

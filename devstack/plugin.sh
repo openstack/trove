@@ -281,14 +281,25 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
-    # To avoid 'Connection timed out' error of sudo command inside the guest agent
-    CLOUDINIT_PATH=/etc/trove/cloudinit/${TROVE_DATASTORE_TYPE}.cloudinit
-    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
-    sudo touch "$CLOUDINIT_PATH"
-    sudo tee $CLOUDINIT_PATH >/dev/null <<'EOF'
+    # 1. To avoid 'Connection timed out' error of sudo command inside the guest agent
+    # 2. Config the controller IP address used by guest-agent to download Trove code during initialization (only valid for dev_mode=true).
+    common_cloudinit=/etc/trove/cloudinit/common.cloudinit
+    sudo mkdir -p $(dirname ${common_cloudinit})
+    sudo touch ${common_cloudinit}
+    sudo tee ${common_cloudinit} >/dev/null <<EOF
 #cloud-config
 manage_etc_hosts: "localhost"
+write_files:
+  - path: /etc/trove/controller.conf
+    content: |
+      CONTROLLER=${SERVICE_HOST}
 EOF
+
+    # NOTE(lxkong): Remove this when we support common cloud-init file for all datastores.
+    for datastore in "mysql" "mariadb"
+    do
+        sudo cp ${common_cloudinit} /etc/trove/cloudinit/${datastore}.cloudinit
+    done
 }
 
 # install_trove() - Collect source and prepare
@@ -482,15 +493,6 @@ function create_guest_image {
         $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
             $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
     fi
-
-    # To avoid 'Connection timed out' error of sudo command inside the guest agent.
-    CLOUDINIT_PATH=/etc/trove/cloudinit/${TROVE_DATASTORE_TYPE}.cloudinit
-    sudo mkdir -p $(dirname "$CLOUDINIT_PATH")
-    sudo touch "$CLOUDINIT_PATH"
-    sudo tee $CLOUDINIT_PATH >/dev/null <<'EOF'
-#cloud-config
-manage_etc_hosts: "localhost"
-EOF
 }
 
 # Set up Trove management network and make configuration change.

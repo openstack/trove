@@ -135,9 +135,8 @@ PATH_DEVSTACK_OUTPUT=/opt/stack \
 - if `dev_mode=false`, the trove code for guest agent is injected into the 
   image at the building time. Now `dev_mode=false` is still in experimental
   and not considered production ready yet.
-- If `dev_mode=true`, the script assumes to be running on the host of 
-  trove-taskmanager, otherwise, `CONTROLLER_IP` needs to be specified 
-  explicitly.
+- If `dev_mode=true`, no Trove code is injected into the guest image. The guest
+  agent will download Trove code during the service initialization.
 
 For example, build a Mysql image for Ubuntu Xenial operating system:
 

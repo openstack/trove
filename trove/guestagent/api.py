@@ -101,7 +101,7 @@ class API(object):
             raise exception.GuestTimeout()
 
     def _cast(self, method_name, version, **kwargs):
-        LOG.debug("Casting %s", method_name)
+        LOG.debug("Calling %s asynchronously", method_name)
         try:
             with NotificationCastWrapper(self.context, 'guest'):
                 cctxt = self.client.prepare(version=version)
