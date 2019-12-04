@@ -10,7 +10,7 @@
           {{ datastore_type }} \
           {{ guest_os }} \
           {{ guest_os_release }} \
-          false \
+          {{ dev_mode }} \
           {{ guest_username }} \
           {{ ansible_user_dir }}/images/trove-{{ branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}
       args:
