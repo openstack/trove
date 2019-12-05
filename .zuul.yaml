@@ -19,11 +19,10 @@
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
+        - trove-scenario-mariadb-single
         - trove-scenario-postgresql-single:
             voting: false
         - trove-scenario-postgresql-multi:
-            voting: false
-        - trove-scenario-mariadb-single:
             voting: false
         - trove-scenario-mariadb-multi:
             voting: false
@@ -368,7 +367,7 @@
       guest_os_release: xenial
       guest_username: ubuntu
       branch: master
-      dev_node: false
+      dev_mode: false
 
 - job:
     name: publish-trove-guest-image-mysql-ubuntu-xenial-dev

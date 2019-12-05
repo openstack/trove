@@ -1311,6 +1311,7 @@ function cmd_gate_tests() {
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
 
     sudo chown -R $(whoami) /etc/trove
+    cd $TROVESTACK_SCRIPTS
 
     local RESTART_TROVE=false
     cmd_kick_start "${DATASTORE_TYPE}" "${RESTART_TROVE}"
