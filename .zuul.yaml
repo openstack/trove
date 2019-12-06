@@ -3,8 +3,7 @@
       - check-requirements
       - openstack-cover-jobs
       - openstack-lower-constraints-jobs
-      - openstack-python-jobs
-      - openstack-python3-train-jobs
+      - openstack-python3-ussuri-jobs
       - periodic-stable-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
@@ -112,6 +111,7 @@
         SERVICE_HOST: ''
         HOST_IP: ''
         VNCSERVER_PROXYCLIENT_ADDRESS: 127.0.0.1
+        USE_PYTHON3: True
     run: playbooks/trove-devstack-base.yaml
     irrelevant-files:
       - ^.*\.rst$
@@ -124,7 +124,7 @@
 
 - job:
     name: trove-fakemodetests-base
-    parent: openstack-tox-py27
+    parent: openstack-tox-py36
     abstract: true
     irrelevant-files:
       - ^.*\.rst$
