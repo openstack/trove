@@ -15,6 +15,7 @@ import re
 
 from oslo_log import log as logging
 
+from trove.common.i18n import _
 from trove.guestagent.datastore.mysql import service as mysql_service
 from trove.guestagent.datastore.mysql_common import service as common_service
 from trove.guestagent.strategies.backup import base
@@ -29,13 +30,13 @@ class MariaBackup(base.BackupRunner):
 
     @property
     def user_and_pass(self):
-        return (' --user=%(user)s --password=%(password)s --host=127.0.0.1 ' %
+        return ('--user=%(user)s --password=%(password)s --host=127.0.0.1' %
                 {'user': common_service.ADMIN_USER_NAME,
                  'password': mysql_service.MySqlApp.get_auth_password()})
 
     @property
     def cmd(self):
-        cmd = ('sudo mariabackup --backup --stream=xbstream' +
+        cmd = ('sudo mariabackup --backup --stream=xbstream ' +
                self.user_and_pass + ' 2>' + BACKUP_LOG)
         return cmd + self.zip_cmd + self.encrypt_cmd
 
@@ -61,10 +62,49 @@ class MariaBackup(base.BackupRunner):
 
         return True
 
+    def metadata(self):
+        LOG.debug('Getting metadata for backup %s', self.base_filename)
+
+        meta = {}
+        lsn = re.compile(r"The latest check point \(for incremental\): "
+                         r"'(\d+)'")
+        with open(BACKUP_LOG, 'r') as backup_log:
+            output = backup_log.read()
+            match = lsn.search(output)
+            if match:
+                meta = {'lsn': match.group(1)}
+
+        LOG.info("Metadata for backup %s: %s", self.base_filename, meta)
+        return meta
+
     @property
     def filename(self):
         return '%s.xbstream' % self.base_filename
 
 
 class MariaBackupIncremental(MariaBackup):
-    pass
+    def __init__(self, *args, **kwargs):
+        if not kwargs.get('lsn'):
+            raise AttributeError(_('lsn attribute missing, bad parent?'))
+        super(MariaBackupIncremental, self).__init__(*args, **kwargs)
+        self.parent_location = kwargs.get('parent_location')
+        self.parent_checksum = kwargs.get('parent_checksum')
+
+    @property
+    def cmd(self):
+        cmd = (
+            'sudo mariabackup --backup --stream=xbstream'
+            ' --incremental-lsn=%(lsn)s ' +
+            self.user_and_pass +
+            ' 2>' +
+            BACKUP_LOG
+        )
+        return cmd + self.zip_cmd + self.encrypt_cmd
+
+    def metadata(self):
+        meta = super(MariaBackupIncremental, self).metadata()
+        meta.update({
+            'parent_location': self.parent_location,
+            'parent_checksum': self.parent_checksum,
+        })
+        return meta

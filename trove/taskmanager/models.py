@@ -1089,7 +1089,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         action.execute()
 
     def create_backup(self, backup_info):
-        LOG.info("Initiating backup for instance %s.", self.id)
+        LOG.info("Initiating backup for instance %s, backup_info: %s", self.id,
+                 backup_info)
         self.guest.create_backup(backup_info)
 
     def backup_required_for_replication(self):
