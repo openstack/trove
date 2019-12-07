@@ -217,6 +217,7 @@ function configure_trove {
     iniset_conditional $TROVE_CONF DEFAULT resize_time_out $TROVE_RESIZE_TIME_OUT
     iniset_conditional $TROVE_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
     iniset_conditional $TROVE_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
+    iniset_conditional $TROVE_CONF DEFAULT reboot_time_out 300
 
     configure_keystone_authtoken_middleware $TROVE_CONF trove
     iniset $TROVE_CONF service_credentials username trove
@@ -239,7 +240,6 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
     iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
@@ -278,7 +278,6 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
     # To avoid 'Connection timed out' error of sudo command inside the guest agent

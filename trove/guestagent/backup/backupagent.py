@@ -166,6 +166,7 @@ class BackupAgent(object):
 
             LOG.info("Restoring instance from backup %(id)s to "
                      "%(restore_location)s", backup_info)
+
             content_size = runner.restore()
             LOG.info("Restore from backup %(id)s completed successfully "
                      "to %(restore_location)s", backup_info)

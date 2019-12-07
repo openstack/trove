@@ -100,7 +100,7 @@ class InnoBackupEx(base.BackupRunner):
         return True
 
     def metadata(self):
-        LOG.debug('Getting metadata from backup.')
+        LOG.debug('Getting metadata for backup %s', self.base_filename)
         meta = {}
         lsn = re.compile(r"The latest check point \(for incremental\): "
                          r"'(\d+)'")
@@ -109,7 +109,7 @@ class InnoBackupEx(base.BackupRunner):
             match = lsn.search(output)
             if match:
                 meta = {'lsn': match.group(1)}
-        LOG.info("Metadata for backup: %s.", str(meta))
+        LOG.info("Metadata for backup %s: %s", self.base_filename, meta)
         return meta
 
     @property
