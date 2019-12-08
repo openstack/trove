@@ -810,14 +810,6 @@ function cmd_test_init() {
 
     exclaim "Creating Test Flavors."
     add_test_flavors
-
-    if [[ -n $KEY_DIR ]]; then
-        exclaim "Installing the SSH key from $KEY_DIR to the test environment."
-        mkdir -m 700 -p $USERHOME/.ssh
-        install -b --mode 0400 $KEY_DIR/id_rsa $USERHOME/.ssh
-        cat $KEY_DIR/authorized_keys >> $USERHOME/.ssh/authorized_keys
-        chmod 600 $USERHOME/.ssh/authorized_keys
-    fi
 }
 
 function cmd_build_image() {
@@ -1307,12 +1299,7 @@ function cmd_gate_tests() {
     # This var is used to ssh into the db instance during the test.
     export TROVE_TEST_SSH_KEY_FILE=${SSH_DIR}/id_rsa
 
-    # Fix iptables rules that prevent amqp connections from the devstack box to the guests
-    sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
-
-    sudo chown -R $(whoami) /etc/trove
     cd $TROVESTACK_SCRIPTS
-
     local RESTART_TROVE=false
     cmd_kick_start "${DATASTORE_TYPE}" "${RESTART_TROVE}"
 

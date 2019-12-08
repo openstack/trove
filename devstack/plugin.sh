@@ -319,6 +319,9 @@ function install_trove {
     if is_service_enabled horizon; then
         install_trove_dashboard
     fi
+
+    # Fix iptables rules that prevent amqp connections from the devstack box to the guests
+    sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
 }
 
 # install_trove_dashboard() - Collect source and prepare
