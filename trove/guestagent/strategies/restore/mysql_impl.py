@@ -211,8 +211,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
 
     def pre_restore(self):
         self.app.stop_db()
-        LOG.info("Cleaning out restore location: %s.",
-                 self.restore_location)
+        LOG.debug("Cleaning out restore location: %s.", self.restore_location)
         operating_system.chmod(self.restore_location, FileMode.SET_FULL,
                                as_root=True)
         utils.clean_out(self.restore_location)
@@ -313,7 +312,7 @@ class InnoBackupExIncremental(InnoBackupEx):
         prepare_cmd = self._incremental_prepare_cmd(incremental_dir)
         LOG.debug("Running innobackupex prepare: %s.", prepare_cmd)
         utils.execute(prepare_cmd, shell=True)
-        LOG.info("Innobackupex prepare finished successfully.")
+        LOG.debug("Innobackupex prepare finished successfully.")
 
     def _incremental_restore(self, location, checksum):
         """Recursively apply backups from all parents.

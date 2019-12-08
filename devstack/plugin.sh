@@ -239,7 +239,6 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
     iniset $TROVE_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
     iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
@@ -278,7 +277,6 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_swift_client trove.common.clients_admin.swift_client_trove_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
     # 1. To avoid 'Connection timed out' error of sudo command inside the guest agent
