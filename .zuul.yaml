@@ -15,6 +15,7 @@
         - trove-tox-bandit-baseline:
             voting: false
         - trove-tox-fakemodetests
+        - trove-tempest
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
@@ -344,6 +345,56 @@
       - ^trove/hacking/.*$
       - ^trove/tests/scenario/.*$
       - ^trove/tests/unittests/.*$
+
+- job:
+    name: trove-tempest
+    parent: devstack-tempest
+    timeout: 7800
+    required-projects: &base_required_projects
+      - openstack/python-troveclient
+      - openstack/trove
+      - openstack/trove-tempest-plugin
+      - openstack/tempest
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+    vars: &base_vars
+      tox_envlist: all
+      tempest_concurrency: 2
+      devstack_localrc:
+        TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
+        USE_PYTHON3: true
+      devstack_local_conf:
+        post-config:
+          $TROVE_CONF:
+            DEFAULT:
+              usage_timeout: 1800
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove.git
+      devstack_services:
+        etcd3: false
+        tls-proxy: false
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        cinder: true
+        c-sch: true
+        c-api: true
+        c-vol: true
+        c-bak: false
+        swift: true
+        s-account: true
+        s-container: true
+        s-object: true
+        s-proxy: true
+        tempest: true
+      tempest_test_regex: ^trove_tempest_plugin\.tests
 
 - job:
     name: publish-trove-guest-image
