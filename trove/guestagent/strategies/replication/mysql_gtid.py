@@ -43,8 +43,12 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
             # provided we need to set the gtid_purged variable
             # before executing the CHANGE MASTER TO command
             last_gtid = self._read_last_master_gtid()
-            if last_gtid:
+            LOG.debug("last_gtid value is %s", last_gtid)
+            # fix ['mysql-bin.000001', '154', '\n'] still existed last_gtid
+            # with '\n' value
+            if last_gtid and len(last_gtid) != 1:
                 set_gtid_cmd = "SET GLOBAL gtid_purged='%s'" % last_gtid
+                LOG.debug("set gtid_purged with %s", set_gtid_cmd)
                 service.execute_on_client(set_gtid_cmd)
 
         logging_config = snapshot['log_position']

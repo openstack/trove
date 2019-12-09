@@ -252,6 +252,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         LOG.debug('Checking xbstream restore process stderr output.')
         IGNORE_LINES = [
             'encryption: using gcrypt ',
+            'sudo: unable to resolve host ',
         ]
         with open('/tmp/xbstream_extract.log', 'r') as xbstream_log:
             for line in xbstream_log:
