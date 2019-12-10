@@ -433,20 +433,22 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             TroveInstanceCreate(instance=self,
                                 instance_size=flavor['ram']).notify()
         except (TroveError, PollTimeOut) as ex:
-            LOG.exception("Failed to create instance %s.", self.id)
+            LOG.error("Failed to create instance %s, error: %s.",
+                      self.id, str(ex))
             self.update_statuses_on_time_out()
             error_message = "%s" % ex
             error_details = traceback.format_exc()
         except Exception as ex:
-            LOG.exception("Failed to send usage create-event for "
-                          "instance %s.", self.id)
+            LOG.error("Failed to send usage create-event for instance %s, "
+                      "error: %s", self.id, str(ex))
             error_message = "%s" % ex
             error_details = traceback.format_exc()
         finally:
             if error_message:
                 inst_models.save_instance_fault(
                     self.id, error_message, error_details,
-                    skip_delta=CONF.usage_sleep_time + 1)
+                    skip_delta=CONF.usage_sleep_time + 1
+                )
 
     def _create_port(self, network, security_groups, is_mgmt=False,
                      is_public=False):
@@ -772,7 +774,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             raise TroveError(_("Service not active, status: %s") % status)
 
         c_id = self.db_info.compute_instance_id
-        server = self.nova_client.servers.get(c_id)
+        try:
+            server = self.nova_client.servers.get(c_id)
+        except Exception as e:
+            raise TroveError(
+                _("Failed to get server %(server)s for instance %(instance)s, "
+                  "error: %(error)s"),
+                server=c_id, instance=self.id, error=str(e)
+            )
+
         server_status = server.status
         if server_status in [InstanceStatus.ERROR,
                              InstanceStatus.FAILED]:
