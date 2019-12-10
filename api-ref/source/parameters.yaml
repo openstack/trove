@@ -60,6 +60,12 @@ user_name:
   in: path
   required: false
   type: string
+user_project:
+  description: |
+    The project ID of the user's project.
+  in: path
+  required: true
+  type: string
 # variables in body
 access:
   description: |
@@ -608,6 +614,42 @@ nics:
   in: body
   required: false
   type: array
+quota_in_use:
+  description: |
+    The used quota for a resource.
+  in: body
+  required: true
+  type: integer
+quota_limit:
+  description: |
+    The limit of a resource quota.
+  in: body
+  required: true
+  type: integer
+quota_list:
+  description: |
+    A list of resource quotas.
+  in: body
+  required: true
+  type: array
+quota_reserved:
+  description: |
+    The reserved quota for a resource.
+  in: body
+  required: true
+  type: integer
+quota_resource:
+  description: |
+    The resource name.
+  in: body
+  required: true
+  type: string
+quotas:
+  description: |
+    Dictionary that defines the resources quota.
+  in: body
+  required: true
+  type: string
 region_name:
   description: |
     The region name of an instance.

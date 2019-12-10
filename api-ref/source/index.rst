@@ -15,3 +15,4 @@
 .. include:: datastores.inc
 .. include:: configurations.inc
 .. include:: backups.inc
+.. include:: quotas.inc

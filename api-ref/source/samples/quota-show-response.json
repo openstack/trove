@@ -1,0 +1,22 @@
+{
+    "quotas": [
+        {
+            "in_use": 5,
+            "limit": 15,
+            "reserved": 0,
+            "resource": "instances"
+        },
+        {
+            "in_use": 2,
+            "limit": 50,
+            "reserved": 0,
+            "resource": "backups"
+        },
+        {
+            "in_use": 1,
+            "limit": 40,
+            "reserved": 0,
+            "resource": "volumes"
+        }
+    ]
+}

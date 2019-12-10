@@ -349,8 +349,7 @@ QUOTAS = QuotaEngine()
 
 ''' Define all kind of resources here '''
 
-resources = [Resource(Resource.INSTANCES,
-             'max_instances_per_tenant'),
+resources = [Resource(Resource.INSTANCES, 'max_instances_per_tenant'),
              Resource(Resource.BACKUPS, 'max_backups_per_tenant'),
              Resource(Resource.VOLUMES, 'max_volumes_per_tenant')]
 
