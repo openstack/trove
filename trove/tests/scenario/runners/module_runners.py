@@ -1292,7 +1292,8 @@ class ModuleRunner(TestRunner):
         client.instances.module_remove(instance_id, module_id)
         self.assert_client_code(client, expected_http_code)
 
-    def run_wait_for_inst_with_mods(self, expected_states=['BUILD', 'ACTIVE']):
+    def run_wait_for_inst_with_mods(self,
+                                    expected_states=['BUILD', 'HEALTHY']):
         self.assert_instance_action(self.mod_inst_id, expected_states)
 
     def run_module_query_after_inst_create(self):

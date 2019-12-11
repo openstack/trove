@@ -75,7 +75,7 @@ class fake_Server(object):
         self.files = None
         self.userdata = None
         self.block_device_mapping_v2 = None
-        self.status = 'ACTIVE'
+        self.status = 'HEALTHY'
         self.key_name = None
 
 
@@ -723,7 +723,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                                  volume_id=VOLUME_ID)
 
         # this is used during the final check of whether the resize successful
-        db_instance.server_status = 'ACTIVE'
+        db_instance.server_status = 'HEALTHY'
         self.db_instance = db_instance
         self.dm_dv_load_by_uuid_patch = patch.object(
             datastore_models.DatastoreVersion, 'load_by_uuid', MagicMock(
@@ -750,7 +750,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
             spec=novaclient.v2.servers.ServerManager)
         self.stub_running_server = MagicMock(
             spec=novaclient.v2.servers.Server)
-        self.stub_running_server.status = 'ACTIVE'
+        self.stub_running_server.status = 'HEALTHY'
         self.stub_running_server.flavor = {'id': 6, 'ram': 512}
         self.stub_verifying_server = MagicMock(
             spec=novaclient.v2.servers.Server)

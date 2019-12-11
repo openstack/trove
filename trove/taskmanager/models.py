@@ -764,9 +764,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         """
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         status = service.get_status()
+
         if (status == rd_instance.ServiceStatuses.RUNNING or
-           status == rd_instance.ServiceStatuses.INSTANCE_READY):
-                return True
+                status == rd_instance.ServiceStatuses.INSTANCE_READY or
+                status == rd_instance.ServiceStatuses.HEALTHY):
+            return True
         elif status not in [rd_instance.ServiceStatuses.NEW,
                             rd_instance.ServiceStatuses.BUILDING,
                             rd_instance.ServiceStatuses.UNKNOWN,
@@ -1388,6 +1390,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             utils.poll_until(
                 server_finished_rebuilding,
                 sleep_time=2, time_out=600)
+
             if not self.server_status_matches(['ACTIVE']):
                 raise TroveError(_("Instance %(instance)s failed to "
                                    "upgrade to %(datastore_version)s"),
@@ -1752,7 +1755,8 @@ class ResizeVolumeAction(object):
                                       'old_volume_size': self.old_size,
                                       'new_size': self.new_size})
 
-        if self.instance.server.status == InstanceStatus.ACTIVE:
+        if self.instance.server.status in [InstanceStatus.ACTIVE,
+                                           InstanceStatus.HEALTHY]:
             self._resize_active_volume()
             self.instance.reset_task_status()
             # send usage event for size reported by cinder
@@ -1768,13 +1772,17 @@ class ResizeVolumeAction(object):
                                       ).notify()
         else:
             self.instance.reset_task_status()
-            msg = _("Failed to resize instance %(id)s volume for server "
-                    "%(server_id)s. The instance must be in state %(state)s "
-                    "not %(inst_state)s.") % {
-                        'id': self.instance.id,
-                        'server_id': self.instance.server.id,
-                        'state': InstanceStatus.ACTIVE,
-                        'inst_state': self.instance.server.status}
+            msg = (
+                "Failed to resize instance %(id)s volume for server "
+                "%(server_id)s. The instance must be in state %(state)s "
+                "not %(inst_state)s." %
+                {
+                    'id': self.instance.id,
+                    'server_id': self.instance.server.id,
+                    'state': [InstanceStatus.ACTIVE, InstanceStatus.HEALTHY],
+                    'inst_state': self.instance.server.status
+                }
+            )
             raise TroveError(msg)
 
 

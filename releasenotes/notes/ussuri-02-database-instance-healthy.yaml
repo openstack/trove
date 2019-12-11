@@ -1,0 +1,8 @@
+---
+features:
+  - A new database service status ``HEALTHY`` is introduced to indicate that
+    the service is responsive. ``HEALTHY`` is the final status after
+    ``ACTIVE``.
+upgrade:
+  - Any existing scripts that rely on the database instance ``ACTIVE`` status
+    should now rely on ``HEALTHY`` status.

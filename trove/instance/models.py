@@ -97,6 +97,7 @@ def load_server(context, instance_id, server_id, region_name):
 
 
 class InstanceStatus(object):
+    HEALTHY = "HEALTHY"
     ACTIVE = "ACTIVE"
     BLOCKED = "BLOCKED"
     BUILD = "BUILD"
@@ -362,7 +363,8 @@ class SimpleInstance(object):
 
         # Report as Shutdown while deleting, unless there's an error.
         if 'DELETING' == action:
-            if self.db_info.server_status in ["ACTIVE", "SHUTDOWN", "DELETED"]:
+            if self.db_info.server_status in ["ACTIVE", "SHUTDOWN", "DELETED",
+                                              "HEALTHY"]:
                 return InstanceStatus.SHUTDOWN
             else:
                 LOG.error("While shutting down instance (%(instance)s): "
@@ -1415,7 +1417,7 @@ class Instance(BuiltInstance):
         """
         # cases where action cannot be performed
         status_type = 'instance'
-        if self.db_info.server_status != 'ACTIVE':
+        if self.db_info.server_status not in ['ACTIVE', 'HEALTHY']:
             status = self.db_info.server_status
         elif (self.db_info.task_status != InstanceTasks.NONE and
               self.db_info.task_status != InstanceTasks.RESTART_REQUIRED):
@@ -1989,4 +1991,7 @@ def persisted_models():
     }
 
 
-MYSQL_RESPONSIVE_STATUSES = [tr_instance.ServiceStatuses.RUNNING]
+MYSQL_RESPONSIVE_STATUSES = [
+    tr_instance.ServiceStatuses.RUNNING,
+    tr_instance.ServiceStatuses.HEALTHY
+]

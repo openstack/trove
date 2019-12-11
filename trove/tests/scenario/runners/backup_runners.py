@@ -196,7 +196,7 @@ class BackupRunner(TestRunner):
 
         poll_until(_result_is_active, time_out=self.TIMEOUT_BACKUP_CREATE)
 
-    def run_instance_goes_active(self, expected_states=['BACKUP', 'ACTIVE']):
+    def run_instance_goes_active(self, expected_states=['BACKUP', 'HEALTHY']):
         self._assert_instance_states(self.instance_info.id, expected_states)
 
     def run_backup_list(self):
@@ -334,7 +334,7 @@ class BackupRunner(TestRunner):
             expected_http_code=expected_http_code)
 
     def run_restore_from_backup_completed(
-            self, expected_states=['BUILD', 'ACTIVE']):
+            self, expected_states=['BUILD', 'HEALTHY']):
         self.assert_restore_from_backup_completed(
             self.restore_instance_id, expected_states)
         self.restore_host = self.get_instance_host(self.restore_instance_id)
@@ -344,7 +344,7 @@ class BackupRunner(TestRunner):
         self._assert_instance_states(instance_id, expected_states)
 
     def run_restore_from_inc_1_backup_completed(
-            self, expected_states=['BUILD', 'ACTIVE']):
+            self, expected_states=['BUILD', 'HEALTHY']):
         self.assert_restore_from_backup_completed(
             self.restore_inc_1_instance_id, expected_states)
         self.restore_inc_1_host = self.get_instance_host(

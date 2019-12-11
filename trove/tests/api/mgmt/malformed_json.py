@@ -142,7 +142,7 @@ class MalformedJson(object):
     def test_bad_resize_instance_data(self):
         def _check_instance_status():
             inst = self.dbaas.instances.get(self.instance)
-            if inst.status == "ACTIVE":
+            if inst.status in CONFIG.running_status:
                 return True
             else:
                 return False
@@ -161,7 +161,7 @@ class MalformedJson(object):
     def test_bad_resize_vol_data(self):
         def _check_instance_status():
             inst = self.dbaas.instances.get(self.instance)
-            if inst.status == "ACTIVE":
+            if inst.status in CONFIG.running_status:
                 return True
             else:
                 return False
@@ -195,7 +195,7 @@ class MalformedJson(object):
 
         def _check_instance_status():
             inst = self.dbaas.instances.get(self.instance)
-            if inst.status == "ACTIVE":
+            if inst.status in CONFIG.running_status:
                 return True
             else:
                 return False
@@ -227,7 +227,7 @@ class MalformedJson(object):
 
         def _check_instance_status():
             inst = self.dbaas.instances.get(self.instance)
-            if inst.status == "ACTIVE":
+            if inst.status in CONFIG.running_status:
                 return True
             else:
                 return False
@@ -248,7 +248,7 @@ class MalformedJson(object):
 
         def _check_instance_status():
             inst = self.dbaas.instances.get(self.instance)
-            if inst.status == "ACTIVE":
+            if inst.status in CONFIG.running_status:
                 return True
             else:
                 return False

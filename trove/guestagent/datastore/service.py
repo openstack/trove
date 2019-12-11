@@ -181,13 +181,8 @@ class BaseDbStatus(object):
         The database is updated and the status is also returned.
         """
         if self.is_installed and not self._is_restarting:
-            LOG.debug("Determining status of DB server.")
             status = self._get_actual_db_status()
             self.set_status(status)
-        else:
-            LOG.info("DB server is not installed or is in restart mode, so "
-                     "for now we'll skip determining the status of DB on "
-                     "this instance.")
 
     def restart_db_service(self, service_candidates, timeout):
         """Restart the database.

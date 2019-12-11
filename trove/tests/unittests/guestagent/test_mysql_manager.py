@@ -99,10 +99,11 @@ class GuestAgentManagerTest(DatastoreManagerTest):
 
     def test_update_status(self):
         mock_status = MagicMock()
+        mock_status.is_installed = True
+        mock_status._is_restarting = False
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
         self.manager.update_status(self.context)
-        dbaas.MySqlAppStatus.get.assert_any_call()
-        mock_status.update.assert_any_call()
+        self.assertTrue(mock_status.set_status.called)
 
     def _empty_user(self):
         return models.MySQLUser(deserializing=True)

@@ -241,16 +241,21 @@ class Manager(periodic_task.PeriodicTasks):
 
         self._guest_log_loaded_context = self.guest_log_context
 
-    ################
-    # Status related
-    ################
+    def get_service_status(self):
+        return self.status._get_actual_db_status()
+
     @periodic_task.periodic_task
     def update_status(self, context):
-        """Update the status of the trove instance. It is decorated with
-        perodic_task so it is called automatically.
-        """
-        LOG.debug("Update status called.")
-        self.status.update()
+        """Update the status of the trove instance."""
+        if not self.status.is_installed or self.status._is_restarting:
+            LOG.info("Database service is not installed or is in restart "
+                     "mode, skip status check")
+            return
+
+        LOG.debug("Starting to check database service status")
+
+        status = self.get_service_status()
+        self.status.set_status(status)
 
     def rpc_ping(self, context):
         LOG.debug("Responding to RPC ping.")

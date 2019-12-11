@@ -120,6 +120,19 @@ class MySqlManager(manager.Manager):
             },
         }
 
+    def get_service_status(self):
+        try:
+            app = self.mysql_app(self.status)
+            with service.BaseLocalSqlClient(app.get_engine()) as client:
+                cmd = "SELECT 1;"
+                client.execute(cmd)
+
+            LOG.debug("Database service check: database query is responsive")
+            return rd_instance.ServiceStatuses.HEALTHY
+        except Exception as e:
+            LOG.warning('Failed to query database, error: %s', str(e))
+            return super(MySqlManager, self).get_service_status()
+
     def change_passwords(self, context, users):
         with EndNotification(context):
             self.mysql_admin().change_passwords(users)

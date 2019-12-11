@@ -35,6 +35,7 @@ class ServiceStatus(object):
             ServiceStatuses.SHUTDOWN._code,
             ServiceStatuses.CRASHED._code,
             ServiceStatuses.BLOCKED._code,
+            ServiceStatuses.HEALTHY._code,
         ]
         return self._code in allowed_statuses
 
@@ -102,6 +103,8 @@ class ServiceStatuses(object):
     INSTANCE_READY = ServiceStatus(0x19, 'instance ready', 'BUILD')
     RESTART_REQUIRED = ServiceStatus(0x20, 'restart required',
                                      'RESTART_REQUIRED')
+    HEALTHY = ServiceStatus(0x21, 'healthy', 'HEALTHY')
+
 
 # Dissuade further additions at run-time.
 ServiceStatus.__init__ = None

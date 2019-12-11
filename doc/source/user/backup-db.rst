@@ -163,7 +163,7 @@ This example shows you how to back up and restore a MySQL database.
 
    .. code-block:: console
 
-      $ openstack database instance INSTANCE_ID
+      $ openstack database instance show INSTANCE_ID
 
       +-------------------+--------------------------------------+
       |      Property     |                Value                 |

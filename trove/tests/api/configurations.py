@@ -494,7 +494,7 @@ class ListConfigurations(ConfigurationsTestBase):
         def result_is_not_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return False
             else:
                 return True
@@ -503,7 +503,6 @@ class ListConfigurations(ConfigurationsTestBase):
         instance = instance_info.dbaas.instances.get(instance_info.id)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 200)
-        print(instance.status)
         assert_equal('RESTART_REQUIRED', instance.status)
 
     @test(depends_on=[test_waiting_for_instance_in_restart_required])
@@ -516,7 +515,7 @@ class ListConfigurations(ConfigurationsTestBase):
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 assert_equal("REBOOT", instance.status)
@@ -600,7 +599,7 @@ class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
                 configuration_instance.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 assert_equal("BUILD", instance.status)
@@ -741,7 +740,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
         def result_is_not_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return False
             else:
                 return True
@@ -750,10 +749,8 @@ class DeleteConfigurations(ConfigurationsTestBase):
         config = instance_info.dbaas.configurations.list()
         print(config)
         instance = instance_info.dbaas.instances.get(instance_info.id)
-        print(instance.__dict__)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 200)
-        print(instance.status)
         assert_equal('RESTART_REQUIRED', instance.status)
 
     @test(depends_on=[test_restart_service_after_unassign_return_active])
@@ -767,7 +764,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 assert_equal("REBOOT", instance.status)
@@ -809,7 +806,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 assert_equal("REBOOT", instance.status)
@@ -838,11 +835,12 @@ class DeleteConfigurations(ConfigurationsTestBase):
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 assert_equal("REBOOT", instance.status)
                 return False
+
         poll_until(result_is_active)
         result = instance_info.dbaas.configurations.get(configuration_info.id)
         assert_equal(result.instance_count, 0)

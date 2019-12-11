@@ -34,8 +34,8 @@ class InstanceCreateRunner(TestRunner):
         self.init_inst_config_group_id = None
         self.config_group_id = None
 
-    def run_empty_instance_create(
-            self, expected_states=['BUILD', 'ACTIVE'], expected_http_code=200):
+    def run_empty_instance_create(self, expected_states=['BUILD', 'HEALTHY'],
+                                  expected_http_code=200):
         name = self.instance_info.name
         flavor = self.get_instance_flavor()
         volume_size = self.instance_info.volume_size
@@ -68,7 +68,7 @@ class InstanceCreateRunner(TestRunner):
 
     def run_initialized_instance_create(
             self, with_dbs=True, with_users=True, configuration_id=None,
-            expected_states=['BUILD', 'ACTIVE'], expected_http_code=200,
+            expected_states=['BUILD', 'HEALTHY'], expected_http_code=200,
             create_helper_user=True, name_suffix='_init'):
         if self.is_using_existing_instance:
             # The user requested to run the tests using an existing instance.
@@ -215,16 +215,14 @@ class InstanceCreateRunner(TestRunner):
 
         return instance_info
 
-    def run_wait_for_instance(
-            self, expected_states=['BUILD', 'ACTIVE']):
+    def run_wait_for_instance(self, expected_states=['BUILD', 'HEALTHY']):
         instances = [self.instance_info.id]
         self.assert_all_instance_states(instances, expected_states)
         self.instance_info.srv_grp_id = self.assert_server_group_exists(
             self.instance_info.id)
         self.wait_for_test_helpers(self.instance_info)
 
-    def run_wait_for_init_instance(
-            self, expected_states=['BUILD', 'ACTIVE']):
+    def run_wait_for_init_instance(self, expected_states=['BUILD', 'HEALTHY']):
         if self.init_inst_info:
             instances = [self.init_inst_info.id]
             self.assert_all_instance_states(instances, expected_states)

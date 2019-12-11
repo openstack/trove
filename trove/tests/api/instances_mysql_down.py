@@ -63,7 +63,7 @@ class TestBase(object):
 
     def _wait_for_active(self):
         poll_until(lambda: self.client.instances.get(self.id),
-                   lambda instance: instance.status == "ACTIVE",
+                   lambda instance: instance.status in CONFIG.running_status,
                    time_out=(60 * 8))
 
     @test

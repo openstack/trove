@@ -53,21 +53,11 @@ Shows database instance details.
 Lists the status and details of the database instance.
 
 Lists the volume size in gigabytes (GB) and the approximate GB
-used.
-
-After instance creation, the ``used`` value is greater than 0, which
+used. After instance creation, the ``used`` value is greater than 0, which
 is expected as databases may create some basic (non empty) files to
 represent an empty schema. The response does not include the ``used``
 attribute when the instance status is ``BUILD``, ``REBOOT``,
 ``RESIZE``, or ``ERROR``.
-
-The list operations return a DNS-resolvable host name for the
-database instance rather than an IP address. Because the host name
-always resolves to the correct IP address for the database
-instance, you do not need to maintain the mapping. Although the IP
-address might change when you resize, migrate, or perform other
-operations, the host name always resolves to the correct database
-instance.
 
 Normal response codes: 200
 
@@ -380,7 +370,7 @@ Upgrade datastore version
 Upgrade datastore version.
 
 During datastore version upgrading, the instance status change to ``UPGRADE``,
-and changes back to ``ACTIVE`` after upgrading finishes, otherwize changes to
+and changes back to ``HEALTHY`` after upgrading finishes, otherwize changes to
 ``ERROR`` if the upgrading fails.
 
 Normal response codes: 202

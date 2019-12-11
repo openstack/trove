@@ -35,7 +35,7 @@ class InstanceUpgradeRunner(TestRunner):
         host = self.get_instance_host(self.instance_info.id)
         self.test_helper.remove_data(DataType.small, host)
 
-    def run_instance_upgrade(self, expected_states=['UPGRADE', 'ACTIVE'],
+    def run_instance_upgrade(self, expected_states=['UPGRADE', 'HEALTHY'],
                              expected_http_code=202):
         instance_id = self.instance_info.id
         self.report.log("Testing upgrade on instance: %s" % instance_id)

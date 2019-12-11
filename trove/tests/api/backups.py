@@ -82,7 +82,7 @@ class CreateBackups(object):
         assert_equal('NEW', result.status)
         instance = instance_info.dbaas.instances.get(instance_info.id)
 
-        assert_true(instance.status in ['ACTIVE', 'BACKUP'])
+        assert_true(instance.status in ['ACTIVE', 'BACKUP', 'HEALTHY'])
         assert_equal(instance_info.dbaas_datastore,
                      result.datastore['type'])
         assert_equal(instance_info.dbaas_datastore_version,
@@ -130,7 +130,7 @@ class BackupRestoreMixin(object):
         # This version just checks the REST API status.
         def result_is_active():
             instance = instance_info.dbaas.instances.get(instance_id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 # If its not ACTIVE, anything but BUILD must be
@@ -311,7 +311,7 @@ class WaitForRestoreToFinish(object):
         # This version just checks the REST API status.
         def result_is_active():
             instance = instance_info.dbaas.instances.get(instance_id_to_poll)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 # If its not ACTIVE, anything but BUILD must be

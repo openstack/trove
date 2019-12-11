@@ -125,7 +125,7 @@ class ClusterRunner(TestRunner):
         return cluster.id
 
     def run_cluster_create_wait(self,
-                                expected_instance_states=['BUILD', 'ACTIVE']):
+                                expected_instance_states=['BUILD', 'HEALTHY']):
 
         self.assert_cluster_create_wait(
             self.cluster_id, expected_instance_states=expected_instance_states)
@@ -198,7 +198,7 @@ class ClusterRunner(TestRunner):
         cluster_instances = self._get_cluster_instances(
             client, cluster_id)
         self.assert_all_instance_states(
-            cluster_instances, ['REBOOT', 'ACTIVE'])
+            cluster_instances, ['REBOOT', 'HEALTHY'])
 
         self._assert_cluster_states(
             client, cluster_id, ['NONE'])
@@ -313,7 +313,7 @@ class ClusterRunner(TestRunner):
     def assert_cluster_grow_wait(self, cluster_id):
         client = self.auth_client
         cluster_instances = self._get_cluster_instances(client, cluster_id)
-        self.assert_all_instance_states(cluster_instances, ['ACTIVE'])
+        self.assert_all_instance_states(cluster_instances, ['HEALTHY'])
 
         self._assert_cluster_states(client, cluster_id, ['NONE'])
         self._assert_cluster_response(client, cluster_id, 'NONE')
@@ -345,10 +345,12 @@ class ClusterRunner(TestRunner):
 
     def run_cluster_upgrade_wait(self):
         self.assert_cluster_upgrade_wait(
-            self.cluster_id, expected_last_instance_state='ACTIVE')
+            self.cluster_id,
+            expected_last_instance_states=['HEALTHY']
+        )
 
     def assert_cluster_upgrade_wait(self, cluster_id,
-                                    expected_last_instance_state):
+                                    expected_last_instance_states):
         client = self.auth_client
         self._assert_cluster_states(client, cluster_id, ['NONE'])
         cluster_instances = self._get_cluster_instances(client, cluster_id)
@@ -357,7 +359,7 @@ class ClusterRunner(TestRunner):
             len(cluster_instances),
             "Unexpected number of instances after upgrade.")
         self.assert_all_instance_states(cluster_instances,
-                                        [expected_last_instance_state])
+                                        expected_last_instance_states)
         self._assert_cluster_response(client, cluster_id, 'NONE')
 
     def run_add_upgrade_cluster_data(self, data_type=DataType.tiny3):
@@ -411,7 +413,7 @@ class ClusterRunner(TestRunner):
             "Unexpected number of removed nodes.")
 
         cluster_instances = self._get_cluster_instances(client, cluster_id)
-        self.assert_all_instance_states(cluster_instances, ['ACTIVE'])
+        self.assert_all_instance_states(cluster_instances, ['HEALTHY'])
         self.assert_all_gone(self.cluster_removed_instances,
                              expected_last_instance_state)
         self._assert_cluster_response(client, cluster_id, 'NONE')

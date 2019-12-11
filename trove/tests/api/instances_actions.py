@@ -163,7 +163,7 @@ class ActionTestBase(object):
                                        "MySQL process can not be found.")
 
         asserts.assert_is_not_none(self.instance)
-        asserts.assert_equal(self.instance.status, "ACTIVE")
+        asserts.assert_true(self.instance.status in CONFIG.running_status)
 
     def find_mysql_proc_on_instance(self):
         server = create_server_connection(
@@ -240,9 +240,9 @@ class RebootTestBase(ActionTestBase):
         def is_finished_rebooting():
             instance = self.instance
             asserts.assert_not_equal(instance.status, "ERROR")
-            if instance.status != "ACTIVE":
-                return False
-            return True
+            if instance.status in CONFIG.running_status:
+                return True
+            return False
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
@@ -263,7 +263,7 @@ class RebootTestBase(ActionTestBase):
         """Wait until status becomes running."""
         def is_finished_rebooting():
             instance = self.instance
-            if instance.status == "REBOOT" or instance.status == "ACTIVE":
+            if instance.status in ['REBOOT', 'ACTIVE', 'HEALTHY']:
                 return False
             # The reason we check for BLOCKED as well as SHUTDOWN is because
             # Upstart might try to bring mysql back up after the borked
@@ -338,7 +338,7 @@ class StopTests(RebootTestBase):
             check.true(isinstance(instance.volume.get('used', None), float))
 
     @test(depends_on=[test_volume_info_while_mysql_is_down])
-    def test_successful_restart_when_in_shutdown_state(self):
+    def test_successful_restart_from_shutdown(self):
         """Restart MySQL via the REST API successfully when MySQL is down."""
         self.successful_restart()
 
@@ -391,8 +391,9 @@ class ResizeInstanceTest(ActionTestBase):
             instance = self.instance
             if instance.status == "RESIZE":
                 return False
-            asserts.assert_equal("ACTIVE", instance.status)
+            asserts.assert_true(instance.status in CONFIG.running_status)
             return True
+
         poll_until(is_finished_resizing, time_out=TIME_OUT_TIME)
 
     @before_class
@@ -415,9 +416,10 @@ class ResizeInstanceTest(ActionTestBase):
         flavors = self.dbaas.find_flavors_by_name(flavor_name)
 
         def is_active():
-            return self.instance.status == 'ACTIVE'
+            return self.instance.status in CONFIG.running_status
+
         poll_until(is_active, time_out=TIME_OUT_TIME)
-        asserts.assert_equal(self.instance.status, 'ACTIVE')
+        asserts.assert_true(self.instance.status in CONFIG.running_status)
 
         asserts.assert_raises(HTTPNotImplemented,
                               self.dbaas.instances.resize_instance,
@@ -540,7 +542,7 @@ class ResizeInstanceVolume(ActionTestBase):
 
         def check_resize_status():
             instance = instance_info.dbaas.instances.get(instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             elif instance.status == "RESIZE":
                 return False

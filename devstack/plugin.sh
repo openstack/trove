@@ -217,6 +217,7 @@ function configure_trove {
     iniset_conditional $TROVE_CONF DEFAULT resize_time_out $TROVE_RESIZE_TIME_OUT
     iniset_conditional $TROVE_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
     iniset_conditional $TROVE_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
+    iniset_conditional $TROVE_CONF DEFAULT reboot_time_out 300
 
     configure_keystone_authtoken_middleware $TROVE_CONF trove
     iniset $TROVE_CONF service_credentials username trove
@@ -489,7 +490,7 @@ function create_guest_image {
     $TROVE_MANAGE datastore_version_update "$TROVE_DATASTORE_TYPE" "inactive_version" "manager1" $glance_image_id "" $INACTIVE
     $TROVE_MANAGE datastore_update Test_Datastore_1 ""
 
-    echo "Add validation rules if available"
+    echo "Add parameter validation rules if available"
     if [ -f $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]; then
         $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
             $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json

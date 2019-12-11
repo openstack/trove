@@ -31,7 +31,9 @@ def load_and_verify(context, instance_id):
     instance = base_models.Instance.load(context, instance_id)
     if not instance.is_datastore_running:
         raise exception.UnprocessableEntity(
-            "Instance %s is not ready." % instance.id)
+            "Instance %s is not ready, status: %s." %
+            (instance.id, instance.datastore_status.status)
+        )
     else:
         return instance
 

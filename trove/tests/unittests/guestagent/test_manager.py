@@ -123,8 +123,10 @@ class ManagerTest(trove_testtools.TestCase):
         super(ManagerTest, self).tearDown()
 
     def test_update_status(self):
+        self.manager._status.is_installed = True
+        self.manager._status._is_restarting = False
         self.manager.update_status(self.context)
-        self.manager.status.update.assert_any_call()
+        self.assertTrue(self.manager.status.set_status.called)
 
     def test_guest_log_list(self):
         log_list = self.manager.guest_log_list(self.context)

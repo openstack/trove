@@ -19,6 +19,7 @@ import time
 import unittest
 import uuid
 
+from proboscis import asserts
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
@@ -766,7 +767,7 @@ class CreateInstanceFlavors(object):
 
     def _result_is_active(self):
         instance = dbaas.instances.get(self.result.id)
-        if instance.status == "ACTIVE":
+        if instance.status in CONFIG.running_status:
             return True
         else:
             # If its not ACTIVE, anything but BUILD must be
@@ -878,7 +879,7 @@ class WaitForGuestInstallationToFinish(object):
         # This version just checks the REST API status.
         def result_is_active():
             instance = dbaas.instances.get(instance_info.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 # If its not ACTIVE, anything but BUILD must be
@@ -1038,7 +1039,7 @@ class TestInstanceListing(object):
     def test_get_instance_status(self):
         result = dbaas.instances.get(instance_info.id)
         assert_equal(200, dbaas.last_http_code)
-        assert_equal("ACTIVE", result.status)
+        asserts.assert_true(result.status in CONFIG.running_status)
 
     @test
     def test_get_legacy_status(self):
@@ -1083,10 +1084,11 @@ class TestInstanceListing(object):
         assert_equal(200, self.other_client.last_http_code)
         admin_ids = [instance.id for instance in dbaas.instances.list()]
         assert_equal(200, dbaas.last_http_code)
-        assert_equal(len(daffy_ids), 0)
+
         assert_not_equal(sorted(admin_ids), sorted(daffy_ids))
         assert_raises(exceptions.NotFound,
                       self.other_client.instances.get, instance_info.id)
+
         for id in admin_ids:
             assert_equal(daffy_ids.count(id), 0)
 

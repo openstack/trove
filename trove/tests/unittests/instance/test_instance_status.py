@@ -37,7 +37,7 @@ class FakeDBInstance(object):
         self.id = str(uuid.uuid4())
         self.deleted = False
         self.datastore_version_id = str(uuid.uuid4())
-        self.server_status = "ACTIVE"
+        self.server_status = "HEALTHY"
         self.task_status = FakeInstanceTask()
 
 

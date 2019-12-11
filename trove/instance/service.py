@@ -95,9 +95,10 @@ class InstanceController(wsgi.Controller):
                 selected_action = _actions[key]
                 action_name = key
         LOG.info("Performing %(action_name)s action against "
-                 "instance %(instance_id)s for tenant '%(tenant_id)s'",
+                 "instance %(instance_id)s for tenant %(tenant_id)s, "
+                 "body: %(body)s",
                  {'action_name': action_name, 'instance_id': id,
-                  'tenant_id': tenant_id})
+                  'tenant_id': tenant_id, 'body': body})
         needs_server = True
         if action_name in ['reset_status']:
             needs_server = False

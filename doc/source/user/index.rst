@@ -10,6 +10,7 @@ handling complex administrative tasks.
 .. toctree::
    :maxdepth: 1
 
+   instance-status.rst
    create-db.rst
    manage-db-and-users.rst
    backup-db.rst

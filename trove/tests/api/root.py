@@ -94,7 +94,7 @@ class TestRoot(object):
 
         def result_is_active():
             instance = self.dbaas.instances.get(self.id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 # If its not ACTIVE, anything but BUILD must be

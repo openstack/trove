@@ -500,13 +500,13 @@ class GuestLogRunner(TestRunner):
             instance_id = self.instance_info.id
             # we need to wait until the heartbeat flips the instance
             # back into 'ACTIVE' before we issue the restart command
-            expected_states = ['RESTART_REQUIRED', 'ACTIVE']
+            expected_states = ['RESTART_REQUIRED', 'HEALTHY']
             self.assert_instance_action(instance_id, expected_states)
             client = self.auth_client
             client.instances.restart(instance_id)
             self.assert_client_code(client, expected_http_code)
 
-    def run_test_wait_for_restart(self, expected_states=['REBOOT', 'ACTIVE']):
+    def run_test_wait_for_restart(self, expected_states=['REBOOT', 'HEALTHY']):
         if self.test_helper.log_enable_requires_restart():
             self.assert_instance_action(self.instance_info.id, expected_states)
 

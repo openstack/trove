@@ -80,9 +80,11 @@ class RedisGuestAgentManagerTest(DatastoreManagerTest):
 
     def test_update_status(self):
         mock_status = MagicMock()
+        mock_status.is_installed = True
+        mock_status._is_restarting = False
         self.manager._app.status = mock_status
         self.manager.update_status(self.context)
-        mock_status.update.assert_any_call()
+        self.assertTrue(mock_status.set_status.called)
 
     def test_prepare_redis_not_installed(self):
         self._prepare_dynamic(is_redis_installed=False)

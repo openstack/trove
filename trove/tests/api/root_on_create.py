@@ -25,6 +25,7 @@ from trove import tests
 from trove.tests.api.databases import TestMysqlAccess
 from trove.tests.api.instances import instance_info
 from trove.tests.api.users import TestUsers
+from trove.tests.config import CONFIG
 from trove.tests import util
 
 CONF = cfg.CONF
@@ -59,7 +60,7 @@ class TestRootOnCreate(object):
 
         def result_is_active():
             instance = self.dbaas.instances.get(new_id)
-            if instance.status == "ACTIVE":
+            if instance.status in CONFIG.running_status:
                 return True
             else:
                 assert_equal("BUILD", instance.status)

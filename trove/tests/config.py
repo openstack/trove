@@ -125,6 +125,7 @@ class TestConfig(object):
             "redis": {"volume_support": False},
             "swift_enabled": True,
             "trove_mgmt_network": "trove-mgmt",
+            "running_status": ["ACTIVE", "HEALTHY"],
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None

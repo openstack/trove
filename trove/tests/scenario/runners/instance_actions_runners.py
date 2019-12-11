@@ -50,7 +50,7 @@ class InstanceActionsRunner(TestRunner):
         self.test_helper.remove_data(DataType.small, host)
 
     def run_instance_restart(
-            self, expected_states=['REBOOT', 'ACTIVE'],
+            self, expected_states=['REBOOT', 'HEALTHY'],
             expected_http_code=202):
         self.assert_instance_restart(self.instance_info.id, expected_states,
                                      expected_http_code)
@@ -66,7 +66,7 @@ class InstanceActionsRunner(TestRunner):
 
     def run_instance_resize_volume(
             self, resize_amount=1,
-            expected_states=['RESIZE', 'ACTIVE'],
+            expected_states=['RESIZE', 'HEALTHY'],
             expected_http_code=202):
         if self.VOLUME_SUPPORT:
             self.assert_instance_resize_volume(
@@ -106,7 +106,7 @@ class InstanceActionsRunner(TestRunner):
         self.assert_client_code(client, expected_http_code)
 
     def run_wait_for_instance_resize_flavor(
-            self, expected_states=['RESIZE', 'ACTIVE']):
+            self, expected_states=['RESIZE', 'HEALTHY']):
         self.report.log("Waiting for resize to '%s' on instance: %s" %
                         (self.resize_flavor_id, self.instance_info.id))
         self._assert_instance_states(self.instance_info.id, expected_states)

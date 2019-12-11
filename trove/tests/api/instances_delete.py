@@ -54,7 +54,7 @@ class TestBase(object):
                                              nics=instance_info.nics)
         return result.id
 
-    def wait_for_instance_status(self, instance_id, status="ACTIVE",
+    def wait_for_instance_status(self, instance_id, status="HEALTHY",
                                  acceptable_states=None):
         if acceptable_states:
             acceptable_states.append(status)
@@ -64,6 +64,7 @@ class TestBase(object):
                 assert_true(instance.status in acceptable_states,
                             "Invalid status: %s" % instance.status)
             return instance
+
         poll_until(lambda: self.dbaas.instances.get(instance_id),
                    lambda instance: assert_state(instance).status == status,
                    time_out=30, sleep_time=1)
@@ -151,10 +152,10 @@ class ErroredInstanceDelete(TestBase):
     @time_out(30)
     def delete_error_on_delete_instance(self):
         id = self.delete_error
-        self.wait_for_instance_status(id, 'ACTIVE')
+        self.wait_for_instance_status(id, 'HEALTHY')
         self.wait_for_instance_task_status(id, 'No tasks for the instance.')
         instance = self.dbaas.management.show(id)
-        asserts.assert_equal(instance.status, "ACTIVE")
+        asserts.assert_equal(instance.status, "HEALTHY")
         asserts.assert_equal(instance.task_description,
                              'No tasks for the instance.')
         # Try to delete the instance. This fails the first time due to how

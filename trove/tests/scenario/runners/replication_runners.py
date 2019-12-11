@@ -99,7 +99,8 @@ class ReplicationRunner(TestRunner):
         self.register_debug_inst_ids(new_replicas)
         return list(new_replicas)
 
-    def run_wait_for_single_replica(self, expected_states=['BUILD', 'ACTIVE']):
+    def run_wait_for_single_replica(self,
+                                    expected_states=['BUILD', 'HEALTHY']):
         self.assert_instance_action(self.replica_1_id, expected_states)
         self._assert_is_master(self.master_id, [self.replica_1_id])
         self._assert_is_replica(self.replica_1_id, self.master_id)
@@ -143,7 +144,7 @@ class ReplicationRunner(TestRunner):
                               replica_id)
 
     def run_wait_for_non_affinity_master(self,
-                                         expected_states=['BUILD', 'ACTIVE']):
+                                         expected_states=['BUILD', 'HEALTHY']):
         self._assert_instance_states(self.non_affinity_master_id,
                                      expected_states)
         self.non_affinity_srv_grp_id = self.assert_server_group_exists(
@@ -168,7 +169,7 @@ class ReplicationRunner(TestRunner):
                                    'replica2', 2, expected_http_code)
 
     def run_wait_for_multiple_replicas(
-            self, expected_states=['BUILD', 'ACTIVE']):
+            self, expected_states=['BUILD', 'HEALTHY']):
         replica_ids = self._get_replica_set(self.master_id)
         self.report.log("Waiting for replicas: %s" % replica_ids)
         self.assert_instance_action(replica_ids, expected_states)
@@ -181,7 +182,7 @@ class ReplicationRunner(TestRunner):
             self, expected_states=['BUILD', 'ERROR']):
         self._assert_instance_states(self.non_affinity_repl_id,
                                      expected_states,
-                                     fast_fail_status=['ACTIVE'])
+                                     fast_fail_status=['HEALTHY'])
 
     def run_delete_non_affinity_repl(self, expected_http_code=202):
         self.assert_delete_instances(
@@ -267,7 +268,7 @@ class ReplicationRunner(TestRunner):
             self.instance_info.id)
 
     def run_promote_to_replica_source(self,
-                                      expected_states=['PROMOTE', 'ACTIVE'],
+                                      expected_states=['PROMOTE', 'HEALTHY'],
                                       expected_http_code=202):
         self.assert_promote_to_replica_source(
             self.replica_1_id, self.instance_info.id, expected_states,
@@ -312,7 +313,7 @@ class ReplicationRunner(TestRunner):
         self.assert_verify_replica_data(self.replica_1_id, DataType.tiny2)
 
     def run_promote_original_source(self,
-                                    expected_states=['PROMOTE', 'ACTIVE'],
+                                    expected_states=['PROMOTE', 'HEALTHY'],
                                     expected_http_code=202):
         self.assert_promote_to_replica_source(
             self.instance_info.id, self.replica_1_id, expected_states,
@@ -339,7 +340,7 @@ class ReplicationRunner(TestRunner):
             self.test_helper.remove_data(data_set, host)
 
     def run_detach_replica_from_source(self,
-                                       expected_states=['DETACH', 'ACTIVE'],
+                                       expected_states=['DETACH', 'HEALTHY'],
                                        expected_http_code=202):
         self.assert_detach_replica_from_source(
             self.instance_info.id, self.replica_1_id,

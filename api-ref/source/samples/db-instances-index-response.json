@@ -32,7 +32,7 @@
             ],
             "name": "json_rack_instance",
             "region": "RegionOne",
-            "status": "ACTIVE",
+            "status": "HEALTHY",
             "volume": {
                 "size": 2
             }

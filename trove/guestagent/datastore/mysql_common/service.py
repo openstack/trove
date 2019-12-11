@@ -152,37 +152,46 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
         return cls._instance
 
     def _get_actual_db_status(self):
+        """Check database service status.
+
+        The checks which don't need service app can be put here.
+        """
         try:
             utils.execute_with_timeout(
                 "/usr/bin/mysqladmin",
                 "ping", run_as_root=True, root_helper="sudo",
                 log_output_on_error=True)
-            LOG.debug("MySQL Service Status is RUNNING.")
+
+            LOG.debug("Database service check: mysqld is alive")
             return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
-            LOG.warning("Failed to get database status.")
-            try:
-                out, _ = utils.execute_with_timeout(
-                    "/bin/ps", "-C", "mysqld", "h",
-                    log_output_on_error=True
-                )
-                pid = out.split()[0]
-                # TODO(rnirmal): Need to create new statuses for instances
-                # where the mysql service is up, but unresponsive
-                LOG.info('MySQL Service Status %(pid)s is BLOCKED.',
-                         {'pid': pid})
-                return rd_instance.ServiceStatuses.BLOCKED
-            except exception.ProcessExecutionError:
-                LOG.warning("Process execution failed.")
-                mysql_args = load_mysqld_options()
-                pid_file = mysql_args.get('pid_file',
-                                          ['/var/run/mysqld/mysqld.pid'])[0]
-                if os.path.exists(pid_file):
-                    LOG.info("MySQL Service Status is CRASHED.")
-                    return rd_instance.ServiceStatuses.CRASHED
-                else:
-                    LOG.info("MySQL Service Status is SHUTDOWN.")
-                    return rd_instance.ServiceStatuses.SHUTDOWN
+            LOG.warning("Database service check: Failed to get database "
+                        "service status by mysqladmin, fall back to use ps.")
+
+        try:
+            out, _ = utils.execute_with_timeout(
+                "/bin/ps", "-C", "mysqld", "h",
+                log_output_on_error=True
+            )
+            pid = out.split()[0]
+
+            LOG.debug('Database service check: service PID exists', pid)
+            return rd_instance.ServiceStatuses.BLOCKED
+        except exception.ProcessExecutionError:
+            LOG.warning("Database service check: Failed to get database "
+                        "service status by ps, fall back to check PID file.")
+
+        mysql_args = load_mysqld_options()
+        pid_file = mysql_args.get('pid_file',
+                                  ['/var/run/mysqld/mysqld.pid'])[0]
+        if os.path.exists(pid_file):
+            LOG.info("Database service check: MySQL Service Status is "
+                     "CRASHED.")
+            return rd_instance.ServiceStatuses.CRASHED
+        else:
+            LOG.info("Database service check: MySQL Service Status is "
+                     "SHUTDOWN.")
+            return rd_instance.ServiceStatuses.SHUTDOWN
 
 
 class BaseLocalSqlClient(object):

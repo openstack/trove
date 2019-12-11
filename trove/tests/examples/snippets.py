@@ -17,6 +17,7 @@ import json
 import time
 
 from oslo_log import log as logging
+from proboscis import asserts
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import Check
@@ -322,7 +323,7 @@ class CreateInstance(Example):
     def an_instance_is_not_active(self):
         for instance in self.instances:
             instance = self.client.instances.get(instance.id)
-            if instance.status != "ACTIVE":
+            if instance.status not in CONFIG.running_status:
                 assert_equal(instance.status, "BUILD")
                 return True
         return False
@@ -521,8 +522,7 @@ class ActiveMixin(Example):
     def _wait_for_active(self, *acceptable_states):
         global json_instance
         json_instance = self.client.instances.get(json_instance.id)
-        print('instance.status=%s' % json_instance.status)
-        while json_instance.status != "ACTIVE":
+        while json_instance.status not in CONFIG.running_status:
             assert_true(
                 json_instance.status in acceptable_states,
                 "Instance status == %s; expected it to be one of: %s"
@@ -533,8 +533,7 @@ class ActiveMixin(Example):
     def _wait_for_restore_active(self, *acceptable_states):
         for instance in (self.json_restore, ):
             instance = self.client.instances.get(instance.id)
-            print('instance.status=%s' % instance.status)
-            while instance.status != "ACTIVE":
+            while instance.status not in CONFIG.running_status:
                 assert_true(
                     instance.status in acceptable_states,
                     "Instance status == %s; expected it to be one of: %s"
@@ -810,7 +809,7 @@ class InstanceList(Example):
         third_instance = self.client.instances.create(
             "The Third Instance", 1, volume={'size': 2})
         third_instance = self.client.instances.get(third_instance.id)
-        while third_instance.status != "ACTIVE":
+        while third_instance.status not in CONFIG.running_status:
             time.sleep(0.1)
             third_instance = self.client.instances.get(third_instance.id)
 
@@ -909,7 +908,7 @@ class Backups(ActiveMixin):
         self.json_restore = results[JSON_INDEX]
         self._wait_for_restore_active("BUILD")
         self.json_restore = self.client.instances.get(self.json_restore.id)
-        assert_equal(self.json_restore.status, "ACTIVE")
+        asserts.assert_true(self.json_restore.status in CONFIG.running_status)
 
     @test(depends_on=[restore])
     def delete_restores(self):
@@ -1013,7 +1012,7 @@ class MgmtHosts(Example):
             for host in results:
                 check.equal(1, len(host.instances))
                 for instance in host.instances:
-                    check.equal(instance['status'], 'ACTIVE')
+                    check.equal(instance['status'], 'HEALTHY')
                     check.true(isinstance(instance['name'], six.string_types))
                     check.true(isinstance(instance['id'], six.string_types))
                     check.true(isinstance(instance['server_id'],

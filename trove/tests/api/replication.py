@@ -92,7 +92,7 @@ def backup_count_matches(count):
 
 def instance_is_active(id):
     instance = instance_info.dbaas.instances.get(id)
-    if instance.status == "ACTIVE":
+    if instance.status in CONFIG.running_status:
         return True
     else:
         assert_true(instance.status in ['PROMOTE', 'EJECT', 'BUILD', 'BACKUP'])

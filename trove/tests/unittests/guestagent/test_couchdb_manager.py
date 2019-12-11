@@ -108,9 +108,11 @@ class GuestAgentCouchDBManagerTest(DatastoreManagerTest):
 
     def test_update_status(self):
         mock_status = MagicMock()
+        mock_status.is_installed = True
+        mock_status._is_restarting = False
         self.manager.appStatus = mock_status
         self.manager.update_status(self.context)
-        mock_status.update.assert_any_call()
+        self.assertTrue(mock_status.set_status.called)
 
     def _prepare_dynamic(self, packages=None, databases=None,
                          config_content=None, device_path='/dev/vdb',

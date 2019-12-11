@@ -102,7 +102,7 @@ class ConfigurationRunner(TestRunner):
             expected_exception, expected_http_code)
 
     def run_detach_group_with_none_attached(self,
-                                            expected_states=['ACTIVE'],
+                                            expected_states=['HEALTHY'],
                                             expected_http_code=202):
         self.assert_instance_modify(
             self.instance_info.id, None,
@@ -301,7 +301,7 @@ class ConfigurationRunner(TestRunner):
                 self.instance_info.id in conf_instance_ids)
 
     def run_attach_dynamic_group(
-            self, expected_states=['ACTIVE'], expected_http_code=202):
+            self, expected_states=['HEALTHY'], expected_http_code=202):
         if self.dynamic_group_id:
             self.assert_instance_modify(
                 self.instance_info.id, self.dynamic_group_id,
@@ -362,8 +362,8 @@ class ConfigurationRunner(TestRunner):
             self.assert_group_delete_failure(
                 self.dynamic_group_id, expected_exception, expected_http_code)
 
-    def run_update_dynamic_group(
-            self, expected_states=['ACTIVE'], expected_http_code=202):
+    def run_update_dynamic_group(self, expected_states=['HEALTHY'],
+                                 expected_http_code=202):
         if self.dynamic_group_id:
             values = json.dumps(self.test_helper.get_dynamic_group())
             self.assert_update_group(
@@ -381,7 +381,7 @@ class ConfigurationRunner(TestRunner):
             self._restart_instance(instance_id)
 
     def run_detach_dynamic_group(
-            self, expected_states=['ACTIVE'], expected_http_code=202):
+            self, expected_states=['HEALTHY'], expected_http_code=202):
         if self.dynamic_group_id:
             self.assert_instance_modify(
                 self.instance_info.id, None,
@@ -502,7 +502,7 @@ class ConfigurationRunner(TestRunner):
             client, client.configurations.delete, group_id)
 
     def _restart_instance(
-            self, instance_id, expected_states=['REBOOT', 'ACTIVE'],
+            self, instance_id, expected_states=['REBOOT', 'HEALTHY'],
             expected_http_code=202):
         client = self.auth_client
         client.instances.restart(instance_id)
@@ -538,7 +538,7 @@ class ConfigurationRunner(TestRunner):
         return result.id
 
     def run_wait_for_conf_instance(
-            self, expected_states=['BUILD', 'ACTIVE']):
+            self, expected_states=['BUILD', 'HEALTHY']):
         if self.config_inst_id:
             self.assert_instance_action(self.config_inst_id, expected_states)
             self.create_test_helper_on_instance(self.config_inst_id)

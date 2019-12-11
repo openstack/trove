@@ -134,7 +134,7 @@ class FakeServer(object):
     def confirm_resize(self):
         if self.status != "VERIFY_RESIZE":
             raise RuntimeError("Not in resize confirm mode.")
-        self._current_status = "ACTIVE"
+        self._current_status = "HEALTHY"
 
     def revert_resize(self):
         if self.status != "VERIFY_RESIZE":
@@ -143,13 +143,13 @@ class FakeServer(object):
         self.old_host = None
         self.flavor_ref = self.old_flavor_ref
         self.old_flavor_ref = None
-        self._current_status = "ACTIVE"
+        self._current_status = "HEALTHY"
 
     def reboot(self):
         LOG.debug("Rebooting server %s", self.id)
 
         def set_to_active():
-            self._current_status = "ACTIVE"
+            self._current_status = "HEALTHY"
             self.parent.schedule_simulate_running_server(self.id, 1.5)
 
         self._current_status = "REBOOT"
@@ -204,7 +204,7 @@ class FakeServer(object):
 
         def set_flavor():
             if self.name.endswith("_RESIZE_ERROR"):
-                self._current_status = "ACTIVE"
+                self._current_status = "HEALTHY"
                 return
             if new_flavor_id is None:
                 # Migrations are flavorless flavor resizes.
@@ -282,7 +282,7 @@ class FakeServers(object):
             raise nova_exceptions.ClientException("The requested availability "
                                                   "zone is not available.")
 
-        server.schedule_status("ACTIVE", 1)
+        server.schedule_status("HEALTHY", 1)
         LOG.info("FAKE_SERVERS_DB : %s", str(FAKE_SERVERS_DB))
         return server
 
