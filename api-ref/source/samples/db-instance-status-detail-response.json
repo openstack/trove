@@ -1,6 +1,6 @@
 {
     "instance": {
-        "created": "2014-10-30T12:30:00",
+        "created": "2019-12-14T08:08:22",
         "datastore": {
             "type": "mysql",
             "version": "5.5"
@@ -32,8 +32,9 @@
         ],
         "name": "json_rack_instance",
         "region": "RegionOne",
+        "service_status_updated": "2019-12-14T08:51:58",
         "status": "HEALTHY",
-        "updated": "2014-10-30T12:30:00",
+        "updated": "2019-12-14T08:08:30",
         "volume": {
             "size": 2,
             "used": 0.16

@@ -525,7 +525,8 @@ class CreateInstanceFail(object):
                              'hostname', 'id', 'name', 'datastore',
                              'server_state_description', 'status', 'updated',
                              'users', 'volume', 'root_enabled_at',
-                             'root_enabled_by', 'fault']
+                             'root_enabled_by', 'fault',
+                             'service_status_updated']
             with CheckInstance(result._info) as check:
                 check.contains_allowed_attrs(
                     result._info, allowed_attrs,
@@ -739,7 +740,7 @@ class CreateInstance(object):
         # Check these attrs only are returned in create response
         allowed_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
                          'name', 'status', 'updated', 'datastore', 'fault',
-                         'region']
+                         'region', 'service_status_updated']
         if ROOT_ON_CREATE:
             allowed_attrs.append('password')
         if VOLUME_SUPPORT:
@@ -998,7 +999,8 @@ class TestInstanceListing(object):
     def test_detailed_list(self):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
-                         'datastore', 'fault', 'region']
+                         'datastore', 'fault', 'region',
+                         'service_status_updated']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         instances = dbaas.instances.list(detailed=True)
@@ -1017,7 +1019,8 @@ class TestInstanceListing(object):
     def test_get_instance(self):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
-                         'datastore', 'fault', 'region']
+                         'datastore', 'fault', 'region',
+                         'service_status_updated']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         else:
