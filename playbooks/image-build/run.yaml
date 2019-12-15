@@ -4,9 +4,6 @@
       file:
         path: '{{ ansible_user_dir }}/images'
         state: directory
-    - name: Get output image name
-      shell: kubeadm token create --print-join-command
-      register: join_command_raw
     - name: Build Trove guest image
       shell: >-
         ./trovestack build-image \
