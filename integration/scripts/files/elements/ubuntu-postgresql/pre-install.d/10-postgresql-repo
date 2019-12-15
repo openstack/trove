@@ -3,10 +3,10 @@
 set -e
 set -o xtrace
 
-[ -n "${RELEASE}" ] || die "RELEASE must be set to a valid Ubuntu release (e.g. trusty)"
+[ -n "${DIB_RELEASE}" ] || die "RELEASE must be set to a valid Ubuntu release (e.g. trusty)"
 
 cat <<EOL > /etc/apt/sources.list.d/postgresql.list
-deb http://apt.postgresql.org/pub/repos/apt/ ${RELEASE}-pgdg main
+deb http://apt.postgresql.org/pub/repos/apt/ ${DIB_RELEASE}-pgdg main
 EOL
 
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -

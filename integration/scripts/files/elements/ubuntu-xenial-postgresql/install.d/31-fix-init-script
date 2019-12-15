@@ -1,7 +1,0 @@
-#!/bin/sh
-
-set -e
-set -o xtrace
-
-sed -i "s/PIDFile=\/run\/postgresql\/%i.pid/PIDFile=\/var\/run\/postgresql\/postgresql.pid/" /lib/systemd/system/postgresql@.service
-

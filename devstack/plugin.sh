@@ -295,7 +295,7 @@ write_files:
 EOF
 
     # NOTE(lxkong): Remove this when we support common cloud-init file for all datastores.
-    for datastore in "mysql" "mariadb"
+    for datastore in "mysql" "mariadb" "postgresql"
     do
         sudo cp ${common_cloudinit} /etc/trove/cloudinit/${datastore}.cloudinit
     done
