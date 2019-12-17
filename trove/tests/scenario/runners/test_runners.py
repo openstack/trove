@@ -268,9 +268,11 @@ class LogOnFail(type):
                             report.log("%s Error in instance show for %s:\n%s"
                                        % (msg_prefix, inst_id, ex))
                         try:
+                            client.instances.log_action(inst_id, 'guest',
+                                                        publish=True)
                             log_gen = client.instances.log_generator(
                                 inst_id, 'guest',
-                                publish=True, lines=0, swift=None)
+                                lines=0, swift=None)
                             log_contents = "".join(
                                 [chunk for chunk in log_gen()])
                             report.log("%s Guest log for %s:\n%s" %

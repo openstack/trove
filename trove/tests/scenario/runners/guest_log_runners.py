@@ -197,8 +197,8 @@ class GuestLogRunner(TestRunner):
                           expected_status=guest_log.LogStatus.Disabled.name,
                           expected_published=None, expected_pending=None):
         self.report.log("Executing log_enable for log '%s'" % log_name)
-        log_details = client.instances.log_enable(
-            self.instance_info.id, log_name)
+        log_details = client.instances.log_action(
+            self.instance_info.id, log_name, enable=True)
         self.assert_client_code(client, expected_http_code)
         self.assert_log_details(
             log_details, log_name,
@@ -214,8 +214,8 @@ class GuestLogRunner(TestRunner):
                            expected_published=None, expected_pending=None):
         self.report.log("Executing log_disable for log '%s' (discard: %s)" %
                         (log_name, discard))
-        log_details = client.instances.log_disable(
-            self.instance_info.id, log_name, discard=discard)
+        log_details = client.instances.log_action(
+            self.instance_info.id, log_name, disable=True, discard=discard)
         self.assert_client_code(client, expected_http_code)
         self.assert_log_details(
             log_details, log_name,
@@ -233,8 +233,9 @@ class GuestLogRunner(TestRunner):
         self.report.log("Executing log_publish for log '%s' (disable: %s  "
                         "discard: %s)" %
                         (log_name, disable, discard))
-        log_details = client.instances.log_publish(
-            self.instance_info.id, log_name, disable=disable, discard=discard)
+        log_details = client.instances.log_action(
+            self.instance_info.id, log_name, publish=True, disable=disable,
+            discard=discard)
         self.assert_client_code(client, expected_http_code)
         self.assert_log_details(
             log_details, log_name,
@@ -250,8 +251,8 @@ class GuestLogRunner(TestRunner):
                            expected_status=guest_log.LogStatus.Disabled.name,
                            expected_published=None, expected_pending=None):
         self.report.log("Executing log_discard for log '%s'" % log_name)
-        log_details = client.instances.log_discard(
-            self.instance_info.id, log_name)
+        log_details = client.instances.log_action(
+            self.instance_info.id, log_name, discard=True)
         self.assert_client_code(client, expected_http_code)
         self.assert_log_details(
             log_details, log_name,
@@ -329,8 +330,8 @@ class GuestLogRunner(TestRunner):
                                 expected_exception, expected_http_code,
                                 log_name):
         self.assert_raises(expected_exception, expected_http_code,
-                           client, client.instances.log_enable,
-                           self.instance_info.id, log_name)
+                           client, client.instances.log_action,
+                           self.instance_info.id, log_name, enable=True)
 
     def run_test_log_disable_sys(self,
                                  expected_exception=exceptions.BadRequest,
@@ -345,8 +346,8 @@ class GuestLogRunner(TestRunner):
                                  expected_exception, expected_http_code,
                                  log_name, discard=None):
         self.assert_raises(expected_exception, expected_http_code,
-                           client, client.instances.log_disable,
-                           self.instance_info.id, log_name,
+                           client, client.instances.log_action,
+                           self.instance_info.id, log_name, disable=True,
                            discard=discard)
 
     def run_test_log_show_unauth_user(self,
@@ -440,8 +441,8 @@ class GuestLogRunner(TestRunner):
                                  log_name,
                                  disable=None, discard=None):
         self.assert_raises(expected_exception, expected_http_code,
-                           client, client.instances.log_publish,
-                           self.instance_info.id, log_name,
+                           client, client.instances.log_action,
+                           self.instance_info.id, log_name, publish=True,
                            disable=disable, discard=discard)
 
     def run_test_log_discard_unexposed_user(
@@ -457,8 +458,8 @@ class GuestLogRunner(TestRunner):
                                  expected_exception, expected_http_code,
                                  log_name):
         self.assert_raises(expected_exception, expected_http_code,
-                           client, client.instances.log_discard,
-                           self.instance_info.id, log_name)
+                           client, client.instances.log_action,
+                           self.instance_info.id, log_name, discard=True)
 
     def run_test_log_enable_user(self):
         expected_status = guest_log.LogStatus.Ready.name
@@ -547,12 +548,19 @@ class GuestLogRunner(TestRunner):
                              swift_client=None):
         self.report.log("Executing log_generator for log '%s' (publish: %s)" %
                         (log_name, publish))
+
+        if publish:
+            client.instances.log_action(self.instance_info.id, log_name,
+                                        publish=True)
+
         log_gen = client.instances.log_generator(
             self.instance_info.id, log_name,
-            publish=publish, lines=lines, swift=swift_client)
+            lines=lines, swift=swift_client)
         log_contents = "".join([chunk for chunk in log_gen()])
+
         self.report.log("Returned %d lines for log '%s': %s" % (
             len(log_contents.splitlines()), log_name, log_contents))
+
         self._set_last_log_contents(log_name, log_contents)
         if expected_lines:
             self.assert_equal(expected_lines,
@@ -618,9 +626,15 @@ class GuestLogRunner(TestRunner):
         # generate the file
         self.report.log("Executing log_save for log '%s' (publish: %s)" %
                         (log_name, publish))
+
+        if publish:
+            client.instances.log_action(self.instance_info.id,
+                                        log_name=log_name,
+                                        publish=True)
+
         with tempfile.NamedTemporaryFile() as temp_file:
             client.instances.log_save(self.instance_info.id,
-                                      log_name=log_name, publish=publish,
+                                      log_name=log_name,
                                       filename=temp_file.name)
             file_contents = operating_system.read_file(temp_file.name)
             # now grab the contents ourselves
