@@ -10,9 +10,9 @@
           {{ datastore_type }} \
           {{ guest_os }} \
           {{ guest_os_release }} \
-          false \
+          {{ dev_mode }} \
           {{ guest_username }} \
-          {{ ansible_user_dir }}/images/trove-{{ branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}
+          {{ ansible_user_dir }}/images/trove-{{ branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}{{ image_suffix }}
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/integration/scripts"
       tags:

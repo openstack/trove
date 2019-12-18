@@ -59,6 +59,9 @@
         - publish-trove-guest-image-mysql-ubuntu-xenial:
             branches:
               - stable/train
+        - publish-trove-guest-image-mysql-ubuntu-xenial-dev:
+            branches:
+              - stable/train
 
 - job:
     name: trove-legacy-dsvm-base
@@ -365,3 +368,20 @@
       guest_os_release: xenial
       guest_username: ubuntu
       branch: train
+      dev_mode: false
+      image_suffix: ""
+
+- job:
+    name: publish-trove-guest-image-mysql-ubuntu-xenial-dev
+    parent: publish-trove-guest-image
+    description: |
+      Build and publish Ubuntu Xenial based Trove guest image to
+      tarballs.openstack.org.
+    vars:
+      datastore_type: mysql
+      guest_os: ubuntu
+      guest_os_release: xenial
+      guest_username: ubuntu
+      branch: train
+      dev_mode: true
+      image_suffix: "-dev"

@@ -88,7 +88,7 @@ function build_vm() {
     popd > /dev/null
     sudo rm -rf $TEMP
 
-    exclaim "Image ${image_output}.${GUEST_IMAGETYPE} was built successfully."
+    exclaim "Image ${image_output} was built successfully."
 }
 
 function build_guest_image() {
