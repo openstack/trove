@@ -26,6 +26,10 @@ stored in Glance. This document shows you the steps to build the guest images.
     periodically built and published in
     http://tarballs.openstack.org/trove/images/ in Trove upstream CI.
 
+    Additionally, if you install Trove in devstack environment, a MySQL image
+    is created and registered in Glance automatically, unless it's disabled by
+    setting ``TROVE_ENABLE_IMAGE_BUILD=false`` in devstack local.conf file.
+
 High Level Overview of a Trove Guest Instance
 =============================================
 
