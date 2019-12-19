@@ -1,1 +1,1 @@
-git+https://opendev.org/openstack/python-troveclient#egg=python-troveclient
+git+https://opendev.org/openstack/python-troveclient@master#egg=python-troveclient
