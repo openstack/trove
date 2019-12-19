@@ -389,6 +389,10 @@ class SimpleInstance(object):
         return self.db_info.updated
 
     @property
+    def service_status_updated(self):
+        return self.datastore_status.updated_at
+
+    @property
     def volume_id(self):
         return self.db_info.volume_id
 

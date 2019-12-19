@@ -91,6 +91,8 @@ class InstanceDetailView(InstanceView):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
         result['instance']['updated'] = self.instance.updated
+        result['instance']['service_status_updated'] = (self.instance.
+                                                        service_status_updated)
 
         result['instance']['datastore']['version'] = (self.instance.
                                                       datastore_version.name)

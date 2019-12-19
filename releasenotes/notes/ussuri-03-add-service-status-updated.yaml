@@ -1,0 +1,5 @@
+---
+features:
+  - A new field named ``service_status_updated`` is added to the instance API
+    response which e.g. could be used to validate if the instance 'HEALTHY'
+    status is stale or not

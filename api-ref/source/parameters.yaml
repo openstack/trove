@@ -702,6 +702,13 @@ server_id:
    in: body
    required: false
    type: string
+service_status_updated:
+  description: |
+    The date and time when the database service status was updated. This field
+    can be used to validate if the 'HEALTHY' status is stale or not.
+  in: body
+  required: true
+  type: string
 shard_id:
    description: |
      The shard ID of an instance.

@@ -179,6 +179,7 @@ Response Parameters
    - ip: instance_ip_address
    - created: created
    - updated: updated
+   - service_status_updated: service_status_updated
    - fault: instance_fault
    - fault.message: instance_fault_message
    - fault.created: instance_fault_created
