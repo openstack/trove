@@ -727,9 +727,9 @@ class GuestLogRunner(TestRunner):
             self.admin_client,
             log_name,
             expected_type=guest_log.LogType.SYS.name,
-            expected_status=guest_log.LogStatus.Partial.name,
-            expected_published=1, expected_pending=1,
-            is_admin=True)
+            expected_status=[guest_log.LogStatus.Published.name,
+                             guest_log.LogStatus.Partial.name],
+            expected_published=1, is_admin=True)
 
     def run_test_log_publish_again_sys(self):
         log_name = self._get_unexposed_sys_log_name()
@@ -737,9 +737,9 @@ class GuestLogRunner(TestRunner):
             self.admin_client,
             log_name,
             expected_type=guest_log.LogType.SYS.name,
-            expected_status=guest_log.LogStatus.Partial.name,
+            expected_status=[guest_log.LogStatus.Published.name,
+                             guest_log.LogStatus.Partial.name],
             expected_published=self._get_last_log_published(log_name) + 1,
-            expected_pending=1,
             is_admin=True)
 
     def run_test_log_generator_sys(self):
