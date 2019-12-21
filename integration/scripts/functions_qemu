@@ -25,7 +25,7 @@ function build_vm() {
 
     # In dev mode, the trove guest agent needs to download trove code from
     # trove-taskmanager host during service initialization.
-    if [[ "${dev_mode}" == "true" ]]; then
+    if [[ "${dev_mode,,}" == "true" ]]; then
         host_ip=$(ip route get 8.8.8.8 | head -1 | awk '{print $7}')
         export CONTROLLER_IP=${CONTROLLER_IP:-${host_ip}}
         export PATH_TROVE=${PATH_TROVE}
@@ -63,7 +63,7 @@ function build_vm() {
 
     elementes="$elementes ${guest_os}"
 
-    if [[ "${dev_mode}" == "false" ]]; then
+    if [[ "${dev_mode,,}" == "false" ]]; then
         elementes="$elementes pip-and-virtualenv"
         elementes="$elementes pip-cache"
         elementes="$elementes guest-agent"
