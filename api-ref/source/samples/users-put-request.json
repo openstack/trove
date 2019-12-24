@@ -1,0 +1,9 @@
+{
+    "users": [
+        {
+            "name": "new_name",
+            "password": "another_password",
+            "host": "192.168.30.98"
+        }
+    ]
+}

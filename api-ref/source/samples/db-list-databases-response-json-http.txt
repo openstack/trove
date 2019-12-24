@@ -1,5 +1,0 @@
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Length: 129
-Date: Mon, 18 Mar 2013 19:09:17 GMT
-

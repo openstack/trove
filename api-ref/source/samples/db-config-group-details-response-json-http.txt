@@ -1,4 +1,0 @@
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Length: 138
-Date: Fri, 20 Nov 2015 19:53:04 GMT

@@ -1,0 +1,21 @@
+{
+    "backups": [
+        {
+            "created": "2019-12-23T22:38:42",
+            "datastore": {
+                "type": "mysql",
+                "version": "5.7",
+                "version_id": "b3d5c099-dbd5-4518-baa3-7c7c195671bf"
+            },
+            "description": null,
+            "id": "71557643-2245-43ac-b871-3d5a50af21d3",
+            "instance_id": "7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
+            "locationRef": "http://127.0.0.1:8080/v1/AUTH_9f8dd5eacb074c9f87d2d822c9092aa5/database_backups/71557643-2245-43ac-b871-3d5a50af21d3.xbstream.gz.enc",
+            "name": "backup-full",
+            "parent_id": null,
+            "size": 0.12,
+            "status": "COMPLETED",
+            "updated": "2019-12-23T22:38:45"
+        }
+    ]
+}

@@ -7,12 +7,13 @@
 .. rest_expand_all::
 
 .. include:: api-versions.inc
-.. include:: database-instances.inc
-.. include:: database-instance-actions.inc
-.. include:: database-instance-logs.inc
-.. include:: databases.inc
-.. include:: user-management.inc
 .. include:: datastores.inc
-.. include:: configurations.inc
+.. include:: datastore-versions.inc
+.. include:: instances.inc
+.. include:: instance-actions.inc
+.. include:: instance-logs.inc
 .. include:: backups.inc
+.. include:: configurations.inc
+.. include:: databases.inc
+.. include:: users.inc
 .. include:: quotas.inc

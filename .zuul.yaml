@@ -327,6 +327,7 @@
       - openstack/tempest
     irrelevant-files:
       - ^.*\.rst$
+      - ^api-ref/.*$
       - ^doc/.*$
       - ^etc/.*$
       - ^releasenotes/.*$

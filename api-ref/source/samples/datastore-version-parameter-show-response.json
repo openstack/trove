@@ -1,0 +1,8 @@
+{
+    "datastore_version_id": "b3d5c099-dbd5-4518-baa3-7c7c195671bf",
+    "max": 31536000,
+    "min": 1,
+    "name": "wait_timeout",
+    "restart_required": false,
+    "type": "integer"
+}

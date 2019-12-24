@@ -1,37 +1,8 @@
 .. -*- rst -*-
 
-=====================
-Databases (databases)
-=====================
-
-Creates, lists all, and deletes databases.
-
-
-Delete database
-~~~~~~~~~~~~~~~
-
-.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}/databases/{databaseName}
-
-Deletes a database.
-
-This operation also deletes all data that is associated with the
-database.
-
-Normal response codes: 202
-
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
-
-Request
--------
-
-.. rest_parameters:: parameters.yaml
-
-   - instanceId: instanceId
-   - databaseName: databaseName
-   - project_id: project_id
+=========
+Databases
+=========
 
 
 
@@ -45,27 +16,23 @@ Creates a database within an instance.
 
 Normal response codes: 202
 
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
 
 Request
 -------
 
 .. rest_parameters:: parameters.yaml
 
+   - project_id: project_id
+   - instanceId: instanceId
+   - name: name
    - characterSet: characterSet
    - collate: collate
-   - name: name
-   - instanceId: instanceId
-   - project_id: project_id
 
 
 Request Example
 ---------------
 
-.. literalinclude:: samples/db-create-databases-request.json
+.. literalinclude:: samples/databases-create-request.json
    :language: javascript
 
 
@@ -78,16 +45,11 @@ List instance databases
 
 Lists databases for an instance.
 
-This operation returns only the user-defined databases and not the
-system databases. Only the database administrator can view the
-``mysql``, ``information_schema``, and ``lost+found`` system
-databases.
+This operation returns only the user-defined databases and not the system
+databases. Only the database administrator can get system databases such as
+``mysql``, ``information_schema``, and ``lost+found``.
 
 Normal response codes: 200
-
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -95,12 +57,115 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
-   - instanceId: instanceId
    - project_id: project_id
+   - instanceId: instanceId
 
 
 Response Example
 ----------------
 
-.. literalinclude:: samples/db-list-databases-response.json
+.. literalinclude:: samples/databases-list-response.json
    :language: javascript
+
+
+
+
+List instance databases for a user
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  GET /v1.0/{project_id}/instances/{instanceId}/users/{user_name}/databases
+
+Get all the databases that the user has access to.
+
+Normal response codes: 200
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+   - user_name: user_name
+
+
+Response Example
+----------------
+
+.. literalinclude:: samples/databases-list-response.json
+   :language: javascript
+
+
+
+
+Grant databases access
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}/users/{user_name}/databases
+
+Grant user access to the databases.
+
+Normal response codes: 202
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+   - user_name: user_name
+
+
+Request Example
+---------------
+
+.. literalinclude:: samples/user-grant-databases-access-request.json
+   :language: javascript
+
+
+
+
+Revoke databases access
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}/users/{user_name}/databases/{database_name}
+
+Revoke user access to the database.
+
+Normal response codes: 202
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+   - user_name: user_name
+   - database_name: databaseName
+
+
+
+
+Delete database
+~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/instances/{instanceId}/databases/{database_name}
+
+Deletes a database.
+
+Normal response codes: 202
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+   - database_name: databaseName

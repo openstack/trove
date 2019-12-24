@@ -1,0 +1,11 @@
+{
+    "user": {
+        "databases": [
+            {
+                "name": "databaseA"
+            }
+        ],
+        "host": "%",
+        "name": "dbuser1"
+    }
+}

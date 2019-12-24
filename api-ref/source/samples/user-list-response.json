@@ -1,0 +1,30 @@
+{
+    "users": [
+        {
+            "databases": [
+                {
+                    "name": "databaseA"
+                }
+            ],
+            "host": "%",
+            "name": "dbuser1"
+        },
+        {
+            "databases": [
+                {
+                    "name": "databaseB"
+                },
+                {
+                    "name": "databaseC"
+                }
+            ],
+            "host": "%",
+            "name": "dbuser2"
+        },
+        {
+            "databases": [],
+            "host": "%",
+            "name": "dbuser3"
+        }
+    ]
+}

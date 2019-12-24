@@ -11,6 +11,12 @@ configId:
   in: path
   required: false
   type: string
+data_store:
+  description: |
+    Name or ID of the data store.
+  in: path
+  required: false
+  type: string
 databaseName:
   description: |
     The name for the database.
@@ -39,7 +45,7 @@ instanceId:
   description: |
     The ID of the database instance.
   in: path
-  required: false
+  required: true
   type: string
 parameter_name:
   description: |
@@ -65,6 +71,12 @@ user_project:
     The project ID of the user's project.
   in: path
   required: true
+  type: string
+version:
+  description: |
+    Name or ID of the datastore version.
+  in: path
+  required: false
   type: string
 # variables in body
 access:
@@ -362,7 +374,7 @@ flavorId1:
 flavorRef:
   description: |
     Reference (href), which is the actual URI to a
-    flavor as it appears in the list flavors response.  Rather than
+    flavor as it appears in the list flavors response. Rather than
     the flavor URI, you can also pass the flavor ID (integer) as the
     ``flavorRef`` value. For example, ``1``.
   in: body

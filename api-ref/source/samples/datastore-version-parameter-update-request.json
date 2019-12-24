@@ -1,0 +1,9 @@
+{
+    "configuration-parameter": {
+        "name": "connect_timeout",
+        "data_type": "integer",
+        "min_size": 64,
+        "max_size": 65535,
+        "restart_required": 1
+    }
+}

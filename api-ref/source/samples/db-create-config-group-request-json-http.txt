@@ -1,7 +1,0 @@
-POST /v1.0/1234/configurations HTTP/1.1
-User-Agent: python-example-client
-Host: openstack.example.com
-X-Auth-Token: d6cafa5b-e0c7-4ab8-948e-7c95f2acd031
-Accept: application/json
-Content-Type: application/json
-

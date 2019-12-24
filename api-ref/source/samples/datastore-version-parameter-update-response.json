@@ -1,0 +1,10 @@
+{
+    "datastore_version_id": "4eb0179d-fe11-4556-9422-5267d2fc7625",
+    "deleted": 0,
+    "deleted_at": null,
+    "max_size": 65535,
+    "min_size": 64,
+    "name": "connect_timeout",
+    "restart_required": true,
+    "type": "integer"
+}

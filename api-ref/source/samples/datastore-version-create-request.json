@@ -1,0 +1,11 @@
+{
+    "version": {
+        "datastore_name": "mysql",
+        "datastore_manager": "mysql",
+        "name": "test",
+        "image": "58b83318-cb18-4189-8d89-a015dc3839dd",
+        "active": true,
+        "default": false,
+        "packages": []
+    }
+}

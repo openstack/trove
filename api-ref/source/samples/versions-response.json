@@ -1,0 +1,15 @@
+{
+    "versions": [
+        {
+            "id": "v1.0",
+            "links": [
+                {
+                    "href": "http://127.0.0.1:8779/v1.0/",
+                    "rel": "self"
+                }
+            ],
+            "status": "CURRENT",
+            "updated": "2012-08-01T00:00:00Z"
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "databases": [
+        {
+            "name": "databaseB"
+        },
+        {
+            "name": "databaseC"
+        },
+        {
+            "name": "databaseD"
+        }
+    ]
+}

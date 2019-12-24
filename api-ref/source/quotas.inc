@@ -4,7 +4,34 @@
 Quotas
 ======
 
-Show and update quotas.
+
+
+
+Show resources limit for current project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  GET /v1.0/{project_id}/limits
+
+Get resources quota and rate limit for the current project.
+
+Normal response codes: 200
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+
+Response Example
+----------------
+
+.. literalinclude:: samples/limit-show-response.json
+   :language: javascript
+
+
+
 
 Show resources quota for a specific project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,6 +67,8 @@ Response Example
 
 .. literalinclude:: samples/quota-show-response.json
    :language: javascript
+
+
 
 
 Update resources quota for a specific project

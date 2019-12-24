@@ -215,10 +215,6 @@ class API(wsgi.Router):
                        conditions={'method': ['GET']})
         mapper.connect("/{tenant_id}/backups/{id}",
                        controller=backups_resource,
-                       action="action",
-                       conditions={'method': ['POST']})
-        mapper.connect("/{tenant_id}/backups/{id}",
-                       controller=backups_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
 

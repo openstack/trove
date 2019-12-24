@@ -1,49 +1,8 @@
 .. -*- rst -*-
 
-=====================================
-Configuration groups (configurations)
-=====================================
-
-Creates and lists all configuration groups.
-
-
-Create configuration group
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. rest_method::  POST /v1.0/{project_id}/configurations
-
-Creates a configuration group.
-
-Normal response codes: 200
-
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
-
-Request
--------
-
-.. rest_parameters:: parameters.yaml
-
-   - datastore: datastore
-   - values: values
-   - name: name
-   - project_id: project_id
-
-
-Request Example
----------------
-
-.. literalinclude:: samples/db-create-config-group-request.json
-   :language: javascript
-
-
-Response Example
-----------------
-
-.. literalinclude:: samples/db-create-config-group-response.json
-   :language: javascript
+====================
+Configuration groups
+====================
 
 
 
@@ -55,14 +14,7 @@ List configuration groups
 
 Lists all configuration groups.
 
-The list includes the associated data store and data store version
-for each configuration group.
-
 Normal response codes: 200
-
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -76,14 +28,78 @@ Request
 Response Example
 ----------------
 
-.. literalinclude:: samples/db-list-cfg-groups-response.json
+.. literalinclude:: samples/config-groups-list-response.json
    :language: javascript
 
 
 
 
-List configuration group instances
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create configuration group
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  POST /v1.0/{project_id}/configurations
+
+Creates a configuration group.
+
+Normal response codes: 200
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore: datastore
+   - name: name
+   - values: values
+
+
+Request Example
+---------------
+
+.. literalinclude:: samples/config-group-create-request.json
+   :language: javascript
+
+
+Response Example
+----------------
+
+.. literalinclude:: samples/config-group-create-response.json
+   :language: javascript
+
+
+
+
+Show configuration group details
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  GET /v1.0/{project_id}/configurations/{configId}
+
+Lists details about a configuration group, including its values.
+
+Normal response codes: 200
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - configId: configId
+
+
+Response Example
+----------------
+
+.. literalinclude:: samples/config-group-show-response.json
+   :language: javascript
+
+
+
+
+List instances applied the configuration group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  GET /v1.0/{project_id}/configurations/{configId}/instances
 
@@ -91,50 +107,21 @@ Lists the instances associated with the specified configuration group.
 
 Normal response codes: 200
 
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
 
 Request
 -------
 
 .. rest_parameters:: parameters.yaml
 
-   - configId: configId
    - project_id: project_id
+   - configId: configId
 
 
 Response Example
 ----------------
 
-.. literalinclude:: samples/db-config-group-instances-response.json
+.. literalinclude:: samples/config-group-list-instances-response.json
    :language: javascript
-
-
-
-
-Delete configuration group
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. rest_method::  DELETE /v1.0/{project_id}/configurations/{configId}
-
-Deletes a configuration group.
-
-Normal response codes: 202
-
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
-
-Request
--------
-
-.. rest_parameters:: parameters.yaml
-
-   - configId: configId
-   - project_id: project_id
 
 
 
@@ -148,64 +135,21 @@ Sets new values for a configuration group.
 
 Normal response codes: 200
 
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
 
 Request
 -------
 
 .. rest_parameters:: parameters.yaml
 
-   - values: values
-   - configId: configId
    - project_id: project_id
+   - configId: configId
+   - values: values
 
 
 Request Example
 ---------------
 
-.. literalinclude:: samples/db-patch-config-group-request.json
-   :language: javascript
-
-
-Response Example
-----------------
-
-.. literalinclude:: samples/db-patch-config-group-response-json-http.txt
-   :language: javascript
-
-
-
-
-Show configuration group details
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. rest_method::  GET /v1.0/{project_id}/configurations/{configId}
-
-Lists details about a configuration group, including its values.
-
-
-Normal response codes: 200
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
-
-
-Request
--------
-
-.. rest_parameters:: parameters.yaml
-
-   - configId: configId
-   - project_id: project_id
-
-
-Response Example
-----------------
-
-.. literalinclude:: samples/db-config-group-details-response.json
+.. literalinclude:: samples/config-group-patch-request.json
    :language: javascript
 
 
@@ -220,9 +164,6 @@ Sets new values for a configuration group. Also lets you change the name and
 description of the configuration group.
 
 Normal response codes: 202
-Error response codes: badRequest(400), unauthorized(401), forbidden(403),
-itemNotFound(404), badMethod(405), overLimit(413), unprocessableEntity(422),
-instanceFault(500), notImplemented(501), serviceUnavailable(503)
 
 
 Request
@@ -230,15 +171,36 @@ Request
 
 .. rest_parameters:: parameters.yaml
 
+   - project_id: project_id
+   - configId: configId
    - values: values
    - description: description
    - name: name
-   - configId: configId
-   - project_id: project_id
 
 
 Request Example
 ---------------
 
-.. literalinclude:: samples/db-update-config-group-request.json
+.. literalinclude:: samples/config-group-put-request.json
    :language: javascript
+
+
+
+
+Delete configuration group
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/configurations/{configId}
+
+Deletes a configuration group.
+
+Normal response codes: 202
+
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - configId: configId

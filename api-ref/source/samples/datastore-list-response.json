@@ -1,0 +1,96 @@
+{
+    "datastores": [
+        {
+            "default_version": "9e46a201-e92e-4ae0-af89-4af12a21bb45",
+            "id": "75dc45e0-2c3c-47ee-a5b8-5213288e3fe2",
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/75dc45e0-2c3c-47ee-a5b8-5213288e3fe2",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/datastores/75dc45e0-2c3c-47ee-a5b8-5213288e3fe2",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "mariadb",
+            "versions": [
+                {
+                    "id": "9e46a201-e92e-4ae0-af89-4af12a21bb45",
+                    "links": [
+                        {
+                            "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/versions/9e46a201-e92e-4ae0-af89-4af12a21bb45",
+                            "rel": "self"
+                        },
+                        {
+                            "href": "https://127.0.0.1:8779/datastores/versions/9e46a201-e92e-4ae0-af89-4af12a21bb45",
+                            "rel": "bookmark"
+                        }
+                    ],
+                    "name": "10.4"
+                }
+            ]
+        },
+        {
+            "default_version": "b3d5c099-dbd5-4518-baa3-7c7c195671bf",
+            "id": "3bf89e46-c3ed-4db6-a423-6e6709ec21ef",
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/3bf89e46-c3ed-4db6-a423-6e6709ec21ef",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/datastores/3bf89e46-c3ed-4db6-a423-6e6709ec21ef",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "mysql",
+            "versions": [
+                {
+                    "id": "b3d5c099-dbd5-4518-baa3-7c7c195671bf",
+                    "links": [
+                        {
+                            "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/versions/b3d5c099-dbd5-4518-baa3-7c7c195671bf",
+                            "rel": "self"
+                        },
+                        {
+                            "href": "https://127.0.0.1:8779/datastores/versions/b3d5c099-dbd5-4518-baa3-7c7c195671bf",
+                            "rel": "bookmark"
+                        }
+                    ],
+                    "name": "5.7"
+                }
+            ]
+        },
+        {
+            "id": "cc9ee471-e781-43bf-a796-423c5d549997",
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/cc9ee471-e781-43bf-a796-423c5d549997",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/datastores/cc9ee471-e781-43bf-a796-423c5d549997",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "postgresql",
+            "versions": [
+                {
+                    "id": "4eb0179d-fe11-4556-9422-5267d2fc7625",
+                    "links": [
+                        {
+                            "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/versions/4eb0179d-fe11-4556-9422-5267d2fc7625",
+                            "rel": "self"
+                        },
+                        {
+                            "href": "https://127.0.0.1:8779/datastores/versions/4eb0179d-fe11-4556-9422-5267d2fc7625",
+                            "rel": "bookmark"
+                        }
+                    ],
+                    "name": "12"
+                }
+            ]
+        }
+    ]
+}

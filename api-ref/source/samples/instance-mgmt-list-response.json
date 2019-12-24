@@ -1,0 +1,114 @@
+{
+    "instances": [
+        {
+            "created": "2019-12-23T20:58:35",
+            "datastore": {
+                "type": "mysql",
+                "version": "5.7"
+            },
+            "deleted": false,
+            "deleted_at": null,
+            "encrypted_rpc_messaging": true,
+            "flavor": {
+                "id": "d2",
+                "links": [
+                    {
+                        "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/flavors/d2",
+                        "rel": "self"
+                    },
+                    {
+                        "href": "https://127.0.0.1:8779/flavors/d2",
+                        "rel": "bookmark"
+                    }
+                ]
+            },
+            "id": "7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
+            "ip": [
+                "10.1.0.62",
+                "172.24.5.114"
+            ],
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/instances/7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/instances/7de1bed8-6983-4d46-9a52-0abfbb0d27a2"
+                }
+            ],
+            "name": "test",
+            "region": "RegionOne",
+            "server": {
+                "host": "bdfe3275004d2a98d38d494fd7adfcd0c6d5d5198e86fa0d6ec5d588",
+                "id": "710a84e5-6adf-4a4c-9167-8bade67a5a1c",
+                "name": "test",
+                "status": "ACTIVE",
+                "tenant_id": "27ac4b83e9d045eb8c373bacaa994eb7"
+            },
+            "server_id": "710a84e5-6adf-4a4c-9167-8bade67a5a1c",
+            "service_status": "HEALTHY",
+            "service_status_updated": "2019-12-24T00:02:55",
+            "status": "HEALTHY",
+            "task_description": "No tasks for the instance.",
+            "tenant_id": "9f8dd5eacb074c9f87d2d822c9092aa5",
+            "updated": "2019-12-23T23:53:46",
+            "volume": {
+                "size": 1
+            },
+            "volume_id": "ccb62e29-73ea-4859-b206-3b3a4e30a991"
+        },
+        {
+            "created": "2019-12-23T20:53:38",
+            "datastore": {
+                "type": "mysql",
+                "version": "5.7"
+            },
+            "deleted": false,
+            "deleted_at": null,
+            "encrypted_rpc_messaging": true,
+            "fault": {
+                "created": "2019-12-23T20:53:41",
+                "details": "Failed to create User port for instance b76a6a76-748b-4064-adec-4c9e6c9abd68",
+                "message": "Failed to create User port for instance b76a6a76-748b-4064-adec-4c9e6c9abd68"
+            },
+            "flavor": {
+                "id": "6",
+                "links": [
+                    {
+                        "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/flavors/6",
+                        "rel": "self"
+                    },
+                    {
+                        "href": "https://127.0.0.1:8779/flavors/6",
+                        "rel": "bookmark"
+                    }
+                ]
+            },
+            "id": "b76a6a76-748b-4064-adec-4c9e6c9abd68",
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/instances/b76a6a76-748b-4064-adec-4c9e6c9abd68",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/instances/b76a6a76-748b-4064-adec-4c9e6c9abd68",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "test",
+            "region": "RegionOne",
+            "server": null,
+            "server_id": null,
+            "service_status": "NEW",
+            "service_status_updated": "2019-12-23T20:53:38",
+            "status": "ERROR",
+            "task_description": "Build error: Port.",
+            "tenant_id": "9f8dd5eacb074c9f87d2d822c9092aa5",
+            "updated": "2019-12-23T20:53:41",
+            "volume": {
+                "size": 1
+            },
+            "volume_id": null
+        }
+    ]
+}

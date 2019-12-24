@@ -1,0 +1,30 @@
+{
+    "versions": [
+        {
+            "active": true,
+            "datastore_id": "75dc45e0-2c3c-47ee-a5b8-5213288e3fe2",
+            "datastore_manager": "mariadb",
+            "datastore_name": "mariadb",
+            "default": false,
+            "id": "385fa391-f6f1-4444-9d80-7dc3b2188fa3",
+            "image": "42706631-3b76-4d1c-95c9-6a85e72eebda",
+            "name": "10.4-dev-train",
+            "packages": [
+                ""
+            ]
+        },
+        {
+            "active": true,
+            "datastore_id": "cc9ee471-e781-43bf-a796-423c5d549997",
+            "datastore_manager": "postgresql",
+            "datastore_name": "postgresql",
+            "default": false,
+            "id": "4eb0179d-fe11-4556-9422-5267d2fc7625",
+            "image": "2eb8005f-270c-492f-977e-3c041a622ef7",
+            "name": "12",
+            "packages": [
+                ""
+            ]
+        }
+    ]
+}

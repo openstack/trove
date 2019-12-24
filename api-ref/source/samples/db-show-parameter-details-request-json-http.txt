@@ -1,6 +1,0 @@
-GET /v1.0/1234/datastores/versions/f8e67741-e767-4137-b394-3fb8a3fafd2f/parameters/connect_timeout HTTP/1.1
-User-Agent: python-example-client
-Host: openstack.example.com
-X-Auth-Token: 87c6033c-9ff6-405f-943e-2deb73f278b7
-Accept: application/json
-Content-Type: application/json

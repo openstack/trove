@@ -1,0 +1,12 @@
+{
+    "configuration-parameters": [
+        {
+            "datastore_version_id": "4eb0179d-fe11-4556-9422-5267d2fc7625",
+            "max": 65535,
+            "min": 64,
+            "name": "connect_timeout",
+            "restart_required": false,
+            "type": "integer"
+        }
+    ]
+}

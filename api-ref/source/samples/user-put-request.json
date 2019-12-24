@@ -1,0 +1,7 @@
+{
+    "user": {
+        "name": "new_name",
+        "password": "new_password",
+        "host": "192.168.30.98"
+    }
+}

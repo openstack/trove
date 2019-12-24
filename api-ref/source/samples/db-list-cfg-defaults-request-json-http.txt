@@ -1,7 +1,0 @@
-GET /v1.0/1234/instances/instance_1 HTTP/1.1
-User-Agent: python-example-client
-Host: openstack.example.com
-X-Auth-Token: 87c6033c-9ff6-405f-943e-2deb73f278b7
-Accept: application/json
-Content-Type: application/json
-

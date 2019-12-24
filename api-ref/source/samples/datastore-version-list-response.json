@@ -1,0 +1,19 @@
+{
+    "versions": [
+        {
+            "datastore": "cc9ee471-e781-43bf-a796-423c5d549997",
+            "id": "4eb0179d-fe11-4556-9422-5267d2fc7625",
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/versions/4eb0179d-fe11-4556-9422-5267d2fc7625",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/datastores/versions/4eb0179d-fe11-4556-9422-5267d2fc7625",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "12"
+        }
+    ]
+}

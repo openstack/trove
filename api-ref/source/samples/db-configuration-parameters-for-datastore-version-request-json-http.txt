@@ -1,7 +1,0 @@
-GET /v1.0/1234/datastores/a00000a0-00a0-0a00-00a0-000a000000aa/versions/b00000b0-00b0-0b00-00b0-000b000000bb/parameters HTTP/1.1
-User-Agent: python-troveclient
-Host: troveapi.org
-X-Auth-Token: 87c6033c-9ff6-405f-943e-2deb73f278b7
-Accept: application/json
-Content-Type: application/json
-

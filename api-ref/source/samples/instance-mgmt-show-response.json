@@ -1,0 +1,104 @@
+{
+    "instance": {
+        "created": "2019-12-23T20:58:35",
+        "datastore": {
+            "type": "mysql",
+            "version": "5.7"
+        },
+        "deleted": false,
+        "deleted_at": null,
+        "encrypted_rpc_messaging": true,
+        "flavor": {
+            "id": "d2",
+            "links": [
+                {
+                    "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/flavors/d2",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://127.0.0.1:8779/flavors/d2",
+                    "rel": "bookmark"
+                }
+            ]
+        },
+        "guest_status": {
+            "state_description": "healthy"
+        },
+        "id": "7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
+        "ip": [
+            "10.1.0.62",
+            "172.24.5.114"
+        ],
+        "links": [
+            {
+                "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/instances/7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
+                "rel": "self"
+            },
+            {
+                "href": "https://127.0.0.1:8779/instances/7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
+                "rel": "bookmark"
+            }
+        ],
+        "name": "test",
+        "region": "RegionOne",
+        "server": {
+            "addresses": {
+                "private": [
+                    {
+                        "OS-EXT-IPS-MAC:mac_addr": "fa:16:3e:fc:eb:4a",
+                        "OS-EXT-IPS:type": "fixed",
+                        "addr": "10.1.0.62",
+                        "version": 4
+                    },
+                    {
+                        "OS-EXT-IPS-MAC:mac_addr": "fa:16:3e:fc:eb:4a",
+                        "OS-EXT-IPS:type": "floating",
+                        "addr": "172.24.5.114",
+                        "version": 4
+                    }
+                ],
+                "trove-mgmt": [
+                    {
+                        "OS-EXT-IPS-MAC:mac_addr": "fa:16:3e:f9:0f:6a",
+                        "OS-EXT-IPS:type": "fixed",
+                        "addr": "192.168.254.125",
+                        "version": 4
+                    }
+                ]
+            },
+            "host": "bdfe3275004d2a98d38d494fd7adfcd0c6d5d5198e86fa0d6ec5d588",
+            "id": "710a84e5-6adf-4a4c-9167-8bade67a5a1c",
+            "name": "test",
+            "status": "ACTIVE",
+            "tenant_id": "27ac4b83e9d045eb8c373bacaa994eb7"
+        },
+        "server_id": "710a84e5-6adf-4a4c-9167-8bade67a5a1c",
+        "service_status": "HEALTHY",
+        "service_status_updated": "2019-12-24T00:08:55",
+        "status": "HEALTHY",
+        "task_description": "No tasks for the instance.",
+        "tenant_id": "9f8dd5eacb074c9f87d2d822c9092aa5",
+        "updated": "2019-12-23T23:53:46",
+        "volume": {
+            "attachments": [
+                {
+                    "attached_at": "2019-12-23T23:11:39.000000",
+                    "attachment_id": "a31526ba-884a-4e1f-8c64-4dc4b987ba4e",
+                    "device": "/dev/vdb",
+                    "host_name": "node.trove.magnum-pg0.utah.cloudlab.us",
+                    "id": "ccb62e29-73ea-4859-b206-3b3a4e30a991",
+                    "server_id": "710a84e5-6adf-4a4c-9167-8bade67a5a1c",
+                    "volume_id": "ccb62e29-73ea-4859-b206-3b3a4e30a991"
+                }
+            ],
+            "availability_zone": "nova",
+            "created_at": "2019-12-23T20:58:39.000000",
+            "id": "ccb62e29-73ea-4859-b206-3b3a4e30a991",
+            "size": 1,
+            "status": "in-use",
+            "total": 0.95,
+            "used": 0.12
+        },
+        "volume_id": "ccb62e29-73ea-4859-b206-3b3a4e30a991"
+    }
+}
