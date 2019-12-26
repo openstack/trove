@@ -1345,8 +1345,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         datastore_status.save()
 
     def upgrade(self, datastore_version):
-        LOG.debug("Upgrading instance %s to new datastore version %s",
-                  self, datastore_version)
+        LOG.info("Upgrading instance %s to new datastore version %s",
+                 self.id, datastore_version)
 
         def server_finished_rebuilding():
             self.refresh_compute_server_info()
@@ -1389,7 +1389,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                                 files=injected_files)
             utils.poll_until(
                 server_finished_rebuilding,
-                sleep_time=2, time_out=600)
+                sleep_time=5, time_out=600)
 
             if not self.server_status_matches(['ACTIVE']):
                 raise TroveError(_("Instance %(instance)s failed to "
@@ -1397,10 +1397,14 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                                  instance=self,
                                  datastore_version=datastore_version)
 
+            LOG.info('Finished rebuilding server for instance %s', self.id)
+
             self.guest.post_upgrade(upgrade_info)
 
             self.reset_task_status()
-
+            LOG.info("Finished upgrading instance %s to new datastore "
+                     "version %s",
+                     self.id, datastore_version)
         except Exception as e:
             LOG.exception(e)
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
