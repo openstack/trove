@@ -269,7 +269,7 @@ class MySqlManager(manager.Manager):
         operating_system.copy("%s/." % os.path.expanduser('~'), home_save,
                               preserve=True, as_root=True)
 
-        self.unmount_volume(context, mount_point=data_dir)
+        self.unmount_volume(context, mount_point=mount_point)
         return {
             'mount_point': mount_point,
             'save_dir': save_dir,
