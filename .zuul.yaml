@@ -19,19 +19,8 @@
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
-        - trove-scenario-postgresql-single:
-            voting: false
-        - trove-scenario-postgresql-multi:
-            voting: false
-        - trove-scenario-mariadb-single:
-            voting: false
+        - trove-scenario-mariadb-single
         - trove-scenario-mariadb-multi:
-            voting: false
-        - trove-scenario-redis-single:
-            voting: false
-        - trove-scenario-redis-multi:
-            voting: false
-        - trove-tempest-ipv6-only:
             voting: false
     gate:
       queue: trove
@@ -48,12 +37,15 @@
         - trove-scenario-cassandra-multi
         - trove-scenario-couchbase-single
         - trove-scenario-couchdb-single
-        - trove-scenario-mongodb-single
-        - trove-scenario-mongodb-multi
         - trove-scenario-percona-single
         - trove-scenario-percona-multi
         - trove-scenario-pxc-single
         - trove-scenario-pxc-multi
+        - trove-scenario-postgresql-single
+        - trove-scenario-postgresql-multi
+        - trove-scenario-redis-single
+        - trove-scenario-redis-multi
+        - trove-tempest-ipv6-only
     periodic:
       jobs:
         - publish-trove-guest-image-mysql-ubuntu-xenial:
