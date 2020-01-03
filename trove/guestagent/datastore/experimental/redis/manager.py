@@ -286,7 +286,7 @@ class Manager(manager.Manager):
         return self._get_repl_offset()
 
     def wait_for_txn(self, context, txn):
-        LOG.info("Waiting on repl offset '%s'."), txn
+        LOG.info("Waiting on repl offset '%s'.", txn)
 
         def _wait_for_txn():
             current_offset = self._get_repl_offset()
