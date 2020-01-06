@@ -437,7 +437,7 @@ instance_link_rel:
   type: string
 instance_links:
   description: |
-    The ``links`` object of of the instance.
+    The ``links`` object of the instance.
   in: body
   required: true
   type: array
