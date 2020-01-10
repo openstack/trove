@@ -23,11 +23,8 @@ from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 
-GROUP = "dbaas.api.versions"
 
-
-@test(groups=[tests.DBAAS_API, GROUP, tests.PRE_INSTANCES, 'DBAAS_VERSIONS'],
-      depends_on_groups=["services.initialize"])
+@test(groups=[tests.DBAAS_API_VERSIONS])
 class Versions(object):
     """Test listing all versions and verify the current version."""
 
@@ -39,6 +36,7 @@ class Versions(object):
 
     @test
     def test_list_versions_index(self):
+        """test_list_versions_index"""
         versions = self.client.versions.index(test_config.version_url)
         assert_equal(1, len(versions))
         assert_equal("CURRENT", versions[0].status,

@@ -19,49 +19,21 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis import before_class
-from proboscis.decorators import time_out
 from proboscis import test
 from troveclient.compat import exceptions
 
 from trove import tests
-from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
 from trove.tests import util
 from trove.tests.util import test_config
 
-GROUP = "dbaas.api.databases"
 FAKE = test_config.values['fake_mode']
 
 
-@test(depends_on_groups=[GROUP_START],
-      groups=[tests.INSTANCES, "dbaas.guest.mysql"],
-      enabled=not test_config.values['fake_mode'])
-class TestMysqlAccess(object):
-    """
-        Make sure that MySQL server was secured.
-    """
-
-    @time_out(60 * 2)
-    @test
-    def test_mysql_admin(self):
-        """Ensure we aren't allowed access with os_admin and wrong password."""
-        util.mysql_connection().assert_fails(
-            instance_info.get_address(), "os_admin", "asdfd-asdf234")
-
-    @test
-    def test_mysql_root(self):
-        """Ensure we aren't allowed access with root and wrong password."""
-        util.mysql_connection().assert_fails(
-            instance_info.get_address(), "root", "dsfgnear")
-
-
-@test(depends_on_groups=[GROUP_START],
-      depends_on_classes=[TestMysqlAccess],
-      groups=[tests.DBAAS_API, GROUP, tests.INSTANCES])
+@test(depends_on_groups=[tests.DBAAS_API_USERS_ACCESS],
+      groups=[tests.DBAAS_API_DATABASES])
 class TestDatabases(object):
-    """
-    Test the creation and deletion of additional MySQL databases
-    """
+    """Test the creation and deletion of additional MySQL databases"""
 
     dbname = "third #?@some_-"
     dbname_urlencoded = "third%20%23%3F%40some_-"

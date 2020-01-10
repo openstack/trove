@@ -514,10 +514,6 @@ function get_field() {
     done
 }
 
-function get_glance_id () {
-    echo `$@ | grep ' id ' | get_field 2`
-}
-
 function set_bin_path() {
     if is_fedora; then
        sed -i "s|%bin_path%|/usr/bin|g" $TEST_CONF
@@ -526,35 +522,16 @@ function set_bin_path() {
     fi
 }
 
-function set_mysql_pkg() {
-    if is_fedora; then
-       MYSQL_PKG="mysql-community-server"
-       MYSQL_VER="5.6"
-    else
-       if [[ "$RELEASE" == "xenial" || "$RELEASE" == "bionic" ]]; then
-           MYSQL_PKG="mysql-server-5.7"
-           MYSQL_VER="5.7"
-       else
-           MYSQL_PKG="mysql-server-5.6"
-           MYSQL_VER="5.6"
-       fi
-    fi
-}
-
-
 function cmd_set_datastore() {
     local IMAGEID=$1
     local DATASTORE_TYPE=$2
-    local RESTART_TROVE=${3:-$(get_bool RESTART_TROVE "true")}
 
     # rd_manage datastore_update <datastore_name> <default_version>
     rd_manage datastore_update "$DATASTORE_TYPE" ""
     PACKAGES=${PACKAGES:-""}
 
     if [ "$DATASTORE_TYPE" == "mysql" ]; then
-        set_mysql_pkg
-        PACKAGES=${PACKAGES:-$MYSQL_PKG}
-        VERSION=$MYSQL_VER
+        VERSION="5.7"
     elif [ "$DATASTORE_TYPE" == "percona" ]; then
         PACKAGES=${PACKAGES:-"percona-server-server-5.6"}
         VERSION="5.6"
@@ -562,7 +539,6 @@ function cmd_set_datastore() {
         PACKAGES=${PACKAGES:-"percona-xtradb-cluster-server-5.6"}
         VERSION="5.6"
     elif [ "$DATASTORE_TYPE" == "mariadb" ]; then
-        PACKAGES=${PACKAGES:-"mariadb-server"}
         VERSION="10.4"
     elif [ "$DATASTORE_TYPE" == "mongodb" ]; then
         PACKAGES=${PACKAGES:-"mongodb-org"}
@@ -577,7 +553,6 @@ function cmd_set_datastore() {
         PACKAGES=${PACKAGES:-"couchbase-server"}
         VERSION="2.2.0"
     elif [ "$DATASTORE_TYPE" == "postgresql" ]; then
-        PACKAGES=${PACKAGES:-"postgresql-9.6"}
         VERSION="9.6"
     elif [ "$DATASTORE_TYPE" == "couchdb" ]; then
         PACKAGES=${PACKAGES:-"couchdb"}
@@ -593,27 +568,13 @@ function cmd_set_datastore() {
         exit 1
     fi
 
-    sed -i "s/%datastore_type%/$DATASTORE_TYPE/g" $TEST_CONF
-    sed -i "s/%datastore_version%/$VERSION/g" $TEST_CONF
-
-    #rd_manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <packages> <active>
+    # trove-manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <packages> <active>
     rd_manage datastore_version_update "$DATASTORE_TYPE" "$VERSION" "$DATASTORE_TYPE" $IMAGEID "$PACKAGES" 1
-    rd_manage datastore_version_update "$DATASTORE_TYPE" "inactive_version" "manager1" $IMAGEID "" 0
     rd_manage datastore_update "$DATASTORE_TYPE" "$VERSION"
-    rd_manage datastore_update Test_Datastore_1 ""
 
     if [ -f "$PATH_TROVE"/trove/templates/$DATASTORE_TYPE/validation-rules.json ]; then
         # add the configuration parameters to the database for the kick-start datastore
         rd_manage db_load_datastore_config_parameters "$DATASTORE_TYPE" "$VERSION" "$PATH_TROVE"/trove/templates/$DATASTORE_TYPE/validation-rules.json
-    fi
-
-    if [[ "${RESTART_TROVE}" == true ]]; then
-        cmd_stop
-    fi
-    iniset $TROVE_CONF DEFAULT default_datastore "$DATASTORE_TYPE"
-    sleep 1.5
-    if [[ "${RESTART_TROVE}" == true ]]; then
-        cmd_start
     fi
 }
 
@@ -681,7 +642,8 @@ function install_test_packages() {
 }
 
 function mod_confs() {
-    DATASTORE_TYPE=$1
+    local DATASTORE_TYPE=$1
+    local DATASTORE_VERSION=$2
     exclaim "Running mod_confs ..."
 
     sudo install -b --mode 0664 $TROVESTACK_SCRIPTS/conf/test_begin.conf $TEST_CONF
@@ -701,20 +663,9 @@ function mod_confs() {
     cat $DATASTORE_CONF | sudo tee -a $TEST_CONF > /dev/null
     cat $TROVESTACK_SCRIPTS/conf/test_end.conf | sudo tee -a $TEST_CONF > /dev/null
 
-    #When running in the gate, don't start services
-    if [ "${DEVSTACK_GATE_TROVE}" == "1" ]; then
-        sed -i "s,%startservices%,false,g" ${TEST_CONF}
-    else
-        sed -i "s,%startservices%,true,g" ${TEST_CONF}
-    fi
     #Add the paths to the test conf
     sed -i "s,%report_directory%,$TROVE_REPORT_DIR,g" $TEST_CONF
-    sed -i "s,%keystone_path%,$PATH_KEYSTONE,g" $TEST_CONF
-    sed -i "s,%nova_path%,$PATH_NOVA,g" $TEST_CONF
-    sed -i "s,%glance_path%,$PATH_GLANCE,g" $TEST_CONF
-    sed -i "s,%trove_path%,$PATH_TROVE,g" $TEST_CONF
     sed -i "s,%service_host%,$SERVICE_HOST,g" $TEST_CONF
-    sed -i "s,%swifth_path%,$PATH_SWIFT,g" $TEST_CONF
 
     # Add the region name into test.conf
     sed -i "s/%region_name%/${REGION_NAME}/g" $TEST_CONF
@@ -759,8 +710,10 @@ function mod_confs() {
         iniset $TROVE_CONF $DATASTORE_TYPE num_config_servers_per_cluster 1
     fi
 
-    set_bin_path
+    sed -i "s/%datastore_type%/$DATASTORE_TYPE/g" $TEST_CONF
+    sed -i "s/%datastore_version%/${DATASTORE_VERSION}/g" $TEST_CONF
 
+    set_bin_path
 }
 
 function setup_cluster_configs() {
@@ -794,6 +747,7 @@ function add_test_flavors() {
 
 function cmd_test_init() {
     local DATASTORE_TYPE=$1
+    local DATASTORE_VERSION=$2
 
     if [ -z "${DATASTORE_TYPE}" ]; then
         exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
@@ -806,7 +760,7 @@ function cmd_test_init() {
     install_test_packages "${DATASTORE_TYPE}"
 
     exclaim "Modifying test.conf and guest.conf with appropriate values."
-    mod_confs "${DATASTORE_TYPE}"
+    mod_confs "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
     exclaim "Creating Test Flavors."
     add_test_flavors
@@ -823,7 +777,7 @@ function cmd_build_image() {
     local output=$6
 
     if [[ -z "$output" ]]; then
-        image_name="trove-${IMAGE_GUEST_OS}-${IMAGE_GUEST_RELEASE}-${IMAGE_DATASTORE_TYPE}"
+        image_name="trove-datastore-${IMAGE_GUEST_OS}-${IMAGE_GUEST_RELEASE}-${IMAGE_DATASTORE_TYPE}"
         image_folder=$HOME/images
         output="${image_folder}/${image_name}"
     fi
@@ -840,13 +794,17 @@ function cmd_build_image() {
     build_guest_image $IMAGE_DATASTORE_TYPE $IMAGE_GUEST_OS $IMAGE_GUEST_RELEASE $DEV_MODE ${guest_username} $output
 }
 
+# Build guest image and upload to Glance, register the datastore and configuration parameters.
+# We could skip the image build and upload by:
+#   1. MYSQL_IMAGE_ID is passed, or
+#   2. There is an image in Glance contains the datastore name
 function cmd_build_and_upload_image() {
     local datastore_type=$1
-    local restart_trove=${2:-$(get_bool RESTART_TROVE "true")}
-    local guest_os=${3:-"ubuntu"}
-    local guest_release=${4:-"xenial"}
-    local dev_mode=${5:-"true"}
-    local guest_username=${6:-"ubuntu"}
+    local guest_os=${2:-"ubuntu"}
+    local guest_release=${3:-"xenial"}
+    local dev_mode=${4:-"true"}
+    local guest_username=${5:-"ubuntu"}
+    local output_dir=${6:-"$HOME/images"}
 
     if [ -z "${datastore_type}" ]; then
         exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
@@ -861,21 +819,20 @@ function cmd_build_and_upload_image() {
       glance_imageid=$(openstack $CLOUD_ADMIN_ARG image list | grep "$datastore_type" | awk 'NR==1 {print}' | awk '{print $2}')
 
       if [[ -z $glance_imageid ]]; then
-          cmd_build_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username}
+          mkdir -p ${output_dir}
+          name=trove-datastore-${guest_os}-${guest_release}-${datastore_type}
+          output=${output_dir}/$name.qcow2
+          cmd_build_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username} $output
 
-          image_folder=$HOME/images
-          qcow_image=`find $image_folder -name '*.qcow2'`
-          image_url="file://$qcow_image"
-          glance_imageid=`get_glance_id upload_image $image_url`
+          glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image create $name --public --disk-format qcow2 --container-format bare --file $output --property hw_rng_model='virtio' -c id -f value)
           [[ -z "$glance_imageid" ]] && echo "Glance upload failed!" && exit 1
-          echo "IMAGE ID: $glance_imageid"
       fi
     fi
 
-    echo "IMAGEID: $glance_imageid"
+    exclaim "Using Glance image ID: $glance_imageid"
 
     exclaim "Updating Datastores"
-    cmd_set_datastore "${glance_imageid}" "${datastore_type}" "${restart_trove}"
+    cmd_set_datastore "${glance_imageid}" "${datastore_type}"
 }
 
 
@@ -1037,7 +994,7 @@ function cmd_int_tests() {
     fi
     cd $TROVESTACK_SCRIPTS
     if [ $# -lt 1 ]; then
-        args="--group=blackbox"
+        args="--group=mysql"
     else
         args="$@"
     fi
@@ -1052,23 +1009,6 @@ function cmd_int_tests() {
     #    spewing logs to stdout.
     args="$INT_TEST_OPTIONS -B $TROVESTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
     echo "Running: python $args"
-    python $args
-}
-
-function cmd_int_tests_simple() {
-    exclaim "Running Trove Simple Integration Tests..."
-    cd $TROVESTACK_SCRIPTS
-    if [ $# -lt 1 ]; then
-        args="--group=simple_blackbox"
-    else
-        args="$@"
-    fi
-
-    # -- verbose makes it prettier.
-    # -- logging-clear-handlers keeps the novaclient and other things from
-    #    spewing logs to stdout.
-    args="$INT_TEST_OPTIONS -B $TROVESTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
-    echo "python $args"
     python $args
 }
 
@@ -1259,49 +1199,45 @@ function cmd_clean() {
 
 function cmd_kick_start() {
     local DATASTORE_TYPE=$1
-    local RESTART_TROVE=${2:-$(get_bool RESTART_TROVE "true")}
+    local DATASTORE_VERSION=$2
 
     if [ -z "${DATASTORE_TYPE}" ]; then
         exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
         exit 1
     fi
 
-    exclaim "Running kick-start for $DATASTORE_TYPE (restart trove: $RESTART_TROVE)"
+    exclaim "Running kick-start for $DATASTORE_TYPE"
     dump_env
-    cmd_test_init "${DATASTORE_TYPE}"
-
-    export GUEST_OS=${GUEST_OS:-"ubuntu"}
-    export GUEST_OS_RELEASE=${GUEST_OS_RELEASE:-"xenial"}
-    export GUEST_OS_USERNAME=${GUEST_OS_USERNAME:-"ubuntu"}
-    export DEV_MOEE=${DEV_MODE:-"true"}
-    cmd_build_and_upload_image "${DATASTORE_TYPE}" "${RESTART_TROVE}" "${GUEST_OS}" "${GUEST_OS_RELEASE}" "${DEV_MOEE}" "${GUEST_OS_USERNAME}"
+    cmd_test_init "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 }
 
+# Start functional test. The guest image should be created and registered in
+# appropriate datastore before the test, the configuration parameters should
+# also be loaded as well. DevStack has done all of that.
 function cmd_gate_tests() {
     local DATASTORE_TYPE=${1:-'mysql'}
     local TEST_GROUP=${2:-${DATASTORE_TYPE}}
-    local HOST_SCP_USERNAME=${3:-$(whoami)}
-    local GUEST_USERNAME=${4:-'ubuntu'}
-    # We're not using devstack-gate in Zuul v3 job
-    if [[ $GATE_JOB_VER == "v2" ]]; then
-        local ESCAPED_PATH_TROVE=${5:-'\/opt\/stack\/new\/trove'}
-    fi
+    local DATASTORE_VERSION=${3:-'5.7'}
+    local HOST_SCP_USERNAME=${4:-$(whoami)}
+    local GUEST_USERNAME=${5:-'ubuntu'}
 
     exclaim "Running cmd_gate_tests ..."
 
     export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/gate-tests-report/}
     export TROVE_REPORT_DIR=$HOME/gate-tests-report/
-    TROVESTACK_DUMP_ENV=true
-
+    export TROVESTACK_DUMP_ENV=true
     export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
-    # The user used to connect the db instance.
+    # The user is used to connect with the db instance during testing.
     export TROVE_TEST_SSH_USER=${TROVE_TEST_SSH_USER:-"ubuntu"}
-    # This var is used to ssh into the db instance during the test.
+    # This var is used to ssh into the db instance during testing.
     export TROVE_TEST_SSH_KEY_FILE=${SSH_DIR}/id_rsa
 
     cd $TROVESTACK_SCRIPTS
-    local RESTART_TROVE=false
-    cmd_kick_start "${DATASTORE_TYPE}" "${RESTART_TROVE}"
+
+    # Build and upload guest image, register datastore version.
+    cmd_build_and_upload_image ${DATASTORE_TYPE}
+
+    cmd_kick_start "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
     cmd_int_tests --group=$TEST_GROUP
 }
@@ -1441,42 +1377,13 @@ function run_command() {
     fi
 
     case "$1" in
-        "install" ) cmd_install;;
-        "test-init" ) shift; cmd_test_init $@;;
         "build-image" ) shift; cmd_build_image $@;;
-        "initialize" ) cmd_initialize;;
-        "unit-tests" ) cmd_unit_tests;;
-        "start-deps" ) cmd_start_deps;;
-        "stop-deps" ) cmd_stop_deps;;
-        "start" ) cmd_start;;
+        "upload-image" ) shift; cmd_build_and_upload_image $@;;
         "int-tests" ) shift; cmd_int_tests $@;;
-        "int-tests-wb" ) shift; cmd_int_tests_white_box $@;;
-        "simple-tests") shift; cmd_int_tests_simple $@;;
-        "stop" ) cmd_stop;;
-        "restart" ) cmd_stop; cmd_start;;
-        "wipe-logs" ) cmd_wipe_logs;;
-        "rd-sql" ) shift; cmd_rd_sql $@;;
-        "fake-sql" ) shift; cmd_fake_sql $@;;
-        "run-ci" ) shift; cmd_run_ci $@;;
-        "vagrant-ssh" ) shift; cmd_vagrant_ssh $@;;
         "debug" ) shift; echo "Enabling debugging."; \
                   set -o xtrace; TROVESTACK_DUMP_ENV=true; run_command $@;;
-        "clear" ) shift; cmd_clear $@;;
-        "clean" ) shift; cmd_clean $@;;
-        "run" ) shift; cmd_run $@;;
-        "kick-start" ) shift; cmd_kick_start $@;;
-        "dsvm-gate-tests" ) shift; export GATE_JOB_VER=v2; \
-                            cmd_gate_tests $@;;
         "gate-tests" ) shift; cmd_gate_tests $@;;
-        "run-fake" ) shift; cmd_run_fake $@;;
-        "start-fake" ) shift; cmd_start_fake $@;;
-        "update-projects" ) cmd_clone_projects force_update \
-                            $TROVESTACK_SCRIPTS/projects-list \
-                            $TROVESTACK_SCRIPTS/image-projects-list;;
-        "reset-task" ) shift; cmd_reset_task $@;;
         "wipe-queues" ) shift; cmd_wipe_queues $@;;
-        "repl" ) shift; cmd_repl $@;;
-        "help" ) print_usage;;
         * )
             echo "'$1' not a valid command"
             exit 1

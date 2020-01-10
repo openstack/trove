@@ -112,43 +112,32 @@ def _clean_up():
 
 
 def import_tests():
-
-    # TODO(tim.simpson): Import these again once white box test functionality
-    #                    is restored.
-    # from tests.dns import check_domain
-    # from tests.dns import concurrency
-    # from tests.dns import conversion
-
     # The DNS stuff is problematic. Not loading the other tests allow us to
     # run its functional tests only.
     ADD_DOMAINS = os.environ.get("ADD_DOMAINS", "False") == 'True'
     if not ADD_DOMAINS:
-        from tests.api import delete_all
-        from tests.api import instances_pagination
-        from tests.api import instances_states
-        from tests.dns import dns
-        from tests import initialize
-        from tests.smoke import instance
-        from tests.volumes import driver
+        # F401 unused imports needed for tox tests
+        from trove.tests.api import backups  # noqa
+        from trove.tests.api import configurations  # noqa
+        from trove.tests.api import databases  # noqa
+        from trove.tests.api import datastores  # noqa
+        from trove.tests.api import instances as rd_instances  # noqa
+        from trove.tests.api import instances_actions as acts  # noqa
+        from trove.tests.api import instances_delete  # noqa
+        from trove.tests.api import instances_resize  # noqa
+        from trove.tests.api import limits  # noqa
+        from trove.tests.api.mgmt import datastore_versions # noqa
+        from trove.tests.api.mgmt import instances_actions as mgmt_acts  # noqa
+        from trove.tests.api import replication  # noqa
+        from trove.tests.api import root  # noqa
+        from trove.tests.api import user_access  # noqa
+        from trove.tests.api import users  # noqa
+        from trove.tests.api import versions  # noqa
+        from trove.tests.db import migrations  # noqa
 
         # Groups that exist as core int-tests are registered from the
         # trove.tests.int_tests module
         from trove.tests import int_tests
-
-        # Groups defined in trove/integration, or any other externally
-        # defined groups can be registered here
-        heavy_black_box_groups = [
-            "dbaas.api.instances.pagination",
-            "dbaas.api.instances.delete",
-            "dbaas.api.instances.status",
-            "dbaas.api.instances.down",
-            "dbaas.api.mgmt.hosts.update",
-            "fake.dbaas.api.mgmt.instances",
-            "fake.dbaas.api.mgmt.accounts.broken",
-            "fake.dbaas.api.mgmt.allaccounts"
-        ]
-        proboscis.register(groups=["heavy_blackbox"],
-                           depends_on_groups=heavy_black_box_groups)
 
 
 def run_main(test_importer):

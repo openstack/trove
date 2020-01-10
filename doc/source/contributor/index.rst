@@ -11,4 +11,3 @@ functionality, the following resources are provided.
 
    design
    testing
-   how_to_create_a_trove_instance.rst

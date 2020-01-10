@@ -35,15 +35,8 @@ class BackupRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'BackupRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
-      groups=[GROUP, groups.REPL_INST_CREATE],
-      runs_after_groups=[groups.MODULE_INST_DELETE,
-                         groups.CFGGRP_INST_DELETE,
-                         groups.INST_ACTIONS_RESIZE_WAIT,
-                         groups.DB_ACTION_INST_DELETE,
-                         groups.USER_ACTION_DELETE,
-                         groups.USER_ACTION_INST_DELETE,
-                         groups.ROOT_ACTION_INST_DELETE])
+@test(depends_on_groups=[groups.INST_CREATE],
+      groups=[GROUP, groups.REPL_INST_CREATE])
 class ReplicationInstCreateGroup(TestGroup):
     """Test Replication Instance Create functionality."""
 
@@ -72,9 +65,8 @@ class ReplicationInstCreateGroup(TestGroup):
         self.test_runner.run_create_single_replica()
 
 
-@test(depends_on_groups=[groups.REPL_INST_CREATE],
-      groups=[GROUP, groups.REPL_INST_CREATE_WAIT],
-      runs_after_groups=[groups.INST_INIT_DELETE_WAIT])
+@test(depends_on_classes=[ReplicationInstCreateGroup],
+      groups=[GROUP, groups.REPL_INST_CREATE_WAIT])
 class ReplicationInstCreateWaitGroup(TestGroup):
     """Wait for Replication Instance Create to complete."""
 
@@ -118,7 +110,7 @@ class ReplicationInstCreateWaitGroup(TestGroup):
         self.test_runner.run_verify_replica_data_after_single()
 
 
-@test(depends_on_groups=[groups.REPL_INST_CREATE_WAIT],
+@test(depends_on_classes=[ReplicationInstCreateWaitGroup],
       groups=[GROUP, groups.REPL_INST_MULTI_CREATE])
 class ReplicationInstMultiCreateGroup(TestGroup):
     """Test Replication Instance Multi-Create functionality."""
@@ -146,10 +138,8 @@ class ReplicationInstMultiCreateGroup(TestGroup):
         self.backup_runner.run_check_has_incremental()
 
 
-@test(depends_on_groups=[groups.REPL_INST_CREATE_WAIT],
-      groups=[GROUP, groups.REPL_INST_DELETE_NON_AFFINITY_WAIT],
-      runs_after_groups=[groups.REPL_INST_MULTI_CREATE,
-                         groups.USER_ACTION_DELETE])
+@test(depends_on_classes=[ReplicationInstMultiCreateGroup],
+      groups=[GROUP, groups.REPL_INST_DELETE_NON_AFFINITY_WAIT])
 class ReplicationInstDeleteNonAffReplWaitGroup(TestGroup):
     """Wait for Replication Instance Non-Affinity repl to be gone."""
 
@@ -168,8 +158,7 @@ class ReplicationInstDeleteNonAffReplWaitGroup(TestGroup):
         self.test_runner.run_delete_non_affinity_master()
 
 
-@test(depends_on_groups=[groups.REPL_INST_DELETE_NON_AFFINITY_WAIT,
-                         groups.REPL_INST_MULTI_CREATE],
+@test(depends_on_classes=[ReplicationInstDeleteNonAffReplWaitGroup],
       groups=[GROUP, groups.REPL_INST_MULTI_CREATE_WAIT])
 class ReplicationInstMultiCreateWaitGroup(TestGroup):
     """Wait for Replication Instance Multi-Create to complete."""
@@ -241,7 +230,7 @@ class ReplicationInstMultiCreateWaitGroup(TestGroup):
         self.test_runner.run_delete_valid_master()
 
 
-@test(depends_on_groups=[groups.REPL_INST_MULTI_CREATE_WAIT],
+@test(depends_on_classes=[ReplicationInstMultiCreateWaitGroup],
       groups=[GROUP, groups.REPL_INST_MULTI_PROMOTE])
 class ReplicationInstMultiPromoteGroup(TestGroup):
     """Test Replication Instance Multi-Promote functionality."""
@@ -299,8 +288,7 @@ class ReplicationInstMultiPromoteGroup(TestGroup):
         self.test_runner.run_verify_final_data_replicated()
 
 
-@test(depends_on_groups=[groups.REPL_INST_MULTI_CREATE_WAIT],
-      runs_after_groups=[groups.REPL_INST_MULTI_PROMOTE],
+@test(depends_on_classes=[ReplicationInstMultiPromoteGroup],
       groups=[GROUP, groups.REPL_INST_DELETE])
 class ReplicationInstDeleteGroup(TestGroup):
     """Test Replication Instance Delete functionality."""
@@ -330,7 +318,7 @@ class ReplicationInstDeleteGroup(TestGroup):
         self.test_runner.run_delete_all_replicas()
 
 
-@test(depends_on_groups=[groups.REPL_INST_DELETE],
+@test(depends_on_classes=[ReplicationInstDeleteGroup],
       groups=[GROUP, groups.REPL_INST_DELETE_WAIT])
 class ReplicationInstDeleteWaitGroup(TestGroup):
     """Wait for Replication Instance Delete to complete."""

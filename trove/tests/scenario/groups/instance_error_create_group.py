@@ -15,7 +15,6 @@
 
 from proboscis import test
 
-from trove.tests import PRE_INSTANCES
 from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
@@ -30,8 +29,7 @@ class InstanceErrorCreateRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceErrorCreateRunner'
 
 
-@test(depends_on_groups=["services.initialize"],
-      runs_after_groups=[PRE_INSTANCES, groups.INST_CREATE],
+@test(depends_on_groups=[groups.INST_CREATE],
       groups=[GROUP, groups.INST_ERROR_CREATE])
 class InstanceErrorCreateGroup(TestGroup):
     """Test Instance Error Create functionality."""
@@ -51,8 +49,7 @@ class InstanceErrorCreateGroup(TestGroup):
         self.test_runner.run_create_error2_instance()
 
 
-@test(depends_on_groups=[groups.INST_ERROR_CREATE],
-      runs_after_groups=[groups.MODULE_CREATE, groups.CFGGRP_CREATE],
+@test(depends_on_classes=[InstanceErrorCreateGroup],
       groups=[GROUP, groups.INST_ERROR_CREATE_WAIT])
 class InstanceErrorCreateWaitGroup(TestGroup):
     """Test that Instance Error Create Completes."""
@@ -78,7 +75,7 @@ class InstanceErrorCreateWaitGroup(TestGroup):
         self.test_runner.run_validate_error2_instance()
 
 
-@test(depends_on_groups=[groups.INST_ERROR_CREATE_WAIT],
+@test(depends_on_classes=[InstanceErrorCreateWaitGroup],
       groups=[GROUP, groups.INST_ERROR_DELETE])
 class InstanceErrorDeleteGroup(TestGroup):
     """Test Instance Error Delete functionality."""
@@ -93,8 +90,7 @@ class InstanceErrorDeleteGroup(TestGroup):
         self.test_runner.run_delete_error_instances()
 
 
-@test(depends_on_groups=[groups.INST_ERROR_DELETE],
-      runs_after_groups=[groups.MODULE_INST_CREATE],
+@test(depends_on_classes=[InstanceErrorDeleteGroup],
       groups=[GROUP, groups.INST_ERROR_DELETE_WAIT])
 class InstanceErrorDeleteWaitGroup(TestGroup):
     """Test that Instance Error Delete Completes."""

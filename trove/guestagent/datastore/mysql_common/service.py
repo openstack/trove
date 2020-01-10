@@ -50,7 +50,8 @@ from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 
 ADMIN_USER_NAME = "os_admin"
-CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@127.0.0.1:3306"
+CONNECTION_STR_FORMAT = ("mysql+pymysql://%s:%s@localhost/?"
+                         "unix_socket=/var/run/mysqld/mysqld.sock")
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
@@ -157,26 +158,14 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
         The checks which don't need service app can be put here.
         """
         try:
-            utils.execute_with_timeout(
-                "/usr/bin/mysqladmin",
-                "ping", run_as_root=True, root_helper="sudo",
-                log_output_on_error=True)
-
-            LOG.debug("Database service check: mysqld is alive")
-            return rd_instance.ServiceStatuses.RUNNING
-        except exception.ProcessExecutionError:
-            LOG.warning("Database service check: Failed to get database "
-                        "service status by mysqladmin, fall back to use ps.")
-
-        try:
             out, _ = utils.execute_with_timeout(
                 "/bin/ps", "-C", "mysqld", "h",
                 log_output_on_error=True
             )
             pid = out.split()[0]
 
-            LOG.debug('Database service check: service PID exists', pid)
-            return rd_instance.ServiceStatuses.BLOCKED
+            LOG.debug('Database service check: service PID exists: %s', pid)
+            return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
             LOG.warning("Database service check: Failed to get database "
                         "service status by ps, fall back to check PID file.")
@@ -629,20 +618,28 @@ class BaseMySqlApp(object):
         override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT))
 
     def get_engine(self):
-        """Create the default engine with the updated admin user."""
-        # TODO(rnirmal):Based on permission issues being resolved we may revert
-        # url = URL(drivername='mysql', host='localhost',
-        #          query={'read_default_file': '/etc/mysql/my.cnf'})
+        """Create the default engine with the updated admin user.
+
+        If admin user not created yet, use root instead.
+        """
         global ENGINE
         if ENGINE:
             return ENGINE
 
-        pwd = self.get_auth_password()
+        user = ADMIN_USER_NAME
+        password = ""
+        try:
+            password = self.get_auth_password()
+        except exception.UnprocessableEntity:
+            # os_admin user not created yet
+            user = 'root'
+
         ENGINE = sqlalchemy.create_engine(
-            CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
-                                     urllib.parse.quote(pwd.strip())),
+            CONNECTION_STR_FORMAT % (user,
+                                     urllib.parse.quote(password.strip())),
             pool_recycle=120, echo=CONF.sql_query_logging,
             listeners=[self.keep_alive_connection_cls()])
+
         return ENGINE
 
     @classmethod
@@ -678,7 +675,7 @@ class BaseMySqlApp(object):
         with all privileges similar to the root user.
         """
         LOG.debug("Creating Trove admin user '%s'.", ADMIN_USER_NAME)
-        host = "127.0.0.1"
+        host = "localhost"
         try:
             cu = sql_query.CreateUser(ADMIN_USER_NAME, host=host,
                                       clear=password)
@@ -742,6 +739,9 @@ class BaseMySqlApp(object):
 
         LOG.debug("Generating admin password.")
         admin_password = utils.generate_random_password()
+
+        # By default, MySQL does not require a password at all for connecting
+        # as root
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % ('root', ''), echo=True)
         with self.local_sql_client(engine, use_flush=False) as client:
@@ -771,9 +771,11 @@ class BaseMySqlApp(object):
         self.wipe_ib_logfiles()
 
     def _save_authentication_properties(self, admin_password):
+        # Use localhost to connect with mysql using unix socket instead of ip
+        # and port.
         client_sect = {'client': {'user': ADMIN_USER_NAME,
                                   'password': admin_password,
-                                  'host': '127.0.0.1'}}
+                                  'host': 'localhost'}}
         operating_system.write_file(self.get_client_auth_file(),
                                     client_sect, codec=self.CFG_CODEC)
 

@@ -18,7 +18,7 @@
 
 import re
 
-from oslo_db.sqlalchemy import session
+from oslo_db.sqlalchemy import engines
 import pexpect
 from sqlalchemy.exc import OperationalError
 try:
@@ -114,9 +114,8 @@ class SqlAlchemyConnection(object):
 
     @staticmethod
     def _init_engine(user, password, host):
-        return session.EngineFacade(
-            "mysql+pymysql://%s:%s@%s:3306" % (user, password, host)
-        ).get_engine()
+        return engines.create_engine(
+            "mysql+pymysql://%s:%s@%s:3306" % (user, password, host))
 
 
 class PexpectMySqlConnection(object):

@@ -35,7 +35,6 @@ from troveclient.compat import exceptions
 
 from trove.common.utils import poll_until
 from trove import tests
-from trove.tests.api import backups
 from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import InstanceTestInfo
@@ -49,10 +48,6 @@ from trove.tests.util import create_dbaas_client
 from trove.tests.util.mysql import create_mysql_connection
 from trove.tests.util.users import Requirements
 
-
-CONFIGURATION_GROUP = "dbaas.api.configurations"
-GROUP_CONFIG_DEFINE = "dbaas.api.configurations.define"
-CONFIG_NEW_INSTANCE_GROUP = "dbaas.api.configurations.newinstance"
 CONFIG_NAME = "test_configuration"
 CONFIG_DESC = "configuration description"
 
@@ -180,8 +175,8 @@ class ConfigurationsTestBase(object):
         return datastore_test_configs.get("configurations", {})
 
 
-@test(depends_on_groups=[backups.BACKUP_GROUP],
-      groups=[CONFIGURATION_GROUP, GROUP_CONFIG_DEFINE, tests.INSTANCES])
+@test(depends_on_groups=[tests.DBAAS_API_BACKUPS],
+      groups=[tests.DBAAS_API_CONFIGURATIONS])
 class CreateConfigurations(ConfigurationsTestBase):
 
     @test
@@ -315,13 +310,13 @@ class CreateConfigurations(ConfigurationsTestBase):
         assert_equal(resp.status, 200)
 
 
-@test(depends_on=[CreateConfigurations],
-      groups=[CONFIGURATION_GROUP, GROUP_CONFIG_DEFINE, tests.INSTANCES])
+@test(depends_on_classes=[CreateConfigurations],
+      groups=[tests.DBAAS_API_CONFIGURATIONS])
 class AfterConfigurationsCreation(ConfigurationsTestBase):
 
     @test
     def test_assign_configuration_to_invalid_instance(self):
-        # test assigning to an instance that does not exist
+        """test assigning to an instance that does not exist"""
         invalid_id = "invalid-inst-id"
         try:
             instance_info.dbaas.instances.modify(invalid_id,
@@ -332,7 +327,7 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
 
     @test
     def test_assign_configuration_to_valid_instance(self):
-        # test assigning a configuration to an instance
+        """test assigning a configuration to an instance"""
         print("instance_info.id: %s" % instance_info.id)
         print("configuration_info: %s" % configuration_info)
         print("configuration_info.id: %s" % configuration_info.id)
@@ -344,8 +339,7 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
 
     @test(depends_on=[test_assign_configuration_to_valid_instance])
     def test_assign_configuration_to_instance_with_config(self):
-        # test assigning a configuration to an instance that
-        # already has an assigned configuration
+        """test assigning a configuration to an instance conflicts"""
         config_id = configuration_info.id
         assert_raises(exceptions.BadRequest,
                       instance_info.dbaas.instances.modify, instance_info.id,
@@ -354,7 +348,7 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
     @test(depends_on=[test_assign_configuration_to_valid_instance])
     @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
-        # validate that the configuration was applied correctly to the instance
+        """validate the configuration after attaching"""
         print("instance_info.id: %s" % instance_info.id)
         inst = instance_info.dbaas.instances.get(instance_info.id)
         configuration_id = inst.configuration['id']
@@ -363,8 +357,9 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
         _test_configuration_is_applied_to_instance(instance_info,
                                                    configuration_id)
 
+    @test(depends_on=[test_get_configuration_details_from_instance_validation])
     def test_configurations_get(self):
-        # test that the instance shows up on the assigned configuration
+        """test that the instance shows up on the assigned configuration"""
         result = instance_info.dbaas.configurations.get(configuration_info.id)
         assert_equal(configuration_info.id, result.id)
         assert_equal(configuration_info.name, result.name)
@@ -428,8 +423,8 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
                       configuration_info.id)
 
 
-@test(depends_on=[AfterConfigurationsCreation],
-      groups=[CONFIGURATION_GROUP, GROUP_CONFIG_DEFINE, tests.INSTANCES])
+@test(depends_on_classes=[AfterConfigurationsCreation],
+      groups=[tests.DBAAS_API_CONFIGURATIONS])
 class ListConfigurations(ConfigurationsTestBase):
 
     @test
@@ -545,13 +540,13 @@ class ListConfigurations(ConfigurationsTestBase):
         assert_equal(list_config[0].updated, details_config.updated)
 
 
-@test(depends_on=[ListConfigurations],
-      groups=[CONFIGURATION_GROUP, CONFIG_NEW_INSTANCE_GROUP, tests.INSTANCES])
+@test(depends_on_classes=[ListConfigurations],
+      groups=[tests.DBAAS_API_CONFIGURATIONS])
 class StartInstanceWithConfiguration(ConfigurationsTestBase):
 
     @test
     def test_start_instance_with_configuration(self):
-        # test that a new instance will apply the configuration on create
+        """test that a new instance will apply the configuration on create"""
         global configuration_instance
         databases = []
         databases.append({"name": "firstdbconfig", "character_set": "latin2",
@@ -588,13 +583,13 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
 
 
 @test(depends_on_classes=[StartInstanceWithConfiguration],
-      groups=[CONFIGURATION_GROUP, CONFIG_NEW_INSTANCE_GROUP, tests.INSTANCES])
+      groups=[tests.DBAAS_API_CONFIGURATIONS])
 class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
 
     @test
     @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_instance_with_configuration_active(self):
-        # wait for the instance to become active
+        """wait for the instance created with configuration"""
 
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
@@ -619,7 +614,7 @@ class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
 
 
 @test(depends_on=[WaitForConfigurationInstanceToFinish],
-      groups=[CONFIGURATION_GROUP, tests.INSTANCES])
+      groups=[tests.DBAAS_API_CONFIGURATIONS])
 class DeleteConfigurations(ConfigurationsTestBase):
 
     @before_class
@@ -689,7 +684,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @test(depends_on=[test_unable_delete_instance_configurations])
     @time_out(30)
     def test_unassign_configuration_from_instances(self):
-        # test to unassign configuration from instance
+        """test to unassign configuration from instance"""
         instance_info.dbaas.instances.modify(configuration_instance.id,
                                              configuration="")
         resp, body = instance_info.dbaas.client.last_response
@@ -725,7 +720,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
 
     @test(depends_on=[test_assign_in_wrong_state])
     def test_no_instances_on_configuration(self):
-        # test there is no configuration on the instance after unassigning
+        """test_no_instances_on_configuration"""
         result = instance_info.dbaas.configurations.get(configuration_info.id)
         assert_equal(configuration_info.id, result.id)
         assert_equal(configuration_info.name, result.name)
@@ -737,6 +732,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @test(depends_on=[test_unassign_configuration_from_instances])
     @time_out(120)
     def test_restart_service_after_unassign_return_active(self):
+        """test_restart_service_after_unassign_return_active"""
         def result_is_not_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
@@ -756,7 +752,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @test(depends_on=[test_restart_service_after_unassign_return_active])
     @time_out(120)
     def test_restart_service_should_return_active(self):
-        # test that after restarting the instance it becomes active
+        """test that after restarting the instance it becomes active"""
         instance_info.dbaas.instances.restart(instance_info.id)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
@@ -773,7 +769,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
 
     @test(depends_on=[test_restart_service_should_return_active])
     def test_assign_config_and_name_to_instance_using_patch(self):
-        # test assigning a configuration and name to an instance
+        """test_assign_config_and_name_to_instance_using_patch"""
         new_name = 'new_name'
         report = CONFIG.get_report()
         report.log("instance_info.id: %s" % instance_info.id)
@@ -858,8 +854,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
 
     @test(runs_after=[test_unassign_configuration_after_patch])
     def test_delete_unassigned_configuration(self):
-        # test that we can delete the configuration after no instances are
-        # assigned to it any longer
+        """test_delete_unassigned_configuration"""
         instance_info.dbaas.configurations.delete(configuration_info.id)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
@@ -867,8 +862,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @test(depends_on=[test_delete_unassigned_configuration])
     @time_out(TIMEOUT_INSTANCE_DELETE)
     def test_delete_configuration_instance(self):
-        # test that we can delete the instance even though there is a
-        # configuration applied to the instance
+        """test_delete_configuration_instance"""
         instance_info.dbaas.instances.delete(configuration_instance.id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 

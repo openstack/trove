@@ -26,7 +26,6 @@ from troveclient.compat import exceptions
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
 from trove import tests
-from trove.tests.api import configurations
 from trove.tests.api.instances import CheckInstance
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
@@ -44,7 +43,6 @@ class SlaveInstanceTestInfo(object):
         self.replicated_db = generate_uuid()
 
 
-REPLICATION_GROUP = "dbaas.api.replication"
 slave_instance = SlaveInstanceTestInfo()
 existing_db_on_master = generate_uuid()
 backup_count = None
@@ -131,8 +129,8 @@ def validate_master(master, slaves):
     assert_true(asserted_ids.issubset(master_ids))
 
 
-@test(depends_on_groups=[configurations.CONFIGURATION_GROUP],
-      groups=[REPLICATION_GROUP, tests.INSTANCES],
+@test(depends_on_groups=[tests.DBAAS_API_CONFIGURATIONS],
+      groups=[tests.DBAAS_API_REPLICATION],
       enabled=CONFIG.swift_enabled)
 class CreateReplicationSlave(object):
 
@@ -151,6 +149,7 @@ class CreateReplicationSlave(object):
 
     @test
     def test_create_db_on_master(self):
+        """test_create_db_on_master"""
         databases = [{'name': existing_db_on_master}]
         # Ensure that the auth_token in the dbaas client is not stale
         instance_info.dbaas.authenticate()
@@ -159,27 +158,29 @@ class CreateReplicationSlave(object):
 
     @test(runs_after=['test_create_db_on_master'])
     def test_create_slave(self):
+        """test_create_slave"""
         global backup_count
         backup_count = len(
             instance_info.dbaas.instances.backups(instance_info.id))
         slave_instance.id = create_slave()
 
 
-@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
+@test(groups=[tests.DBAAS_API_REPLICATION],
       enabled=CONFIG.swift_enabled,
-      depends_on=[CreateReplicationSlave])
+      depends_on_classes=[CreateReplicationSlave])
 class WaitForCreateSlaveToFinish(object):
     """Wait until the instance is created and set up as slave."""
 
     @test
     @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_slave_created(self):
+        """Wait for replica to be created."""
         poll_until(lambda: instance_is_active(slave_instance.id))
 
 
 @test(enabled=(not CONFIG.fake_mode and CONFIG.swift_enabled),
-      depends_on=[WaitForCreateSlaveToFinish],
-      groups=[REPLICATION_GROUP, tests.INSTANCES])
+      depends_on_classes=[WaitForCreateSlaveToFinish],
+      groups=[tests.DBAAS_API_REPLICATION])
 class VerifySlave(object):
 
     def db_is_found(self, database_to_find):
@@ -194,15 +195,18 @@ class VerifySlave(object):
     @test
     @time_out(20 * 60)
     def test_correctly_started_replication(self):
+        """test_correctly_started_replication"""
         poll_until(slave_is_running())
 
     @test(runs_after=[test_correctly_started_replication])
     @time_out(60)
     def test_backup_deleted(self):
+        """test_backup_deleted"""
         poll_until(backup_count_matches(backup_count))
 
     @test(depends_on=[test_correctly_started_replication])
     def test_slave_is_read_only(self):
+        """test_slave_is_read_only"""
         cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
         server = create_server_connection(slave_instance.id)
 
@@ -217,6 +221,7 @@ class VerifySlave(object):
 
     @test(depends_on=[test_slave_is_read_only])
     def test_create_db_on_master(self):
+        """test_create_db_on_master"""
         databases = [{'name': slave_instance.replicated_db}]
         instance_info.dbaas.databases.create(instance_info.id, databases)
         assert_equal(202, instance_info.dbaas.last_http_code)
@@ -224,38 +229,41 @@ class VerifySlave(object):
     @test(depends_on=[test_create_db_on_master])
     @time_out(5 * 60)
     def test_database_replicated_on_slave(self):
+        """test_database_replicated_on_slave"""
         poll_until(self.db_is_found(slave_instance.replicated_db))
 
     @test(runs_after=[test_database_replicated_on_slave])
     @time_out(5 * 60)
     def test_existing_db_exists_on_slave(self):
+        """test_existing_db_exists_on_slave"""
         poll_until(self.db_is_found(existing_db_on_master))
 
     @test(depends_on=[test_existing_db_exists_on_slave])
     def test_slave_user_exists(self):
+        """test_slave_user_exists"""
         assert_equal(_get_user_count(slave_instance), 1)
         assert_equal(_get_user_count(instance_info), 1)
 
 
-@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
-      depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[VerifySlave],
+@test(groups=[tests.DBAAS_API_REPLICATION],
+      depends_on_classes=[VerifySlave],
       enabled=CONFIG.swift_enabled)
 class TestInstanceListing(object):
     """Test replication information in instance listing."""
 
     @test
     def test_get_slave_instance(self):
+        """test_get_slave_instance"""
         validate_slave(instance_info, slave_instance)
 
     @test
     def test_get_master_instance(self):
+        """test_get_master_instance"""
         validate_master(instance_info, [slave_instance])
 
 
-@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
-      depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[TestInstanceListing],
+@test(groups=[tests.DBAAS_API_REPLICATION],
+      depends_on_classes=[TestInstanceListing],
       enabled=CONFIG.swift_enabled)
 class TestReplicationFailover(object):
     """Test replication failover functionality."""
@@ -303,14 +311,17 @@ class TestReplicationFailover(object):
     @test(depends_on=[test_promote_master, test_eject_slave,
                       test_eject_valid_master])
     def test_promote_to_replica_source(self):
+        """test_promote_to_replica_source"""
         TestReplicationFailover.promote(instance_info, slave_instance)
 
     @test(depends_on=[test_promote_to_replica_source])
     def test_promote_back_to_replica_source(self):
+        """test_promote_back_to_replica_source"""
         TestReplicationFailover.promote(slave_instance, instance_info)
 
     @test(depends_on=[test_promote_back_to_replica_source], enabled=False)
     def add_second_slave(self):
+        """add_second_slave"""
         if CONFIG.fake_mode:
             raise SkipTest("three site promote not supported in fake mode")
 
@@ -324,6 +335,7 @@ class TestReplicationFailover(object):
 
     @test(depends_on=[add_second_slave], enabled=False)
     def test_three_site_promote(self):
+        """Promote the second slave"""
         if CONFIG.fake_mode:
             raise SkipTest("three site promote not supported in fake mode")
 
@@ -333,6 +345,7 @@ class TestReplicationFailover(object):
 
     @test(depends_on=[test_three_site_promote], enabled=False)
     def disable_master(self):
+        """Stop trove-guestagent on master"""
         if CONFIG.fake_mode:
             raise SkipTest("eject_replica_source not supported in fake mode")
 
@@ -361,9 +374,8 @@ class TestReplicationFailover(object):
         validate_slave(instance_info, slave_instance)
 
 
-@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
-      depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[TestReplicationFailover],
+@test(groups=[tests.DBAAS_API_REPLICATION],
+      depends_on=[TestReplicationFailover],
       enabled=CONFIG.swift_enabled)
 class DetachReplica(object):
 
@@ -376,6 +388,7 @@ class DetachReplica(object):
     @test
     @time_out(5 * 60)
     def test_detach_replica(self):
+        """test_detach_replica"""
         if CONFIG.fake_mode:
             raise SkipTest("Detach replica not supported in fake mode")
 
@@ -388,6 +401,7 @@ class DetachReplica(object):
     @test(depends_on=[test_detach_replica])
     @time_out(5 * 60)
     def test_slave_is_not_read_only(self):
+        """test_slave_is_not_read_only"""
         if CONFIG.fake_mode:
             raise SkipTest("Test not_read_only not supported in fake mode")
 
@@ -407,15 +421,15 @@ class DetachReplica(object):
         poll_until(check_not_read_only)
 
 
-@test(groups=[REPLICATION_GROUP, tests.INSTANCES],
-      depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[DetachReplica],
+@test(groups=[tests.DBAAS_API_REPLICATION],
+      depends_on=[DetachReplica],
       enabled=CONFIG.swift_enabled)
 class DeleteSlaveInstance(object):
 
     @test
     @time_out(TIMEOUT_INSTANCE_DELETE)
     def test_delete_slave_instance(self):
+        """test_delete_slave_instance"""
         instance_info.dbaas.instances.delete(slave_instance.id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 

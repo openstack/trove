@@ -28,15 +28,12 @@ from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 
-
-GROUP = "dbaas.api.datastores"
 NAME = "nonexistent"
 
 
-@test(groups=[tests.DBAAS_API, GROUP, tests.PRE_INSTANCES],
-      depends_on_groups=["services.initialize"])
+@test(groups=[tests.DBAAS_API_DATASTORES],
+      depends_on_groups=[tests.DBAAS_API_VERSIONS])
 class Datastores(object):
-
     @before_class
     def setUp(self):
         rd_user = test_config.users.find_user(
@@ -87,24 +84,38 @@ class Datastores(object):
                          "Datastore '%s' cannot be found." % NAME)
 
     @test
+    def test_create_inactive_datastore_by_admin(self):
+        datastore = self.rd_client.datastores.get(test_config.dbaas_datastore)
+        ds_version = self.rd_client.datastore_versions.list(datastore.id)[0]
+        ds_version_info = self.rd_admin.datastore_versions.get_by_uuid(
+            ds_version.id)
+
+        # Create datastore version for testing
+        # 'Test_Datastore_1' is also used in other test cases.
+        # Will be deleted in test_delete_datastore_version
+        self.rd_admin.mgmt_datastore_versions.create(
+            "inactive_version", test_config.dbaas_datastore_name_no_versions,
+            "test_manager", ds_version_info.image,
+            active='false', default='false'
+        )
+
+    @test(depends_on=[test_create_inactive_datastore_by_admin])
     def test_datastore_with_no_active_versions_is_hidden(self):
         datastores = self.rd_client.datastores.list()
         name_list = [datastore.name for datastore in datastores]
-        name_no_versions = test_config.dbaas_datastore_name_no_versions
-        assert_true(name_no_versions not in name_list)
 
-    @test
+        assert_true(
+            test_config.dbaas_datastore_name_no_versions not in name_list)
+
+    @test(depends_on=[test_create_inactive_datastore_by_admin])
     def test_datastore_with_no_active_versions_is_visible_for_admin(self):
         datastores = self.rd_admin.datastores.list()
         name_list = [datastore.name for datastore in datastores]
-        name_no_versions = test_config.dbaas_datastore_name_no_versions
-        assert_true(name_no_versions in name_list)
+        assert_true(test_config.dbaas_datastore_name_no_versions in name_list)
 
 
-@test(groups=[tests.DBAAS_API, GROUP, tests.PRE_INSTANCES],
-      depends_on_groups=["services.initialize"])
+@test(groups=[tests.DBAAS_API_DATASTORES])
 class DatastoreVersions(object):
-
     @before_class
     def setUp(self):
         rd_user = test_config.users.find_user(

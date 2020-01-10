@@ -14,10 +14,21 @@
 
 import os
 
+# Groups
 DBAAS_API = "dbaas.api"
-PRE_INSTANCES = "dbaas.api.pre_instances"
-INSTANCES = "dbaas.api.instances"
-POST_INSTANCES = "dbaas.api.post_instances"
+DBAAS_API_INSTANCES = "dbaas.api.instances"
+DBAAS_API_INSTANCES_DELETE = "dbaas.api.instances.delete"
+DBAAS_API_USERS = "dbaas.api.users"
+DBAAS_API_USERS_ACCESS = "dbaas.api.users.access"
+DBAAS_API_USERS_ROOT = "dbaas.api.users.root"
+DBAAS_API_DATABASES = "dbaas.api.databases"
+DBAAS_API_VERSIONS = "dbaas.api.versions"
+DBAAS_API_DATASTORES = "dbaas.api.datastores"
+DBAAS_API_MGMT_DATASTORES = "dbaas.api.mgmt.datastores"
+DBAAS_API_INSTANCE_ACTIONS = "dbaas.api.instances.actions"
+DBAAS_API_BACKUPS = "dbaas.api.backups"
+DBAAS_API_CONFIGURATIONS = "dbaas.api.configurations"
+DBAAS_API_REPLICATION = "dbaas.api.replication"
 
 # Use '-t' to avoid the warning message 'mesg: ttyname failed: Inappropriate
 # ioctl for device'

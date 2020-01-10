@@ -225,11 +225,6 @@ class BackupRunner(TestRunner):
         self.assert_backup_list(
             backup_list, self.backup_count_for_ds_prior_to_create + 1)
 
-    def run_backup_list_filter_different_datastore(self):
-        backup_list = self.auth_client.backups.list(
-            datastore='Test_Datastore_1')
-        self.assert_backup_list(backup_list, 0)
-
     def run_backup_list_filter_datastore_not_found(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):

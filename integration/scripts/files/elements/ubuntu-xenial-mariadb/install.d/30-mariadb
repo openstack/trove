@@ -14,17 +14,17 @@ apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74C
 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup |
   bash -s -- --mariadb-server-version="mariadb-10.4" --skip-key-import --skip-maxscale
 
+apt-get install -y -qq apt-transport-https ca-certificates gnupg2
+
 # NOTE(lxkong): Refer to https://www.percona.com/doc/percona-xtrabackup/2.4/installation/apt_repo.html
 wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
 dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
-
-apt-get install -y -qq apt-transport-https ca-certificates
-apt-get update -qq
 
 # Disable password prompt
 debconf-set-selections <<< "mariadb-server mysql-server/root_password password ''"
 debconf-set-selections <<< "mariadb-server mysql-server/root_password_again password ''"
 
+apt-get update -qq
 apt-get install -y -qq --allow-unauthenticated mariadb-server mariadb-client galera-4 libmariadb3 mariadb-backup mariadb-common
 
 cat <<EOF >/etc/mysql/conf.d/no_perf_schema.cnf
@@ -34,5 +34,6 @@ EOF
 
 chown mysql:mysql /etc/mysql/my.cnf
 rm -f /etc/init.d/mysql
+
 systemctl daemon-reload
 systemctl enable mariadb

@@ -78,7 +78,6 @@ class TestConfig(object):
             'dbaas_datastore_version': "5.5",
             'dbaas_datastore_version_id': "b00000b0-00b0-0b00-00b0-"
                                           "000b000000bb",
-            'dbaas_inactive_datastore_version': "mysql_inactive_version",
             'instance_create_time': 16 * 60,
             'mysql_connection_method': {"type": "direct"},
             'typical_nova_image_name': None,

@@ -15,7 +15,6 @@
 
 from proboscis import test
 
-from trove.tests import PRE_INSTANCES
 from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
@@ -30,9 +29,7 @@ class InstanceCreateRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceCreateRunner'
 
 
-@test(depends_on_groups=["services.initialize"],
-      runs_after_groups=[PRE_INSTANCES],
-      groups=[GROUP, groups.INST_CREATE])
+@test(groups=[GROUP, groups.INST_CREATE])
 class InstanceCreateGroup(TestGroup):
     """Test Instance Create functionality."""
 
@@ -46,7 +43,7 @@ class InstanceCreateGroup(TestGroup):
         self.test_runner.run_empty_instance_create()
 
 
-@test(depends_on_groups=[groups.INST_CREATE],
+@test(depends_on_classes=[InstanceCreateGroup],
       groups=[GROUP, groups.INST_INIT_CREATE])
 class InstanceInitCreateGroup(TestGroup):
     """Test Instance Init Create functionality."""
@@ -66,10 +63,8 @@ class InstanceInitCreateGroup(TestGroup):
         self.test_runner.run_initialized_instance_create()
 
 
-@test(depends_on_groups=[groups.INST_CREATE],
-      groups=[GROUP, groups.INST_CREATE_WAIT],
-      runs_after_groups=[groups.MODULE_CREATE, groups.CFGGRP_CREATE,
-                         groups.INST_ERROR_DELETE])
+@test(depends_on_classes=[InstanceCreateGroup],
+      groups=[GROUP, groups.INST_CREATE])
 class InstanceCreateWaitGroup(TestGroup):
     """Test that Instance Create Completes."""
 
@@ -83,9 +78,8 @@ class InstanceCreateWaitGroup(TestGroup):
         self.test_runner.run_wait_for_instance()
 
 
-@test(depends_on_groups=[groups.INST_INIT_CREATE],
-      groups=[GROUP, groups.INST_INIT_CREATE_WAIT],
-      runs_after_groups=[groups.INST_CREATE_WAIT])
+@test(depends_on_classes=[InstanceCreateWaitGroup],
+      groups=[GROUP, groups.INST_INIT_CREATE_WAIT])
 class InstanceInitCreateWaitGroup(TestGroup):
     """Test that Instance Init Create Completes."""
 
@@ -109,7 +103,7 @@ class InstanceInitCreateWaitGroup(TestGroup):
         self.test_runner.run_validate_initialized_instance()
 
 
-@test(depends_on_groups=[groups.INST_INIT_CREATE_WAIT],
+@test(depends_on_classes=[InstanceInitCreateWaitGroup],
       groups=[GROUP, groups.INST_INIT_DELETE])
 class InstanceInitDeleteGroup(TestGroup):
     """Test Initialized Instance Delete functionality."""
@@ -124,8 +118,7 @@ class InstanceInitDeleteGroup(TestGroup):
         self.test_runner.run_initialized_instance_delete()
 
 
-@test(depends_on_groups=[groups.INST_INIT_DELETE],
-      runs_after_groups=[groups.INST_ERROR_DELETE],
+@test(depends_on_classes=[InstanceInitDeleteGroup],
       groups=[GROUP, groups.INST_INIT_DELETE_WAIT])
 class InstanceInitDeleteWaitGroup(TestGroup):
     """Test that Initialized Instance Delete Completes."""

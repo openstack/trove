@@ -16,7 +16,6 @@
 from proboscis import test
 
 from trove.tests.scenario import groups
-from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
@@ -42,7 +41,7 @@ class BackupRunnerFactory2(test_runners.RunnerFactory):
     _runner_cls = 'BackupRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+@test(depends_on_groups=[groups.INST_FORCE_DELETE_WAIT],
       groups=[GROUP, groups.ROOT_ACTION_ENABLE])
 class RootActionsEnableGroup(TestGroup):
     """Test Root Actions Enable functionality."""
@@ -100,7 +99,7 @@ class RootActionsEnableGroup(TestGroup):
         self.test_runner.run_check_root_enabled()
 
 
-@test(depends_on_groups=[groups.ROOT_ACTION_ENABLE],
+@test(depends_on_classes=[RootActionsEnableGroup],
       groups=[GROUP, groups.ROOT_ACTION_DISABLE])
 class RootActionsDisableGroup(TestGroup):
     """Test Root Actions Disable functionality."""
@@ -132,9 +131,8 @@ class RootActionsDisableGroup(TestGroup):
         self.backup_runner2.run_backup_create_completed()
 
 
-@test(depends_on_groups=[groups.ROOT_ACTION_DISABLE],
-      groups=[GROUP, groups.ROOT_ACTION_INST, groups.ROOT_ACTION_INST_CREATE],
-      runs_after_groups=[groups.INST_ACTIONS_RESIZE_WAIT])
+@test(depends_on_classes=[RootActionsDisableGroup],
+      groups=[GROUP, groups.ROOT_ACTION_INST, groups.ROOT_ACTION_INST_CREATE])
 class RootActionsInstCreateGroup(TestGroup):
     """Test Root Actions Instance Create functionality."""
 
@@ -156,10 +154,9 @@ class RootActionsInstCreateGroup(TestGroup):
         self.backup_runner2.run_restore_from_backup(suffix='_root_disable')
 
 
-@test(depends_on_groups=[groups.ROOT_ACTION_INST_CREATE],
+@test(depends_on_classes=[RootActionsInstCreateGroup],
       groups=[GROUP, groups.ROOT_ACTION_INST,
-              groups.ROOT_ACTION_INST_CREATE_WAIT],
-      runs_after_groups=[guest_log_group.GROUP])
+              groups.ROOT_ACTION_INST_CREATE_WAIT])
 class RootActionsInstCreateWaitGroup(TestGroup):
     """Wait for Root Actions Instance Create to complete."""
 
@@ -197,7 +194,7 @@ class RootActionsInstCreateWaitGroup(TestGroup):
             instance_id, root_creds)
 
 
-@test(depends_on_groups=[groups.ROOT_ACTION_INST_CREATE_WAIT],
+@test(depends_on_classes=[RootActionsInstCreateWaitGroup],
       groups=[GROUP, groups.ROOT_ACTION_INST, groups.ROOT_ACTION_INST_DELETE])
 class RootActionsInstDeleteGroup(TestGroup):
     """Test Root Actions Instance Delete functionality."""
@@ -231,10 +228,9 @@ class RootActionsInstDeleteGroup(TestGroup):
         self.backup_runner2.run_delete_backup()
 
 
-@test(depends_on_groups=[groups.ROOT_ACTION_INST_DELETE],
+@test(depends_on_classes=[RootActionsInstDeleteGroup],
       groups=[GROUP, groups.ROOT_ACTION_INST,
-              groups.ROOT_ACTION_INST_DELETE_WAIT],
-      runs_after_groups=[groups.INST_DELETE])
+              groups.ROOT_ACTION_INST_DELETE_WAIT])
 class RootActionsInstDeleteWaitGroup(TestGroup):
     """Wait for Root Actions Instance Delete to complete."""
 

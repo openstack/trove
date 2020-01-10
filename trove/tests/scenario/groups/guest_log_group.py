@@ -28,10 +28,8 @@ class GuestLogRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'GuestLogRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
-      groups=[GROUP],
-      runs_after_groups=[groups.USER_ACTION_INST_CREATE,
-                         groups.ROOT_ACTION_INST_CREATE])
+@test(depends_on_groups=[groups.DB_ACTION_INST_DELETE_WAIT],
+      groups=[GROUP, groups.INST_LOG])
 class GuestLogGroup(TestGroup):
     """Test Guest Log functionality."""
 

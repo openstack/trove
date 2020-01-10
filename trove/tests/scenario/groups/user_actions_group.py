@@ -16,7 +16,6 @@
 from proboscis import test
 
 from trove.tests.scenario import groups
-from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
@@ -42,7 +41,7 @@ class DatabaseActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'DatabaseActionsRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+@test(depends_on_groups=[groups.ROOT_ACTION_INST_DELETE_WAIT],
       groups=[GROUP, groups.USER_ACTION_CREATE])
 class UserActionsCreateGroup(TestGroup):
     """Test User Actions Create functionality."""
@@ -171,7 +170,7 @@ class UserActionsCreateGroup(TestGroup):
         self.test_runner.run_system_user_attribute_update()
 
 
-@test(depends_on_groups=[groups.USER_ACTION_CREATE],
+@test(depends_on_classes=[UserActionsCreateGroup],
       groups=[GROUP, groups.USER_ACTION_DELETE])
 class UserActionsDeleteGroup(TestGroup):
     """Test User Actions Delete functionality."""
@@ -198,7 +197,7 @@ class UserActionsDeleteGroup(TestGroup):
 
 
 @test(groups=[GROUP, groups.USER_ACTION_INST, groups.USER_ACTION_INST_CREATE],
-      runs_after_groups=[groups.INST_ACTIONS_RESIZE_WAIT])
+      depends_on_classes=[UserActionsDeleteGroup])
 class UserActionsInstCreateGroup(TestGroup):
     """Test User Actions Instance Create functionality."""
 
@@ -215,10 +214,9 @@ class UserActionsInstCreateGroup(TestGroup):
             create_helper_user=False, name_suffix='_user')
 
 
-@test(depends_on_groups=[groups.USER_ACTION_INST_CREATE],
+@test(depends_on_classes=[UserActionsInstCreateGroup],
       groups=[GROUP, groups.USER_ACTION_INST,
-              groups.USER_ACTION_INST_CREATE_WAIT],
-      runs_after_groups=[guest_log_group.GROUP])
+              groups.USER_ACTION_INST_CREATE_WAIT])
 class UserActionsInstCreateWaitGroup(TestGroup):
     """Wait for User Actions Instance Create to complete."""
 
@@ -238,7 +236,7 @@ class UserActionsInstCreateWaitGroup(TestGroup):
         self.instance_create_runner.run_validate_initialized_instance()
 
 
-@test(depends_on_groups=[groups.USER_ACTION_INST_CREATE_WAIT],
+@test(depends_on_classes=[UserActionsInstCreateWaitGroup],
       groups=[GROUP, groups.USER_ACTION_INST, groups.USER_ACTION_INST_DELETE])
 class UserActionsInstDeleteGroup(TestGroup):
     """Test User Actions Instance Delete functionality."""
@@ -254,10 +252,9 @@ class UserActionsInstDeleteGroup(TestGroup):
         self.instance_create_runner.run_initialized_instance_delete()
 
 
-@test(depends_on_groups=[groups.USER_ACTION_INST_DELETE],
+@test(depends_on_classes=[UserActionsInstDeleteGroup],
       groups=[GROUP, groups.USER_ACTION_INST,
-              groups.USER_ACTION_INST_DELETE_WAIT],
-      runs_after_groups=[groups.INST_DELETE])
+              groups.USER_ACTION_INST_DELETE_WAIT])
 class UserActionsInstDeleteWaitGroup(TestGroup):
     """Wait for User Actions Instance Delete to complete."""
 

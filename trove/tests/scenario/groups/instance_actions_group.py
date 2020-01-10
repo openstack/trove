@@ -29,10 +29,8 @@ class InstanceActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceActionsRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
-      groups=[GROUP, groups.INST_ACTIONS],
-      runs_after_groups=[groups.MODULE_INST_CREATE,
-                         groups.CFGGRP_INST_CREATE])
+@test(depends_on_groups=[groups.INST_LOG],
+      groups=[GROUP, groups.INST_ACTIONS])
 class InstanceActionsGroup(TestGroup):
     """Test Instance Actions functionality."""
 
@@ -78,14 +76,8 @@ class InstanceActionsGroup(TestGroup):
         self.test_runner.run_remove_test_data()
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
-      groups=[GROUP, groups.INST_ACTIONS_RESIZE],
-      runs_after_groups=[groups.INST_ACTIONS,
-                         groups.INST_UPGRADE,
-                         groups.MODULE_INST_CREATE_WAIT,
-                         groups.CFGGRP_INST_CREATE_WAIT,
-                         groups.BACKUP_CREATE,
-                         groups.BACKUP_INC_CREATE])
+@test(depends_on_classes=[InstanceActionsGroup],
+      groups=[GROUP, groups.INST_ACTIONS_RESIZE])
 class InstanceActionsResizeGroup(TestGroup):
     """Test Instance Actions Resize functionality."""
 
@@ -109,11 +101,8 @@ class InstanceActionsResizeGroup(TestGroup):
         self.test_runner.run_instance_resize_flavor()
 
 
-@test(depends_on_groups=[groups.INST_ACTIONS_RESIZE],
-      groups=[GROUP, groups.INST_ACTIONS_RESIZE_WAIT],
-      runs_after_groups=[groups.BACKUP_INST_CREATE,
-                         groups.BACKUP_INC_INST_CREATE,
-                         groups.DB_ACTION_INST_CREATE])
+@test(depends_on_classes=[InstanceActionsResizeGroup],
+      groups=[GROUP, groups.INST_ACTIONS_RESIZE_WAIT])
 class InstanceActionsResizeWaitGroup(TestGroup):
     """Test that Instance Actions Resize Completes."""
 
