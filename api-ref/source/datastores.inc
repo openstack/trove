@@ -28,8 +28,6 @@ Response Example
    :language: javascript
 
 
-
-
 Show datastore details
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -50,3 +48,19 @@ Response Example
 
 .. literalinclude:: samples/datastore-show-response.json
    :language: javascript
+
+
+Delete datastore
+~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/datastores/{datastore}
+
+Delete a datastore.
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore: data_store

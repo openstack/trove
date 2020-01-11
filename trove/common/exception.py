@@ -66,6 +66,12 @@ class NotFound(TroveError):
     message = _("Resource %(uuid)s cannot be found.")
 
 
+class BadRequest(TroveError):
+
+    message = _("The server could not comply with the request since it is "
+                "either malformed or otherwise incorrect.")
+
+
 class CapabilityNotFound(NotFound):
 
     message = _("Capability '%(capability)s' cannot be found.")
@@ -172,6 +178,16 @@ class DatastoreVersionInactive(TroveError):
     message = _("Datastore version '%(version)s' is not active.")
 
 
+class DatastoreVersionAlreadyExists(BadRequest):
+
+    message = _("A datastore version with the name '%(name)s' already exists.")
+
+
+class DatastoreVersionsExist(BadRequest):
+
+    message = _("Datastore versions exist for datastore %(datastore)s.")
+
+
 class DatastoreDefaultDatastoreNotFound(TroveError):
 
     message = _("Please specify datastore. Default datastore "
@@ -238,12 +254,6 @@ class GuestError(TroveError):
 class GuestTimeout(TroveError):
 
     message = _("Timeout trying to connect to the Guest Agent.")
-
-
-class BadRequest(TroveError):
-
-    message = _("The server could not comply with the request since it is "
-                "either malformed or otherwise incorrect.")
 
 
 class MissingKey(BadRequest):
@@ -659,11 +669,6 @@ class BackupTooLarge(TroveError):
 class ImageNotFound(NotFound):
 
     message = _("Image %(uuid)s cannot be found.")
-
-
-class DatastoreVersionAlreadyExists(BadRequest):
-
-    message = _("A datastore version with the name '%(name)s' already exists.")
 
 
 class LogAccessForbidden(Forbidden):
