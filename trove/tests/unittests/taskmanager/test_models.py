@@ -395,7 +395,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
     @patch.object(template, 'SingleInstanceConfigTemplate')
-    @patch('trove.common.clients.neutron_client')
+    @patch('trove.common.clients_admin.neutron_client_trove_admin')
     def test_create_instance_with_mgmt_port(self,
                                             mock_neutron_client,
                                             mock_single_instance_template,

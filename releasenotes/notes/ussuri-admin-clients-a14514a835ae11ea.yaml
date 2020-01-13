@@ -1,0 +1,11 @@
+---
+upgrade:
+  - |
+    Trove is now using admin clients by default to communicate with Nova,
+    Cinder, Neutron and Glance. Deployers want to stick to the old clients need
+    to explicitly config the following options:
+
+    * remote_nova_client
+    * remote_cinder_client
+    * remote_neutron_client
+    * remote_glance_client

@@ -237,11 +237,6 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
     iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
 
-    iniset $TROVE_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
-    iniset $TROVE_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
-
     iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
     iniset $TROVE_CONF couchbase tcp_ports 8091,8092,4369,11209-11211,21100-21199
     iniset $TROVE_CONF couchdb tcp_ports 5984
@@ -274,11 +269,6 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF service_credentials project_name $SERVICE_PROJECT_NAME
     iniset $TROVE_GUESTAGENT_CONF service_credentials region_name $REGION_NAME
     iniset $TROVE_GUESTAGENT_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
-
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_nova_client trove.common.clients_admin.nova_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_cinder_client trove.common.clients_admin.cinder_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_neutron_client trove.common.clients_admin.neutron_client_trove_admin
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT remote_glance_client trove.common.clients_admin.glance_client_trove_admin
 
     # 1. To avoid 'Connection timed out' error of sudo command inside the guest agent
     # 2. Config the controller IP address used by guest-agent to download Trove code during initialization (only valid for dev_mode=true).
