@@ -1,8 +1,8 @@
 .. _database:
 
-========
-Database
-========
+=========
+Datastore
+=========
 
 The Database service provides database management features.
 

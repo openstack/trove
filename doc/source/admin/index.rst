@@ -5,7 +5,8 @@
 .. toctree::
    :maxdepth: 2
 
-   basics
+   run_trove_in_production
+   datastore
    building_guest_images
-   database_module_usage
    secure_oslo_messaging
+   database_module_usage
