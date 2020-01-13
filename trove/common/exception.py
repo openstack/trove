@@ -596,6 +596,10 @@ class PublicNetworkNotFound(TroveError):
     message = _("Public network cannot be found.")
 
 
+class NetworkConflict(BadRequest):
+    message = _("User network conflicts with the management network.")
+
+
 class ClusterVolumeSizeRequired(TroveError):
     message = _("A volume size is required for each instance in the cluster.")
 
