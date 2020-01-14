@@ -21,6 +21,7 @@ from trove.common import exception
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 MGMT_NETWORKS = None
+MGMT_CIDRS = None
 
 
 def get_management_networks(context):
@@ -147,3 +148,27 @@ def create_security_group_rule(client, sg_id, protocol, ports, remote_ips):
             }
 
             client.create_security_group_rule(body)
+
+
+def get_subnet_cidrs(client, network_id):
+    cidrs = []
+
+    subnets = client.list_subnets(network_id=network_id)['subnets']
+    for subnet in subnets:
+        cidrs.append(subnet.get('cidr'))
+
+    return cidrs
+
+
+def get_mamangement_subnet_cidrs(client):
+    """Cache the management subnet CIDRS."""
+    global MGMT_CIDRS
+
+    if MGMT_CIDRS is not None:
+        return MGMT_CIDRS
+
+    MGMT_CIDRS = []
+    if len(CONF.management_networks) > 0:
+        MGMT_CIDRS = get_subnet_cidrs(client, CONF.management_networks[0])
+
+    return MGMT_CIDRS
