@@ -1,0 +1,4 @@
+---
+features:
+  - Admin user can delete datastore if there are no instances or backups
+    associated.

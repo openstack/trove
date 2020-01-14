@@ -38,6 +38,16 @@ rules = [
             }
         ]),
     policy.DocumentedRuleDefault(
+        name='datastore:delete',
+        check_str='rule:admin',
+        description='Delete a datastore.',
+        operations=[
+            {
+                'path': PATH_DATASTORE,
+                'method': 'DELETE'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
         name='datastore:version_show',
         check_str='',
         description='Get a version of a datastore by the version id.',

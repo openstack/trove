@@ -15,12 +15,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from oslo_log import log as logging
 
+from trove.common import exception
 from trove.common import policy
 from trove.common import wsgi
 from trove.datastore import models, views
 from trove.flavor import views as flavor_views
 from trove.volume_type import views as volume_type_view
+
+LOG = logging.getLogger(__name__)
 
 
 class DatastoreController(wsgi.Controller):
@@ -105,3 +109,17 @@ class DatastoreController(wsgi.Controller):
                             context, datastore, version_id))
         return wsgi.Result(volume_type_view.VolumeTypesView(
             volume_types, req).data(), 200)
+
+    def delete(self, req, tenant_id, id):
+        """Remove an existing datastore."""
+        self.authorize_request(req, 'delete')
+
+        ds_versions = models.DatastoreVersions.load(id, only_active=False)
+        if len(ds_versions.db_info.all()) > 0:
+            raise exception.DatastoreVersionsExist(datastore=id)
+
+        LOG.info("Deleting datastore %s", id)
+
+        datastore = models.Datastore.load(id)
+        datastore.delete()
+        return wsgi.Result(None, 202)
