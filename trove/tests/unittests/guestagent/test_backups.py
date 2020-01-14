@@ -470,7 +470,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_DB2_CLS)
         bkp = RunnerClass(12345)        # this is not db2 backup filename
-        self.assertIsNotNone(12345)     # look into this
+        self.assertIsNotNone(bkp)     # look into this
         self.assertEqual(
             DB2BACKUP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
         self.assertIn("gz.enc", bkp.manifest)
