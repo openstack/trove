@@ -24,6 +24,7 @@ import six
 from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 from sqlalchemy import func
 
 from trove.backup.models import Backup
@@ -1810,6 +1811,10 @@ class instance_encryption_key_cache(object):
             # BUG(1650518): Cleanup in the Pike release
             if val is None:
                 return val
+
+            # We need string anyway
+            if isinstance(val, six.binary_type):
+                val = encodeutils.safe_decode(val)
 
             if len(self._lru) == self._lru_cache_size:
                 tail = self._lru.pop()

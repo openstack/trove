@@ -15,7 +15,6 @@
         - openstack-tox-pylint
         - trove-tox-bandit-baseline:
             voting: false
-        - trove-tox-fakemodetests
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
@@ -26,7 +25,6 @@
       queue: trove
       jobs:
         - openstack-tox-pylint
-        - trove-tox-fakemodetests
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi

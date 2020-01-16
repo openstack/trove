@@ -552,9 +552,7 @@ function cmd_set_datastore() {
     PACKAGES=${PACKAGES:-""}
 
     if [ "$DATASTORE_TYPE" == "mysql" ]; then
-        set_mysql_pkg
-        PACKAGES=${PACKAGES:-$MYSQL_PKG}
-        VERSION=$MYSQL_VER
+        VERSION="5.7"
     elif [ "$DATASTORE_TYPE" == "percona" ]; then
         PACKAGES=${PACKAGES:-"percona-server-server-5.6"}
         VERSION="5.6"
@@ -562,7 +560,6 @@ function cmd_set_datastore() {
         PACKAGES=${PACKAGES:-"percona-xtradb-cluster-server-5.6"}
         VERSION="5.6"
     elif [ "$DATASTORE_TYPE" == "mariadb" ]; then
-        PACKAGES=${PACKAGES:-"mariadb-server"}
         VERSION="10.4"
     elif [ "$DATASTORE_TYPE" == "mongodb" ]; then
         PACKAGES=${PACKAGES:-"mongodb-org"}
