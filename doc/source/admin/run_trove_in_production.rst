@@ -312,6 +312,21 @@ datastore versions and the configuration parameters for the particular version.
 It's recommended to config a default version for each datastore.
 
 
+Quota Management
+~~~~~~~~~~~~~~~~
+The amount of resources that could be created by each OpenStack project is
+controlled by quota. The default resource quota for each project is set in
+Trove config file as follows unless changed by the cloud administrator via
+`Quota API
+<https://docs.openstack.org/api-ref/database/#update-resources-quota-for-a-specific-project>`_.
+
+.. code-block:: ini
+
+    [DEFAULT]
+    max_instances_per_tenant = 10
+    max_backups_per_tenant = 50
+
+
 Trove Deployment Verfication
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If all of the above instructions have been followed, it should now be possible
