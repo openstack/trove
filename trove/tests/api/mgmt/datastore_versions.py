@@ -22,6 +22,7 @@ from proboscis.check import Check
 from proboscis import test
 from troveclient.compat import exceptions
 
+from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util import create_client
 from trove.tests.util import create_dbaas_client
@@ -29,10 +30,9 @@ from trove.tests.util import create_glance_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 
-GROUP = "dbaas.api.mgmt.ds_versions"
 
-
-@test(groups=[GROUP])
+@test(groups=[tests.DBAAS_API_MGMT_DATASTORES],
+      depends_on_groups=[tests.DBAAS_API_DATASTORES])
 class MgmtDataStoreVersion(object):
     """Tests the mgmt datastore version methods."""
 

@@ -39,6 +39,7 @@ from proboscis.asserts import fail
 from proboscis import SkipTest
 from six.moves.urllib.parse import unquote
 from sqlalchemy import create_engine
+from sqlalchemy.sql.expression import text
 import tenacity
 from troveclient.compat import Dbaas
 
@@ -53,6 +54,7 @@ from trove.tests.util.users import Requirements
 
 
 WHITE_BOX = test_config.white_box
+FLUSH = text("FLUSH PRIVILEGES;")
 CONF = cfg.CONF
 
 

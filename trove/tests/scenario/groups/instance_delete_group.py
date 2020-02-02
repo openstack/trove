@@ -29,22 +29,10 @@ class InstanceDeleteRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceDeleteRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+@test(depends_on_groups=[groups.INST_CREATE],
       groups=[GROUP, groups.INST_DELETE],
-      runs_after_groups=[groups.INST_INIT_DELETE,
-                         groups.INST_ACTIONS,
-                         groups.INST_UPGRADE,
-                         groups.INST_ACTIONS_RESIZE_WAIT,
-                         groups.BACKUP_INST_DELETE,
-                         groups.BACKUP_INC_INST_DELETE,
-                         groups.CFGGRP_INST_DELETE,
-                         groups.DB_ACTION_DELETE,
-                         groups.DB_ACTION_INST_DELETE,
-                         groups.MODULE_INST_DELETE,
-                         groups.REPL_INST_DELETE_WAIT,
-                         groups.ROOT_ACTION_INST_DELETE,
-                         groups.USER_ACTION_DELETE,
-                         groups.USER_ACTION_INST_DELETE])
+      runs_after_groups=[groups.USER_ACTION_INST_DELETE_WAIT,
+                         groups.REPL_INST_DELETE_WAIT])
 class InstanceDeleteGroup(TestGroup):
     """Test Instance Delete functionality."""
 
@@ -58,16 +46,8 @@ class InstanceDeleteGroup(TestGroup):
         self.test_runner.run_instance_delete()
 
 
-@test(depends_on_groups=[groups.INST_DELETE],
-      groups=[GROUP, groups.INST_DELETE_WAIT],
-      runs_after_groups=[groups.BACKUP_INST_DELETE_WAIT,
-                         groups.BACKUP_INC_INST_DELETE_WAIT,
-                         groups.CFGGRP_INST_DELETE_WAIT,
-                         groups.DB_ACTION_INST_DELETE_WAIT,
-                         groups.MODULE_INST_DELETE_WAIT,
-                         groups.REPL_INST_DELETE_WAIT,
-                         groups.ROOT_ACTION_INST_DELETE_WAIT,
-                         groups.USER_ACTION_INST_DELETE_WAIT])
+@test(depends_on_classes=[InstanceDeleteGroup],
+      groups=[GROUP, groups.INST_DELETE_WAIT])
 class InstanceDeleteWaitGroup(TestGroup):
     """Test that Instance Delete Completes."""
 

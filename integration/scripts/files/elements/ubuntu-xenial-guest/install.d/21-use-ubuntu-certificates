@@ -6,6 +6,7 @@
 GUEST_UNIT_DROPINS="/etc/systemd/system/trove-guest.service.d"
 
 mkdir -v -p ${GUEST_UNIT_DROPINS}
-echo -e '[Service]\nEnvironment=REQUESTS_CA_BUNDLE=/etc/ssl/certs' > ${GUEST_UNIT_DROPINS}/30-use-system-certificates.conf
-
-
+cat <<EOF > ${GUEST_UNIT_DROPINS}/30-use-system-certificates.conf
+[Service]
+Environment=REQUESTS_CA_BUNDLE=/etc/ssl/certs
+EOF

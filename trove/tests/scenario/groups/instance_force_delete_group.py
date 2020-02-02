@@ -15,7 +15,6 @@
 
 from proboscis import test
 
-from trove.tests import PRE_INSTANCES
 from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
@@ -30,8 +29,7 @@ class InstanceForceDeleteRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceForceDeleteRunner'
 
 
-@test(depends_on_groups=["services.initialize"],
-      runs_after_groups=[PRE_INSTANCES, groups.INST_ERROR_CREATE],
+@test(depends_on_groups=[groups.INST_ERROR_DELETE_WAIT],
       groups=[GROUP, groups.INST_FORCE_DELETE])
 class InstanceForceDeleteGroup(TestGroup):
     """Test Instance Force Delete functionality."""
@@ -51,8 +49,7 @@ class InstanceForceDeleteGroup(TestGroup):
         self.test_runner.run_delete_build_instance()
 
 
-@test(depends_on_groups=[groups.INST_FORCE_DELETE],
-      runs_after_groups=[groups.MODULE_INST_CREATE],
+@test(depends_on_classes=[InstanceForceDeleteGroup],
       groups=[GROUP, groups.INST_FORCE_DELETE_WAIT])
 class InstanceForceDeleteWaitGroup(TestGroup):
     """Make sure the Force Delete instance goes away."""

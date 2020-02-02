@@ -27,20 +27,33 @@ from proboscis import test
 from troveclient.compat import exceptions
 
 from trove import tests
-from trove.tests.api.databases import TestDatabases
-from trove.tests.api.databases import TestMysqlAccess
 from trove.tests.api.instances import instance_info
 from trove.tests import util
 from trove.tests.util import test_config
 
-
-GROUP = "dbaas.api.users"
 FAKE = test_config.values['fake_mode']
 
 
-@test(depends_on_classes=[TestMysqlAccess],
-      groups=[tests.DBAAS_API, GROUP, tests.INSTANCES],
-      runs_after=[TestDatabases])
+@test(depends_on_groups=[tests.DBAAS_API_USERS_ROOT],
+      groups=[tests.DBAAS_API_USERS],
+      enabled=not test_config.values['fake_mode'])
+class TestMysqlAccessNegative(object):
+    """Make sure that MySQL server was secured."""
+    @test
+    def test_mysql_admin(self):
+        """Ensure we aren't allowed access with os_admin and wrong password."""
+        util.mysql_connection().assert_fails(
+            instance_info.get_address(), "os_admin", "asdfd-asdf234")
+
+    @test
+    def test_mysql_root(self):
+        """Ensure we aren't allowed access with root and wrong password."""
+        util.mysql_connection().assert_fails(
+            instance_info.get_address(), "root", "dsfgnear")
+
+
+@test(depends_on_classes=[TestMysqlAccessNegative],
+      groups=[tests.DBAAS_API_USERS])
 class TestUsers(object):
     """
     Test the creation and deletion of users
@@ -366,25 +379,6 @@ class TestUsers(object):
         assert_raises(exceptions.BadRequest, self.dbaas.users.create,
                       instance_info.id, users)
         assert_equal(400, self.dbaas.last_http_code)
-
-    @test(enabled=False)
-    # TODO(hub_cap): Make this test work once python-routes is updated,
-    # if ever.
-    def test_delete_user_with_period_in_name(self):
-        """Attempt to create/destroy a user with a period in its name."""
-        users = []
-        username_with_period = "user.name"
-        users.append({"name": username_with_period, "password": self.password,
-                      "databases": [{"name": self.db1}]})
-        self.dbaas.users.create(instance_info.id, users)
-        assert_equal(202, self.dbaas.last_http_code)
-        if not FAKE:
-            time.sleep(5)
-
-        self.check_database_for_user(username_with_period, self.password,
-                                     [self.db1])
-        self.dbaas.users.delete(instance_info.id, username_with_period)
-        assert_equal(202, self.dbaas.last_http_code)
 
     @test
     def test_invalid_password(self):

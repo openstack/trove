@@ -30,9 +30,11 @@ class MariaBackup(base.BackupRunner):
 
     @property
     def user_and_pass(self):
-        return ('--user=%(user)s --password=%(password)s --host=127.0.0.1' %
+        return ('--user=%(user)s --password=%(password)s --host=localhost '
+                '--socket=%(socket_file)s' %
                 {'user': common_service.ADMIN_USER_NAME,
-                 'password': mysql_service.MySqlApp.get_auth_password()})
+                 'password': mysql_service.MySqlApp.get_auth_password(),
+                 'socket_file': '/var/run/mysqld/mysqld.sock'})
 
     @property
     def cmd(self):

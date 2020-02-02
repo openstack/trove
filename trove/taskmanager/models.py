@@ -478,9 +478,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                        access=None):
         """Prepare the networks for the trove instance.
 
-        the params are all passed from trove-taskmanager.
-
-        Exception is raised if any error happens.
+        'nics' contains the networks that management network always comes at
+        last.
         """
         LOG.info("Preparing networks for the instance %s", self.id)
         security_group = None
@@ -1243,34 +1242,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 # Also we check guest state before issuing reboot
                 LOG.debug(str(e))
 
-            # Wait for the mysql stopped.
-            def _datastore_is_offline():
-                self._refresh_datastore_status()
-                return (
-                    self.datastore_status_matches(
-                        rd_instance.ServiceStatuses.SHUTDOWN) or
-                    self.datastore_status_matches(
-                        rd_instance.ServiceStatuses.CRASHED)
-                )
-
-            try:
-                utils.poll_until(
-                    _datastore_is_offline,
-                    sleep_time=3,
-                    time_out=CONF.reboot_time_out
-                )
-            except exception.PollTimeOut:
-                LOG.error("Cannot reboot instance, DB status is %s",
-                          self.datastore_status.status)
-                return
-
-            LOG.debug("The guest service status is %s.",
-                      self.datastore_status.status)
-
             LOG.info("Rebooting instance %s.", self.id)
             self.server.reboot()
-            # Poll nova until instance is active
-            reboot_time_out = CONF.reboot_time_out
 
             def update_server_info():
                 self.refresh_compute_server_info()
@@ -1279,7 +1252,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             utils.poll_until(
                 update_server_info,
                 sleep_time=3,
-                time_out=reboot_time_out)
+                time_out=CONF.reboot_time_out)
 
             # Set the status to PAUSED. The guest agent will reset the status
             # when the reboot completes and MySQL is running.

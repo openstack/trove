@@ -30,8 +30,6 @@ from trove.common.utils import poll_until
 from trove import tests
 from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import EPHEMERAL_SUPPORT
-from trove.tests.api.instances import GROUP as INSTANCE_GROUP
-from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.config import CONFIG
@@ -40,21 +38,11 @@ from trove.tests.util.check import TypeCheck
 from trove.tests.util import LocalSqlClient
 from trove.tests.util.server_connection import create_server_connection
 
-GROUP = "dbaas.api.instances.actions"
-GROUP_REBOOT = "dbaas.api.instances.actions.reboot"
-GROUP_RESTART = "dbaas.api.instances.actions.restart"
-GROUP_RESIZE = "dbaas.api.instances.actions.resize"
-GROUP_STOP_MYSQL = "dbaas.api.instances.actions.stop"
-GROUP_UPDATE_GUEST = "dbaas.api.instances.actions.update_guest"
 MYSQL_USERNAME = "test_user"
 MYSQL_PASSWORD = "abcde"
-# stored in test conf
-SERVICE_ID = '123'
 FAKE_MODE = CONFIG.fake_mode
 # If true, then we will actually log into the database.
 USE_IP = not FAKE_MODE
-# If true, then we will actually search for the process
-USE_LOCAL_OVZ = CONFIG.use_local_ovz
 
 
 class MySqlConnection(object):
@@ -202,7 +190,7 @@ class ActionTestBase(object):
         return expected
 
 
-@test(depends_on_groups=[GROUP_START])
+@test(depends_on_groups=[tests.DBAAS_API_INSTANCES])
 def create_user():
     """Create a test user so that subsequent tests can log in."""
     helper = ActionTestBase()
@@ -274,10 +262,11 @@ class RebootTestBase(ActionTestBase):
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
 
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_RESTART],
-      depends_on_groups=[GROUP_START], depends_on=[create_user])
+@test(groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
+      depends_on_groups=[tests.DBAAS_API_DATABASES],
+      depends_on=[create_user])
 class RestartTests(RebootTestBase):
-    """Tests restarting MySQL."""
+    """Test restarting MySQL."""
 
     def call_reboot(self):
         self.instance.restart()
@@ -298,10 +287,10 @@ class RestartTests(RebootTestBase):
         self.successful_restart()
 
 
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_STOP_MYSQL],
-      depends_on_groups=[GROUP_RESTART], depends_on=[create_user])
+@test(groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
+      depends_on_classes=[RestartTests])
 class StopTests(RebootTestBase):
-    """Tests which involve stopping MySQL."""
+    """Test stopping MySQL."""
 
     def call_reboot(self):
         self.instance.restart()
@@ -343,10 +332,10 @@ class StopTests(RebootTestBase):
         self.successful_restart()
 
 
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_REBOOT],
-      depends_on_groups=[GROUP_STOP_MYSQL])
+@test(groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
+      depends_on_classes=[StopTests])
 class RebootTests(RebootTestBase):
-    """Tests restarting instance."""
+    """Test restarting instance."""
 
     def call_reboot(self):
         instance_info.dbaas_admin.management.reboot(self.instance_id)
@@ -359,24 +348,21 @@ class RebootTests(RebootTestBase):
 
     @test
     def test_ensure_mysql_is_running(self):
-        """Make sure MySQL is accessible before restarting."""
+        """Make sure MySQL is accessible before rebooting."""
         self.ensure_mysql_is_running()
 
     @after_class(depends_on=[test_ensure_mysql_is_running])
-    def test_successful_restart(self):
-        """Restart MySQL via the REST API successfully."""
+    def test_successful_reboot(self):
+        """MySQL process is different after rebooting."""
         if FAKE_MODE:
             raise SkipTest("Cannot run this in fake mode.")
         self.successful_restart()
 
 
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_RESIZE],
-      depends_on_groups=[GROUP_REBOOT])
+@test(groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
+      depends_on_classes=[RebootTests])
 class ResizeInstanceTest(ActionTestBase):
-
-    """
-    Integration Test cases for resize instance
-    """
+    """Test resizing instance."""
     @property
     def flavor_id(self):
         return instance_info.dbaas_flavor_href
@@ -456,6 +442,7 @@ class ResizeInstanceTest(ActionTestBase):
 
     @test(depends_on=[test_instance_resize_same_size_should_fail])
     def test_status_changed_to_resize(self):
+        """test_status_changed_to_resize"""
         self.log_current_users()
         self.obtain_flavor_ids()
         self.dbaas.instances.resize_instance(
@@ -472,6 +459,7 @@ class ResizeInstanceTest(ActionTestBase):
     @test(depends_on=[test_status_changed_to_resize])
     @time_out(TIME_OUT_TIME)
     def test_instance_returns_to_active_after_resize(self):
+        """test_instance_returns_to_active_after_resize"""
         self.wait_for_resize()
 
     @test(depends_on=[test_instance_returns_to_active_after_resize,
@@ -510,12 +498,11 @@ class ResizeInstanceTest(ActionTestBase):
         asserts.assert_equal(actual, expected)
 
 
-@test(depends_on=[ResizeInstanceTest],
-      groups=[GROUP, tests.INSTANCES, INSTANCE_GROUP, GROUP_RESIZE],
+@test(depends_on_classes=[ResizeInstanceTest],
+      groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
       enabled=VOLUME_SUPPORT)
-class ResizeInstanceVolume(ActionTestBase):
+class ResizeInstanceVolumeTest(ActionTestBase):
     """Resize the volume of the instance."""
-
     @before_class
     def setUp(self):
         self.set_up()
@@ -589,55 +576,3 @@ class ResizeInstanceVolume(ActionTestBase):
                 asserts.fail(
                     "Database %s was not found after the volume resize. "
                     "Returned list: %s" % (name, databases))
-
-
-# This tests the ability of the guest to upgrade itself.
-# It is necessarily tricky because we need to be able to upload a new copy of
-# the guest into an apt-repo in the middle of the test.
-# "guest-update-test" is where the knowledge of how to do this is set in the
-# test conf. If it is not specified this test never runs.
-UPDATE_GUEST_CONF = CONFIG.values.get("guest-update-test", None)
-
-
-@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP_UPDATE_GUEST],
-      depends_on_groups=[GROUP_RESIZE])
-class UpdateGuest(object):
-
-    def get_version(self):
-        info = instance_info.dbaas_admin.diagnostics.get(instance_info.id)
-        return info.version
-
-    @before_class(enabled=UPDATE_GUEST_CONF is not None)
-    def check_version_is_old(self):
-        """Make sure we have the old version before proceeding."""
-        self.old_version = self.get_version()
-        self.next_version = UPDATE_GUEST_CONF["next-version"]
-        asserts.assert_not_equal(self.old_version, self.next_version)
-
-    @test(enabled=UPDATE_GUEST_CONF is not None)
-    def upload_update_to_repo(self):
-        cmds = UPDATE_GUEST_CONF["install-repo-cmd"]
-        testsutil.execute(*cmds, run_as_root=True, root_helper="sudo")
-
-    @test(enabled=UPDATE_GUEST_CONF is not None,
-          depends_on=[upload_update_to_repo])
-    def update_and_wait_to_finish(self):
-        instance_info.dbaas_admin.management.update(instance_info.id)
-
-        def finished():
-            current_version = self.get_version()
-            if current_version == self.next_version:
-                return True
-            # The only valid thing for it to be aside from next_version is
-            # old version.
-            asserts.assert_equal(current_version, self.old_version)
-        poll_until(finished, sleep_time=1, time_out=3 * 60)
-
-    @test(enabled=UPDATE_GUEST_CONF is not None,
-          depends_on=[upload_update_to_repo])
-    @time_out(30)
-    def update_again(self):
-        """Test the wait time of a pointless update."""
-        instance_info.dbaas_admin.management.update(instance_info.id)
-        # Make sure this isn't taking too long.
-        instance_info.dbaas_admin.diagnostics.get(instance_info.id)

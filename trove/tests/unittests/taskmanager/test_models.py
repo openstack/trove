@@ -858,19 +858,6 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.instance_task.server.reboot.assert_any_call()
         self.instance_task.set_datastore_status_to_paused.assert_any_call()
 
-    @patch.object(utils, 'poll_until')
-    @patch('trove.taskmanager.models.LOG')
-    def test_reboot_datastore_not_ready(self, mock_logging, mock_poll):
-        mock_poll.side_effect = PollTimeOut
-        self.instance_task.server.reboot = Mock()
-        self.instance_task.set_datastore_status_to_paused = Mock()
-
-        self.instance_task.reboot()
-
-        self.instance_task._guest.stop_db.assert_any_call()
-        assert not self.instance_task.server.reboot.called
-        assert not self.instance_task.set_datastore_status_to_paused.called
-
     @patch.object(BaseInstance, 'update_db')
     def test_detach_replica(self, mock_update_db):
         with patch.object(self.instance_task, 'reset_task_status') as tr_mock:

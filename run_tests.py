@@ -206,20 +206,14 @@ def import_tests():
     from trove.tests.api import configurations  # noqa
     from trove.tests.api import databases  # noqa
     from trove.tests.api import datastores  # noqa
-    from trove.tests.api import header  # noqa
     from trove.tests.api import instances as rd_instances  # noqa
     from trove.tests.api import instances_actions as rd_actions  # noqa
     from trove.tests.api import instances_delete  # noqa
-    from trove.tests.api import instances_mysql_down  # noqa
     from trove.tests.api import instances_resize  # noqa
     from trove.tests.api import limits  # noqa
-    from trove.tests.api.mgmt import admin_required  # noqa
-    from trove.tests.api.mgmt import instances as mgmt_instances  # noqa
     from trove.tests.api.mgmt import instances_actions as mgmt_actions  # noqa
-    from trove.tests.api.mgmt import malformed_json  # noqa
     from trove.tests.api import replication  # noqa
     from trove.tests.api import root  # noqa
-    from trove.tests.api import root_on_create  # noqa
     from trove.tests.api import user_access  # noqa
     from trove.tests.api import users  # noqa
     from trove.tests.api import versions  # noqa

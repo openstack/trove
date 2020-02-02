@@ -31,13 +31,11 @@ from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
-from trove.tests.api import instances_actions
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 
 
-BACKUP_GROUP = "dbaas.api.backups"
 BACKUP_NAME = 'backup_test'
 BACKUP_DESC = 'test description'
 
@@ -53,8 +51,8 @@ backup_count_prior_to_create = 0
 backup_count_for_instance_prior_to_create = 0
 
 
-@test(depends_on_groups=[instances_actions.GROUP_RESIZE],
-      groups=[BACKUP_GROUP, tests.INSTANCES],
+@test(depends_on_groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
+      groups=[tests.DBAAS_API_BACKUPS],
       enabled=CONFIG.swift_enabled)
 class CreateBackups(object):
 
@@ -145,7 +143,7 @@ class BackupRestoreMixin(object):
 
 
 @test(depends_on_classes=[CreateBackups],
-      groups=[BACKUP_GROUP, tests.INSTANCES],
+      groups=[tests.DBAAS_API_BACKUPS],
       enabled=CONFIG.swift_enabled)
 class WaitForBackupCreateToFinish(BackupRestoreMixin):
     """Wait until the backup creation is finished."""
@@ -153,12 +151,12 @@ class WaitForBackupCreateToFinish(BackupRestoreMixin):
     @test
     @time_out(TIMEOUT_BACKUP_CREATE)
     def test_backup_created(self):
-        # This version just checks the REST API status.
+        """Wait for the backup to be finished."""
         self.verify_backup(backup_info.id)
 
 
 @test(depends_on=[WaitForBackupCreateToFinish],
-      groups=[BACKUP_GROUP, tests.INSTANCES],
+      groups=[tests.DBAAS_API_BACKUPS],
       enabled=CONFIG.swift_enabled)
 class ListBackups(object):
 
@@ -191,7 +189,7 @@ class ListBackups(object):
     def test_backup_list_filter_different_datastore(self):
         """Test list backups and filter by datastore."""
         result = instance_info.dbaas.backups.list(
-            datastore='Test_Datastore_1')
+            datastore=CONFIG.dbaas_datastore_name_no_versions)
         # There should not be any backups for this datastore
         assert_equal(0, len(result))
 
@@ -247,7 +245,7 @@ class ListBackups(object):
 
 @test(runs_after=[ListBackups],
       depends_on=[WaitForBackupCreateToFinish],
-      groups=[BACKUP_GROUP, tests.INSTANCES],
+      groups=[tests.DBAAS_API_BACKUPS],
       enabled=CONFIG.swift_enabled)
 class IncrementalBackups(BackupRestoreMixin):
 
@@ -275,9 +273,10 @@ class IncrementalBackups(BackupRestoreMixin):
         assert_equal(backup_info.id, incremental_info.parent_id)
 
 
-@test(groups=[BACKUP_GROUP, tests.INSTANCES], enabled=CONFIG.swift_enabled)
+@test(groups=[tests.DBAAS_API_BACKUPS],
+      depends_on_classes=[IncrementalBackups],
+      enabled=CONFIG.swift_enabled)
 class RestoreUsingBackup(object):
-
     @classmethod
     def _restore(cls, backup_ref):
         restorePoint = {"backupRef": backup_ref}
@@ -295,15 +294,15 @@ class RestoreUsingBackup(object):
 
     @test(depends_on=[IncrementalBackups])
     def test_restore_incremental(self):
+        """Restore from incremental backup."""
         global incremental_restore_instance_id
         incremental_restore_instance_id = self._restore(incremental_info.id)
 
 
 @test(depends_on_classes=[RestoreUsingBackup],
-      groups=[BACKUP_GROUP, tests.INSTANCES],
+      groups=[tests.DBAAS_API_BACKUPS],
       enabled=CONFIG.swift_enabled)
 class WaitForRestoreToFinish(object):
-
     @classmethod
     def _poll(cls, instance_id_to_poll):
         """Shared "instance restored" test logic."""
@@ -324,7 +323,7 @@ class WaitForRestoreToFinish(object):
         poll_until(result_is_active, time_out=TIMEOUT_INSTANCE_CREATE,
                    sleep_time=10)
 
-    @test(depends_on=[RestoreUsingBackup.test_restore_incremental])
+    @test
     def test_instance_restored_incremental(self):
         try:
             self._poll(incremental_restore_instance_id)
@@ -333,8 +332,8 @@ class WaitForRestoreToFinish(object):
 
 
 @test(enabled=(not CONFIG.fake_mode and CONFIG.swift_enabled),
-      depends_on=[WaitForRestoreToFinish],
-      groups=[BACKUP_GROUP, tests.INSTANCES])
+      depends_on_classes=[WaitForRestoreToFinish],
+      groups=[tests.DBAAS_API_BACKUPS])
 class VerifyRestore(object):
 
     @classmethod
@@ -348,8 +347,7 @@ class VerifyRestore(object):
 
         poll_until(db_is_found, time_out=60 * 10, sleep_time=10)
 
-    @test(depends_on=[WaitForRestoreToFinish.
-          test_instance_restored_incremental])
+    @test
     def test_database_restored_incremental(self):
         try:
             self._poll(incremental_restore_instance_id, incremental_db)
@@ -359,8 +357,8 @@ class VerifyRestore(object):
             fail('Timed out')
 
 
-@test(groups=[BACKUP_GROUP, tests.INSTANCES], enabled=CONFIG.swift_enabled,
-      depends_on=[VerifyRestore])
+@test(groups=[tests.DBAAS_API_BACKUPS], enabled=CONFIG.swift_enabled,
+      depends_on_classes=[VerifyRestore])
 class DeleteRestoreInstance(object):
 
     @classmethod
@@ -380,7 +378,7 @@ class DeleteRestoreInstance(object):
         assert_raises(exceptions.NotFound, instance_info.dbaas.instances.get,
                       instance_id)
 
-    @test(depends_on=[VerifyRestore.test_database_restored_incremental])
+    @test
     def test_delete_restored_instance_incremental(self):
         try:
             self._delete(incremental_restore_instance_id)
@@ -388,11 +386,10 @@ class DeleteRestoreInstance(object):
             fail('Timed out')
 
 
-@test(depends_on=[DeleteRestoreInstance],
-      groups=[BACKUP_GROUP, tests.INSTANCES],
+@test(depends_on_classes=[DeleteRestoreInstance],
+      groups=[tests.DBAAS_API_BACKUPS],
       enabled=CONFIG.swift_enabled)
 class DeleteBackups(object):
-
     @test
     def test_backup_delete_not_found(self):
         """Test delete unknown backup."""

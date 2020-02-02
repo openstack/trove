@@ -30,7 +30,7 @@ class ConfigurationRunnerFactory(test_runners.RunnerFactory):
 
 
 @test(groups=[GROUP, groups.CFGGRP_CREATE],
-      runs_after_groups=[groups.MODULE_CREATE])
+      depends_on_groups=[groups.BACKUP_DELETE])
 class ConfigurationCreateGroup(TestGroup):
     """Test Configuration Group functionality."""
 
@@ -94,11 +94,9 @@ class ConfigurationCreateGroup(TestGroup):
         self.test_runner.run_non_dynamic_conf_get_unauthorized_user()
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT,
-                         groups.CFGGRP_CREATE],
+@test(depends_on_classes=[ConfigurationCreateGroup],
       groups=[GROUP, groups.CFGGRP_INST,
-              groups.CFGGRP_INST_CREATE],
-      runs_after_groups=[groups.MODULE_INST_CREATE])
+              groups.CFGGRP_INST_CREATE])
 class ConfigurationInstCreateGroup(TestGroup):
     """Test Instance Configuration Group Create functionality."""
 
@@ -230,12 +228,9 @@ class ConfigurationInstCreateGroup(TestGroup):
         self.test_runner.run_create_instance_with_conf()
 
 
-@test(depends_on_groups=[groups.CFGGRP_INST_CREATE],
+@test(depends_on_classes=[ConfigurationInstCreateGroup],
       groups=[GROUP, groups.CFGGRP_INST,
-              groups.CFGGRP_INST_CREATE_WAIT],
-      runs_after_groups=[groups.INST_ACTIONS,
-                         groups.INST_UPGRADE,
-                         groups.MODULE_INST_CREATE_WAIT])
+              groups.CFGGRP_INST_CREATE_WAIT])
 class ConfigurationInstCreateWaitGroup(TestGroup):
     """Test that Instance Configuration Group Create Completes."""
 
@@ -254,10 +249,9 @@ class ConfigurationInstCreateWaitGroup(TestGroup):
         self.test_runner.run_verify_instance_values()
 
 
-@test(depends_on_groups=[groups.CFGGRP_INST_CREATE_WAIT],
+@test(depends_on_classes=[ConfigurationInstCreateWaitGroup],
       groups=[GROUP, groups.CFGGRP_INST,
-              groups.CFGGRP_INST_DELETE],
-      runs_after_groups=[groups.MODULE_INST_DELETE])
+              groups.CFGGRP_INST_DELETE])
 class ConfigurationInstDeleteGroup(TestGroup):
     """Test Instance Configuration Group Delete functionality."""
 
@@ -271,10 +265,9 @@ class ConfigurationInstDeleteGroup(TestGroup):
         self.test_runner.run_delete_conf_instance()
 
 
-@test(depends_on_groups=[groups.CFGGRP_INST_DELETE],
+@test(depends_on_classes=[ConfigurationInstDeleteGroup],
       groups=[GROUP, groups.CFGGRP_INST,
-              groups.CFGGRP_INST_DELETE_WAIT],
-      runs_after_groups=[groups.INST_DELETE])
+              groups.CFGGRP_INST_DELETE_WAIT])
 class ConfigurationInstDeleteWaitGroup(TestGroup):
     """Test that Instance Configuration Group Delete Completes."""
 
@@ -288,8 +281,7 @@ class ConfigurationInstDeleteWaitGroup(TestGroup):
         self.test_runner.run_wait_for_delete_conf_instance()
 
 
-@test(depends_on_groups=[groups.CFGGRP_CREATE],
-      runs_after_groups=[groups.CFGGRP_INST_DELETE_WAIT],
+@test(depends_on_classes=[ConfigurationInstDeleteWaitGroup],
       groups=[GROUP, groups.CFGGRP_DELETE])
 class ConfigurationDeleteGroup(TestGroup):
     """Test Configuration Group Delete functionality."""

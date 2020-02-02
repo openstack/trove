@@ -431,7 +431,7 @@ class MySqlManager(manager.Manager):
                 }))
 
     def attach_replica(self, context, replica_info, slave_config):
-        LOG.debug("Attaching replica.")
+        LOG.info("Attaching replica.")
         app = self.mysql_app(self.mysql_app_status.get())
         try:
             if 'replication_strategy' in replica_info:

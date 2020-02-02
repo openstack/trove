@@ -33,21 +33,8 @@ For an in-depth look at the project's design and structure, see the
   - `Trove`_
   - `Trove Client`_
 
-* `Trove Wiki`_ on OpenStack
 * `Trove API Documentation`_ on docs.openstack.org
-* `Trove Blueprints`_ on storyboard.openstack.org
-* `Trove Bugs`_ on storyboard.openstack.org
-
-
-Guest Images
-============
-
-In order to use Trove, you need to have Guest Images for each
-datastore and version. These images are loaded into Glance and
-registered with Trove.
-
-For those wishing to develop guest images, please refer to the
-:ref:`build_guest_images` page.
+* `Trove storyboard`_ on storyboard.openstack.org
 
 
 Search Trove Documentation
@@ -56,9 +43,7 @@ Search Trove Documentation
 * :ref:`search`
 
 
-.. _Trove Wiki: https://wiki.openstack.org/wiki/Trove
 .. _Trove: https://opendev.org/openstack/trove
 .. _Trove Client: https://opendev.org/openstack/python-troveclient
 .. _Trove API Documentation: https://docs.openstack.org/api-ref/database/
-.. _Trove Blueprints: https://storyboard.openstack.org/#!/project/openstack/trove
-.. _Trove Bugs: https://storyboard.openstack.org/#!/project/openstack/trove
+.. _Trove storyboard: https://storyboard.openstack.org/#!/project/openstack/trove

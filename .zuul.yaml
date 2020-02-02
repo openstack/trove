@@ -142,6 +142,9 @@
       devstack_localrc:
         TROVE_RESIZE_TIME_OUT: 1800
       trove_resize_time_out: 1800
+      trove_test_datastore: 'mysql'
+      trove_test_group: 'mysql'
+      trove_test_datastore_version: '5.7'
 
 - job:
     name: trove-grenade
@@ -196,6 +199,7 @@
     vars:
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-single
+      trove_test_datastore_version: 10.4
       devstack_localrc:
         TROVE_ENABLE_IMAGE_BUILD: false
 
@@ -205,6 +209,7 @@
     vars:
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-multi
+      trove_test_datastore_version: 10.4
       devstack_localrc:
         TROVE_ENABLE_IMAGE_BUILD: false
 
@@ -214,6 +219,7 @@
     vars:
       trove_test_datastore: mysql
       trove_test_group: mysql-supported-single
+      trove_test_datastore_version: 5.7
 
 - job:
     name: trove-scenario-mysql-multi
@@ -221,6 +227,7 @@
     vars:
       trove_test_datastore: mysql
       trove_test_group: mysql-supported-multi
+      trove_test_datastore_version: 5.7
 
 - job:
     name: trove-scenario-percona-multi

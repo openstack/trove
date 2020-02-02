@@ -50,9 +50,6 @@ def main():
                "was not injected into the guest or not read by guestagent"))
         raise RuntimeError(msg)
 
-    # BUG(1650518): Cleanup in the Pike release
-    # make it fatal if CONF.instance_rpc_encr_key is None
-
     # rpc module must be loaded after decision about thread monkeypatching
     # because if thread module is not monkeypatched we can't use eventlet
     # executor from oslo_messaging library.

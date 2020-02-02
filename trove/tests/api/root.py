@@ -22,99 +22,22 @@ from proboscis.asserts import assert_true
 from proboscis import test
 from troveclient.compat import exceptions
 
-from trove.common import utils
 from trove import tests
 from trove.tests.api import instances
-from trove.tests.config import CONFIG
-from trove.tests import util
 from trove.tests.util import test_config
-from trove.tests.util import users as users_util
-
-GROUP = "dbaas.api.root"
 
 
-@test(groups=[tests.DBAAS_API, GROUP, tests.INSTANCES])
+@test(groups=[tests.DBAAS_API_USERS_ROOT],
+      depends_on_groups=[tests.DBAAS_API_INSTANCES])
 class TestRoot(object):
-    """
-    Test the root operations
-    """
-
     root_enabled_timestamp = 'Never'
-    system_users = ['root', 'debian_sys_maint']
 
     @proboscis.before_class
     def setUp(self):
-        self.info = instances.InstanceTestInfo()
-
-        reqs = users_util.Requirements(is_admin=True)
-        self.info.admin_user = CONFIG.users.find_user(reqs)
-        self.info.dbaas_admin = self.dbaas_admin = util.create_dbaas_client(
-            self.info.admin_user
-        )
-        reqs = users_util.Requirements(is_admin=False)
-        self.info.user = CONFIG.users.find_user(reqs)
-        self.info.dbaas = self.dbaas = util.create_dbaas_client(self.info.user)
-
-        self.info.name = "TEST_%s" % self.__class__.__name__
-
-        flavor, flavor_href = self.info.find_default_flavor()
-        self.info.dbaas_flavor = flavor
-        self.info.dbaas_flavor_href = flavor_href
-
-        databases = []
-        databases.append({"name": "firstdb", "character_set": "latin2",
-                          "collate": "latin2_general_ci"})
-        databases.append({"name": "db2"})
-        self.info.databases = databases
-
-        users = []
-        users.append({"name": "lite", "password": "litepass",
-                      "databases": [{"name": "firstdb"}]})
-        self.info.users = users
-
-        self.info.dbaas_datastore = CONFIG.dbaas_datastore
-        self.info.dbaas_datastore_version = CONFIG.dbaas_datastore_version
-        self.info.volume = {'size': CONFIG.get('trove_volume_size', 2)}
-
-        self.info.initial_result = self.dbaas.instances.create(
-            self.info.name,
-            self.info.dbaas_flavor_href,
-            self.info.volume,
-            databases,
-            users,
-            nics=self.info.nics,
-            availability_zone="nova",
-            datastore=self.info.dbaas_datastore,
-            datastore_version=self.info.dbaas_datastore_version
-        )
-
-        assert_equal(200, self.dbaas.last_http_code)
-
-        self.id = self.info.initial_result.id
-
-        def result_is_active():
-            instance = self.dbaas.instances.get(self.id)
-            if instance.status in CONFIG.running_status:
-                return True
-            else:
-                # If its not ACTIVE, anything but BUILD must be
-                # an error.
-                assert_equal("BUILD", instance.status)
-                return False
-
-        utils.poll_until(result_is_active)
-
-    @proboscis.after_class
-    def tearDown(self):
-        self.dbaas.instances.delete(self.id)
-
-        def _is_delete():
-            try:
-                self.dbaas.instances.get(self.id)
-            except exceptions.NotFound:
-                return True
-
-        utils.poll_until(_is_delete)
+        # Reuse the instance created previously.
+        self.id = instances.instance_info.id
+        self.dbaas = instances.instance_info.dbaas
+        self.dbaas_admin = instances.instance_info.dbaas_admin
 
     def _verify_root_timestamp(self, id):
         reh = self.dbaas_admin.management.root_enabled_history(id)

@@ -26,8 +26,7 @@ from trove.tests.util.users import Requirements
 GROUP = "dbaas.api.mgmt.configurations"
 
 
-@test(groups=[GROUP, tests.DBAAS_API, tests.PRE_INSTANCES],
-      depends_on_groups=["services.initialize"])
+@test(groups=[GROUP, tests.DBAAS_API, tests.PRE_INSTANCES])
 class ConfigGroupsSetupBeforeInstanceCreation(object):
 
     @before_class

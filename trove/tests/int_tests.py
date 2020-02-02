@@ -14,20 +14,8 @@
 #    under the License.
 
 import proboscis
-from trove.tests.api import backups
-from trove.tests.api import configurations
-from trove.tests.api import databases
-from trove.tests.api import datastores
-from trove.tests.api import instances
-from trove.tests.api import instances_actions
-from trove.tests.api.mgmt import admin_required
-from trove.tests.api.mgmt import datastore_versions
-from trove.tests.api.mgmt import instances as mgmt_instances
-from trove.tests.api import replication
-from trove.tests.api import root
-from trove.tests.api import user_access
-from trove.tests.api import users
-from trove.tests.api import versions
+
+from trove import tests
 from trove.tests.scenario import groups
 from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import cluster_group
@@ -41,14 +29,9 @@ from trove.tests.scenario.groups import instance_error_create_group
 from trove.tests.scenario.groups import instance_force_delete_group
 from trove.tests.scenario.groups import instance_upgrade_group
 from trove.tests.scenario.groups import module_group
-from trove.tests.scenario.groups import negative_cluster_actions_group
 from trove.tests.scenario.groups import replication_group
 from trove.tests.scenario.groups import root_actions_group
 from trove.tests.scenario.groups import user_actions_group
-
-
-GROUP_SERVICES_INITIALIZE = "services.initialize"
-GROUP_SETUP = 'dbaas.setup'
 
 
 def build_group(*groups):
@@ -77,63 +60,14 @@ def register(group_names, *test_groups, **kwargs):
     proboscis.register(groups=build_group(group_names),
                        depends_on_groups=build_group(*test_groups))
     # Now register the same groups with '-' instead of '_'
-    proboscis.register(groups=build_group(
-                       [name.replace('_', '-') for name in group_names]),
-                       depends_on_groups=build_group(*test_groups))
+    proboscis.register(
+        groups=build_group([name.replace('_', '-') for name in group_names]),
+        depends_on_groups=build_group(*test_groups))
 
-black_box_groups = [
-    users.GROUP,
-    user_access.GROUP,
-    databases.GROUP,
-    root.GROUP,
-    GROUP_SERVICES_INITIALIZE,
-    instances.GROUP_START,
-    instances.GROUP_QUOTAS,
-    backups.BACKUP_GROUP,
-    replication.REPLICATION_GROUP,
-    configurations.CONFIGURATION_GROUP,
-    instances_actions.GROUP_RESIZE,
-    instances_actions.GROUP_STOP_MYSQL,
-    instances.GROUP_STOP,
-    instances.GROUP_GUEST,
-    versions.GROUP,
-    datastores.GROUP,
-    datastore_versions.GROUP,
-    # TODO(SlickNik): The restart tests fail intermittently so pulling
-    # them out of the blackbox group temporarily. Refer to Trove bug:
-    # https://bugs.launchpad.net/trove/+bug/1204233
-    # instances_actions.GROUP_RESTART,
-]
-proboscis.register(groups=["blackbox", "mysql"],
-                   depends_on_groups=black_box_groups)
 
-simple_black_box_groups = [
-    GROUP_SERVICES_INITIALIZE,
-    versions.GROUP,
-    instances.GROUP_START_SIMPLE,
-    admin_required.GROUP,
-    datastore_versions.GROUP,
-]
-proboscis.register(groups=["simple_blackbox"],
-                   depends_on_groups=simple_black_box_groups)
-
-black_box_mgmt_groups = [
-    instances_actions.GROUP_REBOOT,
-    admin_required.GROUP,
-    mgmt_instances.GROUP,
-    datastore_versions.GROUP,
-]
-proboscis.register(groups=["blackbox_mgmt"],
-                   depends_on_groups=black_box_mgmt_groups)
-
-#
-# Group designations for datastore agnostic int-tests
-#
 # Base groups for all other groups
 base_groups = [
-    GROUP_SERVICES_INITIALIZE,
-    versions.GROUP,
-    GROUP_SETUP
+    tests.DBAAS_API_VERSIONS,
 ]
 
 # Cluster-based groups
@@ -142,8 +76,6 @@ cluster_create_groups.extend([groups.CLUSTER_DELETE_WAIT])
 
 cluster_actions_groups = list(cluster_create_groups)
 cluster_actions_groups.extend([groups.CLUSTER_ACTIONS_SHRINK_WAIT])
-
-cluster_negative_actions_groups = list(negative_cluster_actions_group.GROUP)
 
 cluster_root_groups = list(cluster_create_groups)
 cluster_root_groups.extend([groups.CLUSTER_ACTIONS_ROOT_ENABLE])
@@ -239,42 +171,60 @@ common_groups = list(instance_create_groups)
 # of no use case.
 common_groups.extend([guest_log_groups, instance_init_groups])
 
-# Register: Component based groups
-register(["backup"], backup_groups)
-register(["backup_incremental"], backup_incremental_groups)
-register(["backup_negative"], backup_negative_groups)
-register(["cluster"], cluster_actions_groups)
-register(["cluster_actions"], cluster_actions_groups)
-register(["cluster_create"], cluster_create_groups)
-register(["cluster_negative_actions"], cluster_negative_actions_groups)
-register(["cluster_restart"], cluster_restart_groups)
-register(["cluster_root"], cluster_root_groups)
-register(["cluster_root_actions"], cluster_root_actions_groups)
-register(["cluster_upgrade"], cluster_upgrade_groups)
-register(["cluster_config"], cluster_config_groups)
-register(["cluster_config_actions"], cluster_config_actions_groups)
-register(["common"], common_groups)
-register(["configuration"], configuration_groups)
-register(["configuration_create"], configuration_create_groups)
-register(["database"], database_actions_groups)
-register(["guest_log"], guest_log_groups)
-register(["instance"], instance_groups)
-register(["instance_actions"], instance_actions_groups)
-register(["instance_create"], instance_create_groups)
-register(["instance_error"], instance_error_create_groups)
-register(["instance_force_delete"], instance_force_delete_groups)
-register(["instance_init"], instance_init_groups)
-register(["instance_upgrade"], instance_upgrade_groups)
-register(["module"], module_groups)
-register(["module_create"], module_create_groups)
-register(["replication"], replication_groups)
-register(["replication_promote"], replication_promote_groups)
-register(["root"], root_actions_groups)
-register(["user"], user_actions_groups)
+integration_groups = [
+    tests.DBAAS_API_VERSIONS,
+    tests.DBAAS_API_DATASTORES,
+    tests.DBAAS_API_MGMT_DATASTORES,
+    tests.DBAAS_API_INSTANCES,
+    tests.DBAAS_API_USERS_ROOT,
+    tests.DBAAS_API_USERS,
+    tests.DBAAS_API_USERS_ACCESS,
+    tests.DBAAS_API_DATABASES,
+    tests.DBAAS_API_INSTANCE_ACTIONS,
+    tests.DBAAS_API_BACKUPS,
+    tests.DBAAS_API_CONFIGURATIONS,
+    tests.DBAAS_API_REPLICATION,
+    tests.DBAAS_API_INSTANCES_DELETE
+]
+# We intentionally make the functional tests running in series and dependent
+# on each other, so that one test case failure will stop the whole testing.
+proboscis.register(groups=["mysql"],
+                   depends_on_groups=integration_groups)
 
-# Register: Datastore based groups
-# These should contain all functionality currently supported by the datastore.
-# Keeping them in alphabetical order may reduce the number of merge conflicts.
+register(
+    ["mysql_supported"],
+    single=[instance_create_group.GROUP,
+            backup_group.GROUP,
+            configuration_group.GROUP,
+            database_actions_group.GROUP,
+            guest_log_group.GROUP,
+            instance_actions_group.GROUP,
+            instance_error_create_group.GROUP,
+            instance_force_delete_group.GROUP,
+            root_actions_group.GROUP,
+            user_actions_group.GROUP,
+            instance_delete_group.GROUP],
+    multi=[replication_group.GROUP,
+           instance_delete_group.GROUP]
+)
+
+register(
+    ["mariadb_supported"],
+    single=[instance_create_group.GROUP,
+            backup_group.GROUP,
+            configuration_group.GROUP,
+            database_actions_group.GROUP,
+            guest_log_group.GROUP,
+            instance_actions_group.GROUP,
+            instance_error_create_group.GROUP,
+            instance_force_delete_group.GROUP,
+            root_actions_group.GROUP,
+            user_actions_group.GROUP,
+            instance_delete_group.GROUP],
+    multi=[replication_group.GROUP,
+           instance_delete_group.GROUP]
+)
+
 register(
     ["db2_supported"],
     single=[common_groups,
@@ -292,7 +242,6 @@ register(
             configuration_groups,
             user_actions_groups, ],
     multi=[cluster_actions_groups,
-           cluster_negative_actions_groups,
            cluster_root_actions_groups,
            cluster_config_actions_groups, ]
 )
@@ -316,22 +265,6 @@ register(
 )
 
 register(
-    ["mariadb_supported"],
-    single=[common_groups,
-            backup_groups,
-            backup_incremental_groups,
-            configuration_groups,
-            database_actions_groups,
-            root_actions_groups,
-            user_actions_groups, ],
-    multi=[replication_promote_groups, ]
-    # multi=[cluster_actions_groups,
-    #        cluster_negative_actions_groups,
-    #        cluster_root_actions_groups,
-    #        replication_promote_groups, ]
-)
-
-register(
     ["mongodb_supported"],
     single=[common_groups,
             backup_groups,
@@ -340,19 +273,6 @@ register(
             root_actions_groups,
             user_actions_groups, ],
     multi=[cluster_actions_groups, ]
-)
-
-register(
-    ["mysql_supported"],
-    single=[common_groups,
-            backup_incremental_groups,
-            configuration_groups,
-            database_actions_groups,
-            instance_groups,
-            instance_upgrade_groups,
-            root_actions_groups,
-            user_actions_groups, ],
-    multi=[replication_promote_groups, ]
 )
 
 register(
@@ -388,7 +308,6 @@ register(
             user_actions_groups, ],
     multi=[]
     # multi=[cluster_actions_groups,
-    #        cluster_negative_actions_groups,
     #        cluster_root_actions_groups, ]
 )
 
@@ -406,7 +325,6 @@ register(
             redis_root_actions_groups, ],
     multi=[replication_promote_groups, ]
     # multi=[cluster_actions_groups,
-    #        cluster_negative_actions_groups,
     #        replication_promote_groups, ]
 )
 
@@ -416,6 +334,5 @@ register(
             configuration_groups,
             root_actions_groups, ],
     multi=[cluster_actions_groups,
-           cluster_negative_actions_groups,
            cluster_root_actions_groups, ]
 )

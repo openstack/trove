@@ -22,13 +22,8 @@ from troveclient.compat import exceptions
 
 from trove import tests
 from trove.tests.api.instances import instance_info
-from trove.tests.api.users import TestUsers
 from trove.tests import util
 from trove.tests.util import test_config
-
-GROUP = "dbaas.api.useraccess"
-GROUP_POSITIVE = GROUP + ".positive"
-GROUP_NEGATIVE = GROUP + ".negative"
 
 FAKE = test_config.values['fake_mode']
 
@@ -123,14 +118,10 @@ class UserAccessBase(object):
         self._test_access(self.users, [])
 
 
-@test(depends_on_classes=[TestUsers],
-      groups=[tests.DBAAS_API, GROUP, tests.INSTANCES],
-      runs_after=[TestUsers])
+@test(depends_on_groups=[tests.DBAAS_API_USERS],
+      groups=[tests.DBAAS_API_USERS_ACCESS])
 class TestUserAccessPasswordChange(UserAccessBase):
-    """
-    Test that change_password works.
-    """
-
+    """Test that change_password works."""
     @before_class
     def setUp(self):
         super(TestUserAccessPasswordChange, self).set_up()
@@ -227,13 +218,10 @@ class TestUserAccessPasswordChange(UserAccessBase):
             self.dbaas.users.delete(instance_info.id, username)
 
 
-@test(depends_on_classes=[TestUsers],
-      groups=[tests.DBAAS_API, GROUP, GROUP_POSITIVE, tests.INSTANCES],
-      runs_after=[TestUsers])
+@test(depends_on_classes=[TestUserAccessPasswordChange],
+      groups=[tests.DBAAS_API_USERS_ACCESS])
 class TestUserAccessPositive(UserAccessBase):
-    """
-    Test the creation and deletion of user grants.
-    """
+    """Test the creation and deletion of user grants."""
 
     @before_class
     def setUp(self):
@@ -365,13 +353,9 @@ class TestUserAccessPositive(UserAccessBase):
 
 
 @test(depends_on_classes=[TestUserAccessPositive],
-      groups=[tests.DBAAS_API, GROUP, GROUP_NEGATIVE, tests.INSTANCES],
-      depends_on=[TestUserAccessPositive])
+      groups=[tests.DBAAS_API_USERS_ACCESS])
 class TestUserAccessNegative(UserAccessBase):
-    """
-    Negative tests for the creation and deletion of user grants.
-    """
-
+    """Negative tests for the creation and deletion of user grants."""
     @before_class
     def setUp(self):
         super(TestUserAccessNegative, self).set_up()

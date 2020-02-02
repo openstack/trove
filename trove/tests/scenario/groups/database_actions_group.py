@@ -35,7 +35,7 @@ class InstanceCreateRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceCreateRunner'
 
 
-@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+@test(depends_on_groups=[groups.CFGGRP_DELETE],
       groups=[GROUP, groups.DB_ACTION_CREATE])
 class DatabaseActionsCreateGroup(TestGroup):
     """Test Database Actions Create functionality."""
@@ -73,7 +73,7 @@ class DatabaseActionsCreateGroup(TestGroup):
         self.test_runner.run_existing_database_create()
 
 
-@test(depends_on_groups=[groups.DB_ACTION_CREATE],
+@test(depends_on_classes=[DatabaseActionsCreateGroup],
       groups=[GROUP, groups.DB_ACTION_DELETE])
 class DatabaseActionsDeleteGroup(TestGroup):
     """Test Database Actions Delete functionality."""
@@ -103,8 +103,8 @@ class DatabaseActionsDeleteGroup(TestGroup):
         self.test_runner.run_system_database_delete()
 
 
-@test(groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_CREATE],
-      runs_after_groups=[groups.INST_ACTIONS_RESIZE])
+@test(depends_on_classes=[DatabaseActionsDeleteGroup],
+      groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_CREATE])
 class DatabaseActionsInstCreateGroup(TestGroup):
     """Test Database Actions Instance Create functionality."""
 
@@ -121,11 +121,8 @@ class DatabaseActionsInstCreateGroup(TestGroup):
             name_suffix='_db')
 
 
-@test(depends_on_groups=[groups.DB_ACTION_INST_CREATE],
-      groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_CREATE_WAIT],
-      runs_after_groups=[groups.BACKUP_INST_CREATE,
-                         groups.BACKUP_INC_INST_CREATE,
-                         groups.INST_ACTIONS_RESIZE])
+@test(depends_on_classes=[DatabaseActionsInstCreateGroup],
+      groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_CREATE_WAIT])
 class DatabaseActionsInstCreateWaitGroup(TestGroup):
     """Wait for Database Actions Instance Create to complete."""
 
@@ -150,7 +147,7 @@ class DatabaseActionsInstCreateWaitGroup(TestGroup):
         self.instance_create_runner.run_validate_initialized_instance()
 
 
-@test(depends_on_groups=[groups.DB_ACTION_INST_CREATE_WAIT],
+@test(depends_on_classes=[DatabaseActionsInstCreateWaitGroup],
       groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_DELETE])
 class DatabaseActionsInstDeleteGroup(TestGroup):
     """Test Database Actions Instance Delete functionality."""
@@ -166,9 +163,8 @@ class DatabaseActionsInstDeleteGroup(TestGroup):
         self.instance_create_runner.run_initialized_instance_delete()
 
 
-@test(depends_on_groups=[groups.DB_ACTION_INST_DELETE],
-      groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_DELETE_WAIT],
-      runs_after_groups=[groups.INST_DELETE])
+@test(depends_on_classes=[DatabaseActionsInstDeleteGroup],
+      groups=[GROUP, groups.DB_ACTION_INST, groups.DB_ACTION_INST_DELETE_WAIT])
 class DatabaseActionsInstDeleteWaitGroup(TestGroup):
     """Wait for Database Actions Instance Delete to complete."""
 

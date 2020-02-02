@@ -1368,7 +1368,7 @@ class MySqlAppTest(trove_testtools.TestCase):
         self.mySqlApp._save_authentication_properties("some_password")
         write_file_mock.assert_called_once_with(
             MySqlApp.get_client_auth_file(),
-            {'client': {'host': '127.0.0.1',
+            {'client': {'host': 'localhost',
                         'password': 'some_password',
                         'user': mysql_common_service.ADMIN_USER_NAME}},
             codec=MySqlApp.CFG_CODEC)
@@ -2225,9 +2225,8 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
         super(MySqlAppStatusTest, self).tearDown()
 
     def test_get_actual_db_status(self):
-
         mysql_common_service.utils.execute_with_timeout = \
-            Mock(return_value=(None, None))
+            Mock(return_value=("111", None))
 
         self.mySqlAppStatus = MySqlAppStatus.get()
         status = self.mySqlAppStatus._get_actual_db_status()
@@ -2258,19 +2257,6 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
         status = self.mySqlAppStatus._get_actual_db_status()
 
         self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN, status)
-
-    @patch('trove.guestagent.datastore.mysql_common.service.LOG')
-    def test_get_actual_db_status_error_blocked(self, *args):
-
-        mysql_common_service.utils.execute_with_timeout = MagicMock(
-            side_effect=[ProcessExecutionError(), ("some output", None)])
-        mysql_common_service.load_mysqld_options = Mock()
-        mysql_common_service.os.path.exists = Mock(return_value=True)
-
-        self.mySqlAppStatus = MySqlAppStatus.get()
-        status = self.mySqlAppStatus._get_actual_db_status()
-
-        self.assertEqual(rd_instance.ServiceStatuses.BLOCKED, status)
 
 
 class TestRedisApp(BaseAppTest.AppTestCase):

@@ -169,3 +169,7 @@ USER_ACTION_INST_CREATE = "scenario.user_action_inst_create_grp"
 USER_ACTION_INST_CREATE_WAIT = "scenario.user_action_inst_create_wait_grp"
 USER_ACTION_INST_DELETE = "scenario.user_action_inst_delete_grp"
 USER_ACTION_INST_DELETE_WAIT = "scenario.user_action_inst_delete_wait_grp"
+
+
+# Instance Log Group
+INST_LOG = "scenario.inst_log_grp"

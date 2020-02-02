@@ -21,25 +21,12 @@ from tests.util.services import Service
 from trove.tests.config import CONFIG
 
 
-FAKE = CONFIG.fake_mode
-START_SERVICES = (not FAKE) and CONFIG.values.get('start_services', False)
-START_NOVA_NETWORK = (START_SERVICES and
-                      not CONFIG.values.get('neutron_enabled',
-                                            False))
-KEYSTONE_ALL = CONFIG.values.get('keystone_use_combined', True)
-USE_NOVA_VOLUME = CONFIG.values.get('use_nova_volume', False)
-
-dbaas_image = None
-instance_name = None
-success_statuses = ["build", "active"]
-
-
 def dbaas_url():
     return str(CONFIG.values.get("dbaas_url"))
 
+
 def nova_url():
     return str(CONFIG.values.get("nova_client")['url'])
-
 
 
 class Daemon(object):
@@ -74,95 +61,3 @@ class Daemon(object):
         self.service = Service(cmds)
         if not self.service.is_service_alive():
             self.service.start()
-
-@test(groups=["services.initialize"],
-      enabled=START_SERVICES and (not KEYSTONE_ALL))
-def start_keystone_all():
-    """Starts the Keystone API."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/keystone-all",
-           extra_cmds=['--config-file'],
-           conf_file_name="keystone_conf").run()
-
-
-@test(groups=["services.initialize", "services.initialize.glance"],
-      enabled=START_SERVICES)
-def start_glance_registry():
-    """Starts the Glance Registry."""
-    Daemon(alternate_path="/usr/bin/glance-registry",
-           conf_file_name="glance_reg_conf",
-           service_path_root="usr_bin_dir",
-           service_path="%s/glance-registry").run()
-
-
-@test(groups=["services.initialize", "services.initialize.glance"],
-      depends_on=[start_glance_registry], enabled=START_SERVICES)
-def start_glance_api():
-    """Starts the Glance API."""
-    Daemon(alternate_path="/usr/bin/glance-api",
-           conf_file_name="glance_reg_conf",
-           service_path_root="usr_bin_dir",
-           service_path="%s/glance-api").run()
-
-
-@test(groups=["services.initialize"], depends_on_classes=[start_glance_api],
-      enabled=START_NOVA_NETWORK)
-def start_nova_network():
-    """Starts the Nova Network Service."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/nova-network",
-           extra_cmds=['--config-file='],
-           conf_file_name="nova_conf").run()
-
-
-@test(groups=["services.initialize"], enabled=START_SERVICES)
-def start_scheduler():
-    """Starts the Scheduler Service."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/nova-scheduler",
-           extra_cmds=['--config-file='],
-           conf_file_name="nova_conf").run()
-
-
-@test(groups=["services.initialize"],
-      depends_on_classes=[start_glance_api],
-      enabled=START_SERVICES)
-def start_compute():
-    """Starts the Nova Compute Service."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/nova-compute",
-           extra_cmds=['--config-file='],
-           conf_file_name="nova_conf").run()
-
-
-@test(groups=["services.initialize"], depends_on_classes=[start_scheduler],
-      enabled=START_SERVICES and USE_NOVA_VOLUME)
-def start_volume():
-    """Starts the Nova Compute Service."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/nova-volume",
-           extra_cmds=['--config-file='],
-           conf_file_name="nova_conf").run()
-
-
-@test(groups=["services.initialize"],
-      depends_on_classes=[start_glance_api, start_nova_network, start_compute,
-                          start_volume],
-      enabled=START_SERVICES)
-def start_nova_api():
-    """Starts the Nova Compute Service."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/nova-api",
-           extra_cmds=['--config-file='],
-           conf_file_name="nova_conf").run()
-
-
-@test(groups=["services.initialize"],
-      depends_on_classes=[start_nova_api],
-      enabled=START_SERVICES)
-def start_trove_api():
-    """Starts the Trove Service."""
-    Daemon(service_path_root="usr_bin_dir",
-           service_path="%s/trove-api",
-           extra_cmds=['--config-file='],
-           conf_file_name="trove_conf").run()
