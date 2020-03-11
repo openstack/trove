@@ -181,6 +181,7 @@ class Coroutine(object):
         self.my_sem.release()
         self.caller_sem.acquire()  # Wait for it to finish.
 
+
 # Main global thread to run.
 main_greenlet = None
 
@@ -238,7 +239,7 @@ def fake_poll_until(retriever, condition=lambda value: value,
         fake_sleep(sleep_time)
         slept_time += sleep_time
         if time_out and slept_time >= time_out:
-                raise exception.PollTimeOut()
+            raise exception.PollTimeOut()
 
 
 def run_main(func):

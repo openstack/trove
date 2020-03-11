@@ -451,7 +451,7 @@ class DB2Admin(object):
                         system.CREATE_USER_COMMAND % {
                             'login': user.name, 'login': user.name,
                             'passwd': user.password}, shell=True)
-                except exception.ProcessExecutionError as pe:
+                except exception.ProcessExecutionError:
                     LOG.exception("Error creating user: %s.", user.name)
                     continue
 
@@ -495,7 +495,7 @@ class DB2Admin(object):
                 LOG.debug("Revoked access for user:%(user)s on "
                           "database:%(db)s.",
                           {'user': userName, 'db': mydb.name})
-            except exception.ProcessExecutionError as pe:
+            except exception.ProcessExecutionError:
                 LOG.debug("Error occurred while revoking access to %s.",
                           mydb.name)
             try:

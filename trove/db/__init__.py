@@ -85,4 +85,5 @@ class Queryable(object):
         return lambda model, **conditions: Query(
             model, query_func=getattr(get_db_api(), item), **conditions)
 
+
 db_query = Queryable()

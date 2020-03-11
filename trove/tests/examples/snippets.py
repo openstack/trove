@@ -183,35 +183,35 @@ def make_client(user):
 
 def write_snippet(get_replace_list, client, name, url, method, status, reason,
                   func, *func_args):
-        """
-        'name' is the name of the file, while 'url,' 'method,' 'status,'
-        and 'reason' are expected values that are asserted against.
-        If func_args is present, it is a list of lists, each one of which
-        is passed as the *args to the two invocations of "func".
-        """
-        func_args = func_args or []
-        snippet_writer = SnippetWriter(conf, get_replace_list)
-        results = []
-        client.client.snippet_writer = snippet_writer
-        client.client.name = name
-        args = func_args
-        result = func(client, *args)
+    """
+    'name' is the name of the file, while 'url,' 'method,' 'status,'
+    and 'reason' are expected values that are asserted against.
+    If func_args is present, it is a list of lists, each one of which
+    is passed as the *args to the two invocations of "func".
+    """
+    func_args = func_args or []
+    snippet_writer = SnippetWriter(conf, get_replace_list)
+    results = []
+    client.client.snippet_writer = snippet_writer
+    client.client.name = name
+    args = func_args
+    result = func(client, *args)
 
-        # Now write the snippet (if this happens earlier we can't replace
-        # data such as the instance ID).
-        client.client.write_snippet()
-        with Check() as check:
-            check.equal(client.client.old_info['url'], url)
-            check.equal(client.client.old_info['method'], method)
-            check.equal(client.client.old_info['response_headers'].status,
-                        status)
-            check.equal(client.client.old_info['response_headers'].reason,
-                        reason)
-        results.append(result)
-        # To prevent this from writing a snippet somewhere else...
-        client.client.name = "junk"
+    # Now write the snippet (if this happens earlier we can't replace
+    # data such as the instance ID).
+    client.client.write_snippet()
+    with Check() as check:
+        check.equal(client.client.old_info['url'], url)
+        check.equal(client.client.old_info['method'], method)
+        check.equal(client.client.old_info['response_headers'].status,
+                    status)
+        check.equal(client.client.old_info['response_headers'].reason,
+                    reason)
+    results.append(result)
+    # To prevent this from writing a snippet somewhere else...
+    client.client.name = "junk"
 
-        return results
+    return results
 
 
 JSON_INDEX = 0

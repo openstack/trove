@@ -92,9 +92,9 @@ class FakeGuest(object):
         LOG.debug("Updating attributes")
         self._check_username(username)
         if (username, hostname) not in self.users:
-                raise rd_exception.UserNotFound(
-                    "User %s@%s cannot be found on the instance."
-                    % (username, hostname))
+            raise rd_exception.UserNotFound(
+                "User %s@%s cannot be found on the instance."
+                % (username, hostname))
         new_name = user_attrs.get('name')
         new_host = user_attrs.get('host')
         new_password = user_attrs.get('password')

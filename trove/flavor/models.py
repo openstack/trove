@@ -34,7 +34,7 @@ class Flavor(object):
             try:
                 client = create_nova_client(context)
                 self.flavor = client.flavors.get(flavor_id)
-            except nova_exceptions.NotFound as e:
+            except nova_exceptions.NotFound:
                 raise exception.NotFound(uuid=flavor_id)
             except nova_exceptions.ClientException as e:
                 raise exception.TroveError(str(e))

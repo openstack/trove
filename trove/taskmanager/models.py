@@ -566,13 +566,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         backup_info = None
         if backup_id is not None:
-                backup = bkup_models.Backup.get_by_id(self.context, backup_id)
-                backup_info = {'id': backup_id,
-                               'instance_id': backup.instance_id,
-                               'location': backup.location,
-                               'type': backup.backup_type,
-                               'checksum': backup.checksum,
-                               }
+            backup = bkup_models.Backup.get_by_id(self.context, backup_id)
+            backup_info = {'id': backup_id,
+                           'instance_id': backup.instance_id,
+                           'location': backup.location,
+                           'type': backup.backup_type,
+                           'checksum': backup.checksum,
+                           }
         self._guest_prepare(flavor['ram'], volume_info,
                             packages, databases, users, backup_info,
                             config.config_contents, root_password,

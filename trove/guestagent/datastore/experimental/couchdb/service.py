@@ -229,7 +229,7 @@ class CouchDBAdmin(object):
                          'username': user.name,
                          'password': user.password},
                         shell=True)
-                except exception.ProcessExecutionError as pe:
+                except exception.ProcessExecutionError:
                     LOG.exception("Error creating user: %s.", user.name)
 
                 for database in user.databases:

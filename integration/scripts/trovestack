@@ -188,8 +188,6 @@ function dump_env() {
         done
         exclaim "Dumping pip modules:"
         pip freeze | sort
-        exclaim "Dumping domain list:"
-        openstack --os-cloud=devstack-admin domain list
         exclaim "Dumping configuration completed"
         set -e
     fi
@@ -764,6 +762,10 @@ function cmd_test_init() {
 
     exclaim "Creating Test Flavors."
     add_test_flavors
+
+    exclaim "Re-installing python-troveclient from git"
+    pip3 uninstall -y python-troveclient
+    pip3 install -U git+https://opendev.org/openstack/python-troveclient@master#egg=python-troveclient
 }
 
 function cmd_build_image() {
@@ -1207,8 +1209,9 @@ function cmd_kick_start() {
     fi
 
     exclaim "Running kick-start for $DATASTORE_TYPE"
-    dump_env
     cmd_test_init "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
+
+    dump_env
 }
 
 # Start functional test. The guest image should be created and registered in

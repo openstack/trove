@@ -58,6 +58,7 @@ def build_jinja_environment():
     env.globals['min'] = min
     return env
 
+
 ENV = build_jinja_environment()
 
 

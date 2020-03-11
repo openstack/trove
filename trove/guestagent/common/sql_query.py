@@ -419,8 +419,8 @@ class SetServerVariable(object):
         else:
             return "SET GLOBAL %s=%s" % (self.key, self.value)
 
-# Miscellaneous queries that need no parameters.
 
+# Miscellaneous queries that need no parameters.
 FLUSH = "FLUSH PRIVILEGES;"
 ROOT_ENABLED = ("SELECT User FROM mysql.user "
                 "WHERE User = 'root' AND Host != 'localhost';")

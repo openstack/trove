@@ -64,7 +64,6 @@
     required-projects:
       - openstack/devstack-gate
       - openstack/diskimage-builder
-      - openstack/python-troveclient
       - openstack/tripleo-image-elements
       - openstack/trove
       - openstack/trove-dashboard
@@ -85,7 +84,6 @@
     required-projects:
       - openstack/tempest
       - openstack/diskimage-builder
-      - openstack/python-troveclient
       - openstack/tripleo-image-elements
       - openstack/trove
       - openstack/trove-dashboard
@@ -328,7 +326,6 @@
     parent: devstack-tempest
     timeout: 7800
     required-projects: &base_required_projects
-      - openstack/python-troveclient
       - openstack/trove
       - openstack/trove-tempest-plugin
       - openstack/tempest

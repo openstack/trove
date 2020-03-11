@@ -32,6 +32,6 @@ REDIS_PACKAGE = ''
 SERVICE_CANDIDATES = ['redis-server', 'redis']
 
 OS = get_os()
-if OS is 'redhat':
+if OS == 'redhat':
     REDIS_CONFIG = '/etc/redis.conf'
     REDIS_PACKAGE = 'redis'

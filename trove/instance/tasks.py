@@ -122,5 +122,6 @@ class InstanceTasks(object):
                                        'Build error: Port.',
                                        is_error=True)
 
+
 # Dissuade further additions at run-time.
 InstanceTask.__init__ = None
