@@ -447,20 +447,29 @@ function create_guest_image {
         return 0
     fi
 
-    echo "Starting to create guest image..."
-
-    TROVE_BRANCH=${TROVE_BRANCH} $DEST/trove/integration/scripts/trovestack \
-      build-image \
-      ${TROVE_DATASTORE_TYPE} \
-      ${TROVE_IMAGE_OS} \
-      ${TROVE_IMAGE_OS_RELEASE} \
-      true
-
     image_name="trove-datastore-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}-${TROVE_DATASTORE_TYPE}"
+    image_url_var="TROVE_NON_DEV_IMAGE_URL_${TROVE_DATASTORE_TYPE^^}"
+    image_url=`eval echo '$'"$image_url_var"`
+    mkdir -p $HOME/images
     image_file=$HOME/images/${image_name}.qcow2
+
+    if [[ -n ${image_url} ]]; then
+        echo "Downloading guest image from ${image_url}"
+        curl -sSL ${image_url} -o ${image_file}
+    else
+        echo "Starting to create guest image"
+
+        TROVE_BRANCH=${TROVE_BRANCH} $DEST/trove/integration/scripts/trovestack \
+          build-image \
+          ${TROVE_DATASTORE_TYPE} \
+          ${TROVE_IMAGE_OS} \
+          ${TROVE_IMAGE_OS_RELEASE} \
+          true
+    fi
+
     if [ ! -f ${image_file} ]; then
         echo "Image file was not found at ${image_file}"
-        return 1
+        exit 1
     fi
 
     echo "Add the image to glance"

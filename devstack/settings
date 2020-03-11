@@ -90,3 +90,4 @@ CELLSV2_SETUP=singleconductor
 
 # Enable or disable the Trove guest image build during devstack installation.
 TROVE_ENABLE_IMAGE_BUILD=${TROVE_ENABLE_IMAGE_BUILD:-"true"}
+TROVE_NON_DEV_IMAGE_URL_MYSQL=${TROVE_NON_DEV_IMAGE_URL_MYSQL:-""}

@@ -27,6 +27,8 @@
             voting: false
         - trove-tempest-ipv6-only:
             voting: false
+        - trove-functional-mysql-nondev:
+            voting: false
     gate:
       queue: trove
       jobs:
@@ -139,6 +141,18 @@
     vars:
       devstack_localrc:
         TROVE_RESIZE_TIME_OUT: 1800
+      trove_resize_time_out: 1800
+      trove_test_datastore: 'mysql'
+      trove_test_group: 'mysql'
+      trove_test_datastore_version: '5.7'
+
+- job:
+    name: trove-functional-mysql-nondev
+    parent: trove-devstack-base
+    vars:
+      devstack_localrc:
+        TROVE_RESIZE_TIME_OUT: 1800
+        TROVE_NON_DEV_IMAGE_URL_MYSQL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-xenial.qcow2
       trove_resize_time_out: 1800
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
