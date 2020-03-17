@@ -783,7 +783,9 @@ class BaseInstance(SimpleInstance):
         try:
             if self.volume_id:
                 volume = self.volume_client.volumes.get(self.volume_id)
-                if volume.status == "available":
+                if volume.status in ["available", "error"]:
+                    LOG.info("Deleting volume %s for instance %s",
+                             self.volume_id, self.id)
                     volume.delete()
         except Exception as e:
             LOG.warning("Failed to delete volume for instance %s, error: %s",

@@ -387,7 +387,7 @@ function setup_mgmt_network() {
 
     if [[ "$IP_VERSION" =~ 4.* ]]; then
         NEW_SUBNET_ID=$(create_mgmt_subnet_v4 ${PROJECT_ID} ${network_id} ${SUBNET_NAME} ${SUBNET_RANGE})
-        openstack router add subnet $ROUTER_ID $NEW_SUBNET_ID
+        # openstack router add subnet $ROUTER_ID $NEW_SUBNET_ID
     fi
     # Trove doesn't support IPv6 for now.
 #    if [[ "$IP_VERSION" =~ .*6 ]]; then
