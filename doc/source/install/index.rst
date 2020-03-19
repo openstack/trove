@@ -8,13 +8,13 @@ database engines.
 
 .. toctree::
 
-   apache-mod-wsgi.rst
    get_started.rst
+   apache-mod-wsgi.rst
    install-devstack.rst
    install-manual.rst
-   install-obs.rst
-   install-rdo.rst
    install-ubuntu.rst
+   install-redhat.rst
+   install-suse.rst
    dashboard.rst
    verify.rst
    next-steps.rst

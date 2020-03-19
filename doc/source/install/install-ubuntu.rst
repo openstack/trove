@@ -29,39 +29,7 @@ Install and configure components
 Finalize installation
 ---------------------
 
-1. Due to a bug in the Ubuntu packages, edit the service definition files
-   to use the correct configuration settings.
-
-   To do this, navigate to ``/etc/init`` and edit the following files
-   as described below:
-
-   ``trove-taskmanager.conf``
-
-   ``trove-conductor.conf``
-
-   (Note that, although they have the same names, these files are
-   in a different location and have different content than the similarly
-   named files you edited earlier in this procedure.)
-
-   In each file, find this line:
-
-   .. code-block:: ini
-
-      exec start-stop-daemon --start --chdir /var/lib/trove \
-         --chuid trove:trove --make-pidfile \
-         --pidfile /var/run/trove/trove-conductor.pid \
-         --exec /usr/bin/trove-conductor -- \
-         --config-file=/etc/trove/trove.conf ${DAEMON_ARGS}
-
-   Note that ``--config-file`` incorrectly points to ``trove.conf``.
-
-   In ``trove-taskmanager.conf``, edit ``config-file`` to point to
-   ``/etc/trove/trove-taskmanager.conf``.
-
-   In ``trove-conductor.conf``, edit ``config-file`` to point to
-   ``/etc/trove/trove-conductor.conf``.
-
-2. Restart the Database services:
+1. Restart the Database services:
 
    .. code-block:: console
 

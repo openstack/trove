@@ -1,11 +1,15 @@
-.. _install-rdo:
+.. _install-obs:
 
-Install and configure for Red Hat Enterprise Linux and CentOS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Install and configure for openSUSE and SUSE Linux Enterprise
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+
+    This guide is not tested since stable/train.
 
 This section describes how to install and configure the Database service
-for Red Hat Enterprise Linux 7 and CentOS 7.
+for openSUSE Leap 42.2 and SUSE Linux Enterprise Server 12 SP2.
 
 .. include:: common_prerequisites.txt
 
@@ -16,9 +20,16 @@ Install and configure components
 
    .. code-block:: console
 
-      # yum install openstack-trove python-troveclient
+      # zypper --quiet --non-interactive install python-oslo.db \
+        python-MySQL-python
+
+      # zypper --quiet --non-interactive install openstack-trove-api \
+        openstack-trove-taskmanager openstack-trove-conductor \
+        openstack-trove-guestagent
+
 
 .. include:: common_configure.txt
+
 
 Finalize installation
 ---------------------
@@ -35,3 +46,4 @@ the system boots:
    # systemctl start openstack-trove-api.service \
      openstack-trove-taskmanager.service \
      openstack-trove-conductor.service
+

@@ -1,98 +1,89 @@
-2. In the ``/etc/trove`` directory, edit the ``trove.conf`` file and
-   complete the following steps:
+2. In the ``/etc/trove`` directory, edit the ``trove.conf`` file, here is an example:
 
-   * Provide appropriate values for the following settings:
-
-     .. code-block:: ini
+    .. code-block:: ini
 
         [DEFAULT]
-        log_dir = /var/log/trove
-        trove_auth_url = http://controller/identity/v2.0
-        nova_compute_url = http://controller:8774/v2
-        cinder_url = http://controller:8776/v1
-        swift_url = http://controller:8080/v1/AUTH_
-        ...
-        [database]
-        connection = mysql+pymysql://trove:TROVE_DBPASS@controller/trove
-
-   * Configure the Database service to use the ``RabbitMQ`` message broker
-     by setting the following options in each file:
-
-     .. code-block:: ini
-
-        [DEFAULT]
-        ...
+        network_driver = trove.network.neutron.NeutronDriver
+        management_networks = ef7541ad-9599-4285-878a-e0ab62032b03
+        management_security_groups = d0d797f7-11d4-436e-89a3-ac8bca829f81
+        cinder_volume_type = lvmdriver-1
+        nova_keypair = trove-mgmt
+        default_datastore = mysql
+        taskmanager_manager = trove.taskmanager.manager.Manager
+        trove_api_workers = 5
+        transport_url = rabbit://stackrabbit:password@192.168.1.34:5672/
+        control_exchange = trove
         rpc_backend = rabbit
-        transport_url = rabbit://<rabbit_userid>:<rabbit_password>@<rabbit_host>:5672
+        reboot_time_out = 300
+        usage_timeout = 900
+        agent_call_high_timeout = 1200
+        use_syslog = False
+        debug = True
+
+        [keystone_authtoken]
+        memcached_servers = localhost:11211
+        cafile = /devstack/stack/data/ca-bundle.pem
+        project_domain_name = Default
+        project_name = service
+        user_domain_name = Default
+        password = password
+        username = trove
+        auth_url = http://192.168.1.34/identity
+        auth_type = password
+
+        [service_credentials]
+        auth_url = http://192.168.1.34/identity/v3
+        region_name = RegionOne
+        project_name = service
+        password = password
+        project_domain_name = Default
+        user_domain_name = Default
+        username = trove
+
+        [database]
+        connection = mysql+pymysql://root:password@127.0.0.1/trove?charset=utf8
+
+        [mariadb]
+        tcp_ports = 3306,4444,4567,4568
+
+        [mysql]
+        tcp_ports = 3306
+
+        [postgresql]
+        tcp_ports = 5432
 
 3. Verify that the ``api-paste.ini`` file is present in ``/etc/trove``.
 
    If the file is not present, you can get it from this
    `location <https://opendev.org/openstack/trove/raw/branch/master/etc/trove/api-paste.ini>`__.
 
-4. Edit the ``trove.conf`` file so it includes appropriate values for the
-   settings shown below:
+4. Edit the ``/etc/trove/trove-guestagent.conf`` file
+   so that future trove guests can connect to your OpenStack environment, here
+   is an example:
 
    .. code-block:: ini
 
       [DEFAULT]
-      auth_strategy = keystone
-      ...
-      # Config option for showing the IP address that nova doles out
-      add_addresses = True
-      network_label_regex = ^NETWORK_LABEL$
-      ...
-      api_paste_config = /etc/trove/api-paste.ini
-      ...
-      [keystone_authtoken]
-      ...
-      www_authenticate_uri = http://controller/identity
-      auth_url = http://controller/identity_admin
-      auth_type = password
-      project_domain_name = default
-      user_domain_name = default
+      log_file = trove-guestagent.log
+      log_dir = /var/log/trove/
+      ignore_users = os_admin
+      control_exchange = trove
+      transport_url = rabbit://stackrabbit:password@172.24.5.1:5672/
+      rpc_backend = rabbit
+      command_process_timeout = 60
+      use_syslog = False
+      debug = True
+
+      [service_credentials]
+      auth_url = http://192.168.1.34/identity/v3
+      region_name = RegionOne
       project_name = service
+      password = password
+      project_domain_name = Default
+      user_domain_name = Default
       username = trove
-      password = TROVE_PASS
 
-5. Edit the ``trove.conf`` file so it includes the required
-   settings to connect to the OpenStack Compute service as shown below.
-   Include ConfigDrive settings so that configuration is injected
-   into the Guest VM. And finally, if using Nova Network, set the
-   the network driver name and a regex which allows Projects to
-   launch Guests on any of their networks.
-
-   .. code-block:: ini
-
-      [DEFAULT]
-      ...
-      # Configuration options for talking to nova via the novaclient.
-      # These options are for an admin user in your keystone config.
-      # It proxy's the token received from the user to send to nova
-      # via this admin users creds,
-      # basically acting like the client via that proxy token.
-      nova_proxy_admin_user = admin
-      nova_proxy_admin_pass = ADMIN_PASS
-      nova_proxy_admin_tenant_name = service
-      taskmanager_manager = trove.taskmanager.manager.Manager
-
-      # Inject configuration into guest via ConfigDrive
-      use_nova_server_config_drive = True
-
-      # Set these if using Neutron Networking
-      network_driver=trove.network.neutron.NeutronDriver
-      network_label_regex=.*
-
-6. Edit the ``/etc/trove/trove-guestagent.conf`` file
-   so that future trove guests can connect to your OpenStack environment:
-
-   .. code-block:: ini
-
-      rabbit_host = controller
-      rabbit_password = RABBIT_PASS
-      trove_auth_url = http://controller/identity_admin/v2.0
-
-7. Populate the trove database you created earlier in this procedure:
+5. Populate the trove database you created earlier in this procedure:
 
    .. code-block:: console
 
@@ -104,4 +95,3 @@
    .. note::
 
       Ignore any deprecation messages in this output.
-

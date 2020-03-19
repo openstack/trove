@@ -29,11 +29,12 @@ This example is a high-level process flow for using Database services:
 #. The OpenStack end user deploys the Database service using the following
    steps:
 
-   #. Create a Database service instance using the :command:`trove create`
-      command.
-   #. Use the :command:`trove list` command to get the ID of the instance,
-      followed by the :command:`trove show` command to get the IP address of
-      it.
+   #. Create a Database service instance using the
+      ``openstack database instance create`` command.
+   #. Use the :command:`openstack database instance list` command to get the ID
+      of the instance, followed by the
+      :command:`openstack database instance show` command to get the IP address
+      of it.
    #. Access the Database service instance using typical database access
       commands. For example, with MySQL:
 
@@ -49,18 +50,27 @@ The Database service includes the following components:
   A CLI that communicates with the ``trove-api`` component.
 
 ``trove-api`` component
-  Provides an OpenStack-native RESTful API that supports JSON to
-  provision and manage Trove instances.
+  This component is responsible for providing the RESTful API. It talks to the
+  task manager for complex tasks, but it can also talk to the guest agent
+  directly to perform simple tasks, such as retrieving databases or users from
+  trove instance.
 
 ``trove-conductor`` service
-  Runs on the host, and receives messages from guest instances that
-  want to update information on the host.
+  The conductor component is responsible for updating the Trove backend
+  database with the information that the guest agent sends regarding the
+  instances. It eliminates the need for direct database access by all the guest
+  agents for updating information.
 
 ``trove-taskmanager`` service
-  Instruments the complex system flows that support provisioning
-  instances, managing the lifecycle of instances, and performing
-  operations on instances.
+  The task manager is the engine responsible for doing the majority of the
+  work. It is responsible for provisioning instances, managing the life cycle,
+  and performing different operations. The task manager normally sends common
+  commands to trove guest agent, which are of an abstract nature; it is the
+  responsibility of the guest agent to read them and issue database-specific
+  commands in order to execute them.
 
 ``trove-guestagent`` service
-  Runs within the guest instance. Manages and performs operations on
-  the database itself.
+  The guest agent runs inside the Nova instances that are used to run the
+  database engines. The agent listens to the messaging bus for the topic and is
+  responsible for actually translating and executing the commands that are sent
+  to it by the task manager component for the particular datastore.

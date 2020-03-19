@@ -150,28 +150,28 @@ Trove configuration
 There are several configuration files for Trove, you can find samples of the
 config files in ``etc/trove/`` of Trove repo:
 
-- api-paste.ini and trove.conf — For trove-api service
+- api-paste.ini — For trove-api service
+- trove.conf - For trove-api, trove-taskmanagerr, trove-conductor services.
 - trove-guestagent.conf — For trove-guestagent service
-- ``<datastore_manager>.cloudinit`` — Userdata for VMs during provisioning
+- ``<datastore_manager>.cloudinit`` — Userdata for trove instance during
+  provisioning
 
 Options in trove.conf
 ---------------------
 
-#.  Config service tenant model, change the values according to your own
+#.  Service tenant credentials, change the values according to your own
     environment.
 
     .. code-block:: ini
 
-        nova_proxy_admin_user = admin
-        nova_proxy_admin_pass = password
-        nova_proxy_admin_tenant_name = admin
-        nova_proxy_admin_tenant_id = f472127c03f6410899225e26a3c1d22c
-        nova_proxy_admin_user_domain_name = default
-        nova_proxy_admin_project_domain_name = default
-        remote_nova_client = trove.common.clients_admin.nova_client_trove_admin
-        remote_cinder_client = trove.common.clients_admin.cinder_client_trove_admin
-        remote_neutron_client = trove.common.clients_admin.neutron_client_trove_admin
-        os_region_name = RegionOne
+        [service_credentials]
+        auth_url = <Keystone service URL>
+        username = admin
+        password = password
+        user_domain_name = default
+        project_name = admin
+        project_domain_name = default
+        region_name = RegionOne
 
 #.  Management config options.
 
@@ -216,7 +216,7 @@ Create and register Trove guest image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To build Trove guest image, refer to
-`Build guest agent image <https://docs.openstack.org/trove/latest/admin/trovestack.html#build-guest-agent-image>`_
+`Build guest agent image <https://docs.openstack.org/trove/latest/admin/building_guest_images.html>`_
 
 Run Trove
 ~~~~~~~~~
