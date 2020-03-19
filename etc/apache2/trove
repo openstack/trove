@@ -13,7 +13,7 @@
 # under the License.
 
 # This is an example Apache2 configuration file for using Trove API
-through mod_wsgi
+# through mod_wsgi
 
 Listen 8779
 
