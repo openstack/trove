@@ -1,0 +1,4 @@
+---
+features:
+  - Add XFS disk format for database data volume, cloud admin can config
+    'ext3', 'ext4' or 'xfs' in ``volume_fstype`` option.
