@@ -50,6 +50,7 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
     HOST_IP=<your-host-ip-here>
 
     enable_plugin trove https://opendev.org/openstack/trove
+    enable_plugin trove-dashboard https://opendev.org/openstack/trove-dashboard
 
     LIBS_FROM_GIT+=,python-troveclient
     DATABASE_PASSWORD=password
@@ -70,6 +71,9 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
 
     # Pre-requisites
     ENABLED_SERVICES=rabbit,mysql,key
+
+    # Nova
+    enable_service horizon
 
     # Nova
     enable_service n-api
