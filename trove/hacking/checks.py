@@ -12,7 +12,9 @@
 
 import re
 
-import pep8
+import pycodestyle
+
+from hacking import core
 
 _all_log_levels = (
     'critical',
@@ -34,6 +36,7 @@ def _translation_is_not_expected(filename):
     return any(pat in filename for pat in ["/tests/"])
 
 
+@core.flake8ext
 def check_raised_localized_exceptions(logical_line, filename):
     """T103 - Untranslated exception message.
     :param logical_line: The logical line to check.
@@ -55,6 +58,7 @@ def check_raised_localized_exceptions(logical_line, filename):
             yield (logical_line.index(exception_msg), msg)
 
 
+@core.flake8ext
 def check_no_basestring(logical_line):
     """T104 - Don't use basestring, use six.string_types instead
        basestring is not supported by py3, using six.string_types to ensure
@@ -66,7 +70,8 @@ def check_no_basestring(logical_line):
         yield(0, msg)
 
 
-def no_translate_logs(logical_line, physical_line, filename):
+@core.flake8ext
+def no_translate_logs(physical_line, logical_line, filename):
     """T105 - Log messages shouldn't be translated from the
     Pike release.
     :param logical_line: The logical line to check.
@@ -79,7 +84,7 @@ def no_translate_logs(logical_line, physical_line, filename):
     if _translation_is_not_expected(filename):
         return
 
-    if pep8.noqa(physical_line):
+    if pycodestyle.noqa(physical_line):
         return
 
     msg = "T105: Log message shouldn't be translated."
@@ -90,6 +95,7 @@ def no_translate_logs(logical_line, physical_line, filename):
 asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
 
 
+@core.flake8ext
 def assert_raises_regexp(logical_line):
     """Check for usage of deprecated assertRaisesRegexp
 
@@ -99,10 +105,3 @@ def assert_raises_regexp(logical_line):
     if res:
         yield (0, "N335: assertRaisesRegex must be used instead "
                   "of assertRaisesRegexp")
-
-
-def factory(register):
-    register(check_raised_localized_exceptions)
-    register(check_no_basestring)
-    register(no_translate_logs)
-    register(assert_raises_regexp)

@@ -11,7 +11,7 @@
 #    under the License.
 
 import mock
-import pep8
+import pycodestyle
 import textwrap
 
 from trove.hacking import checks as tc
@@ -27,11 +27,6 @@ class HackingTestCase(trove_testtools.TestCase):
 
     def assertLineFails(self, func, *args):
         self.assertIsInstance(next(func(*args)), tuple)
-
-    def test_factory(self):
-        def check_callable(fn):
-            self.assertTrue(hasattr(fn, '__call__'))
-        self.assertIsNone(tc.factory(check_callable))
 
     def test_log_translations(self):
         all_log_levels = (
@@ -89,20 +84,20 @@ class HackingTestCase(trove_testtools.TestCase):
             0,
             len(list(tc.check_no_basestring("this basestring is good)"))))
 
-    # We are patching pep8 so that only the check under test is actually
+    # We are patching pycodestyle so that only the check under test is actually
     # installed.
-    @mock.patch('pep8._checks',
+    @mock.patch('pycodestyle._checks',
                 {'physical_line': {}, 'logical_line': {}, 'tree': {}})
     def _run_check(self, code, checker, filename=None):
-        pep8.register_check(checker)
+        pycodestyle.register_check(checker)
 
         lines = textwrap.dedent(code).strip().splitlines(True)
 
-        checker = pep8.Checker(filename=filename, lines=lines)
+        checker = pycodestyle.Checker(filename=filename, lines=lines)
         # NOTE(sdague): the standard reporter has printing to stdout
         # as a normal part of check_all, which bleeds through to the
         # test output stream in an unhelpful way. This blocks that printing.
-        with mock.patch('pep8.StandardReport.get_file_results'):
+        with mock.patch('pycodestyle.StandardReport.get_file_results'):
             checker.check_all()
         checker.report._deferred_print.sort()
         return checker.report._deferred_print
