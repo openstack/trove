@@ -71,10 +71,22 @@
             "type": "integer"
         },
         {
+            "name": "innodb_flush_method",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
             "name": "innodb_log_buffer_size",
             "restart_required": true,
             "max": 4294967295,
             "min": 262144,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_log_file_size",
+            "restart_required": true,
+            "max": 274877906944,
+            "min": 4194304,
             "type": "integer"
         },
         {
