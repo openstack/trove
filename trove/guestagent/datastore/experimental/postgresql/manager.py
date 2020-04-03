@@ -68,8 +68,7 @@ class Manager(manager.Manager):
     def configuration_manager(self):
         return self.app.configuration_manager
 
-    @property
-    def datastore_log_defs(self):
+    def get_datastore_log_defs(self):
         owner = self.app.pgsql_owner
         long_query_time = CONF.get(self.manager).get(
             'guest_log_long_query_time')

@@ -259,7 +259,7 @@ class ManagerTest(trove_testtools.TestCase):
 
     def assert_guest_log_status(self, original_status, new_status,
                                 expected_final_status):
-        gl_cache = self.manager.guest_log_cache
+        gl_cache = self.manager.get_guest_log_cache()
         gl_cache[self.log_name_sys]._status = original_status
         self.manager.set_guest_log_status(new_status, self.log_name_sys)
         assert_equal(gl_cache[self.log_name_sys].status, expected_final_status,

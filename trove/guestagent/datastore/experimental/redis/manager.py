@@ -53,8 +53,7 @@ class Manager(manager.Manager):
     def configuration_manager(self):
         return self._app.configuration_manager
 
-    @property
-    def datastore_log_defs(self):
+    def get_datastore_log_defs(self):
         logfile = self._app.get_logfile()
         if not logfile:
             return {}
