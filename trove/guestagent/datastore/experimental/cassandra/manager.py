@@ -65,8 +65,7 @@ class Manager(manager.Manager):
     def configuration_manager(self):
         return self.app.configuration_manager
 
-    @property
-    def datastore_log_defs(self):
+    def get_datastore_log_defs(self):
         system_log_file = self.validate_log_file(
             self.app.cassandra_system_log_file, self.app.cassandra_owner)
         return {

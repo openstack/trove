@@ -70,8 +70,7 @@ class MySqlManager(manager.Manager):
         return self.mysql_app(
             self.mysql_app_status.get()).configuration_manager
 
-    @property
-    def datastore_log_defs(self):
+    def get_datastore_log_defs(self):
         owner = 'mysql'
         datastore_dir = self.mysql_app.get_data_dir()
         server_section = configurations.MySQLConfParser.SERVER_CONF_SECTION
