@@ -1,53 +1,15 @@
 guest-agent:
   installtype: package
 build-essential:
-  installtype: source
+python3-all:
+python3-all-dev:
+python3-pip:
+python3-sqlalchemy:
+libxml2-dev:
+libxslt1-dev:
 libffi-dev:
-  installtype: source
 libssl-dev:
-  installtype: source
-python-dev:
-  installtype: source
-
-acl:
-acpid:
-apparmor:
-apparmor-utils:
-apt-transport-https:
-at:
-bash-completion:
-cloud-guest-utils:
-cloud-init:
-cron:
-curl:
-dbus:
-dkms:
-dmeventd:
-ethtool:
-gawk:
-ifenslave:
-ifupdown:
-iptables:
-iputils-tracepath:
-irqbalance:
-isc-dhcp-client:
-less:
-logrotate:
-lsof:
-net-tools:
-netbase:
-netcat-openbsd:
-open-vm-tools:
-  arch: i386, amd64
+libyaml-dev:
 openssh-client:
 openssh-server:
-pollinate:
-psmisc:
-rsyslog:
-socat:
-tcpdump:
-ubuntu-cloudimage-keyring:
-ureadahead:
-uuid-runtime:
-vim-tiny:
-vlan:
+rsync:

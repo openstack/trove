@@ -7,12 +7,11 @@
     - name: Build Trove guest image
       shell: >-
         ./trovestack build-image \
-          {{ datastore_type }} \
           {{ guest_os }} \
           {{ guest_os_release }} \
           {{ dev_mode }} \
           {{ guest_username }} \
-          {{ ansible_user_dir }}/images/trove-{{ branch }}-{{ datastore_type }}-{{ guest_os }}-{{ guest_os_release }}{{ image_suffix }}
+          {{ ansible_user_dir }}/images/trove-{{ branch }}-guest-{{ guest_os }}-{{ guest_os_release }}{{ image_suffix }}.qcow2
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/integration/scripts"
       tags:

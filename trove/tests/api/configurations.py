@@ -502,7 +502,7 @@ class ListConfigurations(ConfigurationsTestBase):
 
     @test(depends_on=[test_waiting_for_instance_in_restart_required])
     def test_restart_service_should_return_active(self):
-        # test that after restarting the instance it becomes active
+        """test_restart_service_should_return_active"""
         instance_info.dbaas.instances.restart(instance_info.id)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
@@ -513,14 +513,14 @@ class ListConfigurations(ConfigurationsTestBase):
             if instance.status in CONFIG.running_status:
                 return True
             else:
-                assert_equal("REBOOT", instance.status)
+                assert_true(instance.status in ['REBOOT', 'SHUTDOWN'])
                 return False
         poll_until(result_is_active)
 
     @test(depends_on=[test_restart_service_should_return_active])
     @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
-        # validate that the configuraiton was applied correctly to the instance
+        """test_get_configuration_details_from_instance_validation"""
         inst = instance_info.dbaas.instances.get(instance_info.id)
         configuration_id = inst.configuration['id']
         assert_not_equal(None, inst.configuration['id'])

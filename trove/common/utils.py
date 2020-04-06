@@ -185,7 +185,7 @@ class MethodInspector(object):
 
 
 def build_polling_task(retriever, condition=lambda value: value,
-                       sleep_time=1, time_out=0):
+                       sleep_time=1, time_out=0, initial_delay=0):
     """Run a function in a loop with backoff on error.
 
     The condition function runs based on the retriever function result.
@@ -197,7 +197,8 @@ def build_polling_task(retriever, condition=lambda value: value,
             raise loopingcall.LoopingCallDone(retvalue=obj)
 
     call = loopingcall.BackOffLoopingCall(f=poll_and_check)
-    return call.start(initial_delay=0, starting_interval=sleep_time,
+    return call.start(initial_delay=initial_delay,
+                      starting_interval=sleep_time,
                       max_interval=30, timeout=time_out)
 
 
@@ -210,7 +211,7 @@ def wait_for_task(polling_task):
 
 
 def poll_until(retriever, condition=lambda value: value,
-               sleep_time=3, time_out=0):
+               sleep_time=3, time_out=0, initial_delay=0):
     """Retrieves object until it passes condition, then returns it.
 
     If time_out_limit is passed in, PollTimeOut will be raised once that
@@ -218,7 +219,8 @@ def poll_until(retriever, condition=lambda value: value,
 
     """
     task = build_polling_task(retriever, condition=condition,
-                              sleep_time=sleep_time, time_out=time_out)
+                              sleep_time=sleep_time, time_out=time_out,
+                              initial_delay=initial_delay)
     return wait_for_task(task)
 
 

@@ -175,10 +175,10 @@ common_opts = [
                help="Maximum time (in seconds) to wait for Guest Agent "
                     "'quick' requests (such as retrieving a list of "
                     "users or databases)."),
-    cfg.IntOpt('agent_call_high_timeout', default=60 * 5,
+    cfg.IntOpt('agent_call_high_timeout', default=60 * 3,
                help="Maximum time (in seconds) to wait for Guest Agent 'slow' "
                     "requests (such as restarting the database)."),
-    cfg.IntOpt('agent_replication_snapshot_timeout', default=36000,
+    cfg.IntOpt('agent_replication_snapshot_timeout', default=60 * 30,
                help='Maximum time (in seconds) to wait for taking a Guest '
                     'Agent replication snapshot.'),
     cfg.IntOpt('command_process_timeout', default=30,
@@ -186,8 +186,9 @@ common_opts = [
                     'commands to complete.'),
     # The guest_id opt definition must match the one in cmd/guest.py
     cfg.StrOpt('guest_id', default=None, help="ID of the Guest Instance."),
-    cfg.IntOpt('state_change_wait_time', default=60 * 10,
-               help='Maximum time (in seconds) to wait for a state change.'),
+    cfg.IntOpt('state_change_wait_time', default=180,
+               help='Maximum time (in seconds) to wait for database state '
+                    'change.'),
     cfg.IntOpt('state_change_poll_time', default=3,
                help='Interval between state change poll requests (seconds).'),
     cfg.IntOpt('agent_heartbeat_time', default=10,
@@ -293,9 +294,11 @@ common_opts = [
                help='The region this service is located.'),
     cfg.StrOpt('backup_runner',
                default='trove.guestagent.backup.backup_types.InnoBackupEx',
-               help='Runner to use for backups.'),
+               help='Runner to use for backups.',
+               deprecated_for_removal=True),
     cfg.DictOpt('backup_runner_options', default={},
-                help='Additional options to be passed to the backup runner.'),
+                help='Additional options to be passed to the backup runner.',
+                deprecated_for_removal=True),
     cfg.BoolOpt('verify_swift_checksum_on_restore', default=True,
                 help='Enable verification of Swift checksum before starting '
                 'restore. Makes sure the checksum of original backup matches '
@@ -304,11 +307,12 @@ common_opts = [
                 help='Require the replica volume size to be greater than '
                 'or equal to the size of the master volume '
                 'during replica creation.'),
-    cfg.StrOpt('storage_strategy', default='SwiftStorage',
+    cfg.StrOpt('storage_strategy', default='swift',
                help="Default strategy to store backups."),
     cfg.StrOpt('storage_namespace',
                default='trove.common.strategies.storage.swift',
-               help='Namespace to load the default storage strategy from.'),
+               help='Namespace to load the default storage strategy from.',
+               deprecated_for_removal=True),
     cfg.StrOpt('backup_swift_container', default='database_backups',
                help='Swift container to put backups in.'),
     cfg.BoolOpt('backup_use_gzip_compression', default=True,
@@ -429,15 +433,12 @@ common_opts = [
     cfg.IntOpt('usage_timeout', default=60 * 30,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
-    cfg.IntOpt('restore_usage_timeout', default=36000,
+    cfg.IntOpt('restore_usage_timeout', default=60 * 60,
                help='Maximum time (in seconds) to wait for a Guest instance '
                     'restored from a backup to become active.'),
     cfg.IntOpt('cluster_usage_timeout', default=36000,
                help='Maximum time (in seconds) to wait for a cluster to '
                     'become active.'),
-    cfg.IntOpt('timeout_wait_for_service', default=120,
-               help='Maximum time (in seconds) to wait for a service to '
-                    'become alive.'),
     cfg.StrOpt('module_aes_cbc_key', default='module_aes_cbc_key',
                help='OpenSSL aes_cbc key for module encryption.'),
     cfg.ListOpt('module_types', default=['ping', 'new_relic_license'],
@@ -466,6 +467,10 @@ common_opts = [
                help='Key (OpenSSL aes_cbc) to encrypt instance keys in DB.'),
     cfg.StrOpt('instance_rpc_encr_key',
                help='Key (OpenSSL aes_cbc) for instance RPC encryption.'),
+    cfg.StrOpt('database_service_uid', default='1001',
+               help='The UID(GID) of database service user.'),
+    cfg.StrOpt('backup_docker_image', default='openstacktrove/db-backup:1.0.0',
+               help='The docker image used for backup and restore.'),
 ]
 
 
@@ -544,7 +549,7 @@ mysql_opts = [
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
+    cfg.StrOpt('backup_strategy', default='innobackupex',
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
@@ -564,28 +569,10 @@ mysql_opts = [
     cfg.IntOpt('usage_timeout', default=400,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.mysql_impl',
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.mysql_impl',
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.DictOpt('backup_incremental_strategy',
-                default={'InnoBackupEx': 'InnoBackupExIncremental'},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental backup, the runner will use the default full '
-                'backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for mysql.'),
@@ -611,6 +598,10 @@ mysql_opts = [
                help='Character length of generated passwords.',
                deprecated_name='default_password_length',
                deprecated_group='DEFAULT'),
+    cfg.StrOpt(
+        'docker_image', default='mysql',
+        help='Database docker image.'
+    )
 ]
 
 # Percona
@@ -653,28 +644,10 @@ percona_opts = [
     cfg.IntOpt('usage_timeout', default=450,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.mysql_impl',
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.mysql_impl',
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.DictOpt('backup_incremental_strategy',
-                default={'InnoBackupEx': 'InnoBackupExIncremental'},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental backup, the runner will use the default full '
-                'backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for percona.'),
@@ -739,22 +712,10 @@ pxc_opts = [
     cfg.IntOpt('usage_timeout', default=450,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.mysql_impl',
-               help='Namespace to load backup strategies from.'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.mysql_impl',
-               help='Namespace to load restore strategies from.'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.DictOpt('backup_incremental_strategy',
-                default={'InnoBackupEx': 'InnoBackupExIncremental'},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental backup, the runner will use the default full '
-                'backup.'),
     cfg.ListOpt('ignore_users', default=['os_admin', 'root', 'clusterrepuser'],
                 help='Users to exclude when listing users.'),
     cfg.ListOpt('ignore_dbs',
@@ -818,12 +779,6 @@ redis_opts = [
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default='RedisSyncReplication',
                help='Default strategy for replication.'),
     cfg.StrOpt('replication_namespace',
@@ -837,18 +792,6 @@ redis_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.StrOpt('backup_namespace',
-               default="trove.guestagent.strategies.backup.experimental."
-                       "redis_impl",
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default="trove.guestagent.strategies.restore.experimental."
-                       "redis_impl",
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
     cfg.StrOpt('api_strategy',
@@ -893,12 +836,6 @@ cassandra_opts = [
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental strategy based on the default backup '
-                'strategy. For strategies that do not implement incremental '
-                'backups, the runner performs full backup instead.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('backup_strategy', default="NodetoolSnapshot",
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
@@ -912,18 +849,6 @@ cassandra_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.StrOpt('backup_namespace',
-               default="trove.guestagent.strategies.backup.experimental."
-               "cassandra_impl",
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default="trove.guestagent.strategies.restore.experimental."
-               "cassandra_impl",
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for Cassandra.'),
@@ -1002,12 +927,6 @@ couchbase_opts = [
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
     cfg.StrOpt('mount_point', default='/var/lib/couchbase',
@@ -1018,18 +937,6 @@ couchbase_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.experimental.'
-               'couchbase_impl',
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.experimental.'
-               'couchbase_impl',
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
@@ -1066,12 +973,6 @@ mongodb_opts = [
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
     cfg.StrOpt('mount_point', default='/var/lib/mongodb',
@@ -1109,18 +1010,6 @@ mongodb_opts = [
                'mongodb.guestagent.MongoDbGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.experimental.'
-                       'mongo_impl',
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.experimental.'
-                       'mongo_impl',
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.PortOpt('mongodb_port', default=27017,
                 help='Port for mongod and mongos instances.'),
     cfg.PortOpt('configsvr_port', default=27019,
@@ -1164,11 +1053,6 @@ postgresql_opts = [
                 help='The TCP port the server listens on.'),
     cfg.StrOpt('backup_strategy', default='PgBaseBackup',
                help='Default strategy to perform backups.'),
-    cfg.DictOpt('backup_incremental_strategy',
-                default={'PgBaseBackup': 'PgBaseBackupIncremental'},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.'),
     cfg.StrOpt('replication_strategy',
                default='PostgresqlReplicationStreaming',
                help='Default strategy for replication.'),
@@ -1188,14 +1072,6 @@ postgresql_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.experimental.'
-               'postgresql_impl',
-               help='Namespace to load backup strategies from.'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.experimental.'
-               'postgresql_impl',
-               help='Namespace to load restore strategies from.'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb'),
@@ -1248,16 +1124,6 @@ couchdb_opts = [
                help='Default strategy to perform backups.'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
-    cfg.StrOpt('backup_namespace', default='trove.guestagent.strategies'
-               '.backup.experimental.couchdb_impl',
-               help='Namespace to load backup strategies from.'),
-    cfg.StrOpt('restore_namespace', default='trove.guestagent.strategies'
-               '.restore.experimental.couchdb_impl',
-               help='Namespace to load restore strategies from.'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.'),
     cfg.BoolOpt('root_on_create', default=False,
                 help='Enable the automatic creation of the root user for the '
                 'service during instance-create. The generated password for '
@@ -1303,10 +1169,6 @@ vertica_opts = [
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default=None,
                help='Default strategy to perform backups.'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
     cfg.StrOpt('mount_point', default='/var/lib/vertica',
@@ -1317,9 +1179,11 @@ vertica_opts = [
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
     cfg.StrOpt('backup_namespace', default=None,
-               help='Namespace to load backup strategies from.'),
+               help='Namespace to load backup strategies from.',
+               deprecated_for_removal=True),
     cfg.StrOpt('restore_namespace', default=None,
-               help='Namespace to load restore strategies from.'),
+               help='Namespace to load restore strategies from.',
+               deprecated_for_removal=True),
     cfg.IntOpt('readahead_size', default=2048,
                help='Size(MB) to be set as readahead_size for data volume'),
     cfg.BoolOpt('cluster_support', default=True,
@@ -1387,22 +1251,6 @@ db2_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.experimental.'
-                       'db2_impl',
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.experimental.'
-                       'db2_impl',
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.'),
     cfg.ListOpt('ignore_users', default=['PUBLIC', 'DB2INST1']),
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
@@ -1432,21 +1280,14 @@ mariadb_opts = [
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.experimental'
-                       '.mariadb_impl',
-               help='Namespace to load backup strategies from.',
-               deprecated_name='backup_namespace',
-               deprecated_group='DEFAULT'),
-    cfg.StrOpt('backup_strategy', default='MariaBackup',
+    cfg.StrOpt('backup_strategy', default='mariabackup',
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default='MariaDBGTIDReplication',
                help='Default strategy for replication.'),
     cfg.StrOpt('replication_namespace',
-               default='trove.guestagent.strategies.replication.experimental'
-               '.mariadb_gtid',
+               default='trove.guestagent.strategies.replication.mariadb_gtid',
                help='Namespace to load replication strategies from.'),
     cfg.StrOpt('mount_point', default='/var/lib/mysql',
                help="Filesystem path for mounting "
@@ -1459,25 +1300,10 @@ mariadb_opts = [
     cfg.IntOpt('usage_timeout', default=400,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.experimental'
-                       '.mariadb_impl',
-               help='Namespace to load restore strategies from.',
-               deprecated_name='restore_namespace',
-               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.DictOpt('backup_incremental_strategy',
-                default={'MariaBackup':
-                         'MariaBackupIncremental'},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental backup, the runner will use the default full '
-                'backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for mysql.'),
@@ -1521,6 +1347,10 @@ mariadb_opts = [
                help='Character length of generated passwords.',
                deprecated_name='default_password_length',
                deprecated_group='DEFAULT'),
+    cfg.StrOpt(
+        'docker_image', default='mariadb',
+        help='Database docker image.'
+    )
 ]
 
 # RPC version groups

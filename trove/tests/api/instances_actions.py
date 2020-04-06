@@ -158,17 +158,23 @@ class ActionTestBase(object):
             self.instance_id,
             ip_address=self.instance_mgmt_address
         )
-        cmd = "sudo ps acux | grep mysqld " \
-              "| grep -v mysqld_safe | awk '{print $2}'"
+        container_exist_cmd = 'sudo docker ps -q'
+        pid_cmd = "sudo docker inspect database -f '{{.State.Pid}}'"
 
         try:
-            stdout = server.execute(cmd)
+            server.execute(container_exist_cmd)
+        except Exception as err:
+            asserts.fail("Failed to execute command: %s, error: %s" %
+                         (container_exist_cmd, str(err)))
+
+        try:
+            stdout = server.execute(pid_cmd)
             return int(stdout)
         except ValueError:
             return None
-        except Exception as e:
+        except Exception as err:
             asserts.fail("Failed to execute command: %s, error: %s" %
-                         (cmd, str(e)))
+                         (pid_cmd, str(err)))
 
     def log_current_users(self):
         users = self.dbaas.users.list(self.instance_id)
@@ -469,8 +475,7 @@ class ResizeInstanceTest(ActionTestBase):
         self.wait_for_resize()
 
     @test(depends_on=[test_instance_returns_to_active_after_resize,
-                      test_status_changed_to_resize],
-          groups=["dbaas.usage"])
+                      test_status_changed_to_resize])
     def test_resize_instance_usage_event_sent(self):
         expected = self._build_expected_msg()
         expected['old_instance_size'] = self.old_dbaas_flavor.ram
@@ -525,18 +530,20 @@ class ResizeInstanceVolumeTest(ActionTestBase):
     @test
     @time_out(60)
     def test_volume_resize(self):
+        """test_volume_resize"""
         instance_info.dbaas.instances.resize_volume(instance_info.id,
                                                     self.new_volume_size)
 
     @test(depends_on=[test_volume_resize])
     @time_out(300)
     def test_volume_resize_success(self):
+        """test_volume_resize_success"""
 
         def check_resize_status():
             instance = instance_info.dbaas.instances.get(instance_info.id)
             if instance.status in CONFIG.running_status:
                 return True
-            elif instance.status == "RESIZE":
+            elif instance.status in ["RESIZE", "SHUTDOWN"]:
                 return False
             else:
                 asserts.fail("Status should not be %s" % instance.status)
@@ -547,6 +554,7 @@ class ResizeInstanceVolumeTest(ActionTestBase):
 
     @test(depends_on=[test_volume_resize_success])
     def test_volume_filesystem_resize_success(self):
+        """test_volume_filesystem_resize_success"""
         # The get_volume_filesystem_size is a mgmt call through the guestagent
         # and the volume resize occurs through the fake nova-volume.
         # Currently the guestagent fakes don't have access to the nova fakes so
@@ -560,8 +568,9 @@ class ResizeInstanceVolumeTest(ActionTestBase):
         # cinder volume but it should round to it. (e.g. round(1.9) == 2)
         asserts.assert_equal(round(new_volume_fs_size), self.new_volume_size)
 
-    @test(depends_on=[test_volume_resize_success], groups=["dbaas.usage"])
+    @test(depends_on=[test_volume_resize_success])
     def test_resize_volume_usage_event_sent(self):
+        """test_resize_volume_usage_event_sent"""
         expected = self._build_expected_msg()
         expected['volume_size'] = self.new_volume_size
         expected['old_volume_size'] = self.old_volume_size
@@ -569,9 +578,9 @@ class ResizeInstanceVolumeTest(ActionTestBase):
                                              'trove.instance.modify_volume',
                                              **expected)
 
-    @test
-    @time_out(300)
+    @test(depends_on=[test_volume_resize_success])
     def test_volume_resize_success_databases(self):
+        """test_volume_resize_success_databases"""
         databases = instance_info.dbaas.databases.list(instance_info.id)
         db_list = []
         for database in databases:

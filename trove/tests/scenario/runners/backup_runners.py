@@ -26,7 +26,7 @@ from trove.tests.scenario.runners.test_runners import TestRunner
 class BackupRunner(TestRunner):
 
     def __init__(self):
-        self.TIMEOUT_BACKUP_CREATE = 60 * 30
+        self.TIMEOUT_BACKUP_CREATE = 60 * 60
         self.TIMEOUT_BACKUP_DELETE = 120
 
         super(BackupRunner, self).__init__(timeout=self.TIMEOUT_BACKUP_CREATE)
@@ -357,7 +357,7 @@ class BackupRunner(TestRunner):
         self.assert_verify_backup_data(self.restore_inc_1_host, DataType.tiny)
 
     def run_verify_databases_in_restored_inc_1_instance(self):
-        self.assert_verify_backup_databases(self.restore_instance_id,
+        self.assert_verify_backup_databases(self.restore_inc_1_instance_id,
                                             self.databases_before_backup)
 
     def assert_verify_backup_databases(self, instance_id, expected_databases):

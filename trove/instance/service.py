@@ -412,7 +412,6 @@ class InstanceController(wsgi.Controller):
 
     def _modify_instance(self, context, req, instance, **kwargs):
         if 'detach_replica' in kwargs and kwargs['detach_replica']:
-            LOG.debug("Detaching replica from source.")
             context.notification = notification.DBaaSInstanceDetach(
                 context, request=req)
             with StartNotification(context, instance_id=instance.id):

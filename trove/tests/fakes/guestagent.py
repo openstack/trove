@@ -269,7 +269,7 @@ class FakeGuest(object):
         time.sleep(2)
         self._set_task_status('HEALTHY')
 
-    def stop_db(self, do_not_start_on_reboot=False):
+    def stop_db(self):
         self._set_task_status('SHUTDOWN')
 
     def get_volume_info(self):

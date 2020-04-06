@@ -1,15 +1,16 @@
 [Unit]
-Description=OpenStack Trove Guest Agent
+Description=OpenStack Trove Guest Agent Service
 After=network.target syslog.service
 Wants=syslog.service
 
 [Service]
 User=GUEST_USERNAME
 Group=GUEST_USERNAME
-ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove/conf.d"
-ExecStart=/usr/local/bin/guest-agent --config-dir=/etc/trove/conf.d
 KillMode=mixed
 Restart=always
+
+ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove /var/log/trove/"
+ExecStart=/usr/local/bin/guest-agent --config-dir=/etc/trove/conf.d
 
 [Install]
 WantedBy=multi-user.target

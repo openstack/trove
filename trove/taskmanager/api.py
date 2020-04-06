@@ -193,7 +193,8 @@ class API(object):
                         availability_zone=None, root_password=None,
                         nics=None, overrides=None, slave_of_id=None,
                         cluster_config=None, volume_type=None,
-                        modules=None, locality=None, access=None):
+                        modules=None, locality=None, access=None,
+                        ds_version=None):
 
         LOG.debug("Making async call to create instance %s ", instance_id)
         version = self.API_BASE_VERSION
@@ -214,7 +215,8 @@ class API(object):
                    slave_of_id=slave_of_id,
                    cluster_config=cluster_config,
                    volume_type=volume_type,
-                   modules=modules, locality=locality, access=access)
+                   modules=modules, locality=locality, access=access,
+                   ds_version=ds_version)
 
     def create_cluster(self, cluster_id):
         LOG.debug("Making async call to create cluster %s ", cluster_id)

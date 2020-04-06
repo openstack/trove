@@ -322,7 +322,7 @@ Command examples:
     # Use 5.7.29 as the default datastore version for 'mysql'
     trove-manage datastore_update mysql 5.7.29
     # Register configuration parameters for 5.7.29 version of datastore 'mysql'
-    trove-manage db_load_datastore_config_parameters mysql 5.7.29 $workdir/trove/trove/templates/mysql/validation-rules.json
+    trove-manage db_load_datastore_config_parameters mysql 5.7.29 ${trove_repo_dir}}/trove/templates/mysql/validation-rules.json
 
 
 Quota Management

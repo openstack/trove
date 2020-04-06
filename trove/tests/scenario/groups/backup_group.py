@@ -232,22 +232,6 @@ class BackupInstCreateGroup(TestGroup):
 
 
 @test(depends_on_classes=[BackupInstCreateGroup],
-      groups=[GROUP, groups.BACKUP_INC_INST,
-              groups.BACKUP_INC_INST_CREATE])
-class BackupIncInstCreateGroup(TestGroup):
-    """Test Backup Incremental Instance Create functionality."""
-
-    def __init__(self):
-        super(BackupIncInstCreateGroup, self).__init__(
-            BackupRunnerFactory.instance())
-
-    @test
-    def restore_from_inc_1_backup(self):
-        """Check that restoring an instance from inc 1 backup starts."""
-        self.test_runner.run_restore_from_inc_1_backup()
-
-
-@test(depends_on_classes=[BackupIncInstCreateGroup],
       groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_CREATE_WAIT])
 class BackupInstCreateWaitGroup(TestGroup):
     """Test Backup Instance Create completes."""
@@ -273,6 +257,52 @@ class BackupInstCreateWaitGroup(TestGroup):
 
 
 @test(depends_on_classes=[BackupInstCreateWaitGroup],
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_DELETE])
+class BackupInstDeleteGroup(TestGroup):
+    """Test Backup Instance Delete functionality."""
+
+    def __init__(self):
+        super(BackupInstDeleteGroup, self).__init__(
+            BackupRunnerFactory.instance())
+
+    @test
+    def delete_restored_instance(self):
+        """Test deleting the restored instance."""
+        self.test_runner.run_delete_restored_instance()
+
+
+@test(depends_on_classes=[BackupInstDeleteGroup],
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_DELETE_WAIT])
+class BackupInstDeleteWaitGroup(TestGroup):
+    """Test Backup Instance Delete completes."""
+
+    def __init__(self):
+        super(BackupInstDeleteWaitGroup, self).__init__(
+            BackupRunnerFactory.instance())
+
+    @test
+    def wait_for_restored_instance_delete(self):
+        """Wait until deleting the restored instance completes."""
+        self.test_runner.run_wait_for_restored_instance_delete()
+
+
+@test(depends_on_classes=[BackupInstDeleteWaitGroup],
+      groups=[GROUP, groups.BACKUP_INC_INST,
+              groups.BACKUP_INC_INST_CREATE])
+class BackupIncInstCreateGroup(TestGroup):
+    """Test Backup Incremental Instance Create functionality."""
+
+    def __init__(self):
+        super(BackupIncInstCreateGroup, self).__init__(
+            BackupRunnerFactory.instance())
+
+    @test
+    def restore_from_inc_1_backup(self):
+        """Check that restoring an instance from inc 1 backup starts."""
+        self.test_runner.run_restore_from_inc_1_backup()
+
+
+@test(depends_on_classes=[BackupIncInstCreateGroup],
       groups=[GROUP, groups.BACKUP_INC_INST,
               groups.BACKUP_INC_INST_CREATE_WAIT])
 class BackupIncInstCreateWaitGroup(TestGroup):
@@ -299,21 +329,6 @@ class BackupIncInstCreateWaitGroup(TestGroup):
 
 
 @test(depends_on_classes=[BackupIncInstCreateWaitGroup],
-      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_DELETE])
-class BackupInstDeleteGroup(TestGroup):
-    """Test Backup Instance Delete functionality."""
-
-    def __init__(self):
-        super(BackupInstDeleteGroup, self).__init__(
-            BackupRunnerFactory.instance())
-
-    @test
-    def delete_restored_instance(self):
-        """Test deleting the restored instance."""
-        self.test_runner.run_delete_restored_instance()
-
-
-@test(depends_on_classes=[BackupInstDeleteGroup],
       groups=[GROUP, groups.BACKUP_INC_INST,
               groups.BACKUP_INC_INST_DELETE])
 class BackupIncInstDeleteGroup(TestGroup):
@@ -330,21 +345,6 @@ class BackupIncInstDeleteGroup(TestGroup):
 
 
 @test(depends_on_classes=[BackupIncInstDeleteGroup],
-      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_DELETE_WAIT])
-class BackupInstDeleteWaitGroup(TestGroup):
-    """Test Backup Instance Delete completes."""
-
-    def __init__(self):
-        super(BackupInstDeleteWaitGroup, self).__init__(
-            BackupRunnerFactory.instance())
-
-    @test
-    def wait_for_restored_instance_delete(self):
-        """Wait until deleting the restored instance completes."""
-        self.test_runner.run_wait_for_restored_instance_delete()
-
-
-@test(depends_on_classes=[BackupInstDeleteWaitGroup],
       groups=[GROUP, groups.BACKUP_INC_INST,
               groups.BACKUP_INC_INST_DELETE_WAIT])
 class BackupIncInstDeleteWaitGroup(TestGroup):

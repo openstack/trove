@@ -14,15 +14,14 @@
         - openstack-tox-pylint
         - trove-tox-bandit-baseline:
             voting: false
-        - trove-tempest:
+        - trove-tempest
+        - trove-functional-mysql:
             voting: false
-        - trove-functional-mysql
-        - trove-scenario-mysql-single
-        - trove-scenario-mysql-multi
-        - trove-scenario-mariadb-single
-        - trove-scenario-postgresql-single:
+        - trove-scenario-mysql-single:
             voting: false
-        - trove-scenario-postgresql-multi:
+        - trove-scenario-mysql-multi:
+            voting: false
+        - trove-scenario-mariadb-single:
             voting: false
         - trove-scenario-mariadb-multi:
             voting: false
@@ -34,9 +33,12 @@
       queue: trove
       jobs:
         - openstack-tox-pylint
-        - trove-functional-mysql
-        - trove-scenario-mysql-single
-        - trove-scenario-mysql-multi
+        - trove-functional-mysql:
+            voting: false
+        - trove-scenario-mysql-single:
+            voting: false
+        - trove-scenario-mysql-multi:
+            voting: false
     experimental:
       jobs:
         - trove-grenade
@@ -145,7 +147,7 @@
       trove_resize_time_out: 1800
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
-      trove_test_datastore_version: '5.7'
+      trove_test_datastore_version: '5.7.29'
 
 - job:
     name: trove-functional-mysql-nondev
@@ -153,11 +155,11 @@
     vars:
       devstack_localrc:
         TROVE_RESIZE_TIME_OUT: 1800
-        TROVE_NON_DEV_IMAGE_URL_MYSQL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-xenial.qcow2
+        TROVE_NON_DEV_IMAGE_URL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-xenial.qcow2
       trove_resize_time_out: 1800
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
-      trove_test_datastore_version: '5.7'
+      trove_test_datastore_version: '5.7.29'
 
 - job:
     name: trove-grenade
@@ -212,7 +214,7 @@
     vars:
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-single
-      trove_test_datastore_version: 10.4
+      trove_test_datastore_version: 10.4.12
       devstack_localrc:
         TROVE_ENABLE_IMAGE_BUILD: false
 
@@ -222,7 +224,7 @@
     vars:
       trove_test_datastore: mariadb
       trove_test_group: mariadb-supported-multi
-      trove_test_datastore_version: 10.4
+      trove_test_datastore_version: 10.4.12
       devstack_localrc:
         TROVE_ENABLE_IMAGE_BUILD: false
 
@@ -232,7 +234,7 @@
     vars:
       trove_test_datastore: mysql
       trove_test_group: mysql-supported-single
-      trove_test_datastore_version: 5.7
+      trove_test_datastore_version: 5.7.29
 
 - job:
     name: trove-scenario-mysql-multi
@@ -240,7 +242,7 @@
     vars:
       trove_test_datastore: mysql
       trove_test_group: mysql-supported-multi
-      trove_test_datastore_version: 5.7
+      trove_test_datastore_version: 5.7.29
 
 - job:
     name: trove-scenario-percona-multi

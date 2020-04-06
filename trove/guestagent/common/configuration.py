@@ -16,11 +16,15 @@
 import abc
 import os
 import re
+
+from oslo_log import log as logging
 import six
 
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
+
+LOG = logging.getLogger(__name__)
 
 
 class ConfigurationManager(object):
@@ -76,6 +80,11 @@ class ConfigurationManager(object):
                                     implementation changes in the future.
         :type override_strategy     ConfigurationOverrideStrategy
         """
+        base_config_dir = os.path.dirname(base_config_path)
+        operating_system.create_directory(
+            base_config_dir, user=owner, group=group, force=True, as_root=True
+        )
+
         self._base_config_path = base_config_path
         self._owner = owner
         self._group = group
@@ -111,9 +120,13 @@ class ConfigurationManager(object):
         :returns:        Configuration file as a Python dict.
         """
 
-        base_options = operating_system.read_file(
-            self._base_config_path, codec=self._codec,
-            as_root=self._requires_root)
+        try:
+            base_options = operating_system.read_file(
+                self._base_config_path, codec=self._codec,
+                as_root=self._requires_root)
+        except Exception:
+            LOG.warning('File %s not found', self._base_config_path)
+            return None
 
         updates = self._override_strategy.parse_updates()
         guestagent_utils.update_dict(updates, base_options)
@@ -124,8 +137,8 @@ class ConfigurationManager(object):
         """Write given contents to the base configuration file.
         Remove all existing overrides (both system and user).
 
-        :param contents        Contents of the configuration file.
-        :type contents         string or dict
+        :param options        Contents of the configuration file.
+        :type options         string or dict
         """
         if isinstance(options, dict):
             # Serialize a dict of options for writing.

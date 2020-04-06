@@ -268,7 +268,7 @@ class Backup(object):
             try:
                 cls.delete(context, child.id)
             except exception.NotFound:
-                LOG.exception("Backup %s cannot be found.", backup_id)
+                LOG.warning("Backup %s cannot be found.", backup_id)
 
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)

@@ -1,4 +1,0 @@
-[[local|localrc]]
-
-# force kvm as the libvirt type.
-LIBVIRT_TYPE=kvm

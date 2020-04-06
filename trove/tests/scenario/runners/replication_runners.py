@@ -468,6 +468,4 @@ class PerconaReplicationRunner(MysqlReplicationRunner):
 
 
 class MariadbReplicationRunner(MysqlReplicationRunner):
-
-    def _get_expected_binlog_format(self):
-        return 'STATEMENT'
+    pass

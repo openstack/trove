@@ -28,8 +28,8 @@ from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
 from trove import tests
 from trove.tests.api.instances import instance_info
-from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
+from trove.tests.api.instances import TIMEOUT_INSTANCE_RESTORE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
@@ -320,7 +320,7 @@ class WaitForRestoreToFinish(object):
                     assert_equal(instance.volume.get('used', None), None)
                 return False
 
-        poll_until(result_is_active, time_out=TIMEOUT_INSTANCE_CREATE,
+        poll_until(result_is_active, time_out=TIMEOUT_INSTANCE_RESTORE,
                    sleep_time=10)
 
     @test

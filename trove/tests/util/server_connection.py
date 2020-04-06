@@ -62,7 +62,7 @@ class ServerSSHConnection(object):
         retry=tenacity.retry_if_exception_type(subprocess.CalledProcessError)
     )
     def execute(self, cmd):
-        exe_cmd = "%s %s %s" % (tests.SSH_CMD, self.ip_address, cmd)
+        exe_cmd = "%s %s '%s'" % (tests.SSH_CMD, self.ip_address, cmd)
         print("RUNNING COMMAND: %s" % exe_cmd)
 
         output = util.process(exe_cmd)

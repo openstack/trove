@@ -21,37 +21,18 @@ from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
-from trove.common.db.mysql import models
+from trove.common import exception
 from trove.common import utils
-from trove.guestagent.backup.backupagent import BackupAgent
-from trove.guestagent.datastore.mysql.service import MySqlAdmin
-from trove.guestagent.strategies import backup
+from trove.common.db.mysql import models
+from trove.guestagent.common import operating_system
 from trove.guestagent.strategies.replication import base
 
-AGENT = BackupAgent()
-CONF = cfg.CONF
-
-REPL_BACKUP_NAMESPACE = 'trove.guestagent.strategies.backup.mysql_impl'
-
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class MysqlReplicationBase(base.Replication):
     """Base class for MySql Replication strategies."""
-
-    @property
-    def repl_backup_runner(self):
-        return backup.get_backup_strategy('InnoBackupEx',
-                                          REPL_BACKUP_NAMESPACE)
-
-    @property
-    def repl_incr_backup_runner(self):
-        return backup.get_backup_strategy('InnoBackupExIncremental',
-                                          REPL_BACKUP_NAMESPACE)
-
-    @property
-    def repl_backup_extra_opts(self):
-        return CONF.backup_runner_options.get('InnoBackupEx', '')
 
     def get_master_ref(self, service, snapshot_info):
         master_ref = {
@@ -60,7 +41,7 @@ class MysqlReplicationBase(base.Replication):
         }
         return master_ref
 
-    def _create_replication_user(self):
+    def _create_replication_user(self, service, adm):
         replication_user = None
         replication_password = utils.generate_random_password(16)
 
@@ -78,9 +59,11 @@ class MysqlReplicationBase(base.Replication):
                         name=name, password=replication_password
                     )
                     mysql_user.check_create()
-                MySqlAdmin().create_user([mysql_user.serialize()])
-                LOG.debug("Trying to create replication user " +
+
+                LOG.debug("Trying to create replication user %s",
                           mysql_user.name)
+                adm.create_user([mysql_user.serialize()])
+
                 replication_user = {
                     'name': mysql_user.name,
                     'password': replication_password
@@ -93,52 +76,55 @@ class MysqlReplicationBase(base.Replication):
 
         return replication_user
 
-    def snapshot_for_replication(self, context, service,
-                                 location, snapshot_info):
-        snapshot_id = snapshot_info['id']
-        replica_number = snapshot_info.get('replica_number', 1)
+    def snapshot_for_replication(self, context, service, adm, location,
+                                 snapshot_info):
+        LOG.info("Creating backup for replication")
+        service.create_backup(context, snapshot_info)
 
-        LOG.debug("Acquiring backup for replica number %d.", replica_number)
-        # Only create a backup if it's the first replica
-        if replica_number == 1:
-            AGENT.execute_backup(
-                context, snapshot_info, runner=self.repl_backup_runner,
-                extra_opts=self.repl_backup_extra_opts,
-                incremental_runner=self.repl_incr_backup_runner)
-        else:
-            LOG.debug("Using existing backup created for previous replica.")
-
-        LOG.debug("Replication snapshot %(snapshot_id)s used for replica "
-                  "number %(replica_number)d.",
-                  {'snapshot_id': snapshot_id,
-                   'replica_number': replica_number})
-
-        replication_user = self._create_replication_user()
+        LOG.info('Creating replication user')
+        replication_user = self._create_replication_user(service, adm)
         service.grant_replication_privilege(replication_user)
 
-        # With streamed InnobackupEx, the log position is in
-        # the stream and will be decoded by the slave
         log_position = {
             'replication_user': replication_user
         }
-        return snapshot_id, log_position
+        return snapshot_info['id'], log_position
 
     def enable_as_master(self, service, master_config):
         if not service.exists_replication_source_overrides():
             service.write_replication_source_overrides(master_config)
             service.restart()
 
+    def read_last_master_gtid(self, service):
+        INFO_FILE = ('%s/xtrabackup_binlog_info' % service.get_data_dir())
+        operating_system.chmod(INFO_FILE,
+                               operating_system.FileMode.ADD_READ_ALL,
+                               as_root=True)
+
+        LOG.info("Reading last master GTID from %s", INFO_FILE)
+        try:
+            with open(INFO_FILE, 'r') as f:
+                content = f.read()
+                LOG.debug('Content in %s: "%s"', INFO_FILE, content)
+                ret = content.strip().split('\t')
+                return ret[2] if len(ret) == 3 else ''
+        except Exception as ex:
+            LOG.error('Failed to read last master GTID, error: %s', str(ex))
+            raise exception.UnableToDetermineLastMasterGTID(
+                {'binlog_file': INFO_FILE})
+
     @abc.abstractmethod
-    def connect_to_master(self, service, snapshot):
+    def connect_to_master(self, service, master_info):
         """Connects a slave to a master"""
 
-    def enable_as_slave(self, service, snapshot, slave_config):
+    def enable_as_slave(self, service, master_info, slave_config):
         try:
             service.write_replication_replica_overrides(slave_config)
             service.restart()
-            self.connect_to_master(service, snapshot)
-        except Exception:
-            LOG.exception("Exception enabling guest as replica")
+            self.connect_to_master(service, master_info)
+        except Exception as err:
+            LOG.error("Exception enabling guest as replica, error: %s",
+                      str(err))
             raise
 
     def detach_slave(self, service, for_failover):
@@ -147,8 +133,9 @@ class MysqlReplicationBase(base.Replication):
         service.restart()
         return replica_info
 
-    def get_replica_context(self, service):
-        replication_user = self._create_replication_user()
+    def get_replica_context(self, service, adm):
+        """Get replication information as master."""
+        replication_user = self._create_replication_user(service, adm)
         service.grant_replication_privilege(replication_user)
         return {
             'master': self.get_master_ref(service, None),

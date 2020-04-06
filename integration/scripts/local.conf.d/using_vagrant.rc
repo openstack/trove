@@ -1,9 +1,0 @@
-[[local|localrc]]
-
-# This is similar to code found at
-# https://github.com/bcwaldon/vagrant_devstack/blob/master/Vagrantfile
-# and seems to make instances ping'able in VirtualBox.
-FLAT_INTERFACE=eth1
-PUBLIC_INTERFACE=eth1
-FLOATING_RANGE=`ip_chunk eth0 1`.`ip_chunk eth0 2`.`ip_chunk eth0 3`.128/28
-HOST_IP=`ip_chunk eth0 1`.`ip_chunk eth0 2`.`ip_chunk eth0 3`.`ip_chunk eth0 4`

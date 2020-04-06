@@ -8,7 +8,6 @@ socket = /var/run/mysqld/mysqld.sock
 nice = 0
 
 [mysqld]
-user = mysql
 port = 3306
 basedir = /usr
 datadir = /var/lib/mysql/data

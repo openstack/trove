@@ -1,3 +1,0 @@
-[[post-config|\$CEILOMETER_CONF]]
-[notification]
-store_events = True

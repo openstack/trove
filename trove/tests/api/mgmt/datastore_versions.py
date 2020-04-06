@@ -154,6 +154,9 @@ class MgmtDataStoreVersion(object):
         self.client.mgmt_datastore_versions.delete(self.created_version.id)
         assert_equal(202, self.client.last_http_code)
 
+        # Delete the created datastore as well.
+        self.client.datastores.delete(self.created_version.datastore_id)
+
         # Lets match the total count of ds_version,
         # it should get back to original
         ds_versions = self.client.mgmt_datastore_versions.list()

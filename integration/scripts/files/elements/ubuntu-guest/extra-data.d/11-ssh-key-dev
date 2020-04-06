@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+source $_LIB/die
+
+[ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
+
+# Guest agent needs to ssh into the controller to download code in dev mode.
+if [[ ${DEV_MODE} == "true" && -e ${SSH_DIR}/id_rsa ]]; then
+   sudo -Hiu ${HOST_SCP_USERNAME} dd if=${SSH_DIR}/id_rsa of=${TMP_HOOKS_PATH}/id_rsa
+   sudo -Hiu ${HOST_SCP_USERNAME} dd if=${SSH_DIR}/id_rsa.pub of=${TMP_HOOKS_PATH}/id_rsa.pub
+fi

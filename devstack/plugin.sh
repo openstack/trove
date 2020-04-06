@@ -362,7 +362,7 @@ function create_subnet_v6 {
     if [[ -n "$IPV6_PRIVATE_NETWORK_GATEWAY" ]]; then
         subnet_params+="--gateway $IPV6_PRIVATE_NETWORK_GATEWAY "
     fi
-    if [ -n $SUBNETPOOL_V6_ID ]; then
+    if [[ -n $SUBNETPOOL_V6_ID ]]; then
         subnet_params+="--subnet-pool $SUBNETPOOL_V6_ID "
     else
         subnet_params+="--subnet-range $FIXED_RANGE_V6 $ipv6_modes} "
@@ -447,27 +447,26 @@ function create_guest_image {
         return 0
     fi
 
-    image_name="trove-datastore-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}-${TROVE_DATASTORE_TYPE}"
-    image_url_var="TROVE_NON_DEV_IMAGE_URL_${TROVE_DATASTORE_TYPE^^}"
-    image_url=`eval echo '$'"$image_url_var"`
+    image_name="trove-guest-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}"
     mkdir -p $HOME/images
     image_file=$HOME/images/${image_name}.qcow2
 
-    if [[ -n ${image_url} ]]; then
-        echo "Downloading guest image from ${image_url}"
-        curl -sSL ${image_url} -o ${image_file}
+    if [[ -n ${TROVE_NON_DEV_IMAGE_URL} ]]; then
+        echo "Downloading guest image from ${TROVE_NON_DEV_IMAGE_URL}"
+        curl -sSL ${TROVE_NON_DEV_IMAGE_URL} -o ${image_file}
     else
         echo "Starting to create guest image"
 
-        TROVE_BRANCH=${TROVE_BRANCH} $DEST/trove/integration/scripts/trovestack \
+        $DEST/trove/integration/scripts/trovestack \
           build-image \
-          ${TROVE_DATASTORE_TYPE} \
           ${TROVE_IMAGE_OS} \
           ${TROVE_IMAGE_OS_RELEASE} \
-          true
+          true \
+          ${TROVE_IMAGE_OS} \
+          ${image_file}
     fi
 
-    if [ ! -f ${image_file} ]; then
+    if [[ ! -f ${image_file} ]]; then
         echo "Image file was not found at ${image_file}"
         exit 1
     fi
@@ -485,7 +484,7 @@ function create_guest_image {
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION
 
     echo "Add parameter validation rules if available"
-    if [ -f $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]; then
+    if [[ -f $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]]; then
         $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
             $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
     fi

@@ -124,7 +124,7 @@ if is_fedora; then
 else
     PKG_INSTALL_OPTS="DEBIAN_FRONTEND=noninteractive"
     PKG_MGR=apt-get
-    PKG_GET_ARGS="-y --allow-unauthenticated --force-yes"
+    PKG_GET_ARGS="-y --allow-unauthenticated --force-yes -qq"
 fi
 PKG_INSTALL_ARG="install"
 PKG_UPDATE_ARG="update"
@@ -522,57 +522,15 @@ function set_bin_path() {
 
 function cmd_set_datastore() {
     local IMAGEID=$1
-    local DATASTORE_TYPE=$2
 
-    # rd_manage datastore_update <datastore_name> <default_version>
-    rd_manage datastore_update "$DATASTORE_TYPE" ""
-    PACKAGES=${PACKAGES:-""}
-
-    if [ "$DATASTORE_TYPE" == "mysql" ]; then
-        VERSION="5.7"
-    elif [ "$DATASTORE_TYPE" == "percona" ]; then
-        PACKAGES=${PACKAGES:-"percona-server-server-5.6"}
-        VERSION="5.6"
-    elif [ "$DATASTORE_TYPE" == "pxc" ]; then
-        PACKAGES=${PACKAGES:-"percona-xtradb-cluster-server-5.6"}
-        VERSION="5.6"
-    elif [ "$DATASTORE_TYPE" == "mariadb" ]; then
-        VERSION="10.4"
-    elif [ "$DATASTORE_TYPE" == "mongodb" ]; then
-        PACKAGES=${PACKAGES:-"mongodb-org"}
-        VERSION="3.2"
-    elif [ "$DATASTORE_TYPE" == "redis" ]; then
-        PACKAGES=${PACKAGES:-""}
-        VERSION="3.2.6"
-    elif [ "$DATASTORE_TYPE" == "cassandra" ]; then
-        PACKAGES=${PACKAGES:-"cassandra"}
-        VERSION="2.1.0"
-    elif [ "$DATASTORE_TYPE" == "couchbase" ]; then
-        PACKAGES=${PACKAGES:-"couchbase-server"}
-        VERSION="2.2.0"
-    elif [ "$DATASTORE_TYPE" == "postgresql" ]; then
-        VERSION="9.6"
-    elif [ "$DATASTORE_TYPE" == "couchdb" ]; then
-        PACKAGES=${PACKAGES:-"couchdb"}
-        VERSION="1.6.1"
-    elif [ "$DATASTORE_TYPE" == "vertica" ]; then
-        PACKAGES=${PACKAGES:-"vertica"}
-        VERSION="9.0.1"
-    elif [ "$DATASTORE_TYPE" == "db2" ]; then
-        PACKAGES=${PACKAGES:-""}
-        VERSION="11.1"
-    else
-        echo "Unrecognized datastore type. ($DATASTORE_TYPE)"
-        exit 1
-    fi
-
+    rd_manage datastore_update "$datastore" ""
     # trove-manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <packages> <active>
-    rd_manage datastore_version_update "$DATASTORE_TYPE" "$VERSION" "$DATASTORE_TYPE" $IMAGEID "$PACKAGES" 1
-    rd_manage datastore_update "$DATASTORE_TYPE" "$VERSION"
+    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" $IMAGEID "" 1
+    rd_manage datastore_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
-    if [ -f "$PATH_TROVE"/trove/templates/$DATASTORE_TYPE/validation-rules.json ]; then
+    if [[ -f "$PATH_TROVE"/trove/templates/${DATASTORE_TYPE}/validation-rules.json ]]; then
         # add the configuration parameters to the database for the kick-start datastore
-        rd_manage db_load_datastore_config_parameters "$DATASTORE_TYPE" "$VERSION" "$PATH_TROVE"/trove/templates/$DATASTORE_TYPE/validation-rules.json
+        rd_manage db_load_datastore_config_parameters "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "$PATH_TROVE"/trove/templates/${DATASTORE_TYPE}/validation-rules.json
     fi
 }
 
@@ -627,8 +585,8 @@ function install_test_packages() {
     DATASTORE_TYPE=$1
 
     sudo -H $HTTP_PROXY pip install openstack.nose_plugin proboscis pexpect
-    if [ "$DATASTORE_TYPE" = "couchbase" ]; then
-        if [ "$DISTRO" == "ubuntu" ]; then
+    if [[ "$DATASTORE_TYPE" = "couchbase" ]]; then
+        if [[ "$DISTRO" == "ubuntu" ]]; then
 	        # Install Couchbase SDK for scenario tests.
 	        sudo -H $HTTP_PROXY curl http://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
 	        echo "deb http://packages.couchbase.com/ubuntu trusty trusty/main" | sudo tee /etc/apt/sources.list.d/couchbase-csdk.list
@@ -649,12 +607,12 @@ function mod_confs() {
     TROVE_REPORT_DIR=${TROVE_REPORT_DIR:=$TROVESTACK_SCRIPTS/../report/}
 
     EXTRA_CONF=$TROVESTACK_SCRIPTS/conf/test.extra.conf
-    if [ -e $EXTRA_CONF ]; then
+    if [[ -e $EXTRA_CONF ]]; then
         cat $EXTRA_CONF >> $TEST_CONF
     fi
     # Append datastore specific configuration file
     DATASTORE_CONF=$TROVESTACK_SCRIPTS/conf/$DATASTORE_TYPE.conf
-    if [ ! -f $DATASTORE_CONF ]; then
+    if [[ ! -f $DATASTORE_CONF ]]; then
         exclaim "Datastore configuration file ${DATASTORE_CONF} not found"
         exit 1
     fi
@@ -695,14 +653,14 @@ function mod_confs() {
         sed -i "/%shared_network_subnet%/d" $TEST_CONF
     fi
 
-    if [ "$DATASTORE_TYPE" = "vertica" ]; then
+    if [[ "$DATASTORE_TYPE" = "vertica" ]]; then
         # Vertica needs more time than mysql for its boot/start/stop operations.
         setup_cluster_configs cluster_member_count 3
-    elif [ "$DATASTORE_TYPE" = "pxc" ]; then
+    elif [[ "$DATASTORE_TYPE" = "pxc" ]]; then
         setup_cluster_configs min_cluster_member_count 2
-    elif [ "$DATASTORE_TYPE" = "cassandra" ]; then
+    elif [[ "$DATASTORE_TYPE" = "cassandra" ]]; then
         setup_cluster_configs cluster_member_count 2
-    elif [ "$DATASTORE_TYPE" = "mongodb" ]; then
+    elif [[ "$DATASTORE_TYPE" = "mongodb" ]]; then
         setup_cluster_configs cluster_member_count 2
         # Decrease the number of required config servers per cluster to save resources.
         iniset $TROVE_CONF $DATASTORE_TYPE num_config_servers_per_cluster 1
@@ -747,7 +705,7 @@ function cmd_test_init() {
     local DATASTORE_TYPE=$1
     local DATASTORE_VERSION=$2
 
-    if [ -z "${DATASTORE_TYPE}" ]; then
+    if [[ -z "${DATASTORE_TYPE}" ]]; then
         exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
         exit 1
     fi
@@ -768,73 +726,60 @@ function cmd_test_init() {
     pip3 install -U git+https://opendev.org/openstack/python-troveclient@master#egg=python-troveclient
 }
 
+# Build trove guest image
 function cmd_build_image() {
     exclaim "Params for cmd_build_image function: $@"
 
-    local IMAGE_DATASTORE_TYPE=${1:-'mysql'}
-    local IMAGE_GUEST_OS=${2:-'ubuntu'}
-    local IMAGE_GUEST_RELEASE=${3:-'xenial'}
-    local DEV_MODE=${4:-'true'}
-    local guest_username=${5:-'ubuntu'}
-    local output=$6
+    local image_guest_os=${1:-'ubuntu'}
+    local image_guest_release=${2:-'bionic'}
+    local dev_mode=${3:-'true'}
+    local guest_username=${4:-'ubuntu'}
+    local output=$5
 
     if [[ -z "$output" ]]; then
-        image_name="trove-datastore-${IMAGE_GUEST_OS}-${IMAGE_GUEST_RELEASE}-${IMAGE_DATASTORE_TYPE}"
+        image_name="trove-guest-${image_guest_os}-${image_guest_release}"
+        if [[ ${dev_mode} == "true" ]]; then
+            image_name="${image_name}-dev"
+        fi
         image_folder=$HOME/images
-        output="${image_folder}/${image_name}"
+        output="${image_folder}/${image_name}.qcow2"
     fi
+
     # Always rebuild the image.
-    sudo rm -f $output
-    sudo mkdir -p $(dirname $output); sudo chmod 777 -R $(dirname $output)
+    sudo rm -rf ${output}
+    sudo mkdir -p $(dirname ${output}); sudo chmod 777 -R $(dirname ${output})
 
     echo "Ensuring we have all packages needed to build image."
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
-    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap
+    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap squashfs-tools
     sudo -H $HTTP_PROXY pip install diskimage-builder
 
-    exclaim "Use diskimage-builder to actually build the Trove Guest Agent Image."
-    build_guest_image $IMAGE_DATASTORE_TYPE $IMAGE_GUEST_OS $IMAGE_GUEST_RELEASE $DEV_MODE ${guest_username} $output
+    build_guest_image ${image_guest_os} ${image_guest_release} ${dev_mode} ${guest_username} ${output}
 }
 
 # Build guest image and upload to Glance, register the datastore and configuration parameters.
-# We could skip the image build and upload by:
-#   1. MYSQL_IMAGE_ID is passed, or
-#   2. There is an image in Glance contains the datastore name
 function cmd_build_and_upload_image() {
-    local datastore_type=$1
-    local guest_os=${2:-"ubuntu"}
-    local guest_release=${3:-"xenial"}
-    local dev_mode=${4:-"true"}
-    local guest_username=${5:-"ubuntu"}
-    local output_dir=${6:-"$HOME/images"}
+    local guest_os=${1:-"ubuntu"}
+    local guest_release=${2:-"bionic"}
+    local dev_mode=${3:-"true"}
+    local guest_username=${4:-"ubuntu"}
+    local output_dir=${5:-"$HOME/images"}
 
-    if [ -z "${datastore_type}" ]; then
-        exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
-        exit 1
-    fi
+    name=trove-guest-${guest_os}-${guest_release}
+    glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image list --name $name -f value -c ID)
+    if [[ -z ${glance_imageid} ]]; then
+        mkdir -p ${output_dir}
+        output=${output_dir}/${name}
+        cmd_build_image ${guest_os} ${guest_release} ${dev_mode} ${guest_username} ${output}
 
-    image_var="${datastore_type^^}_IMAGE_ID"
-    glance_imageid=`eval echo '$'"$image_var"`
-
-    if [[ -z $glance_imageid ]]; then
-      # Find the first image id with the name contains datastore_type.
-      glance_imageid=$(openstack $CLOUD_ADMIN_ARG image list | grep "$datastore_type" | awk 'NR==1 {print}' | awk '{print $2}')
-
-      if [[ -z $glance_imageid ]]; then
-          mkdir -p ${output_dir}
-          name=trove-datastore-${guest_os}-${guest_release}-${datastore_type}
-          output=${output_dir}/$name.qcow2
-          cmd_build_image ${datastore_type} ${guest_os} ${guest_release} ${dev_mode} ${guest_username} $output
-
-          glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image create $name --public --disk-format qcow2 --container-format bare --file $output --property hw_rng_model='virtio' -c id -f value)
-          [[ -z "$glance_imageid" ]] && echo "Glance upload failed!" && exit 1
-      fi
+        glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image create ${name} --public --disk-format qcow2 --container-format bare --file ${output} --property hw_rng_model='virtio' --tag trove -c id -f value)
+        [[ -z "$glance_imageid" ]] && echo "Glance upload failed!" && exit 1
     fi
 
     exclaim "Using Glance image ID: $glance_imageid"
 
     exclaim "Updating Datastores"
-    cmd_set_datastore "${glance_imageid}" "${datastore_type}"
+    cmd_set_datastore "${glance_imageid}"
 }
 
 
@@ -991,11 +936,11 @@ function cmd_stop() {
 
 function cmd_int_tests() {
     exclaim "Running Trove Integration Tests..."
-    if [ ! $USAGE_ENDPOINT ]; then
+    if [[ ! $USAGE_ENDPOINT ]]; then
         export USAGE_ENDPOINT=trove.tests.util.usage.FakeVerifier
     fi
     cd $TROVESTACK_SCRIPTS
-    if [ $# -lt 1 ]; then
+    if [[ $# -lt 1 ]]; then
         args="--group=mysql"
     else
         args="$@"
@@ -1203,7 +1148,7 @@ function cmd_kick_start() {
     local DATASTORE_TYPE=$1
     local DATASTORE_VERSION=$2
 
-    if [ -z "${DATASTORE_TYPE}" ]; then
+    if [[ -z "${DATASTORE_TYPE}" ]]; then
         exclaim "${COLOR_RED}Datastore argument was not specified.${COLOR_NONE}"
         exit 1
     fi
@@ -1220,9 +1165,12 @@ function cmd_kick_start() {
 function cmd_gate_tests() {
     local DATASTORE_TYPE=${1:-'mysql'}
     local TEST_GROUP=${2:-${DATASTORE_TYPE}}
-    local DATASTORE_VERSION=${3:-'5.7'}
+    local DATASTORE_VERSION=${3:-'5.7.29'}
     local HOST_SCP_USERNAME=${4:-$(whoami)}
     local GUEST_USERNAME=${5:-'ubuntu'}
+
+    export DATASTORE_TYPE=${DATASTORE_TYPE}
+    export DATASTORE_VERSION=${DATASTORE_VERSION}
 
     exclaim "Running cmd_gate_tests ..."
 
@@ -1238,7 +1186,7 @@ function cmd_gate_tests() {
     cd $TROVESTACK_SCRIPTS
 
     # Build and upload guest image, register datastore version.
-    cmd_build_and_upload_image ${DATASTORE_TYPE}
+    cmd_build_and_upload_image
 
     cmd_kick_start "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 

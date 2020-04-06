@@ -1,0 +1,31 @@
+[Unit]
+Description=OpenStack Trove Guest Agent Service for Development
+After=syslog.target network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+User=GUEST_USERNAME
+Group=GUEST_USERNAME
+
+# This script is only for testing purpose for dev_mode=true, the controller
+# IP address should be defined in /etc/trove/controller.conf, e.g.
+# CONTROLLER=192.168.32.151
+EnvironmentFile=/etc/trove/controller.conf
+
+# If ~/trove-installed does not exist, copy the trove source from
+# the user's development environment, then touch the sentinel file
+ExecStartPre=/bin/bash -c "test -e /home/GUEST_USERNAME/trove-installed || sudo rsync -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /home/GUEST_USERNAME/.ssh/id_rsa' -az --exclude='.*' HOST_SCP_USERNAME@$CONTROLLER:PATH_TROVE/ /home/GUEST_USERNAME/trove && touch /home/GUEST_USERNAME/trove-installed"
+
+ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove /var/log/trove/ /home/GUEST_USERNAME/trove"
+
+# Take care of the changes in requirements.txt
+ExecStartPre=/bin/bash -c "sudo /opt/guest-agent-venv/bin/pip install -r /home/GUEST_USERNAME/trove/requirements.txt -c /opt/upper-constraints.txt"
+
+# Start guest-agent.service in virtual environment
+ExecStart=/bin/bash -c "/opt/guest-agent-venv/bin/python /home/GUEST_USERNAME/trove/contrib/trove-guestagent --config-dir=/etc/trove/conf.d"
+
+TimeoutSec=300
+Restart=on-failure

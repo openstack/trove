@@ -28,8 +28,8 @@ from trove.common.utils import poll_until
 from trove import tests
 from trove.tests.api.instances import CheckInstance
 from trove.tests.api.instances import instance_info
-from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
+from trove.tests.api.instances import TIMEOUT_INSTANCE_RESTORE
 from trove.tests.config import CONFIG
 from trove.tests.scenario import runners
 from trove.tests.scenario.runners.test_runners import SkipKnownBug
@@ -49,13 +49,16 @@ backup_count = None
 
 
 def _get_user_count(server_info):
-    cmd = ('mysql -BNq -e \\\'select count\\(*\\) from mysql.user'
-           ' where user like \\\"slave_%\\\"\\\'')
+    cmd = (
+        'docker exec -e MYSQL_PWD=$(sudo cat /opt/trove-guestagent/root.cnf | '
+        'grep password | awk "{print \$3}") database mysql -uroot -N -e '
+        '"select count(*) from mysql.user where user like \\"slave_%\\""'
+    )
     server = create_server_connection(server_info.id)
 
     try:
         stdout = server.execute(cmd)
-        return int(stdout)
+        return int(stdout.rstrip())
     except Exception as e:
         fail("Failed to execute command: %s, error: %s" % (cmd, str(e)))
 
@@ -63,8 +66,13 @@ def _get_user_count(server_info):
 def slave_is_running(running=True):
     def check_slave_is_running():
         server = create_server_connection(slave_instance.id)
-        cmd = ("mysqladmin extended-status "
-               "| awk '/Slave_running/{print $4}'")
+        cmd = (
+            'docker exec -e MYSQL_PWD=$(sudo cat '
+            '/opt/trove-guestagent/root.cnf | grep password '
+            '| awk "{print \$3}") database mysql -uroot -N -e '
+            '"SELECT SERVICE_STATE FROM '
+            'performance_schema.replication_connection_status"'
+        )
 
         try:
             stdout = server.execute(cmd)
@@ -73,7 +81,7 @@ def slave_is_running(running=True):
             fail("Failed to execute command %s, error: %s" %
                  (cmd, str(e)))
 
-        expected = b"ON" if running else b"OFF"
+        expected = b"ON" if running else b""
         return stdout == expected
 
     return check_slave_is_running
@@ -172,7 +180,7 @@ class WaitForCreateSlaveToFinish(object):
     """Wait until the instance is created and set up as slave."""
 
     @test
-    @time_out(TIMEOUT_INSTANCE_CREATE)
+    @time_out(TIMEOUT_INSTANCE_RESTORE)
     def test_slave_created(self):
         """Wait for replica to be created."""
         poll_until(lambda: instance_is_active(slave_instance.id))
@@ -187,13 +195,12 @@ class VerifySlave(object):
 
         def find_database():
             databases = instance_info.dbaas.databases.list(slave_instance.id)
-            return (database_to_find
-                    in [d.name for d in databases])
+            return (database_to_find in [d.name for d in databases])
 
         return find_database
 
     @test
-    @time_out(20 * 60)
+    @time_out(10 * 60)
     def test_correctly_started_replication(self):
         """test_correctly_started_replication"""
         poll_until(slave_is_running())
@@ -207,7 +214,12 @@ class VerifySlave(object):
     @test(depends_on=[test_correctly_started_replication])
     def test_slave_is_read_only(self):
         """test_slave_is_read_only"""
-        cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
+        cmd = (
+            'docker exec -e MYSQL_PWD=$(sudo cat '
+            '/opt/trove-guestagent/root.cnf | grep password | '
+            'awk "{print \$3}") database mysql -uroot -NBq -e '
+            '"select @@read_only"'
+        )
         server = create_server_connection(slave_instance.id)
 
         try:
@@ -329,7 +341,7 @@ class TestReplicationFailover(object):
         self._third_slave.id = create_slave()
         poll_until(lambda: instance_is_active(self._third_slave.id))
         poll_until(slave_is_running())
-        sleep(30)
+        sleep(15)
         validate_master(instance_info, [slave_instance, self._third_slave])
         validate_slave(instance_info, self._third_slave)
 
@@ -349,7 +361,7 @@ class TestReplicationFailover(object):
         if CONFIG.fake_mode:
             raise SkipTest("eject_replica_source not supported in fake mode")
 
-        cmd = "sudo service trove-guestagent stop"
+        cmd = "sudo systemctl stop guest-agent.service"
         server = create_server_connection(self._third_slave.id)
 
         try:
@@ -366,7 +378,7 @@ class TestReplicationFailover(object):
         if CONFIG.fake_mode:
             raise SkipTest("eject_replica_source not supported in fake mode")
 
-        sleep(90)
+        sleep(70)
         instance_info.dbaas.instances.eject_replica_source(self._third_slave)
         assert_equal(202, instance_info.dbaas.last_http_code)
         poll_until(lambda: instance_is_active(self._third_slave.id))
@@ -407,7 +419,12 @@ class DetachReplica(object):
 
         # wait until replica is no longer read only
         def check_not_read_only():
-            cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
+            cmd = (
+                'docker exec -e MYSQL_PWD=$(sudo cat '
+                '/opt/trove-guestagent/root.cnf | grep password | '
+                'awk "{print \$3}") database mysql -uroot -NBq -e '
+                '"select @@read_only"'
+            )
             server = create_server_connection(slave_instance.id)
 
             try:

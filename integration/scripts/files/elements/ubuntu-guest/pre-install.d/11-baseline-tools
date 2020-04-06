@@ -1,0 +1,7 @@
+#!/bin/bash
+# Install baseline packages and tools.
+
+set -e
+set -o xtrace
+
+DEBIAN_FRONTEND=noninteractive apt-get --allow-unauthenticated install -y -qq software-properties-common apt-transport-https ca-certificates ntp >/dev/null

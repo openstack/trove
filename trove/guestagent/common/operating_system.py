@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from functools import reduce
 import inspect
 import operator
 import os
@@ -21,13 +22,12 @@ import re
 import stat
 import tempfile
 
-from functools import reduce
 from oslo_concurrency.processutils import UnknownArgumentError
 
 from trove.common import exception
+from trove.common import utils
 from trove.common.i18n import _
 from trove.common.stream_codecs import IdentityCodec
-from trove.common import utils
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'
@@ -479,6 +479,41 @@ def service_discovery(service_candidates):
     return result
 
 
+def _execute_shell_cmd(cmd, options, *args, **kwargs):
+    """Execute a given shell command passing it
+    given options (flags) and arguments.
+
+    Takes optional keyword arguments:
+    :param as_root:        Execute as root.
+    :type as_root:         boolean
+
+    :param timeout:        Number of seconds if specified,
+                           default if not.
+                           There is no timeout if set to None.
+    :type timeout:         integer
+
+    :raises:               class:`UnknownArgumentError` if passed unknown args.
+    """
+
+    exec_args = {}
+    if kwargs.pop('as_root', False):
+        exec_args['run_as_root'] = True
+        exec_args['root_helper'] = 'sudo'
+
+    if 'timeout' in kwargs:
+        exec_args['timeout'] = kwargs.pop('timeout')
+
+    exec_args['shell'] = kwargs.pop('shell', False)
+
+    if kwargs:
+        raise UnknownArgumentError(_("Got unknown keyword args: %r") % kwargs)
+
+    cmd_flags = _build_command_options(options)
+    cmd_args = cmd_flags + list(args)
+    stdout, stderr = utils.execute_with_timeout(cmd, *cmd_args, **exec_args)
+    return stdout
+
+
 def create_directory(dir_path, user=None, group=None, force=True, **kwargs):
     """Create a given directory and update its ownership
     (recursively) to the given user and group if any.
@@ -559,6 +594,7 @@ def _create_directory(dir_path, force=True, **kwargs):
     :param force:           No error if existing, make parent directories
                             as needed.
     :type force:            boolean
+    :param as_root: Run as root user, default: False.
     """
 
     options = (('p', force),)
@@ -802,39 +838,6 @@ def list_files_in_directory(root_dir, recursive=False, pattern=None,
             if not pattern or re.match(pattern, name)}
 
 
-def _execute_shell_cmd(cmd, options, *args, **kwargs):
-    """Execute a given shell command passing it
-    given options (flags) and arguments.
-
-    Takes optional keyword arguments:
-    :param as_root:        Execute as root.
-    :type as_root:         boolean
-
-    :param timeout:        Number of seconds if specified,
-                           default if not.
-                           There is no timeout if set to None.
-    :type timeout:         integer
-
-    :raises:               class:`UnknownArgumentError` if passed unknown args.
-    """
-
-    exec_args = {}
-    if kwargs.pop('as_root', False):
-        exec_args['run_as_root'] = True
-        exec_args['root_helper'] = 'sudo'
-
-    if 'timeout' in kwargs:
-        exec_args['timeout'] = kwargs.pop('timeout')
-
-    if kwargs:
-        raise UnknownArgumentError(_("Got unknown keyword args: %r") % kwargs)
-
-    cmd_flags = _build_command_options(options)
-    cmd_args = cmd_flags + list(args)
-    stdout, stderr = utils.execute_with_timeout(cmd, *cmd_args, **exec_args)
-    return stdout
-
-
 def _build_command_options(options):
     """Build a list of flags from given pairs (option, is_enabled).
     Each option is prefixed with a single '-'.
@@ -867,3 +870,35 @@ def is_mount(path):
 def get_current_user():
     """Returns name of the current OS user"""
     return pwd.getpwuid(os.getuid())[0]
+
+
+def create_user(user_name, user_id, group_name=None, group_id=None):
+    group_name = group_name or user_name
+    group_id = group_id or user_id
+
+    try:
+        _execute_shell_cmd('groupadd', [], '--gid', group_id, group_name,
+                           as_root=True)
+    except exception.ProcessExecutionError as err:
+        if 'already exists' not in err.stderr:
+            raise exception.UnprocessableEntity(
+                'Failed to add group %s, error: %s' % (group_name, err.stderr)
+            )
+
+    try:
+        _execute_shell_cmd('useradd', [], '--uid', user_id, '--gid', group_id,
+                           '-M', user_name, as_root=True)
+    except exception.ProcessExecutionError as err:
+        if 'already exists' not in err.stderr:
+            raise exception.UnprocessableEntity(
+                'Failed to add user %s, error: %s' % (user_name, err.stderr)
+            )
+
+
+def remove_dir_contents(folder):
+    """Remove all the files and sub-directories but keep the folder.
+
+    Use shell=True here because shell=False doesn't support '*'
+    """
+    path = os.path.join(folder, '*')
+    _execute_shell_cmd(f'rm -rf {path}', [], shell=True, as_root=True)

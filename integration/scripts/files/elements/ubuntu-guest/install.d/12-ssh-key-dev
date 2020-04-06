@@ -1,0 +1,22 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+GUEST_SSH_DIR="/home/${GUEST_USERNAME}/.ssh"
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+if [ ! -e ${GUEST_SSH_DIR} ]; then
+    # this method worked more reliable in vmware fusion over doing sudo -Hiu ${GUEST_USERNAME}
+    mkdir ${GUEST_SSH_DIR}
+    chown -R ${GUEST_USERNAME}:${GUEST_USERNAME} ${GUEST_SSH_DIR}
+fi
+
+if [[ ${DEV_MODE} == "true" && -e "${TMP_HOOKS_DIR}/id_rsa" ]]; then
+    sudo -Hiu ${GUEST_USERNAME} dd of=${GUEST_SSH_DIR}/id_rsa.pub if=${TMP_HOOKS_DIR}/id_rsa.pub
+    sudo -Hiu ${GUEST_USERNAME} dd of=${GUEST_SSH_DIR}/id_rsa if=${TMP_HOOKS_DIR}/id_rsa
+    sudo -Hiu ${GUEST_USERNAME} chmod 600 ${GUEST_SSH_DIR}/id_rsa
+fi

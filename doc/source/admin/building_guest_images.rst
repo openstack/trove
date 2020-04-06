@@ -26,54 +26,42 @@ stored in Glance. This document shows you the steps to build the guest images.
     periodically built and published in
     http://tarballs.openstack.org/trove/images/ in Trove upstream CI.
 
-    Additionally, if you install Trove in devstack environment, a MySQL image
+    Additionally, if you install Trove in devstack environment, the guest image
     is created and registered in Glance automatically, unless it's disabled by
     setting ``TROVE_ENABLE_IMAGE_BUILD=false`` in devstack local.conf file.
 
 High Level Overview of a Trove Guest Instance
 =============================================
 
-At the most basic level, a Trove Guest Instance is a Nova instance
-launched by Trove in response to a create command. For most of this
-document, we will confine ourselves to single instance databases; in
-other words, without the additional complexity of replication or
-mirroring. Guest instances and Guest images for replicated and
-mirrored database instances will be addressed specifically in later
-sections of this document.
+At the most basic level, a Trove Guest Instance is a Nova instance launched by
+Trove in response to a create command. This section describes the various
+components of a Trove Guest Instance.
 
-This section describes the various components of a Trove Guest
-Instance.
+----------------
+Operating System
+----------------
 
------------------------------
-Operating System and Database
------------------------------
+The officially supported operating system is Ubuntu, based on which the
+functional tests are running.
 
-A Trove Guest Instance contains at least a functioning Operating
-System and the database software that the instance wishes to provide
-(as a Service). For example, if your chosen operating system is Ubuntu
-and you wish to deliver MySQL version 5.7, then your guest instance is
-a Nova instance running the Ubuntu operating system and will have
-MySQL version 5.7 installed on it.
+------
+Docker
+------
+
+Since Vitoria release, all the datastore services are installed by docker
+container inside the Trove instance, so docker should be installed when
+building the guest image.
 
 -----------------
 Trove Guest Agent
 -----------------
 
-Trove supports multiple databases, some of them are relational (RDBMS)
-and some are non-relational (NoSQL). In order to provide a common
-management interface to all of these, the Trove Guest Instance has on
-it a 'Guest Agent'. The Trove Guest Agent is a component of the
-Trove system that is specific to the database running on that Guest
-Instance.
+The guest agent runs inside the Nova instances that are used to run the
+database engines. The agent listens to the messaging bus for the topic and is
+responsible for actually translating and executing the commands that are sent
+to it by the task manager component for the particular datastore.
 
-The purpose of the Trove Guest Agent is to implement the Trove Guest
-Agent API for the specific database. This includes such things as the
-implementation of the database 'start' and 'stop' commands. The Trove
-Guest Agent API is the common API used by Trove to communicate with
-any guest database, and the Guest Agent is the implementation of that
-API for the specific database.
-
-The Trove Guest Agent runs inside the Trove Guest Instance.
+Trove guest agent is responsible for datastore docker container management.
 
 ------------------------------------------
 Injected Configuration for the Guest Agent
@@ -104,44 +92,45 @@ services(e.g. the message queue).
 Building Guest Images
 =====================
 
+Since Victoria release, a single trove guest image can be used for different
+datastores, it's unnecessary to maintain different images for differnt
+datastores.
+
 -----------------------------
 Build images using trovestack
 -----------------------------
 
 ``trovestack`` is the recommended tooling provided by Trove community to build
-the guest images. Before running ``trovestack`` command, go to the scripts
-folder:
+the guest images. Before running ``trovestack`` command:
 
 .. code-block:: console
 
     git clone https://opendev.org/openstack/trove
     cd trove/integration/scripts
 
-The trove guest agent image could be created by running the following command:
+The trove guest image could be created by running the following command:
 
 .. code-block:: console
 
     $ ./trovestack build-image \
-        ${datastore_type} \
         ${guest_os} \
         ${guest_os_release} \
         ${dev_mode} \
         ${guest_username} \
-        ${imagepath}
+        ${output_image_path}
 
-* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=xenial`` are fully
+* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=bionic`` are fully
   tested and supported.
 
 * Default input values:
 
   .. code-block:: ini
 
-      datastore_type=mysql
       guest_os=ubuntu
-      guest_os_release=xenial
+      guest_os_release=bionic
       dev_mode=true
       guest_username=ubuntu
-      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}
+      output_image_path=$HOME/images/trove-guest--${guest_os}-${guest_os_release}-dev
 
 * ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
   necessary to build the image on the trove controller host, because the host
@@ -159,31 +148,27 @@ The trove guest agent image could be created by running the following command:
   * ``HOST_SCP_USERNAME``: Only used in dev mode, this is the user name used by
     guest agent to connect to the controller host, e.g. in devstack
     environment, it should be the ``stack`` user.
-  * ``GUEST_WORKING_DIR``: The place to save the guest image, default value is
-    ``$HOME/images``.
-  * ``TROVE_BRANCH``: Only used in dev mode. The branch name of Trove code
-    repository, by default it's master, use other branches as needed such as
-    stable/train.
 
-For example, in order to build a MySQL image for Ubuntu Xenial operating
+For example, in order to build a guest image for Ubuntu Bionic operating
 system in development mode:
 
 .. code-block:: console
 
-    $ ./trovestack build-image mysql ubuntu xenial true
+    $ ./trovestack build-image ubuntu bionic true ubuntu
 
 Once the image build is finished, the cloud administrator needs to register the
 image in Glance and register a new datastore or version in Trove using
-``trove-manage`` command, e.g. after building an image for MySQL 5.7.1:
+``trove-manage`` command, e.g. after building an image for MySQL 5.7.29:
 
 .. code-block:: console
 
-    $ openstack image create ubuntu-mysql-5.7.1-dev \
-      --public \
+    $ openstack image create trove-guest-ubuntu-bionic \
+      --private \
       --disk-format qcow2 \
       --container-format bare \
-      --file ~/images/ubuntu-xenial-mysql.qcow2
-    $ trove-manage datastore_version_update mysql 5.7.1 mysql $image_id "" 1
+      --file ~/images/trove-guest-ubuntu-bionic-dev.qcow2
+    $ trove-manage datastore_version_update mysql 5.7.29 mysql $image_id "" 1
+    $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 ${trove_repo_dir}/trove/templates/mysql/validation-rules.json
 
 If you see anything error or need help for the image creation, please ask help
 either in ``#openstack-trove`` IRC channel or sending emails to

@@ -15,8 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-
-import os
+import tempfile
 
 from oslo_log import log as logging
 
@@ -24,55 +23,201 @@ from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
 from trove.common import instance as rd_instance
+from trove.common import utils
 from trove.common.notification import EndNotification
-from trove.guestagent import backup
-from trove.guestagent.common import operating_system
-from trove.guestagent.datastore import manager
-from trove.guestagent.datastore.mysql_common import service
 from trove.guestagent import guest_log
 from trove.guestagent import volume
-
+from trove.guestagent.common import operating_system
+from trove.guestagent.datastore import manager
+from trove.guestagent.strategies import replication as repl_strategy
+from trove.guestagent.utils import docker as docker_util
+from trove.guestagent.utils import mysql as mysql_util
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
 class MySqlManager(manager.Manager):
-
     def __init__(self, mysql_app, mysql_app_status, mysql_admin,
                  manager_name='mysql'):
-
         super(MySqlManager, self).__init__(manager_name)
-        self._mysql_app = mysql_app
-        self._mysql_app_status = mysql_app_status
-        self._mysql_admin = mysql_admin
 
+        self.app = mysql_app
+        self.status = mysql_app_status
+        self.adm = mysql_admin
         self.volume_do_not_start_on_reboot = False
 
     @property
-    def mysql_app(self):
-        return self._mysql_app
-
-    @property
-    def mysql_app_status(self):
-        return self._mysql_app_status
-
-    @property
-    def mysql_admin(self):
-        return self._mysql_admin
-
-    @property
-    def status(self):
-        return self.mysql_app_status.get()
-
-    @property
     def configuration_manager(self):
-        return self.mysql_app(
-            self.mysql_app_status.get()).configuration_manager
+        return self.app.configuration_manager
+
+    @property
+    def replication(self):
+        """If the datastore supports replication, return an instance of
+        the strategy.
+        """
+        try:
+            return repl_strategy.get_instance(self.manager)
+        except Exception as ex:
+            LOG.warning("Cannot get replication instance for '%(manager)s': "
+                        "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
+
+        return None
+
+    def get_service_status(self):
+        try:
+            with mysql_util.SqlClient(self.app.get_engine()) as client:
+                cmd = "SELECT 1;"
+                client.execute(cmd)
+
+            LOG.debug("Database service check: database query is responsive")
+            return rd_instance.ServiceStatuses.HEALTHY
+        except Exception:
+            return super(MySqlManager, self).get_service_status()
+
+    def create_database(self, context, databases):
+        with EndNotification(context):
+            return self.adm.create_database(databases)
+
+    def create_user(self, context, users):
+        with EndNotification(context):
+            self.adm.create_user(users)
+
+    def delete_database(self, context, database):
+        with EndNotification(context):
+            return self.adm.delete_database(database)
+
+    def delete_user(self, context, user):
+        with EndNotification(context):
+            self.adm.delete_user(user)
+
+    def list_databases(self, context, limit=None, marker=None,
+                       include_marker=False):
+        return self.adm.list_databases(limit, marker, include_marker)
+
+    def list_users(self, context, limit=None, marker=None,
+                   include_marker=False):
+        return self.adm.list_users(limit, marker, include_marker)
+
+    def get_user(self, context, username, hostname):
+        return self.adm.get_user(username, hostname)
+
+    def update_attributes(self, context, username, hostname, user_attrs):
+        with EndNotification(context):
+            self.adm.update_attributes(username, hostname, user_attrs)
+
+    def grant_access(self, context, username, hostname, databases):
+        return self.adm.grant_access(username, hostname, databases)
+
+    def revoke_access(self, context, username, hostname, database):
+        return self.adm.revoke_access(username, hostname, database)
+
+    def list_access(self, context, username, hostname):
+        return self.adm.list_access(username, hostname)
+
+    def enable_root(self, context):
+        return self.adm.enable_root()
+
+    def enable_root_with_password(self, context, root_password=None):
+        return self.adm.enable_root(root_password)
+
+    def is_root_enabled(self, context):
+        return self.adm.is_root_enabled()
+
+    def disable_root(self, context):
+        return self.adm.disable_root()
+
+    def change_passwords(self, context, users):
+        with EndNotification(context):
+            self.adm.change_passwords(users)
+
+    def do_prepare(self, context, packages, databases, memory_mb, users,
+                   device_path, mount_point, backup_info,
+                   config_contents, root_password, overrides,
+                   cluster_config, snapshot, ds_version=None):
+        """This is called from prepare in the base class."""
+        data_dir = mount_point + '/data'
+        if device_path:
+            LOG.info('Preparing the storage for %s, mount path %s',
+                     device_path, mount_point)
+
+            self.app.stop_db()
+
+            device = volume.VolumeDevice(device_path)
+            # unmount if device is already mounted
+            device.unmount_device(device_path)
+            device.format()
+            if operating_system.list_files_in_directory(mount_point):
+                # rsync existing data to a "data" sub-directory
+                # on the new volume
+                device.migrate_data(mount_point, target_subdir="data")
+            # mount the volume
+            device.mount(mount_point)
+            operating_system.chown(mount_point, CONF.database_service_uid,
+                                   CONF.database_service_uid,
+                                   recursive=True, as_root=True)
+
+            operating_system.create_directory(data_dir,
+                                              user=CONF.database_service_uid,
+                                              group=CONF.database_service_uid,
+                                              as_root=True)
+            self.app.set_data_dir(data_dir)
+
+        # Prepare mysql configuration
+        LOG.info('Preparing database configuration')
+        self.app.configuration_manager.save_configuration(config_contents)
+        self.app.update_overrides(overrides)
+
+        # Restore data from backup and reset root password
+        if backup_info:
+            self.perform_restore(context, data_dir, backup_info)
+            self.reset_password_for_restore(ds_version=ds_version,
+                                            data_dir=data_dir)
+
+        # Start database service.
+        # Cinder volume initialization(after formatted) may leave a
+        # lost+found folder
+        command = f'--ignore-db-dir=lost+found --datadir={data_dir}'
+        self.app.start_db(ds_version=ds_version, command=command)
+
+        self.app.secure()
+        enable_remote_root = (backup_info and self.adm.is_root_enabled())
+        if enable_remote_root:
+            self.status.report_root(context)
+        else:
+            self.app.secure_root()
+
+        if snapshot:
+            # This instance is a replication slave
+            self.attach_replica(context, snapshot, snapshot['config'])
+
+    def _validate_slave_for_replication(self, context, replica_info):
+        if replica_info['replication_strategy'] != self.replication_strategy:
+            raise exception.IncompatibleReplicationStrategy(
+                replica_info.update({
+                    'guest_strategy': self.replication_strategy
+                }))
+
+        volume_stats = self.get_filesystem_stats(context, None)
+        if (volume_stats.get('total', 0.0) <
+            replica_info['dataset']['dataset_size']):
+            raise exception.InsufficientSpaceForReplica(
+                replica_info.update({
+                    'slave_volume_size': volume_stats.get('total', 0.0)
+                }))
+
+    def stop_db(self, context):
+        self.app.stop_db()
+
+    def restart(self, context):
+        self.app.restart()
+
+    def start_db_with_conf_changes(self, context, config_contents):
+        self.app.start_db_with_conf_changes(config_contents)
 
     def get_datastore_log_defs(self):
-        owner = 'mysql'
-        datastore_dir = self.mysql_app.get_data_dir()
+        owner = cfg.get_configuration_property('database_service_uid')
+        datastore_dir = self.app.get_data_dir()
         server_section = configurations.MySQLConfParser.SERVER_CONF_SECTION
         long_query_time = CONF.get(self.manager).get(
             'guest_log_long_query_time') / 1000
@@ -119,212 +264,14 @@ class MySqlManager(manager.Manager):
             },
         }
 
-    def get_service_status(self):
-        try:
-            app = self.mysql_app(self.status)
-            with service.BaseLocalSqlClient(app.get_engine()) as client:
-                cmd = "SELECT 1;"
-                client.execute(cmd)
+    def apply_overrides(self, context, overrides):
+        LOG.info("Applying overrides (%s).", overrides)
+        self.app.apply_overrides(overrides)
 
-            LOG.debug("Database service check: database query is responsive")
-            return rd_instance.ServiceStatuses.HEALTHY
-        except Exception as e:
-            LOG.warning('Failed to query database, error: %s', str(e))
-            return super(MySqlManager, self).get_service_status()
-
-    def change_passwords(self, context, users):
-        with EndNotification(context):
-            self.mysql_admin().change_passwords(users)
-
-    def update_attributes(self, context, username, hostname, user_attrs):
-        with EndNotification(context):
-            self.mysql_admin().update_attributes(
-                username, hostname, user_attrs)
-
-    def reset_configuration(self, context, configuration):
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.reset_configuration(configuration)
-
-    def create_database(self, context, databases):
-        with EndNotification(context):
-            return self.mysql_admin().create_database(databases)
-
-    def create_user(self, context, users):
-        with EndNotification(context):
-            self.mysql_admin().create_user(users)
-
-    def delete_database(self, context, database):
-        with EndNotification(context):
-            return self.mysql_admin().delete_database(database)
-
-    def delete_user(self, context, user):
-        with EndNotification(context):
-            self.mysql_admin().delete_user(user)
-
-    def get_user(self, context, username, hostname):
-        return self.mysql_admin().get_user(username, hostname)
-
-    def grant_access(self, context, username, hostname, databases):
-        return self.mysql_admin().grant_access(username, hostname, databases)
-
-    def revoke_access(self, context, username, hostname, database):
-        return self.mysql_admin().revoke_access(username, hostname, database)
-
-    def list_access(self, context, username, hostname):
-        return self.mysql_admin().list_access(username, hostname)
-
-    def list_databases(self, context, limit=None, marker=None,
-                       include_marker=False):
-        return self.mysql_admin().list_databases(limit, marker,
-                                                 include_marker)
-
-    def list_users(self, context, limit=None, marker=None,
-                   include_marker=False):
-        return self.mysql_admin().list_users(limit, marker,
-                                             include_marker)
-
-    def enable_root(self, context):
-        return self.mysql_admin().enable_root()
-
-    def enable_root_with_password(self, context, root_password=None):
-        return self.mysql_admin().enable_root(root_password)
-
-    def is_root_enabled(self, context):
-        return self.mysql_admin().is_root_enabled()
-
-    def disable_root(self, context):
-        return self.mysql_admin().disable_root()
-
-    def _perform_restore(self, backup_info, context, restore_location, app):
-        LOG.info("Restoring database from backup %s, backup_info: %s",
-                 backup_info['id'], backup_info)
-        try:
-            backup.restore(context, backup_info, restore_location)
-        except Exception:
-            LOG.exception("Error performing restore from backup %s.",
-                          backup_info['id'])
-            app.status.set_status(rd_instance.ServiceStatuses.FAILED)
-            raise
-        LOG.info("Restored database successfully.")
-
-    def do_prepare(self, context, packages, databases, memory_mb, users,
-                   device_path, mount_point, backup_info,
-                   config_contents, root_password, overrides,
-                   cluster_config, snapshot):
-        """This is called from prepare in the base class."""
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.install_if_needed(packages)
-        if device_path:
-            LOG.info('Prepare the storage for %s', device_path)
-
-            app.stop_db(
-                do_not_start_on_reboot=self.volume_do_not_start_on_reboot
-            )
-
-            device = volume.VolumeDevice(device_path)
-            # unmount if device is already mounted
-            device.unmount_device(device_path)
-            device.format()
-            if os.path.exists(mount_point):
-                # rsync existing data to a "data" sub-directory
-                # on the new volume
-                device.migrate_data(mount_point, target_subdir="data")
-            # mount the volume
-            device.mount(mount_point)
-            operating_system.chown(mount_point, service.MYSQL_OWNER,
-                                   service.MYSQL_OWNER,
-                                   recursive=False, as_root=True)
-
-            LOG.debug("Mounted the volume at %s", mount_point)
-            # We need to temporarily update the default my.cnf so that
-            # mysql will start after the volume is mounted. Later on it
-            # will be changed based on the config template
-            # (see MySqlApp.secure()) and restart.
-            app.set_data_dir(mount_point + '/data')
-            app.start_mysql()
-
-            LOG.info('Finish to prepare the storage for %s', device_path)
-        if backup_info:
-            self._perform_restore(backup_info, context,
-                                  mount_point + "/data", app)
-        app.secure(config_contents)
-        enable_root_on_restore = (backup_info and
-                                  self.mysql_admin().is_root_enabled())
-        if enable_root_on_restore:
-            app.secure_root(secure_remote_root=False)
-            self.mysql_app_status.get().report_root(context)
-        else:
-            app.secure_root(secure_remote_root=True)
-
-        if snapshot:
-            self.attach_replica(context, snapshot, snapshot['config'])
-
-    def pre_upgrade(self, context):
-        app = self.mysql_app(self.mysql_app_status.get())
-        data_dir = app.get_data_dir()
-        mount_point, _data = os.path.split(data_dir)
-        save_dir = "%s/etc_mysql" % mount_point
-        save_etc_dir = "%s/etc" % mount_point
-        home_save = "%s/trove_user" % mount_point
-
-        app.status.begin_restart()
-        app.stop_db()
-
-        if operating_system.exists("/etc/my.cnf", as_root=True):
-            operating_system.create_directory(save_etc_dir, as_root=True)
-            operating_system.copy("/etc/my.cnf", save_etc_dir,
-                                  preserve=True, as_root=True)
-
-        operating_system.copy("/etc/mysql/.", save_dir,
-                              preserve=True, as_root=True)
-
-        operating_system.copy("%s/." % os.path.expanduser('~'), home_save,
-                              preserve=True, as_root=True)
-
-        self.unmount_volume(context, mount_point=mount_point)
-        return {
-            'mount_point': mount_point,
-            'save_dir': save_dir,
-            'save_etc_dir': save_etc_dir,
-            'home_save': home_save
-        }
-
-    def post_upgrade(self, context, upgrade_info):
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.stop_db()
-        if 'device' in upgrade_info:
-            self.mount_volume(context, mount_point=upgrade_info['mount_point'],
-                              device_path=upgrade_info['device'],
-                              write_to_fstab=True)
-            operating_system.chown(path=upgrade_info['mount_point'],
-                                   user=service.MYSQL_OWNER,
-                                   group=service.MYSQL_OWNER,
-                                   recursive=True, as_root=True)
-
-        self._restore_home_directory(upgrade_info['home_save'])
-
-        if operating_system.exists(upgrade_info['save_etc_dir'],
-                                   is_directory=True, as_root=True):
-            self._restore_directory(upgrade_info['save_etc_dir'], "/etc")
-
-        self._restore_directory("%s/." % upgrade_info['save_dir'],
-                                "/etc/mysql")
-
-        self.configuration_manager.refresh_cache()
-        app.start_mysql()
-        app.status.end_restart()
-
-    def restart(self, context):
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.restart()
-
-    def start_db_with_conf_changes(self, context, config_contents):
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.start_db_with_conf_changes(config_contents)
-
-    def stop_db(self, context, do_not_start_on_reboot=False):
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
+    def update_overrides(self, context, overrides, remove=False):
+        if remove:
+            self.app.remove_overrides()
+        self.app.update_overrides(overrides)
 
     def create_backup(self, context, backup_info):
         """
@@ -333,22 +280,98 @@ class MySqlManager(manager.Manager):
         device_path is specified, it will be mounted based to a point specified
         in configuration.
 
+        :param context: User context object.
         :param backup_info: a dictionary containing the db instance id of the
                             backup task, location, type, and other data.
         """
         with EndNotification(context):
-            backup.backup(context, backup_info)
+            self.app.create_backup(context, backup_info)
 
-    def update_overrides(self, context, overrides, remove=False):
-        app = self.mysql_app(self.mysql_app_status.get())
-        if remove:
-            app.remove_overrides()
-        app.update_overrides(overrides)
+    def perform_restore(self, context, restore_location, backup_info):
+        LOG.info("Starting to restore database from backup %s, "
+                 "backup_info: %s", backup_info['id'], backup_info)
 
-    def apply_overrides(self, context, overrides):
-        LOG.debug("Applying overrides (%s).", overrides)
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.apply_overrides(overrides)
+        try:
+            self.app.restore_backup(context, backup_info, restore_location)
+        except Exception:
+            LOG.error("Failed to restore from backup %s.", backup_info['id'])
+            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise
+
+        LOG.info("Finished restore data from backup %s", backup_info['id'])
+
+    def reset_password_for_restore(self, ds_version=None,
+                                   data_dir='/var/lib/mysql/data'):
+        """Reset the root password after restore the db data.
+
+        We create a temporary database container by running mysqld_safe to
+        reset the root password.
+        """
+        LOG.info('Starting to reset password for restore')
+
+        try:
+            root_pass = self.app.get_auth_password(file="root.cnf")
+        except exception.UnprocessableEntity:
+            root_pass = utils.generate_random_password()
+            self.app.save_password('root', root_pass)
+
+        with tempfile.NamedTemporaryFile(mode='w') as init_file, \
+            tempfile.NamedTemporaryFile(suffix='.err') as err_file:
+            operating_system.write_file(
+                init_file.name,
+                f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_pass}';"
+            )
+            command = (
+                f'mysqld_safe --init-file={init_file.name} '
+                f'--log-error={err_file.name} '
+                f'--datadir={data_dir}'
+            )
+            extra_volumes = {
+                init_file.name: {"bind": init_file.name, "mode": "rw"},
+                err_file.name: {"bind": err_file.name, "mode": "rw"},
+            }
+
+            # Allow database service user to access the temporary files.
+            for file in [init_file.name, err_file.name]:
+                operating_system.chmod(file,
+                                       operating_system.FileMode.SET_ALL_RWX(),
+                                       force=True, as_root=True)
+
+            try:
+                self.app.start_db(ds_version=ds_version, command=command,
+                                  extra_volumes=extra_volumes)
+            except Exception as err:
+                LOG.error('Failed to reset password for restore, error: %s',
+                          str(err))
+                LOG.debug('Content in init error log file: %s',
+                          err_file.read())
+                raise err
+            finally:
+                LOG.debug(
+                    'The init container log: %s',
+                    docker_util.get_container_logs(self.app.docker_client)
+                )
+                docker_util.remove_container(self.app.docker_client)
+
+        LOG.info('Finished to reset password for restore')
+
+    def attach_replica(self, context, replica_info, slave_config):
+        LOG.info("Attaching replica, replica_info: %s", replica_info)
+        try:
+            if 'replication_strategy' in replica_info:
+                self._validate_slave_for_replication(context, replica_info)
+
+            self.replication.enable_as_slave(self.app, replica_info,
+                                             slave_config)
+        except Exception as err:
+            LOG.error("Error enabling replication, error: %s", str(err))
+            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise
+
+    def detach_replica(self, context, for_failover=False):
+        LOG.info("Detaching replica.")
+        replica_info = self.replication.detach_slave(self.app, for_failover)
+        return replica_info
 
     def backup_required_for_replication(self, context):
         return self.replication.backup_required_for_replication()
@@ -357,12 +380,12 @@ class MySqlManager(manager.Manager):
                                  replica_source_config=None):
         LOG.info("Getting replication snapshot, snapshot_info: %s",
                  snapshot_info)
-        app = self.mysql_app(self.mysql_app_status.get())
 
-        self.replication.enable_as_master(app, replica_source_config)
+        self.replication.enable_as_master(self.app, replica_source_config)
+        LOG.info('Enabled as replication master')
 
         snapshot_id, log_position = self.replication.snapshot_for_replication(
-            context, app, None, snapshot_info)
+            context, self.app, self.adm, None, snapshot_info)
 
         volume_stats = self.get_filesystem_stats(context, None)
 
@@ -374,84 +397,37 @@ class MySqlManager(manager.Manager):
                 'snapshot_id': snapshot_id
             },
             'replication_strategy': self.replication_strategy,
-            'master': self.replication.get_master_ref(app, snapshot_info),
+            'master': self.replication.get_master_ref(self.app, snapshot_info),
             'log_position': log_position
         }
 
         return replication_snapshot
 
     def enable_as_master(self, context, replica_source_config):
-        LOG.debug("Calling enable_as_master.")
-        app = self.mysql_app(self.mysql_app_status.get())
-        self.replication.enable_as_master(app, replica_source_config)
-
-    # DEPRECATED: Maintain for API Compatibility
-    def get_txn_count(self, context):
-        LOG.debug("Calling get_txn_count")
-        return self.mysql_app(self.mysql_app_status.get()).get_txn_count()
-
-    def get_last_txn(self, context):
-        LOG.debug("Calling get_last_txn")
-        return self.mysql_app(self.mysql_app_status.get()).get_last_txn()
-
-    def get_latest_txn_id(self, context):
-        LOG.debug("Calling get_latest_txn_id.")
-        return self.mysql_app(self.mysql_app_status.get()).get_latest_txn_id()
-
-    def wait_for_txn(self, context, txn):
-        LOG.debug("Calling wait_for_txn.")
-        self.mysql_app(self.mysql_app_status.get()).wait_for_txn(txn)
-
-    def detach_replica(self, context, for_failover=False):
-        LOG.debug("Detaching replica.")
-        app = self.mysql_app(self.mysql_app_status.get())
-        replica_info = self.replication.detach_slave(app, for_failover)
-        return replica_info
-
-    def get_replica_context(self, context):
-        LOG.debug("Getting replica context.")
-        app = self.mysql_app(self.mysql_app_status.get())
-        replica_info = self.replication.get_replica_context(app)
-        return replica_info
-
-    def _validate_slave_for_replication(self, context, replica_info):
-        if replica_info['replication_strategy'] != self.replication_strategy:
-            raise exception.IncompatibleReplicationStrategy(
-                replica_info.update({
-                    'guest_strategy': self.replication_strategy
-                }))
-
-        volume_stats = self.get_filesystem_stats(context, None)
-        if (volume_stats.get('total', 0.0) <
-                replica_info['dataset']['dataset_size']):
-            raise exception.InsufficientSpaceForReplica(
-                replica_info.update({
-                    'slave_volume_size': volume_stats.get('total', 0.0)
-                }))
-
-    def attach_replica(self, context, replica_info, slave_config):
-        LOG.info("Attaching replica.")
-        app = self.mysql_app(self.mysql_app_status.get())
-        try:
-            if 'replication_strategy' in replica_info:
-                self._validate_slave_for_replication(context, replica_info)
-            self.replication.enable_as_slave(app, replica_info, slave_config)
-        except Exception:
-            LOG.exception("Error enabling replication.")
-            app.status.set_status(rd_instance.ServiceStatuses.FAILED)
-            raise
+        LOG.info("Enable as master")
+        self.replication.enable_as_master(self.app, replica_source_config)
 
     def make_read_only(self, context, read_only):
-        LOG.debug("Executing make_read_only(%s)", read_only)
-        app = self.mysql_app(self.mysql_app_status.get())
-        app.make_read_only(read_only)
+        LOG.info("Executing make_read_only(%s)", read_only)
+        self.app.make_read_only(read_only)
 
-    def cleanup_source_on_replica_detach(self, context, replica_info):
-        LOG.debug("Cleaning up the source on the detach of a replica.")
-        self.replication.cleanup_source_on_replica_detach(self.mysql_admin(),
-                                                          replica_info)
+    def get_latest_txn_id(self, context):
+        LOG.info("Calling get_latest_txn_id.")
+        return self.app.get_latest_txn_id()
+
+    def get_last_txn(self, context):
+        LOG.info("Calling get_last_txn")
+        return self.app.get_last_txn()
+
+    def wait_for_txn(self, context, txn):
+        LOG.info("Calling wait_for_txn.")
+        self.app.wait_for_txn(txn)
+
+    def get_replica_context(self, context):
+        LOG.info("Getting replica context.")
+        replica_info = self.replication.get_replica_context(self.app, self.adm)
+        return replica_info
 
     def demote_replication_master(self, context):
-        LOG.debug("Demoting replication master.")
-        app = self.mysql_app(self.mysql_app_status.get())
-        self.replication.demote_master(app)
+        LOG.info("Demoting replication master.")
+        self.replication.demote_master(self.app)

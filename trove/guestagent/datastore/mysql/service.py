@@ -1,72 +1,43 @@
-# Copyright 2013 OpenStack Foundation
-# Copyright 2013 Rackspace Hosting
-# Copyright 2013 Hewlett-Packard Development Company, L.P.
-# All Rights Reserved.
+# Copyright 2020 Catalyst Cloud
 #
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-#         http://www.apache.org/licenses/LICENSE-2.0
+#        http://www.apache.org/licenses/LICENSE-2.0
 #
 #    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
-#
-
-from oslo_log import log as logging
-
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 from trove.guestagent.datastore.mysql_common import service
-
-LOG = logging.getLogger(__name__)
-CONF = service.CONF
-
-
-class KeepAliveConnection(service.BaseKeepAliveConnection):
-    pass
+from trove.guestagent.utils import mysql as mysql_util
 
 
 class MySqlAppStatus(service.BaseMySqlAppStatus):
-    pass
-
-
-class LocalSqlClient(service.BaseLocalSqlClient):
-    pass
+    def __init__(self, docker_client):
+        super(MySqlAppStatus, self).__init__(docker_client)
 
 
 class MySqlApp(service.BaseMySqlApp):
-    def __init__(self, status):
-        super(MySqlApp, self).__init__(status, LocalSqlClient,
-                                       KeepAliveConnection)
+    def __init__(self, status, docker_client):
+        super(MySqlApp, self).__init__(status, docker_client)
 
-    # DEPRECATED: Mantain for API Compatibility
-    def get_txn_count(self):
-        LOG.info("Retrieving latest txn id.")
-        txn_count = 0
-        with self.local_sql_client(self.get_engine()) as client:
-            result = client.execute('SELECT @@global.gtid_executed').first()
-            for uuid_set in result[0].split(','):
-                for interval in uuid_set.split(':')[1:]:
-                    if '-' in interval:
-                        iparts = interval.split('-')
-                        txn_count += int(iparts[1]) - int(iparts[0])
-                    else:
-                        txn_count += 1
-        return txn_count
+    def _get_gtid_executed(self):
+        with mysql_util.SqlClient(self.get_engine()) as client:
+            return client.execute('SELECT @@global.gtid_executed').first()[0]
 
     def _get_slave_status(self):
-        with self.local_sql_client(self.get_engine()) as client:
+        with mysql_util.SqlClient(self.get_engine()) as client:
             return client.execute('SHOW SLAVE STATUS').first()
 
     def _get_master_UUID(self):
         slave_status = self._get_slave_status()
         return slave_status and slave_status['Master_UUID'] or None
 
-    def _get_gtid_executed(self):
-        with self.local_sql_client(self.get_engine()) as client:
-            return client.execute('SELECT @@global.gtid_executed').first()[0]
+    def get_latest_txn_id(self):
+        return self._get_gtid_executed()
 
     def get_last_txn(self):
         master_UUID = self._get_master_UUID()
@@ -79,27 +50,18 @@ class MySqlApp(service.BaseMySqlApp):
                 break
         return master_UUID, int(last_txn_id)
 
-    def get_latest_txn_id(self):
-        LOG.info("Retrieving latest txn id.")
-        return self._get_gtid_executed()
-
     def wait_for_txn(self, txn):
-        LOG.info("Waiting on txn '%s'.", txn)
-        with self.local_sql_client(self.get_engine()) as client:
+        with mysql_util.SqlClient(self.get_engine()) as client:
             client.execute("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')"
                            % txn)
 
 
 class MySqlRootAccess(service.BaseMySqlRootAccess):
-    def __init__(self):
-        super(MySqlRootAccess, self).__init__(LocalSqlClient,
-                                              MySqlApp(MySqlAppStatus.get()))
+    def __init__(self, app):
+        super(MySqlRootAccess, self).__init__(app)
 
 
 class MySqlAdmin(service.BaseMySqlAdmin):
-    def __init__(self):
-        super(MySqlAdmin, self).__init__(LocalSqlClient, MySqlRootAccess(),
-                                         MySqlApp)
-
-
-get_engine = MySqlApp.get_engine
+    def __init__(self, app):
+        root_access = MySqlRootAccess(app)
+        super(MySqlAdmin, self).__init__(root_access, app)

@@ -66,7 +66,7 @@ class ApiTest(trove_testtools.TestCase):
             instance_id='inst-id', locality='affinity', modules=['mod-id'],
             name='inst-name', nics=['nic-id'], overrides={}, packages=None,
             root_password='pwd', slave_of_id='slv-id', users={'name': 'usr1'},
-            volume_size=1, volume_type='type', access=None)
+            volume_size=1, volume_type='type', access=None, ds_version=None)
 
     def test_detach_replica(self):
         self.api.detach_replica('some-instance-id')

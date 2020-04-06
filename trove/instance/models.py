@@ -144,12 +144,15 @@ def load_simple_instance_addresses(context, db_info):
         return
 
     addresses = []
+    user_ports = []
     client = clients.create_neutron_client(context, db_info.region_id)
     ports = client.list_ports(device_id=db_info.compute_instance_id)['ports']
     for port in ports:
         if 'Management port' not in port['description']:
             LOG.debug('Found user port %s for instance %s', port['id'],
                       db_info.id)
+
+            user_ports.append(port['id'])
             for ip in port['fixed_ips']:
                 # TODO(lxkong): IPv6 is not supported
                 if netutils.is_valid_ipv4(ip.get('ip_address')):
@@ -163,6 +166,7 @@ def load_simple_instance_addresses(context, db_info):
             addresses.append(
                 {'address': fip['floating_ip_address'], 'type': 'public'})
 
+    db_info.ports = user_ports
     db_info.addresses = addresses
 
 
@@ -218,6 +222,13 @@ class SimpleInstance(object):
     def addresses(self):
         if hasattr(self.db_info, 'addresses'):
             return self.db_info.addresses
+        else:
+            return None
+
+    @property
+    def ports(self):
+        if hasattr(self.db_info, 'ports'):
+            return self.db_info.ports
         else:
             return None
 
@@ -1273,13 +1284,15 @@ class Instance(BuiltInstance):
                 instance_id = ids
                 instance_name = names
                 root_password = root_passwords
+
             task_api.API(context).create_instance(
                 instance_id, instance_name, flavor, image_id, databases, users,
                 datastore_version.manager, datastore_version.packages,
                 volume_size, backup_id, availability_zone, root_password,
                 nics, overrides, slave_of_id, cluster_config,
                 volume_type=volume_type, modules=module_list,
-                locality=locality, access=access)
+                locality=locality, access=access,
+                ds_version=datastore_version.name)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password, locality=locality)
@@ -1366,7 +1379,6 @@ class Instance(BuiltInstance):
                                _resize_resources)
 
     def reboot(self):
-        self.validate_can_perform_action()
         LOG.info("Rebooting instance %s.", self.id)
         if self.db_info.cluster_id is not None and not self.context.is_admin:
             raise exception.ClusterInstanceOperationNotSupported()
@@ -1422,6 +1434,7 @@ class Instance(BuiltInstance):
         if not self.slaves:
             raise exception.BadRequest(_("Instance %s is not a replica"
                                        " source.") % self.id)
+
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         last_heartbeat_delta = timeutils.utcnow() - service.updated_at
         agent_expiry_interval = timedelta(seconds=CONF.agent_heartbeat_expiry)
@@ -1496,10 +1509,10 @@ class Instance(BuiltInstance):
                                                  status=status)
 
     def attach_configuration(self, configuration_id):
-        LOG.debug("Attaching configuration to instance: %s", self.id)
+        LOG.info("Attaching configuration %s to instance: %s",
+                 configuration_id, self.id)
         if not self.db_info.configuration_id:
             self._validate_can_perform_assign()
-            LOG.debug("Attaching configuration: %s", configuration_id)
             config = Configuration.find(self.context, configuration_id,
                                         self.db_info.datastore_version_id)
             self.update_configuration(config)
@@ -1519,7 +1532,8 @@ class Instance(BuiltInstance):
         to RESTART_REQUIRED.
         """
 
-        LOG.debug("Saving configuration on instance: %s", self.id)
+        LOG.info("Saving configuration %s on instance: %s",
+                 configuration.configuration_id, self.id)
         overrides = configuration.get_configuration_overrides()
 
         # Always put the instance into RESTART_REQUIRED state after
@@ -1543,8 +1557,8 @@ class Instance(BuiltInstance):
         Apply changes only if ALL values can be applied at once.
         Return True if the configuration has changed.
         """
-
-        LOG.debug("Applying configuration on instance: %s", self.id)
+        LOG.info("Applying configuration %s on instance: %s",
+                 configuration.configuration_id, self.id)
         overrides = configuration.get_configuration_overrides()
 
         if not configuration.does_configuration_need_restart():

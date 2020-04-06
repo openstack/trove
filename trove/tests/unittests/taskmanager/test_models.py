@@ -378,7 +378,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         )
         mock_guest_prepare.assert_called_with(
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
-            config_content, None, overrides, None, None, None
+            config_content, None, overrides, None, None, None, ds_version=None
         )
         mock_create_server.assert_called_with(
             8, 'mysql-image-id', 'mysql',
@@ -440,7 +440,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         )
         mock_guest_prepare.assert_called_with(
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
-            config_content, None, mock.ANY, None, None, None)
+            config_content, None, mock.ANY, None, None, None, ds_version=None)
         mock_create_server.assert_called_with(
             8, 'mysql-image-id', 'mysql',
             mock_build_volume_info()['block_device'], None,
@@ -822,8 +822,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                                          self.new_flavor)
         # verify
         self.assertIsNot(self.instance_task.server, orig_server)
-        self.instance_task._guest.stop_db.assert_any_call(
-            do_not_start_on_reboot=True)
+        self.assertEqual(1, self.instance_task._guest.stop_db.call_count)
         orig_server.resize.assert_any_call(self.new_flavor['id'])
         self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
         self.assertEqual(1, self.stub_server_mgr.get.call_count)
@@ -842,8 +841,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
             self.assertTrue(self.stub_server_mgr.get.called)
             self.assertIs(self.instance_task.server,
                           self.stub_verifying_server)
-            self.instance_task._guest.stop_db.assert_any_call(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.instance_task._guest.stop_db.call_count)
             orig_server.resize.assert_any_call(self.new_flavor['id'])
             self.assertThat(self.db_instance.task_status,
                             Is(InstanceTasks.NONE))
@@ -852,11 +850,12 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     @patch.object(utils, 'poll_until')
     def test_reboot(self, mock_poll):
         self.instance_task.server.reboot = Mock()
-        self.instance_task.set_datastore_status_to_paused = Mock()
+
         self.instance_task.reboot()
+
         self.instance_task._guest.stop_db.assert_any_call()
         self.instance_task.server.reboot.assert_any_call()
-        self.instance_task.set_datastore_status_to_paused.assert_any_call()
+        self.instance_task._guest.restart.assert_any_call()
 
     @patch.object(BaseInstance, 'update_db')
     def test_detach_replica(self, mock_update_db):
@@ -925,34 +924,6 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                           side_effect=GuestError):
             self.assertRaises(GuestError, self.instance_task.attach_replica,
                               Mock())
-
-    def test_get_floating_ips(self):
-        floating_ips = self.instance_task._get_floating_ips()
-        self.assertEqual({'192.168.10.1': 'fake-floatingip-id'},
-                         floating_ips)
-
-    @patch.object(BaseInstance, 'get_visible_ip_addresses',
-                  return_value=[{'address': '192.168.10.1', 'type': 'public'}])
-    def test_detach_public_ips(self, mock_address):
-        removed_ips = self.instance_task.detach_public_ips()
-        self.assertEqual(['fake-floatingip-id'], removed_ips)
-        mock_update_floatingip = (self.instance_task.neutron_client
-                                  .update_floatingip)
-        mock_update_floatingip.assert_called_once_with(
-            removed_ips[0], {'floatingip': {'port_id': None}})
-
-    def test_attach_public_ips(self):
-        self.instance_task.attach_public_ips(['fake-floatingip-id'])
-        mock_list_ports = (self.instance_task.neutron_client
-                           .list_ports)
-        mock_list_ports.assert_called_once_with(device_id='computeinst-id-1')
-
-        mock_update_floatingip = (self.instance_task.neutron_client
-                                  .update_floatingip)
-        mock_update_floatingip.assert_called_once_with(
-            'fake-floatingip-id',
-            {'floatingip': {'port_id': 'fake-port-id',
-                            'fixed_ip_address': '10.0.0.1'}})
 
     @patch.object(BaseInstance, 'update_db')
     def test_enable_as_master(self, mock_update_db):

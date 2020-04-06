@@ -20,6 +20,7 @@ import re
 import six
 
 from trove.common import pagination
+from trove.common import utils
 
 
 def update_dict(updates, target):
@@ -140,3 +141,26 @@ def serialize_list(li, limit=None, marker=None, include_marker=False):
     page, next_name = paginate_list(li, limit=limit, marker=marker,
                                     include_marker=include_marker)
     return [item.serialize() for item in page], next_name
+
+
+def get_filesystem_volume_stats(fs_path):
+    try:
+        stats = os.statvfs(fs_path)
+    except OSError:
+        raise RuntimeError("Filesystem not found (%s)" % fs_path)
+
+    total = stats.f_blocks * stats.f_bsize
+    free = stats.f_bfree * stats.f_bsize
+    # return the size in GB
+    used_gb = utils.to_gb(total - free)
+    total_gb = utils.to_gb(total)
+
+    output = {
+        'block_size': stats.f_bsize,
+        'total_blocks': stats.f_blocks,
+        'free_blocks': stats.f_bfree,
+        'total': total_gb,
+        'free': free,
+        'used': used_gb
+    }
+    return output

@@ -32,33 +32,32 @@ from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import utils
 
-
 LOG = logging.getLogger(__name__)
 defaults = {
     'mysql':
-    'trove.guestagent.datastore.mysql.manager.Manager',
-    'percona':
-    'trove.guestagent.datastore.experimental.percona.manager.Manager',
-    'pxc':
-    'trove.guestagent.datastore.experimental.pxc.manager.Manager',
-    'redis':
-    'trove.guestagent.datastore.experimental.redis.manager.Manager',
-    'cassandra':
-    'trove.guestagent.datastore.experimental.cassandra.manager.Manager',
-    'couchbase':
-    'trove.guestagent.datastore.experimental.couchbase.manager.Manager',
-    'mongodb':
-    'trove.guestagent.datastore.experimental.mongodb.manager.Manager',
-    'postgresql':
-    'trove.guestagent.datastore.experimental.postgresql.manager.Manager',
-    'couchdb':
-    'trove.guestagent.datastore.experimental.couchdb.manager.Manager',
-    'vertica':
-    'trove.guestagent.datastore.experimental.vertica.manager.Manager',
-    'db2':
-    'trove.guestagent.datastore.experimental.db2.manager.Manager',
+        'trove.guestagent.datastore.mysql.manager.Manager',
     'mariadb':
-    'trove.guestagent.datastore.experimental.mariadb.manager.Manager'
+        'trove.guestagent.datastore.mariadb.manager.Manager',
+    'percona':
+        'trove.guestagent.datastore.experimental.percona.manager.Manager',
+    'pxc':
+        'trove.guestagent.datastore.experimental.pxc.manager.Manager',
+    'redis':
+        'trove.guestagent.datastore.experimental.redis.manager.Manager',
+    'cassandra':
+        'trove.guestagent.datastore.experimental.cassandra.manager.Manager',
+    'couchbase':
+        'trove.guestagent.datastore.experimental.couchbase.manager.Manager',
+    'mongodb':
+        'trove.guestagent.datastore.experimental.mongodb.manager.Manager',
+    'postgresql':
+        'trove.guestagent.datastore.experimental.postgresql.manager.Manager',
+    'couchdb':
+        'trove.guestagent.datastore.experimental.couchdb.manager.Manager',
+    'vertica':
+        'trove.guestagent.datastore.experimental.vertica.manager.Manager',
+    'db2':
+        'trove.guestagent.datastore.experimental.db2.manager.Manager',
 }
 CONF = cfg.CONF
 

@@ -27,6 +27,7 @@ from troveclient.compat import exceptions
 from trove import tests
 from trove.tests.api.instances import instance_info
 from trove.tests.config import CONFIG
+from trove.tests.api import configurations
 
 
 def do_not_delete_instance():
@@ -90,3 +91,12 @@ class TestDeleteInstance(object):
 
         # Delete the datastore
         dbaas_admin.datastores.delete(datastore.id)
+
+    @test(depends_on=[test_instance_status_deleted_in_db])
+    def test_delete_configuration(self):
+        """Delete configurations created during testing."""
+        dbaas_admin = instance_info.dbaas_admin
+        configs = dbaas_admin.configurations.list()
+        for config in configs:
+            if config.name == configurations.CONFIG_NAME:
+                dbaas_admin.configurations.delete(config.id)

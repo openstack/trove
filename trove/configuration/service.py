@@ -218,8 +218,6 @@ class ConfigurationsController(wsgi.Controller):
     def _refresh_on_all_instances(self, context, configuration_id):
         """Refresh a configuration group on all single instances.
         """
-        LOG.debug("Re-applying configuration group '%s' to all instances.",
-                  configuration_id)
         single_instances = instances_models.DBInstance.find_all(
             tenant_id=context.project_id,
             configuration_id=configuration_id,
@@ -228,8 +226,8 @@ class ConfigurationsController(wsgi.Controller):
 
         config = models.Configuration(context, configuration_id)
         for dbinstance in single_instances:
-            LOG.debug("Re-applying configuration to instance: %s",
-                      dbinstance.id)
+            LOG.info("Re-applying configuration %s to instance: %s",
+                     configuration_id, dbinstance.id)
             instance = instances_models.Instance.load(context, dbinstance.id)
             instance.update_configuration(config)
 

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+DEV_MODE=${DEV_MODE:-"true"}
+SCRIPTDIR=$(dirname $0)
+GUEST_USERNAME=${GUEST_USERNAME:-"ubuntu"}
+GUEST_VENV=/opt/guest-agent-venv
+
+for folder in "/var/lib/trove" "/etc/trove" "/etc/trove/certs" "/etc/trove/conf.d" "/var/log/trove" "/opt/trove-guestagent"; do
+    mkdir -p ${folder}
+    chown -R ${GUEST_USERNAME}:root ${folder}
+done
+
+install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
+
+# Create a virtual environment (with dependencies installed) for guest agent service
+${DIB_PYTHON} -m virtualenv ${GUEST_VENV}
+${GUEST_VENV}/bin/pip install pip --upgrade
+${GUEST_VENV}/bin/pip install -U -c /opt/upper-constraints.txt /opt/guest-agent
+chown -R ${GUEST_USERNAME}:root ${GUEST_VENV}
+
+if [[ ${DEV_MODE} == "true" ]]; then
+    [[ -n "${HOST_SCP_USERNAME}" ]] || die "HOST_SCP_USERNAME needs to be set to the trovestack host user"
+    [[ -n "${ESCAPED_PATH_TROVE}" ]] || die "ESCAPED_PATH_TROVE needs to be set to the path to the trove directory on the trovestack host"
+
+    sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;s/PATH_TROVE/${ESCAPED_PATH_TROVE}/g" ${SCRIPTDIR}/guest-agent-dev.service > /etc/systemd/system/guest-agent.service
+else
+    # Link the trove-guestagent out to /usr/local/bin where the startup scripts look for
+    ln -s ${GUEST_VENV}/bin/trove-guestagent /usr/local/bin/guest-agent || true
+
+    case "$DIB_INIT_SYSTEM" in
+        systemd)
+            sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g" ${SCRIPTDIR}/guest-agent.service > /etc/systemd/system/guest-agent.service
+            ;;
+        upstart)
+            install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.conf /etc/init/guest-agent.conf
+            ;;
+        sysv)
+            install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.init /etc/init.d/guest-agent.init
+            ;;
+        *)
+            echo "Unsupported init system"
+            exit 1
+            ;;
+    esac
+fi

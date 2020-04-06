@@ -327,7 +327,7 @@ class TestRunner(object):
     instance_info = InstanceTestInfo()
     report = CONFIG.get_report()
 
-    def __init__(self, sleep_time=10, timeout=1200):
+    def __init__(self, sleep_time=10, timeout=1800):
         self.def_sleep_time = sleep_time
         self.def_timeout = timeout
 

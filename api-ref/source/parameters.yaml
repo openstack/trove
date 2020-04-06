@@ -688,10 +688,9 @@ replica_count:
   type: integer
 replica_of:
   description: |
-    ID or name of an existing instance to replicate
-    from.
+    ID or name of an existing instance to replicate from.
   in: body
-  required: false
+  required: true
   type: string
 restore_point:
   description: |
@@ -735,9 +734,10 @@ shard_id:
    type: string
 slave_of:
   description: |
-    To detach a replica, set ``slave_of`` to null.
+    To detach a replica, set ``slave_of`` to null. Deprecated in favor of
+    ``replica_of``
   in: body
-  required: true
+  required: false
   type: string
 tenant_id:
   description: |

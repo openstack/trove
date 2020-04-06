@@ -1,6 +1,5 @@
 {
     "instance": {
-        "replica_of": null,
-        "slave_of": null
+        "replica_of": null
     }
 }

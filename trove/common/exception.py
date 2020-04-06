@@ -307,7 +307,7 @@ class VolumeAttachmentsNotFound(NotFound):
 
 class VolumeCreationFailure(TroveError):
 
-    message = _("Failed to create a volume in Nova.")
+    message = _("Failed to create volume.")
 
 
 class VolumeSizeNotSpecified(BadRequest):
@@ -339,6 +339,16 @@ class ReplicationNotSupported(TroveError):
 class ReplicationSlaveAttachError(TroveError):
 
     message = _("Exception encountered attaching slave to new replica source.")
+
+
+class SlaveOperationNotSupported(TroveError):
+    message = _("The '%(operation)s' operation is not supported for slaves in "
+                "replication.")
+
+
+class UnableToDetermineLastMasterGTID(TroveError):
+    message = _("Unable to determine last GTID executed on master "
+                "(from file %(binlog_file)s).")
 
 
 class TaskManagerError(TroveError):
@@ -688,9 +698,3 @@ class LogAccessForbidden(Forbidden):
 class LogsNotAvailable(Forbidden):
 
     message = _("Log actions are not supported.")
-
-
-class SlaveOperationNotSupported(TroveError):
-
-    message = _("The '%(operation)s' operation is not supported for slaves in "
-                "replication.")

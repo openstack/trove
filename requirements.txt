@@ -48,3 +48,4 @@ xmltodict>=0.10.1 # MIT
 cryptography>=2.1.4  # BSD/Apache-2.0
 oslo.policy>=1.30.0 # Apache-2.0
 diskimage-builder!=1.6.0,!=1.7.0,!=1.7.1,>=1.1.2 # Apache-2.0
+docker>=4.2.0 # Apache-2.0

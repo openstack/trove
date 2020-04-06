@@ -119,7 +119,7 @@ class ResizeTests(ResizeTestBase):
     def test_guest_wont_stop_mysql(self):
         self.guest.stop_db.side_effect = RPCException("Could not stop MySQL!")
         self.assertRaises(RPCException, self.action.execute)
-        self.guest.stop_db.assert_called_once_with(do_not_start_on_reboot=True)
+        self.assertEqual(1, self.guest.stop_db.call_count)
         self.instance.update_db.assert_called_once_with(
             task_status=InstanceTasks.NONE)
 
@@ -128,7 +128,7 @@ class ResizeTests(ResizeTestBase):
         self.server.resize.side_effect = BadRequest(400)
         self.server.status = "ACTIVE"
         self.assertRaises(BadRequest, self.action.execute)
-        self.guest.stop_db.assert_called_once_with(do_not_start_on_reboot=True)
+        self.assertEqual(1, self.guest.stop_db.call_count)
         self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
         self.guest.restart.assert_called_once()
         self.instance.update_db.assert_called_once_with(
@@ -144,8 +144,7 @@ class ResizeTests(ResizeTestBase):
             expected_calls = [
                 mock.call(mock.ANY, sleep_time=2, time_out=120)] * 2
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.update_db.assert_called_once_with(
                 task_status=InstanceTasks.NONE)
@@ -168,8 +167,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.guest.reset_configuration.assert_called_once_with(
                 mock.ANY)
@@ -196,8 +194,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.update_db.assert_called_once_with(
                 task_status=InstanceTasks.NONE)
@@ -220,8 +217,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.guest.restart.assert_called_once()
             self.instance.update_db.assert_called_once_with(
@@ -250,8 +246,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.set_datastore_status_to_paused.assert_called_once()
             self.instance.guest.reset_configuration.assert_called_once_with(
@@ -284,8 +279,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.set_datastore_status_to_paused.assert_called_once()
             self.instance.guest.reset_configuration.assert_called_once_with(
@@ -320,8 +314,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.set_datastore_status_to_paused.assert_called_once()
             self.instance.server.confirm_resize.assert_called_once()
@@ -351,8 +344,7 @@ class ResizeTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.resize.assert_called_once_with(NEW_FLAVOR_ID)
             self.instance.set_datastore_status_to_paused.assert_called_once()
             self.instance.guest.reset_configuration.assert_called_once_with(
@@ -392,8 +384,7 @@ class MigrateTests(ResizeTestBase):
             self.assertEqual(expected_calls, mock_poll_until.call_args_list)
             # Make sure self.poll_until_side_effects is empty
             self.assertFalse(self.poll_until_side_effects)
-            self.guest.stop_db.assert_called_once_with(
-                do_not_start_on_reboot=True)
+            self.assertEqual(1, self.guest.stop_db.call_count)
             self.server.migrate.assert_called_once_with(force_host=None)
             self.instance.set_datastore_status_to_paused.assert_called_once()
             self.instance.server.confirm_resize.assert_called_once()
