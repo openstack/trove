@@ -919,7 +919,7 @@ class TestGetInstances(object):
     def test_index_list(self):
         allowed_attrs = ['id', 'links', 'name', 'status', 'flavor',
                          'datastore', 'ip', 'hostname', 'replica_of',
-                         'region']
+                         'region', 'addresses']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         instances = dbaas.instances.list()
@@ -941,7 +941,7 @@ class TestGetInstances(object):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
                          'datastore', 'fault', 'region',
-                         'service_status_updated']
+                         'service_status_updated', 'addresses']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         instances = dbaas.instances.list(detailed=True)
@@ -961,7 +961,7 @@ class TestGetInstances(object):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
                          'datastore', 'fault', 'region',
-                         'service_status_updated']
+                         'service_status_updated', 'addresses']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         else:

@@ -58,13 +58,6 @@ trove_auth_url = http://0.0.0.0/identity/v2.0
 # Service type to use when searching catalog.
 #neutron_service_type = network
 
-# Config option for showing the IP address that nova doles out
-# For nova-network, set this to the appropriate network label defined in nova
-# For neutron, set this to .* since users can specify custom network labels
-# You can also optionally specify regex'es to match the actual IP addresses
-# ip_regex (white-list) is applied before black_list_regex in the filter chain
-network_label_regex = ^private$
-#network_label_regex = .* #with neutron enabled
 #ip_regex = ^(15.|123.)
 #black_list_regex = ^10.0.0.
 

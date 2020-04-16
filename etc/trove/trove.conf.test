@@ -50,7 +50,6 @@ nova_compute_service_type = compute
 nova_service_name = Compute Service
 
 # Config option for showing the IP address that nova doles out
-network_label_regex = ^private$
 ip_regex = ^(15.|123.)
 black_list_regex = ^(10.0.0.)
 

@@ -53,9 +53,12 @@ class InstanceView(object):
         if self.instance.hostname:
             instance_dict['hostname'] = self.instance.hostname
         else:
-            ip = self.instance.get_visible_ip_addresses()
-            if ip:
-                instance_dict['ip'] = ip
+            addresses = self.instance.get_visible_ip_addresses()
+            if addresses:
+                # NOTE(lxkong): 'ip' is deprecated in stable/ussuri and should
+                # be removed in W.
+                instance_dict['ip'] = [addr['address'] for addr in addresses]
+                instance_dict['addresses'] = addresses
 
         if self.instance.slave_of_id is not None:
             instance_dict['replica_of'] = self._build_master_info()

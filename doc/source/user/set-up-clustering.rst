@@ -2,6 +2,11 @@
 Set up database clustering
 ==========================
 
+.. caution::
+
+   Database clustering function is still in experimental, should not be used
+   in production environment.
+
 You can store data across multiple machines by setting up MongoDB
 sharded clusters.
 

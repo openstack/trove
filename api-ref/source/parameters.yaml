@@ -419,10 +419,16 @@ instance_hostname:
   type: string
 instance_ip_address:
   description: |
-    The IP address of an instance.
+    The IP address of an instance(deprecated).
   in: body
   require: false
   type: string
+instance_ip_addresses:
+  description: |
+    The IP addresses of an instance, including the address type and IP.
+  in: body
+  require: false
+  type: array
 instance_link_href:
   description: |
     The ``href`` attribute of an instance link.

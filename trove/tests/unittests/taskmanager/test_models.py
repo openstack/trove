@@ -932,7 +932,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                          floating_ips)
 
     @patch.object(BaseInstance, 'get_visible_ip_addresses',
-                  return_value=['192.168.10.1'])
+                  return_value=[{'address': '192.168.10.1', 'type': 'public'}])
     def test_detach_public_ips(self, mock_address):
         removed_ips = self.instance_task.detach_public_ips()
         self.assertEqual(['fake-floatingip-id'], removed_ips)

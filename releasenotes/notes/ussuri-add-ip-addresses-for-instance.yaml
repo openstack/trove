@@ -1,0 +1,8 @@
+---
+features:
+  - Added a new field named ``addresses`` in the instance API
+    response which including the IP address and type, either 'private' or
+    'public'.
+deprecations:
+  - The 'ip' field of getting instance response is deprecated and will be
+    removed in W release.

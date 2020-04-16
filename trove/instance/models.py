@@ -25,16 +25,12 @@ from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 from oslo_utils import encodeutils
+from oslo_utils import netutils
 from sqlalchemy import func
 
 from trove.backup.models import Backup
 from trove.common import cfg
-from trove.common.clients import create_cinder_client
-from trove.common.clients import create_dns_client
-from trove.common.clients import create_glance_client
-from trove.common.clients import create_guest_client
-from trove.common.clients import create_neutron_client
-from trove.common.clients import create_nova_client
+from trove.common import clients
 from trove.common import crypto_utils as cu
 from trove.common import exception
 from trove.common.i18n import _
@@ -63,13 +59,16 @@ from trove.taskmanager import api as task_api
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
+# Invalid states to contact the agent
+AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE", "PROMOTE", "EJECT",
+                          "UPGRADE"]
 
-def filter_ips(ips, white_list_regex, black_list_regex):
-    """Return IPs matching white_list_regex and
-       Filter out IPs matching black_list_regex.
-    """
-    return [ip for ip in ips if re.search(white_list_regex, ip)
-            and not re.search(black_list_regex, ip)]
+
+def ip_visible(ip, white_list_regex, black_list_regex):
+    if re.search(white_list_regex, ip) and not re.search(black_list_regex, ip):
+        return True
+
+    return False
 
 
 def load_server(context, instance_id, server_id, region_name):
@@ -84,7 +83,7 @@ def load_server(context, instance_id, server_id, region_name):
     :type server_id: unicode
     :rtype: novaclient.v2.servers.Server
     """
-    client = create_nova_client(context, region_name=region_name)
+    client = clients.create_nova_client(context, region_name=region_name)
     try:
         server = client.servers.get(server_id)
     except nova_exceptions.NotFound:
@@ -129,21 +128,42 @@ def load_simple_instance_server_status(context, db_info):
     """Loads a server or raises an exception."""
     if 'BUILDING' == db_info.task_status.action:
         db_info.server_status = "BUILD"
-        db_info.addresses = {}
     else:
-        client = create_nova_client(context, db_info.region_id)
+        client = clients.create_nova_client(context, db_info.region_id)
         try:
             server = client.servers.get(db_info.compute_instance_id)
             db_info.server_status = server.status
-            db_info.addresses = server.addresses
         except nova_exceptions.NotFound:
             db_info.server_status = "SHUTDOWN"
-            db_info.addresses = {}
 
 
-# Invalid states to contact the agent
-AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE", "PROMOTE", "EJECT",
-                          "UPGRADE"]
+def load_simple_instance_addresses(context, db_info):
+    """Get addresses of the instance from Neutron."""
+    if 'BUILDING' == db_info.task_status.action:
+        db_info.addresses = []
+        return
+
+    addresses = []
+    client = clients.create_neutron_client(context, db_info.region_id)
+    ports = client.list_ports(device_id=db_info.compute_instance_id)['ports']
+    for port in ports:
+        if 'Management port' not in port['description']:
+            LOG.debug('Found user port %s for instance %s', port['id'],
+                      db_info.id)
+            for ip in port['fixed_ips']:
+                # TODO(lxkong): IPv6 is not supported
+                if netutils.is_valid_ipv4(ip.get('ip_address')):
+                    addresses.append(
+                        {'address': ip['ip_address'], 'type': 'private'})
+
+            fips = client.list_floatingips(port_id=port['id'])
+            if len(fips['floatingips']) == 0:
+                continue
+            fip = fips['floatingips'][0]
+            addresses.append(
+                {'address': fip['floating_ip_address'], 'type': 'public'})
+
+    db_info.addresses = addresses
 
 
 class SimpleInstance(object):
@@ -196,13 +216,6 @@ class SimpleInstance(object):
 
     @property
     def addresses(self):
-        # TODO(tim.simpson): This code attaches two parts of the Nova server to
-        #                   db_info: "status" and "addresses". The idea
-        #                   originally was to listen to events to update this
-        #                   data and store it in the Trove database.
-        #                   However, it may have been unwise as a year and a
-        #                   half later we still have to load the server anyway
-        #                   and this makes the code confusing.
         if hasattr(self.db_info, 'addresses'):
             return self.db_info.addresses
         else:
@@ -217,6 +230,7 @@ class SimpleInstance(object):
         """Returns the IP address to be used with DNS."""
         ips = self.get_visible_ip_addresses()
         if ips:
+            # FIXME
             return ips[0]
 
     @property
@@ -234,20 +248,14 @@ class SimpleInstance(object):
             return None
 
         IPs = []
-        mgmt_networks = neutron.get_management_networks(self.context)
 
-        for label in self.addresses:
-            if label in mgmt_networks:
-                continue
-            if (CONF.network_label_regex and
-                    not re.search(CONF.network_label_regex, label)):
-                continue
+        for addr_info in self.addresses:
+            if CONF.ip_regex and CONF.black_list_regex:
+                if not ip_visible(addr_info['address'], CONF.ip_regex,
+                                  CONF.black_list_regex):
+                    continue
 
-            IPs.extend([addr.get('addr') for addr in self.addresses[label]])
-
-        # Includes ip addresses that match the regexp pattern
-        if CONF.ip_regex and CONF.black_list_regex:
-            IPs = filter_ips(IPs, CONF.ip_regex, CONF.black_list_regex)
+            IPs.append(addr_info)
 
         return IPs
 
@@ -550,15 +558,16 @@ def load_instance(cls, context, id, needs_server=False,
         # necessary and instead we'll just use the server_status field from
         # the instance table.
         load_simple_instance_server_status(context, db_info)
+        load_simple_instance_addresses(context, db_info)
         server = None
     else:
         try:
             server = load_server(context, db_info.id,
                                  db_info.compute_instance_id,
                                  region_name=db_info.region_id)
-            # TODO(tim.simpson): Remove this hack when we have notifications!
             db_info.server_status = server.status
-            db_info.addresses = server.addresses
+
+            load_simple_instance_addresses(context, db_info)
         except exception.ComputeInstanceNotFound:
             LOG.error("Could not load compute instance %s.",
                       db_info.compute_instance_id)
@@ -568,24 +577,32 @@ def load_instance(cls, context, id, needs_server=False,
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     LOG.debug("Instance %(instance_id)s service status is %(service_status)s.",
               {'instance_id': id, 'service_status': service_status.status})
+
     return cls(context, db_info, server, service_status)
 
 
 def load_instance_with_info(cls, context, id, cluster_id=None):
     db_info = get_db_info(context, id, cluster_id)
+
     load_simple_instance_server_status(context, db_info)
+
+    load_simple_instance_addresses(context, db_info)
+
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     LOG.debug("Instance %(instance_id)s service status is %(service_status)s.",
               {'instance_id': id, 'service_status': service_status.status})
     instance = cls(context, db_info, service_status)
+
     load_guest_info(instance, context, id)
+
     load_server_group_info(instance, context)
+
     return instance
 
 
 def load_guest_info(instance, context, id):
     if instance.status not in AGENT_INVALID_STATUSES:
-        guest = create_guest_client(context, id)
+        guest = clients.create_guest_client(context, id)
         try:
             volume_info = guest.get_volume_info()
             instance.volume_used = volume_info['used']
@@ -646,7 +663,7 @@ class BaseInstance(SimpleInstance):
         self._server_group_loaded = False
 
     def get_guest(self):
-        return create_guest_client(self.context, self.db_info.id)
+        return clients.create_guest_client(self.context, self.db_info.id)
 
     def delete(self):
         def _delete_resources():
@@ -754,7 +771,7 @@ class BaseInstance(SimpleInstance):
         try:
             dns_support = CONF.trove_dns_support
             if dns_support:
-                dns_api = create_dns_client(self.context)
+                dns_api = clients.create_dns_client(self.context)
                 dns_api.delete_instance_entry(instance_id=self.id)
         except Exception as e:
             LOG.warning("Failed to delete dns entry of instance %s, error: %s",
@@ -839,7 +856,7 @@ class BaseInstance(SimpleInstance):
     @property
     def nova_client(self):
         if not self._nova_client:
-            self._nova_client = create_nova_client(
+            self._nova_client = clients.create_nova_client(
                 self.context, region_name=self.db_info.region_id)
         return self._nova_client
 
@@ -866,14 +883,14 @@ class BaseInstance(SimpleInstance):
     @property
     def volume_client(self):
         if not self._volume_client:
-            self._volume_client = create_cinder_client(
+            self._volume_client = clients.create_cinder_client(
                 self.context, region_name=self.db_info.region_id)
         return self._volume_client
 
     @property
     def neutron_client(self):
         if not self._neutron_client:
-            self._neutron_client = create_neutron_client(
+            self._neutron_client = clients.create_neutron_client(
                 self.context, region_name=self.db_info.region_id)
         return self._neutron_client
 
@@ -966,8 +983,8 @@ class Instance(BuiltInstance):
     @classmethod
     def _validate_remote_datastore(cls, context, region_name, flavor,
                                    datastore, datastore_version):
-        remote_nova_client = create_nova_client(context,
-                                                region_name=region_name)
+        remote_nova_client = clients.create_nova_client(
+            context, region_name=region_name)
         try:
             remote_flavor = remote_nova_client.flavors.get(flavor.id)
             if (flavor.ram != remote_flavor.ram or
@@ -1000,9 +1017,9 @@ class Instance(BuiltInstance):
                 "Datastore Version %(dsv)s not found in region %(remote)s."
                 % {'dsv': datastore_version.name, 'remote': region_name})
 
-        glance_client = create_glance_client(context)
+        glance_client = clients.create_glance_client(context)
         local_image = glance_client.images.get(datastore_version.image)
-        remote_glance_client = create_glance_client(
+        remote_glance_client = clients.create_glance_client(
             context, region_name=region_name)
         remote_image = remote_glance_client.images.get(
             remote_ds_ver.image)
@@ -1050,7 +1067,7 @@ class Instance(BuiltInstance):
                     flavor_id=flavor_id)
 
         datastore_cfg = CONF.get(datastore_version.manager)
-        client = create_nova_client(context)
+        client = clients.create_nova_client(context)
         try:
             flavor = client.flavors.get(flavor_id)
         except nova_exceptions.NotFound:
@@ -1242,7 +1259,7 @@ class Instance(BuiltInstance):
                     status=tr_instance.ServiceStatuses.NEW)
 
                 if CONF.trove_dns_support:
-                    dns_client = create_dns_client(context)
+                    dns_client = clients.create_dns_client(context)
                     hostname = dns_client.determine_hostname(instance_id)
                     db_info.hostname = hostname
                     db_info.save()
@@ -1659,7 +1676,7 @@ class Instances(object):
 
         if context is None:
             raise TypeError(_("Argument context not defined."))
-        client = create_nova_client(context)
+        client = clients.create_nova_client(context)
         servers = client.servers.list()
         query_opts = {'tenant_id': context.project_id,
                       'deleted': False}
@@ -1711,26 +1728,25 @@ class Instances(object):
         for db in db_items:
             server = None
             try:
-                # TODO(tim.simpson): Delete when we get notifications working!
                 if InstanceTasks.BUILDING == db.task_status:
                     db.server_status = "BUILD"
-                    db.addresses = {}
+                    db.addresses = []
                 else:
                     try:
                         region = CONF.service_credentials.region_name
                         if (not db.region_id or db.region_id == region):
                             server = find_server(db.id, db.compute_instance_id)
                         else:
-                            nova_client = create_nova_client(
+                            nova_client = clients.create_nova_client(
                                 context, region_name=db.region_id)
                             server = nova_client.servers.get(
                                 db.compute_instance_id)
                         db.server_status = server.status
-                        db.addresses = server.addresses
+
+                        load_simple_instance_addresses(context, db)
                     except exception.ComputeInstanceNotFound:
                         db.server_status = "SHUTDOWN"  # Fake it...
-                        db.addresses = {}
-                # TODO(tim.simpson): End of hack.
+                        db.addresses = []
 
                 # volumes = find_volumes(server.id)
                 datastore_status = InstanceServiceStatus.find_by(

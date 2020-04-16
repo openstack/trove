@@ -93,7 +93,6 @@ class ClusterView(object):
                     ip_list.extend(instance_ips)
             if instance.type in instance_dict_to_be_published_for:
                 instances.append(instance_dict)
-        ip_list.sort()
         return instances, ip_list
 
     def build_instances(self):

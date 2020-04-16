@@ -198,7 +198,7 @@ class ClusterTasks(Cluster):
 
     @classmethod
     def get_ip(cls, instance):
-        return instance.get_visible_ip_addresses()[0]
+        return instance.get_visible_ip_addresses()[0].get('address')
 
     def _all_instances_ready(self, instance_ids, cluster_id,
                              shard_id=None):
@@ -1170,19 +1170,22 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         return floating_ips
 
     def detach_public_ips(self):
-        LOG.debug("Begin detach_public_ips for instance %s", self.id)
+        LOG.info("Begin detach_public_ips for instance %s", self.id)
         removed_ips = []
         floating_ips = self._get_floating_ips()
-        for ip in self.get_visible_ip_addresses():
-            if ip in floating_ips:
-                fip_id = floating_ips[ip]
-                self.neutron_client.update_floatingip(
-                    fip_id, {'floatingip': {'port_id': None}})
-                removed_ips.append(fip_id)
+
+        for item in self.get_visible_ip_addresses():
+            if item['type'] == 'public':
+                ip = item['address']
+                if ip in floating_ips:
+                    fip_id = floating_ips[ip]
+                    self.neutron_client.update_floatingip(
+                        fip_id, {'floatingip': {'port_id': None}})
+                    removed_ips.append(fip_id)
         return removed_ips
 
     def attach_public_ips(self, ips):
-        LOG.debug("Begin attach_public_ips for instance %s", self.id)
+        LOG.info("Begin attach_public_ips for instance %s", self.id)
         server_id = self.db_info.compute_instance_id
 
         # NOTE(zhaochao): in Nova's addFloatingIp, the new floating ip will

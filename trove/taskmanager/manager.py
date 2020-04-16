@@ -344,6 +344,8 @@ class Manager(periodic_task.PeriodicTasks):
                     snapshot = instance_tasks.get_replication_master_snapshot(
                         context, slave_of_id, flavor, replica_backup_id,
                         replica_number=replica_number)
+                    LOG.info('Snapshot info for creating replica of %s: %s',
+                             slave_of_id, snapshot)
 
                     replica_backup_id = snapshot['dataset']['snapshot_id']
                     replica_backup_created = (replica_backup_id is not None)

@@ -161,39 +161,14 @@ Response Parameters
    - datastore: datastore2
    - datastore.type: datastore_type
    - datastore.version: datastore_version1
-   - region: region_name2
-   - tenant_id: tenant_id
    - volume: volume
    - volume.size: volume_size
    - volume.used: volume_used
-   - hostname: instance_hostname
-   - ip: instance_ip_address
    - created: created
    - updated: updated
    - service_status_updated: service_status_updated
-   - fault: instance_fault
-   - fault.message: instance_fault_message
-   - fault.created: instance_fault_created
-   - fault.details: instance_fault_details
-   - replicas: instance_replicas
-   - replicas.id: instance_replica_id
-   - replicas.links: instance_replica_links
-   - replicas.links.href: instance_replica_link_href
-   - replicas.links.rel: instance_replica_link_rel
-   - configuration: configuration1
-   - configuration.id: configuration_id
-   - configuration.name: configuration_name
-   - configuration.links: configuration_links
-   - configuration.links.href: configuration_link_href
-   - configuration.links.rel: configuration_link_rel
    - locality: locality
-   - local_storage_used: local_storage_used
    - password: root_password
-   - cluster_id: cluster_id
-   - shard_id: shard_id
-   - server_id: server_id
-   - volume_id: volume_id
-   - encrypted_rpc_messaging: encrypted_rpc_messaging
    - instance: instance
 
 
@@ -229,6 +204,62 @@ Request
 
    - project_id: project_id
    - instanceId: instanceId
+
+
+Response Parameters
+-------------------
+
+.. rest_parameters:: parameters.yaml
+
+   - instance: instance
+   - id: instanceId1
+   - name: instanceName1
+   - status: instance_status
+   - links: instance_links
+   - links.href: instance_link_href
+   - links.rel: instance_link_rel
+   - flavor: flavor
+   - flavor.id: flavorId1
+   - flavor.links: flavor_links
+   - flavor.links.href: flavor_link_href
+   - flavor.links.rel: flavor_link_rel
+   - datastore: datastore2
+   - datastore.type: datastore_type
+   - datastore.version: datastore_version1
+   - region: region_name2
+   - tenant_id: tenant_id
+   - volume: volume
+   - volume.size: volume_size
+   - volume.used: volume_used
+   - hostname: instance_hostname
+   - ip: instance_ip_address
+   - addresses: instance_ip_addresses
+   - created: created
+   - updated: updated
+   - service_status_updated: service_status_updated
+   - fault: instance_fault
+   - fault.message: instance_fault_message
+   - fault.created: instance_fault_created
+   - fault.details: instance_fault_details
+   - replicas: instance_replicas
+   - replicas.id: instance_replica_id
+   - replicas.links: instance_replica_links
+   - replicas.links.href: instance_replica_link_href
+   - replicas.links.rel: instance_replica_link_rel
+   - configuration: configuration1
+   - configuration.id: configuration_id
+   - configuration.name: configuration_name
+   - configuration.links: configuration_links
+   - configuration.links.href: configuration_link_href
+   - configuration.links.rel: configuration_link_rel
+   - locality: locality
+   - local_storage_used: local_storage_used
+   - password: root_password
+   - cluster_id: cluster_id
+   - shard_id: shard_id
+   - server_id: server_id
+   - volume_id: volume_id
+   - encrypted_rpc_messaging: encrypted_rpc_messaging
 
 
 Response Example

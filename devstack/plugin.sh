@@ -556,7 +556,6 @@ function config_trove_network {
     sudo ip route
 
     # Now make sure the conf settings are right
-    iniset $TROVE_CONF DEFAULT network_label_regex ""
     iniset $TROVE_CONF DEFAULT ip_regex ""
     iniset $TROVE_CONF DEFAULT black_list_regex ""
     iniset $TROVE_CONF DEFAULT management_networks ${mgmt_net_id}

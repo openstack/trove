@@ -17,6 +17,7 @@ from mock import Mock, patch
 
 from trove.backup import models as backup_models
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
 from trove.common.instance import ServiceStatuses
 from trove.common import neutron
@@ -24,7 +25,6 @@ from trove.datastore import models as datastore_models
 from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import DBInstanceFault
-from trove.instance.models import filter_ips
 from trove.instance.models import Instance
 from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
@@ -50,16 +50,16 @@ class SimpleInstanceTest(trove_testtools.TestCase):
                 ServiceStatuses.BUILDING), ds_version=Mock(), ds=Mock(),
             locality='affinity')
         self.instance.context = self.context
-        db_info.addresses = {"private": [{"addr": "123.123.123.123"}],
-                             "internal": [{"addr": "10.123.123.123"}],
-                             "public": [{"addr": "15.123.123.123"}]}
-        self.orig_conf = CONF.network_label_regex
+        db_info.addresses = [
+            {'type': 'private', 'address': '123.123.123.123'},
+            {'type': 'private', 'address': '10.123.123.123'},
+            {'type': 'public', 'address': '15.123.123.123'},
+        ]
         self.orig_ip_regex = CONF.ip_regex
         self.orig_black_list_regex = CONF.black_list_regex
 
     def tearDown(self):
         super(SimpleInstanceTest, self).tearDown()
-        CONF.network_label_regex = self.orig_conf
         CONF.ip_start = None
         CONF.management_networks = []
         CONF.ip_regex = self.orig_ip_regex
@@ -73,63 +73,21 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         self.assertFalse(root_on_create_val)
 
     def test_filter_ips_white_list(self):
-        CONF.network_label_regex = '.*'
         CONF.ip_regex = '^(15.|123.)'
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = filter_ips(
-            ip, CONF.ip_regex, CONF.black_list_regex)
+        ip = [addr['address'] for addr in ip]
         self.assertEqual(2, len(ip))
         self.assertIn('123.123.123.123', ip)
         self.assertIn('15.123.123.123', ip)
 
     def test_filter_ips_black_list(self):
-        CONF.network_label_regex = '.*'
         CONF.ip_regex = '.*'
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = filter_ips(
-            ip, CONF.ip_regex, CONF.black_list_regex)
+        ip = [addr['address'] for addr in ip]
         self.assertEqual(2, len(ip))
         self.assertNotIn('10.123.123.123', ip)
-
-    def test_one_network_label(self):
-        CONF.network_label_regex = 'public'
-        ip = self.instance.get_visible_ip_addresses()
-        self.assertEqual(['15.123.123.123'], ip)
-
-    def test_two_network_labels(self):
-        CONF.network_label_regex = '^(private|public)$'
-        ip = self.instance.get_visible_ip_addresses()
-        self.assertEqual(2, len(ip))
-        self.assertIn('123.123.123.123', ip)
-        self.assertIn('15.123.123.123', ip)
-
-    def test_all_network_labels(self):
-        CONF.network_label_regex = '.*'
-        ip = self.instance.get_visible_ip_addresses()
-        self.assertEqual(3, len(ip))
-        self.assertIn('10.123.123.123', ip)
-        self.assertIn('123.123.123.123', ip)
-        self.assertIn('15.123.123.123', ip)
-
-    @patch('trove.common.clients.create_neutron_client')
-    def test_filter_management_ip_addresses(self, mock_neutron_client):
-        CONF.network_label_regex = ''
-        CONF.management_networks = ['fake-net-id']
-
-        neutron_client = Mock()
-        neutron_client.show_network.return_value = {
-            'network': {'name': 'public'}
-        }
-        mock_neutron_client.return_value = neutron_client
-
-        ip = self.instance.get_visible_ip_addresses()
-
-        neutron_client.show_network.assert_called_once_with('fake-net-id')
-        self.assertEqual(2, len(ip))
-        self.assertIn('123.123.123.123', ip)
-        self.assertIn('10.123.123.123', ip)
 
     def test_locality(self):
         self.assertEqual('affinity', self.instance.locality)
@@ -208,8 +166,10 @@ class CreateInstanceTest(trove_testtools.TestCase):
             deleted=False
         )
         self.backup_id = self.backup.id
-        self.orig_client = models.create_nova_client
-        models.create_nova_client = nova.fake_create_nova_client
+
+        self.orig_client = clients.create_nova_client
+        clients.create_nova_client = nova.fake_create_nova_client
+
         self.orig_api = task_api.API(self.context).create_instance
         task_api.API(self.context).create_instance = Mock()
         self.run_with_quotas = models.run_with_quotas
@@ -232,7 +192,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
         self.backup.delete()
         self.datastore.delete()
         self.datastore_version.delete()
-        models.create_nova_client = self.orig_client
+        clients.create_nova_client = self.orig_client
         task_api.API(self.context).create_instance = self.orig_api
         models.run_with_quotas = self.run_with_quotas
         backup_models.DBBackup.check_swift_object_exist = self.check
@@ -310,21 +270,22 @@ class TestInstanceUpgrade(trove_testtools.TestCase):
             manager='test',
             active=1)
 
-        self.safe_nova_client = models.create_nova_client
-        models.create_nova_client = nova.fake_create_nova_client
+        self.safe_nova_client = clients.create_nova_client
+        clients.create_nova_client = nova.fake_create_nova_client
         super(TestInstanceUpgrade, self).setUp()
 
     def tearDown(self):
         self.datastore.delete()
         self.datastore_version1.delete()
         self.datastore_version2.delete()
-        models.create_nova_client = self.safe_nova_client
+        clients.create_nova_client = self.safe_nova_client
         super(TestInstanceUpgrade, self).tearDown()
 
+    @patch('trove.common.clients.create_neutron_client')
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(task_api.API, 'upgrade')
     @patch('trove.tests.fakes.nova.LOG')
-    def test_upgrade(self, mock_logging, task_upgrade):
+    def test_upgrade(self, mock_logging, task_upgrade, mock_neutron_client):
         instance_model = DBInstance(
             InstanceTasks.NONE,
             id=str(uuid.uuid4()),
@@ -391,8 +352,8 @@ class TestReplication(trove_testtools.TestCase):
             instance_id=self.master.id)
         self.master_status.save()
 
-        self.safe_nova_client = models.create_nova_client
-        models.create_nova_client = nova.fake_create_nova_client
+        self.safe_nova_client = clients.create_nova_client
+        clients.create_nova_client = nova.fake_create_nova_client
 
         self.swift_verify_patch = patch.object(models.Backup,
                                                'verify_swift_auth_token')
@@ -406,7 +367,7 @@ class TestReplication(trove_testtools.TestCase):
         self.master_status.delete()
         self.datastore.delete()
         self.datastore_version.delete()
-        models.create_nova_client = self.safe_nova_client
+        clients.create_nova_client = self.safe_nova_client
         super(TestReplication, self).tearDown()
 
     @patch('trove.instance.models.LOG')

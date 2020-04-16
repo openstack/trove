@@ -82,13 +82,16 @@ class ClusterViewTest(trove_testtools.TestCase):
         cluster.instances.append(Mock())
         cluster.instances.append(Mock())
         cluster.instances[0].type = 'configsvr'
-        cluster.instances[0].get_visible_ip_addresses = lambda: ['1.2.3.4']
+        cluster.instances[0].get_visible_ip_addresses.return_value = [
+            {'type': 'private', 'address': '1.2.3.4'}]
         cluster.instances[0].datastore_version.manager = 'mongodb'
         cluster.instances[1].type = 'query_router'
-        cluster.instances[1].get_visible_ip_addresses = lambda: ['1.2.3.4']
+        cluster.instances[1].get_visible_ip_addresses.return_value = [
+            {'type': 'private', 'address': '1.2.3.4'}]
         cluster.instances[1].datastore_version.manager = 'mongodb'
         cluster.instances[2].type = 'member'
-        cluster.instances[2].get_visible_ip_addresses = lambda: ['1.2.3.4']
+        cluster.instances[2].get_visible_ip_addresses.return_value = [
+            {'type': 'private', 'address': '1.2.3.4'}]
         cluster.instances[2].datastore_version.manager = 'mongodb'
 
         def test_case(ip_to_be_published_for,
@@ -124,7 +127,8 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.addresses = {"private": [{"addr": self.ip}]}
         self.instance.volume_used = '3'
         self.instance.root_password = 'iloveyou'
-        self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
+        self.instance.get_visible_ip_addresses.return_value = [
+            {'type': 'private', 'address': '1.2.3.4'}]
         self.instance.slave_of_id = None
         self.instance.slaves = None
         self.context = trove_testtools.TroveTestContext(self)
@@ -162,3 +166,5 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
                          result['instance']['datastore']['version'])
         self.assertNotIn('hostname', result['instance'])
         self.assertEqual([self.ip], result['instance']['ip'])
+        self.assertEqual(self.ip,
+                         result['instance']['addresses'][0]['address'])

@@ -29,12 +29,10 @@ class InstanceViewsTest(trove_testtools.TestCase):
         self.addresses = {"private": [{"addr": "123.123.123.123"}],
                           "internal": [{"addr": "10.123.123.123"}],
                           "public": [{"addr": "15.123.123.123"}]}
-        self.orig_label_regex = CONF.network_label_regex
         self.orig_ip_regex = CONF.ip_regex
 
     def tearDown(self):
         super(InstanceViewsTest, self).tearDown()
-        CONF.network_label_regex = self.orig_label_regex
         CONF.ip_regex = self.orig_ip_regex
 
 
@@ -59,7 +57,8 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.addresses = {"private": [{"addr": self.ip}]}
         self.instance.volume_used = '3'
         self.instance.root_password = 'iloveyou'
-        self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
+        self.instance.get_visible_ip_addresses.return_value = [
+            {'type': 'private', 'address': '1.2.3.4'}]
         self.instance.slave_of_id = None
         self.instance.slaves = []
         self.instance.locality = 'affinity'
@@ -104,6 +103,8 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
                          result['instance']['datastore']['version'])
         self.assertNotIn('hostname', result['instance'])
         self.assertEqual([self.ip], result['instance']['ip'])
+        self.assertEqual(self.ip,
+                         result['instance']['addresses'][0]['address'])
 
     def test_locality(self):
         self.instance.hostname = None
