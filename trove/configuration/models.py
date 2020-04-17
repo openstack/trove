@@ -189,7 +189,7 @@ class Configuration(object):
                                                 id=self.configuration_id)
         LOG.debug("config_items: %s", config_items)
         detail_list = DatastoreConfigurationParameters.load_parameters(
-            datastore_v.id, show_deleted=True)
+            datastore_v.id)
 
         for i in config_items:
             LOG.debug("config item: %s", i)
@@ -265,8 +265,6 @@ class DBDatastoreConfigurationParameters(dbmodels.DatabaseModelBase):
         'max_size',
         'min_size',
         'data_type',
-        'deleted',
-        'deleted_at',
     ]
     _table_name = "datastore_configuration_parameters"
 
@@ -287,22 +285,12 @@ class DatastoreConfigurationParameters(object):
         ds_v_id = kwargs.get('datastore_version_id')
         config_param_name = kwargs.get('name')
         try:
-            param = DatastoreConfigurationParameters.load_parameter_by_name(
+            DatastoreConfigurationParameters.load_parameter_by_name(
                 ds_v_id,
-                config_param_name,
-                show_deleted=True)
-            if param.deleted == 1:
-                param.restart_required = kwargs.get('restart_required')
-                param.data_type = kwargs.get('data_type')
-                param.max_size = kwargs.get('max_size')
-                param.min_size = kwargs.get('min_size')
-                param.deleted = 0
-                param.save()
-                return param
-            else:
-                raise exception.ConfigurationParameterAlreadyExists(
-                    parameter_name=config_param_name,
-                    datastore_version=ds_v_id)
+                config_param_name)
+            raise exception.ConfigurationParameterAlreadyExists(
+                parameter_name=config_param_name,
+                datastore_version=ds_v_id)
         except exception.NotFound:
             pass
         config_param = DBDatastoreConfigurationParameters.create(
@@ -313,54 +301,29 @@ class DatastoreConfigurationParameters(object):
     def delete(version_id, config_param_name):
         config_param = DatastoreConfigurationParameters.load_parameter_by_name(
             version_id, config_param_name)
-        config_param.deleted = True
-        config_param.deleted_at = timeutils.utcnow()
-        config_param.save()
+        config_param.delete()
 
     @classmethod
-    def load_parameters(cls, datastore_version_id, show_deleted=False):
-        try:
-            if show_deleted:
-                return DBDatastoreConfigurationParameters.find_all(
-                    datastore_version_id=datastore_version_id
-                )
-            else:
-                return DBDatastoreConfigurationParameters.find_all(
-                    datastore_version_id=datastore_version_id,
-                    deleted=False
-                )
-        except exception.NotFound:
-            raise exception.NotFound(uuid=datastore_version_id)
+    def load_parameters(cls, datastore_version_id):
+        return DBDatastoreConfigurationParameters.find_all(
+            datastore_version_id=datastore_version_id)
 
     @classmethod
-    def load_parameter(cls, config_id, show_deleted=False):
+    def load_parameter(cls, config_id):
         try:
-            if show_deleted:
-                return DBDatastoreConfigurationParameters.find_by(
-                    id=config_id
-                )
-            else:
-                return DBDatastoreConfigurationParameters.find_by(
-                    id=config_id, deleted=False
-                )
+            return DBDatastoreConfigurationParameters.find_by(
+                id=config_id, deleted=False
+            )
         except exception.NotFound:
             raise exception.NotFound(uuid=config_id)
 
     @classmethod
-    def load_parameter_by_name(cls, datastore_version_id, config_param_name,
-                               show_deleted=False):
+    def load_parameter_by_name(cls, datastore_version_id, config_param_name):
         try:
-            if show_deleted:
-                return DBDatastoreConfigurationParameters.find_by(
-                    datastore_version_id=datastore_version_id,
-                    name=config_param_name
-                )
-            else:
-                return DBDatastoreConfigurationParameters.find_by(
-                    datastore_version_id=datastore_version_id,
-                    name=config_param_name,
-                    deleted=False
-                )
+            return DBDatastoreConfigurationParameters.find_by(
+                datastore_version_id=datastore_version_id,
+                name=config_param_name
+            )
         except exception.NotFound:
             raise exception.NotFound(uuid=config_param_name)
 
@@ -376,7 +339,7 @@ def create_or_update_datastore_configuration_parameter(name,
         datastore_version_id)
     try:
         config = DatastoreConfigurationParameters.load_parameter_by_name(
-            datastore_version_id, name, show_deleted=True)
+            datastore_version_id, name)
         config.restart_required = restart_required
         config.max_size = max_size
         config.min_size = min_size

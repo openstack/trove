@@ -105,14 +105,55 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         self.controller.show(self.req, self.tenant_id, id)
         mock_ds_version_load.assert_called_with(id)
 
+    @patch('trove.configuration.models.DBConfiguration.find_all')
+    @patch('trove.backup.models.DBBackup.find_all')
+    @patch('trove.instance.models.DBInstance.find_all')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
-    def test_delete_ds_version(self, mock_ds_version_load, mock_ds_load):
+    def test_delete_ds_version(self, mock_ds_version_load, mock_ds_load,
+                               mock_instance_find, mock_backup_find,
+                               mock_config_find):
         ds_version_id = Mock()
         ds_version = Mock()
         mock_ds_version_load.return_value = ds_version
         self.controller.delete(self.req, self.tenant_id, ds_version_id)
         ds_version.delete.assert_called_with()
+
+    @patch('trove.instance.models.DBInstance.find_all')
+    def test_delete_ds_version_instance_in_use(self, mock_instance_find):
+        mock_instance_find.return_value.all.return_value = [Mock()]
+
+        self.assertRaises(
+            exception.DatastoreVersionsInUse,
+            self.controller.delete,
+            self.req, self.tenant_id, 'fake_version_id'
+        )
+
+    @patch('trove.backup.models.DBBackup.find_all')
+    @patch('trove.instance.models.DBInstance.find_all')
+    def test_delete_ds_version_backup_in_use(self, mock_instance_find,
+                                             mock_backup_find):
+        mock_backup_find.return_value.all.return_value = [Mock()]
+
+        self.assertRaises(
+            exception.DatastoreVersionsInUse,
+            self.controller.delete,
+            self.req, self.tenant_id, 'fake_version_id'
+        )
+
+    @patch('trove.configuration.models.DBConfiguration.find_all')
+    @patch('trove.backup.models.DBBackup.find_all')
+    @patch('trove.instance.models.DBInstance.find_all')
+    def test_delete_ds_version_config_in_use(self, mock_instance_find,
+                                             mock_backup_find,
+                                             mock_config_find):
+        mock_config_find.return_value.all.return_value = [Mock()]
+
+        self.assertRaises(
+            exception.DatastoreVersionsInUse,
+            self.controller.delete,
+            self.req, self.tenant_id, 'fake_version_id'
+        )
 
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     @patch.object(datastore_models.DatastoreVersions, 'load_all')

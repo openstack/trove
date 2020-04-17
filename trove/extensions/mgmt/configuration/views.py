@@ -31,8 +31,6 @@ class MgmtConfigurationParameterView(object):
             "datastore_version_id": self.config.datastore_version_id,
             "restart_required": restart_required,
             "type": self.config.data_type,
-            "deleted": self.config.deleted,
-            "deleted_at": self.config.deleted_at,
         }
         if self.config.max_size:
             ret["max_size"] = int(self.config.max_size)

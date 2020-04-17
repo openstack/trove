@@ -179,15 +179,17 @@ class SimpleInstance(object):
         self.root_pass = root_password
         self._fault = None
         self._fault_loaded = False
-        if ds_version is None:
+        self.ds_version = None
+        self.ds = None
+        self.locality = locality
+        self.slave_list = None
+
+        if ds_version is None and self.db_info.datastore_version_id:
             self.ds_version = (datastore_models.DatastoreVersion.
                                load_by_uuid(self.db_info.datastore_version_id))
-        if ds is None:
+        if ds is None and self.ds_version:
             self.ds = (datastore_models.Datastore.
                        load(self.ds_version.datastore_id))
-        self.locality = locality
-
-        self.slave_list = None
 
     def __repr__(self, *args, **kwargs):
         return "%s(%s)" % (self.name, self.id)
@@ -410,11 +412,15 @@ class SimpleInstance(object):
 
     @property
     def volume_support(self):
-        return CONF.get(self.datastore_version.manager).volume_support
+        if self.datastore_version:
+            return CONF.get(self.datastore_version.manager).volume_support
+        return None
 
     @property
     def device_path(self):
-        return CONF.get(self.datastore_version.manager).device_path
+        if self.datastore_version:
+            return CONF.get(self.datastore_version.manager).device_path
+        return None
 
     @property
     def root_password(self):
@@ -809,8 +815,13 @@ class BaseInstance(SimpleInstance):
         deleted_at = timeutils.utcnow()
         self._delete_resources(deleted_at)
         LOG.debug("Setting instance %s to be deleted.", self.id)
+        # Also set FOREIGN KEY fields to NULL
         self.update_db(deleted=True, deleted_at=deleted_at,
-                       task_status=InstanceTasks.NONE)
+                       task_status=InstanceTasks.NONE,
+                       datastore_version_id=None,
+                       configuration_id=None,
+                       slave_of_id=None,
+                       cluster_id=None)
         self.set_servicestatus_deleted()
         self.set_instance_fault_deleted()
 

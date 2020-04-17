@@ -1427,6 +1427,14 @@ class BackupTasks(object):
     @classmethod
     def delete_backup(cls, context, backup_id):
         """Delete backup from swift."""
+        def _delete(backup):
+            backup.deleted = True
+            backup.deleted_at = timeutils.utcnow()
+            # Set datastore_version_id to None so that datastore_version could
+            # be deleted.
+            backup.datastore_version_id = None
+            backup.save()
+
         LOG.info("Deleting backup %s.", backup_id)
         backup = bkup_models.Backup.get_by_id(context, backup_id)
         try:
@@ -1434,11 +1442,11 @@ class BackupTasks(object):
             if filename:
                 BackupTasks.delete_files_from_swift(context, filename)
         except ValueError:
-            backup.delete()
+            _delete(backup)
         except ClientException as e:
             if e.http_status == 404:
                 # Backup already deleted in swift
-                backup.delete()
+                _delete(backup)
             else:
                 LOG.exception("Error occurred when deleting from swift. "
                               "Details: %s", e)
@@ -1447,7 +1455,7 @@ class BackupTasks(object):
                 raise TroveError(_("Failed to delete swift object for backup "
                                    "%s.") % backup_id)
         else:
-            backup.delete()
+            _delete(backup)
         LOG.info("Deleted backup %s successfully.", backup_id)
 
 

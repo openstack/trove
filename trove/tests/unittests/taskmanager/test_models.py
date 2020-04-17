@@ -1056,7 +1056,8 @@ class BackupTasksTest(trove_testtools.TestCase):
         self.backup.location = ''
         taskmanager_models.BackupTasks.delete_backup('dummy context',
                                                      self.backup.id)
-        self.backup.delete.assert_any_call()
+
+        self.assertTrue(self.backup.deleted)
 
     @patch('trove.taskmanager.models.LOG')
     @patch('trove.common.clients.create_swift_client')

@@ -38,8 +38,7 @@ class ConfigurationsParameterController(wsgi.Controller):
         """List all configuration parameters."""
         ds_version = ds_models.DatastoreVersion.load_by_uuid(version_id)
         config_params = config_models.DatastoreConfigurationParameters
-        rules = config_params.load_parameters(
-            ds_version.id, show_deleted=True)
+        rules = config_params.load_parameters(ds_version.id)
         return wsgi.Result(views.MgmtConfigurationParametersView(rules).data(),
                            200)
 
@@ -48,8 +47,7 @@ class ConfigurationsParameterController(wsgi.Controller):
         """Show a configuration parameter."""
         ds_models.DatastoreVersion.load_by_uuid(version_id)
         config_params = config_models.DatastoreConfigurationParameters
-        rule = config_params.load_parameter_by_name(
-            version_id, id, show_deleted=True)
+        rule = config_params.load_parameter_by_name(version_id, id)
         return wsgi.Result(views.MgmtConfigurationParameterView(rule).data(),
                            200)
 

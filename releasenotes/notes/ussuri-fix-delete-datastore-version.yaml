@@ -1,0 +1,7 @@
+---
+fixes:
+  - Fixed the issue that datastore version cannot be deleted because of
+    dependency of deleted instances. Now, when instance or backup is
+    deleted, the datastore version attribute is set to NULL in database.
+    When datastore configuration parameter is deleted, the record is
+    deleted from database rather than only set 'deleted' field to 1.

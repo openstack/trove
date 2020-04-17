@@ -633,18 +633,19 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @after_class(always_run=True)
     def tearDown(self):
         # need to "undelete" the parameter that was deleted from the mgmt call
-        ds = instance_info.dbaas_datastore
-        ds_v = instance_info.dbaas_datastore_version
-        version = instance_info.dbaas.datastore_versions.get(
-            ds, ds_v)
-        client = instance_info.dbaas_admin.mgmt_configs
-        print(self.config_parameter_dict)
-        client.create(version.id,
-                      self.config_parameter_dict['name'],
-                      self.config_parameter_dict['restart_required'],
-                      self.config_parameter_dict['type'],
-                      self.config_parameter_dict['max'],
-                      self.config_parameter_dict['min'])
+        if instance_info.dbaas:
+            ds = instance_info.dbaas_datastore
+            ds_v = instance_info.dbaas_datastore_version
+            version = instance_info.dbaas.datastore_versions.get(
+                ds, ds_v)
+            client = instance_info.dbaas_admin.mgmt_configs
+            print(self.config_parameter_dict)
+            client.create(version.id,
+                          self.config_parameter_dict['name'],
+                          self.config_parameter_dict['restart_required'],
+                          self.config_parameter_dict['type'],
+                          self.config_parameter_dict['max'],
+                          self.config_parameter_dict['min'])
 
     @test
     def test_delete_invalid_configuration_not_found(self):

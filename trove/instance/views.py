@@ -37,10 +37,14 @@ class InstanceView(object):
             "status": self.instance.status,
             "links": self._build_links(),
             "flavor": self._build_flavor_info(),
-            "datastore": {"type": self.instance.datastore.name,
-                          "version": self.instance.datastore_version.name},
+            "datastore": {"type": None, "version": None},
             "region": self.instance.region_name
         }
+        if self.instance.datastore_version:
+            instance_dict['datastore'] = {
+                "type": self.instance.datastore.name,
+                "version": self.instance.datastore_version.name
+            }
         if self.context.is_admin:
             instance_dict['tenant_id'] = self.instance.tenant_id
         if self.instance.volume_support:
@@ -94,8 +98,10 @@ class InstanceDetailView(InstanceView):
         result['instance']['service_status_updated'] = (self.instance.
                                                         service_status_updated)
 
-        result['instance']['datastore']['version'] = (self.instance.
-                                                      datastore_version.name)
+        result['instance']['datastore']['version'] = None
+        if self.instance.datastore_version:
+            result['instance']['datastore']['version'] = \
+                self.instance.datastore_version.name
 
         if self.instance.fault:
             result['instance']['fault'] = self._build_fault_info()

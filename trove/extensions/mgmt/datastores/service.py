@@ -16,14 +16,17 @@
 from glanceclient import exc as glance_exceptions
 from oslo_log import log as logging
 
+from trove.backup import models as backup_model
 from trove.common import apischema
 from trove.common.auth import admin_context
 from trove.common import clients
 from trove.common import exception
 from trove.common import utils
 from trove.common import wsgi
+from trove.configuration import models as config_model
 from trove.datastore import models
 from trove.extensions.mgmt.datastores import views
+from trove.instance import models as instance_model
 
 LOG = logging.getLogger(__name__)
 
@@ -140,6 +143,21 @@ class DatastoreVersionController(wsgi.Controller):
     @admin_context
     def delete(self, req, tenant_id, id):
         """Remove an existing datastore version."""
+        instances = instance_model.DBInstance.find_all(
+            datastore_version_id=id, deleted=0).all()
+        if len(instances) > 0:
+            raise exception.DatastoreVersionsInUse(resource='instance')
+
+        backups = backup_model.DBBackup.find_all(
+            datastore_version_id=id, deleted=0).all()
+        if len(backups) > 0:
+            raise exception.DatastoreVersionsInUse(resource='backup')
+
+        configs = config_model.DBConfiguration.find_all(
+            datastore_version_id=id, deleted=0).all()
+        if len(configs) > 0:
+            raise exception.DatastoreVersionsInUse(resource='configuration')
+
         datastore_version = models.DatastoreVersion.load_by_uuid(id)
         datastore = models.Datastore.load(datastore_version.datastore_id)
 

@@ -85,6 +85,14 @@ class Datastores(object):
 
     @test
     def test_create_inactive_datastore_by_admin(self):
+        datastores = self.rd_client.datastores.list()
+        for ds in datastores:
+            if ds.name == test_config.dbaas_datastore_name_no_versions:
+                for version in ds.versions:
+                    if version['name'] == 'inactive_version':
+                        return
+
+        # Get a valid image ID from a datastore version
         datastore = self.rd_client.datastores.get(test_config.dbaas_datastore)
         ds_version = self.rd_client.datastore_versions.list(datastore.id)[0]
         ds_version_info = self.rd_admin.datastore_versions.get_by_uuid(

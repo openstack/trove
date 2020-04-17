@@ -42,6 +42,7 @@ def load_mgmt_instances(context, deleted=None, client=None,
         args['deleted'] = deleted
     if not include_clustered:
         args['cluster_id'] = None
+
     db_infos = instance_models.DBInstance.find_all(**args)
 
     instances = MgmtInstances.load_status_from_existing(context, db_infos,

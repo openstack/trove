@@ -188,6 +188,11 @@ class DatastoreVersionsExist(BadRequest):
     message = _("Datastore versions exist for datastore %(datastore)s.")
 
 
+class DatastoreVersionsInUse(BadRequest):
+
+    message = _("Datastore version is in use by %(resource)s.")
+
+
 class DatastoreDefaultDatastoreNotFound(TroveError):
 
     message = _("Please specify datastore. Default datastore "
