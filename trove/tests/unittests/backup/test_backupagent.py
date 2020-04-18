@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import hashlib
-import mock
 import os
+from unittest import mock
 
 from mock import Mock, MagicMock, patch, ANY, DEFAULT, call
 from oslo_utils import netutils

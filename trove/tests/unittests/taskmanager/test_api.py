@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 from mock import Mock
 from mock import patch
+from unittest import mock
 
 from trove.common import context
 from trove.common import exception

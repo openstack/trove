@@ -12,18 +12,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import os
-from mock import ANY, call, DEFAULT, Mock, patch, PropertyMock
+from unittest import mock
+from unittest.mock import ANY
+from unittest.mock import call
+from unittest.mock import DEFAULT
+from unittest.mock import Mock
+from unittest.mock import patch
+
 from testtools.testcase import ExpectedException
+
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common import configuration
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.experimental.cassandra import (
-    service as cass_service
-)
 from trove.guestagent.datastore.experimental.db2 import (
     service as db2_service)
 from trove.guestagent.datastore.experimental.redis.service import RedisApp
@@ -553,199 +556,6 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(DECRYPT + PIPE + UNZIP + PIPE + COUCHDB_RESTORE_CMD,
                          restr.restore_cmd)
-
-
-class CassandraBackupTest(trove_testtools.TestCase):
-
-    _BASE_BACKUP_CMD = ('sudo tar --transform="s#snapshots/%s/##" -cpPf - '
-                        '-C "%s" "%s"')
-    _BASE_RESTORE_CMD = 'sudo tar -xpPf - -C "%(restore_location)s"'
-    _DATA_DIR = 'data_dir'
-    _SNAPSHOT_NAME = 'snapshot_name'
-    _SNAPSHOT_FILES = {'foo.db', 'bar.db'}
-    _RESTORE_LOCATION = {'restore_location': '/var/lib/cassandra'}
-
-    def setUp(self):
-        super(CassandraBackupTest, self).setUp()
-        self.app_status_patcher = patch(
-            'trove.guestagent.datastore.experimental.cassandra.service.'
-            'CassandraAppStatus')
-        self.addCleanup(self.app_status_patcher.stop)
-        self.app_status_patcher.start()
-        self.get_data_dirs_patcher = patch.object(
-            cass_service.CassandraApp, 'cassandra_data_dir',
-            new_callable=PropertyMock)
-        self.addCleanup(self.get_data_dirs_patcher.stop)
-        data_dir_mock = self.get_data_dirs_patcher.start()
-        data_dir_mock.return_value = self._DATA_DIR
-        self.os_list_patcher = patch.object(
-            operating_system, 'list_files_in_directory',
-            return_value=self._SNAPSHOT_FILES)
-        self.addCleanup(self.os_list_patcher.stop)
-        self.os_list_patcher.start()
-
-    def tearDown(self):
-        super(CassandraBackupTest, self).tearDown()
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_backup_encrypted_zipped_nodetoolsnapshot_command(self, _):
-        bkp = self._build_backup_runner(True, True)
-        bkp._run_pre_backup()
-        self.assertIsNotNone(bkp)
-        self.assertEqual(self._BASE_BACKUP_CMD % (
-            self._SNAPSHOT_NAME,
-            self._DATA_DIR,
-            '" "'.join(self._SNAPSHOT_FILES)
-        ) + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
-        self.assertIn(".gz.enc", bkp.manifest)
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_backup_not_encrypted_not_zipped_nodetoolsnapshot_command(self, _):
-        bkp = self._build_backup_runner(False, False)
-        bkp._run_pre_backup()
-        self.assertIsNotNone(bkp)
-        self.assertEqual(self._BASE_BACKUP_CMD % (
-            self._SNAPSHOT_NAME,
-            self._DATA_DIR,
-            '" "'.join(self._SNAPSHOT_FILES)
-        ), bkp.command)
-        self.assertNotIn(".gz.enc", bkp.manifest)
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_backup_not_encrypted_but_zipped_nodetoolsnapshot_command(self, _):
-        bkp = self._build_backup_runner(False, True)
-        bkp._run_pre_backup()
-        self.assertIsNotNone(bkp)
-        self.assertEqual(self._BASE_BACKUP_CMD % (
-            self._SNAPSHOT_NAME,
-            self._DATA_DIR,
-            '" "'.join(self._SNAPSHOT_FILES)
-        ) + PIPE + ZIP, bkp.command)
-        self.assertIn(".gz", bkp.manifest)
-        self.assertNotIn(".enc", bkp.manifest)
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_backup_encrypted_but_not_zipped_nodetoolsnapshot_command(self, _):
-        bkp = self._build_backup_runner(True, False)
-        bkp._run_pre_backup()
-        self.assertIsNotNone(bkp)
-        self.assertEqual(self._BASE_BACKUP_CMD % (
-            self._SNAPSHOT_NAME,
-            self._DATA_DIR,
-            '" "'.join(self._SNAPSHOT_FILES)
-        ) + PIPE + ENCRYPT, bkp.command)
-        self.assertIn(".enc", bkp.manifest)
-        self.assertNotIn(".gz", bkp.manifest)
-
-    @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_restore_encrypted_but_not_zipped_nodetoolsnapshot_command(
-            self, mock_logging, _):
-        restoreBase.RestoreRunner.is_zipped = False
-        restoreBase.RestoreRunner.is_encrypted = True
-        restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
-        RunnerClass = utils.import_class(RESTORE_NODETOOLSNAPSHOT_CLS)
-        rstr = RunnerClass(None, restore_location=self._RESTORE_LOCATION,
-                           location="filename", checksum="md5")
-        self.assertIsNotNone(rstr)
-        self.assertEqual(self._BASE_RESTORE_CMD % self._RESTORE_LOCATION,
-                         rstr.base_restore_cmd % self._RESTORE_LOCATION)
-
-    @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
-    def _build_backup_runner(self, is_encrypted, is_zipped, _):
-        backupBase.BackupRunner.is_zipped = is_zipped
-        backupBase.BackupRunner.is_encrypted = is_encrypted
-        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
-        RunnerClass = utils.import_class(BACKUP_NODETOOLSNAPSHOT_CLS)
-        runner = RunnerClass(self._SNAPSHOT_NAME)
-        runner._remove_snapshot = mock.MagicMock()
-        runner._snapshot_all_keyspaces = mock.MagicMock()
-        runner._find_in_subdirectories = mock.MagicMock(
-            return_value=self._SNAPSHOT_FILES
-        )
-
-        return runner
-
-
-class CouchbaseBackupTests(trove_testtools.TestCase):
-
-    def setUp(self):
-        super(CouchbaseBackupTests, self).setUp()
-        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout',
-                                               return_value=('0', ''))
-        self.exec_timeout_patch.start()
-        self.backup_runner = utils.import_class(BACKUP_CBBACKUP_CLS)
-        self.backup_runner_patch = patch.multiple(
-            self.backup_runner, _run=DEFAULT,
-            _run_pre_backup=DEFAULT, _run_post_backup=DEFAULT)
-
-    def tearDown(self):
-        super(CouchbaseBackupTests, self).tearDown()
-        self.backup_runner_patch.stop()
-        self.exec_timeout_patch.stop()
-
-    def test_backup_success(self):
-        backup_runner_mocks = self.backup_runner_patch.start()
-        with self.backup_runner(12345):
-            pass
-
-        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
-        backup_runner_mocks['_run'].assert_called_once_with()
-        backup_runner_mocks['_run_post_backup'].assert_called_once_with()
-
-    def test_backup_failed_due_to_run_backup(self):
-        backup_runner_mocks = self.backup_runner_patch.start()
-        backup_runner_mocks['_run'].configure_mock(
-            side_effect=exception.TroveError('test')
-        )
-        with ExpectedException(exception.TroveError, 'test'):
-            with self.backup_runner(12345):
-                pass
-
-        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
-        backup_runner_mocks['_run'].assert_called_once_with()
-        self.assertEqual(0, backup_runner_mocks['_run_post_backup'].call_count)
-
-
-class CouchbaseRestoreTests(trove_testtools.TestCase):
-
-    def setUp(self):
-        super(CouchbaseRestoreTests, self).setUp()
-
-        self.restore_runner = utils.import_class(
-            RESTORE_CBBACKUP_CLS)(
-                'swift', location='http://some.where',
-                checksum='True_checksum',
-                restore_location='/tmp/somewhere')
-
-    def tearDown(self):
-        super(CouchbaseRestoreTests, self).tearDown()
-
-    def test_restore_success(self):
-        expected_content_length = 123
-        self.restore_runner._run_restore = mock.Mock(
-            return_value=expected_content_length)
-        self.restore_runner.pre_restore = mock.Mock()
-        self.restore_runner.post_restore = mock.Mock()
-        actual_content_length = self.restore_runner.restore()
-        self.assertEqual(
-            expected_content_length, actual_content_length)
-
-    def test_restore_failed_due_to_pre_restore(self):
-        self.restore_runner.post_restore = mock.Mock()
-        self.restore_runner.pre_restore = mock.Mock(
-            side_effect=exception.ProcessExecutionError('Error'))
-        self.restore_runner._run_restore = mock.Mock()
-        self.assertRaises(exception.ProcessExecutionError,
-                          self.restore_runner.restore)
-
-    def test_restore_failed_due_to_run_restore(self):
-        self.restore_runner.pre_restore = mock.Mock()
-        self.restore_runner._run_restore = mock.Mock(
-            side_effect=exception.ProcessExecutionError('Error'))
-        self.restore_runner.post_restore = mock.Mock()
-        self.assertRaises(exception.ProcessExecutionError,
-                          self.restore_runner.restore)
 
 
 class MongodbBackupTests(trove_testtools.TestCase):

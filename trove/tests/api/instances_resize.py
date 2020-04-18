@@ -13,9 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 from novaclient.exceptions import BadRequest
 from novaclient.v2.servers import Server
+from unittest import mock
+
 from oslo_messaging._drivers.common import RPCException
 from proboscis import test
 from testtools import TestCase

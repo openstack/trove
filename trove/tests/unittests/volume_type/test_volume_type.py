@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-import mock
+from unittest import mock
 
 from trove.common import clients
 from trove.tests.unittests import trove_testtools

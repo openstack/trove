@@ -10,9 +10,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import pycodestyle
 import textwrap
+from unittest import mock
 
 from trove.hacking import checks as tc
 from trove.tests.unittests import trove_testtools

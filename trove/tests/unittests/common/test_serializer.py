@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-import mock
+from unittest import mock
 
 from trove.common.rpc import serializer
 from trove.tests.unittests import trove_testtools
