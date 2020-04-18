@@ -19,17 +19,7 @@
         "deleted_at": null,
         "encrypted_rpc_messaging": true,
         "flavor": {
-            "id": "d2",
-            "links": [
-                {
-                    "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/flavors/d2",
-                    "rel": "self"
-                },
-                {
-                    "href": "https://127.0.0.1:8779/flavors/d2",
-                    "rel": "bookmark"
-                }
-            ]
+            "id": "d2"
         },
         "guest_status": {
             "state_description": "healthy"

@@ -6,17 +6,7 @@
             "version": "5.7"
         },
         "flavor": {
-            "id": "6",
-            "links": [
-                {
-                    "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/flavors/6",
-                    "rel": "self"
-                },
-                {
-                    "href": "https://127.0.0.1:8779/flavors/6",
-                    "rel": "bookmark"
-                }
-            ]
+            "id": "6"
         },
         "id": "b76a6a76-748b-4064-adec-4c9e6c9abd68",
         "links": [

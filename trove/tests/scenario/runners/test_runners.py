@@ -183,6 +183,7 @@ class InstanceTestInfo(object):
         self.helper_user = None  # Test helper user if exists.
         self.helper_database = None  # Test helper database if exists.
         self.admin_user = None
+        self.flavors = None
 
 
 class LogOnFail(type):
@@ -367,6 +368,8 @@ class TestRunner(object):
         if hasattr(self.instance_info, 'id') and self.instance_info.id:
             inst_ids = [self.instance_info.id]
         self.register_debug_inst_ids(inst_ids)
+
+        self.instance_info.flavors = self.nova_client.flavors.list()
 
     @classmethod
     def fail(cls, message):
@@ -817,12 +820,14 @@ class TestRunner(object):
         return {"flavorRef": flavor_id, "volume": {"size": volume_size}}
 
     def get_flavor(self, flavor_name):
-        flavors = self.auth_client.find_flavors_by_name(flavor_name)
-        self.assert_equal(
-            1, len(flavors),
-            "Unexpected number of flavors with name '%s' found." % flavor_name)
+        flavor = None
+        for item in self.instance_info.flavors:
+            if item.name == flavor_name:
+                flavor = item
 
-        return flavors[0]
+        asserts.assert_is_not_none(flavor)
+
+        return flavor
 
     def get_instance_flavor(self, fault_num=None):
         name_format = 'instance%s%s_flavor_name'
@@ -841,7 +846,7 @@ class TestRunner(object):
         return self.get_flavor(flavor_name)
 
     def get_flavor_href(self, flavor):
-        return self.auth_client.find_flavor_self_href(flavor)
+        return flavor.id
 
     def copy_dict(self, d, ignored_keys=None):
         return {k: v for k, v in d.items()
@@ -980,11 +985,10 @@ class CheckInstance(AttrCheck):
         if 'flavor' not in self.instance:
             self.fail("'flavor' not found in instance.")
         else:
-            allowed_attrs = ['id', 'links']
+            allowed_attrs = ['id']
             self.contains_allowed_attrs(
                 self.instance['flavor'], allowed_attrs,
                 msg="Flavor")
-            self.links(self.instance['flavor']['links'])
 
     def datastore(self):
         if 'datastore' not in self.instance:

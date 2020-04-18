@@ -140,7 +140,6 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
         super(ClusterInstanceDetailViewTest, self).tearDown()
 
     @patch.object(ClusterInstanceDetailView, '_build_links')
-    @patch.object(ClusterInstanceDetailView, '_build_flavor_links')
     @patch.object(ClusterInstanceDetailView, '_build_configuration_info')
     def test_data(self, *args):
         view = ClusterInstanceDetailView(self.instance, self.req)
@@ -154,7 +153,6 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
         self.assertNotIn('ip', result['instance'])
 
     @patch.object(ClusterInstanceDetailView, '_build_links')
-    @patch.object(ClusterInstanceDetailView, '_build_flavor_links')
     @patch.object(ClusterInstanceDetailView, '_build_configuration_info')
     def test_data_ip(self, *args):
         self.instance.hostname = None

@@ -67,37 +67,6 @@ class TestClient(object):
         resp, body = self.real_client.client.last_response
         return resp.status
 
-    @staticmethod
-    def find_flavor_self_href(flavor):
-        self_links = [link for link in flavor.links if link['rel'] == 'self']
-        asserts.assert_true(len(self_links) > 0, "Flavor had no self href!")
-        flavor_href = self_links[0]['href']
-        asserts.assert_false(flavor_href is None,
-                             "Flavor link self href missing.")
-        return flavor_href
-
-    def find_flavors_by(self, condition, flavor_manager=None):
-        flavor_manager = flavor_manager or self.flavors
-        flavors = flavor_manager.list()
-        return [flavor for flavor in flavors if condition(flavor)]
-
-    def find_flavors_by_name(self, name, flavor_manager=None):
-        return self.find_flavors_by(lambda flavor: flavor.name == name,
-                                    flavor_manager)
-
-    def find_flavors_by_ram(self, ram, flavor_manager=None):
-        return self.find_flavors_by(lambda flavor: flavor.ram == ram,
-                                    flavor_manager)
-
-    def find_flavor_and_self_href(self, flavor_id, flavor_manager=None):
-        """Given an ID, returns flavor and its self href."""
-        flavor_manager = flavor_manager or self.flavors
-        asserts.assert_false(flavor_id is None)
-        flavor = flavor_manager.get(flavor_id)
-        asserts.assert_false(flavor is None)
-        flavor_href = self.find_flavor_self_href(flavor)
-        return flavor, flavor_href
-
     def __getattr__(self, item):
         if item == "__setstate__":
             raise AttributeError(item)

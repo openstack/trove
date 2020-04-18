@@ -113,11 +113,7 @@ Create and use incremental backups
       |      created      |                  2014-03-19T14:10:56                      |
       |     datastore     |         {u'version': u'mysql-5.5', u'type': u'mysql'}     |
       | datastore_version |                      mysql-5.5                            |
-      |       flavor      | {u'id': u'10', u'links':                                  |
-      |                   | [{u'href': u'https://10.125.1.135:8779/v1.0/              |
-      |                   |  626734041baa4254ae316de52a20b390/flavors/10', u'rel':    |
-      |                   |  u'self'}, {u'href': u'https://10.125.1.135:8779/         |
-      |                   |  flavors/10', u'rel': u'bookmark'}]}                      |
+      |       flavor      |                  {u'id': u'10'}                           |
       |         id        |         a3680953-eea9-4cf2-918b-5b8e49d7e1b3              |
       |        name       |                      guest2                               |
       |       status      |                      BUILD                                |

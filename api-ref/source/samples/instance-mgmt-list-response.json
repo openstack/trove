@@ -20,17 +20,7 @@
             "deleted_at": null,
             "encrypted_rpc_messaging": true,
             "flavor": {
-                "id": "d2",
-                "links": [
-                    {
-                        "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/flavors/d2",
-                        "rel": "self"
-                    },
-                    {
-                        "href": "https://127.0.0.1:8779/flavors/d2",
-                        "rel": "bookmark"
-                    }
-                ]
+                "id": "d2"
             },
             "id": "7de1bed8-6983-4d46-9a52-0abfbb0d27a2",
             "ip": [
@@ -82,17 +72,7 @@
                 "message": "Failed to create User port for instance b76a6a76-748b-4064-adec-4c9e6c9abd68"
             },
             "flavor": {
-                "id": "6",
-                "links": [
-                    {
-                        "href": "https://127.0.0.1:8779/v1.0/2afa58fd5db34fd8b7b659d997a5341f/flavors/6",
-                        "rel": "self"
-                    },
-                    {
-                        "href": "https://127.0.0.1:8779/flavors/6",
-                        "rel": "bookmark"
-                    }
-                ]
+                "id": "6"
             },
             "id": "b76a6a76-748b-4064-adec-4c9e6c9abd68",
             "links": [
