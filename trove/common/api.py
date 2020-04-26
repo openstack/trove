@@ -25,7 +25,6 @@ from trove.instance.service import InstanceController
 from trove.limits.service import LimitsController
 from trove.module.service import ModuleController
 from trove.versions import VersionsController
-from trove.volume_type.service import VolumeTypesController
 
 
 class API(wsgi.Router):
@@ -37,7 +36,6 @@ class API(wsgi.Router):
         self._cluster_router(mapper)
         self._datastore_router(mapper)
         self._flavor_router(mapper)
-        self._volume_type_router(mapper)
         self._versions_router(mapper)
         self._limits_router(mapper)
         self._backups_router(mapper)
@@ -178,17 +176,6 @@ class API(wsgi.Router):
                        conditions={'method': ['GET']})
         mapper.connect("/{tenant_id}/flavors/{id}",
                        controller=flavor_resource,
-                       action="show",
-                       conditions={'method': ['GET']})
-
-    def _volume_type_router(self, mapper):
-        volume_type_resource = VolumeTypesController().create_resource()
-        mapper.connect("/{tenant_id}/volume-types",
-                       controller=volume_type_resource,
-                       action="index",
-                       conditions={'method': ['GET']})
-        mapper.connect("/{tenant_id}/volume-types/{id}",
-                       controller=volume_type_resource,
                        action="show",
                        conditions={'method': ['GET']})
 
