@@ -15,8 +15,8 @@
 import os
 import stat
 import tempfile
+from unittest import mock
 
-import mock
 from mock import DEFAULT
 from mock import MagicMock
 from mock import Mock

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from eventlet import Timeout
-import mock
+from unittest import mock
 
 import trove.common.context as context
 from trove.common import exception

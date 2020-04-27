@@ -13,11 +13,11 @@
 #    under the License.
 import os
 from tempfile import NamedTemporaryFile
+from unittest import mock
 
 from cinderclient import exceptions as cinder_exceptions
 import cinderclient.v2.client as cinderclient
 from cinderclient.v2 import volumes as cinderclient_volumes
-import mock
 from mock import Mock, MagicMock, patch, PropertyMock, call
 import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions

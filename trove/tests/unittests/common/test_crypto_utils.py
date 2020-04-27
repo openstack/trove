@@ -14,8 +14,9 @@
 #    under the License.
 #
 
-import mock
 import os
+from unittest import mock
+
 import six
 
 from trove.common import crypto_utils

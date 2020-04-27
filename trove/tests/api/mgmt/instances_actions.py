@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 from novaclient.v2.servers import Server
 from proboscis import after_class
 from proboscis.asserts import assert_equal
@@ -20,6 +19,7 @@ from proboscis.asserts import assert_raises
 from proboscis import before_class
 from proboscis import SkipTest
 from proboscis import test
+from unittest import mock
 
 from trove.backup import models as backup_models
 from trove.backup import state

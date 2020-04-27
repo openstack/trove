@@ -13,9 +13,10 @@
 #    under the License.
 
 
-import mock
 import os
 import pkg_resources
+from unittest import mock
+
 from six.moves import configparser as config_parser
 
 import trove

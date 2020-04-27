@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
+from unittest import mock
 
 from trove.common.db import models
 from trove.tests.unittests import trove_testtools

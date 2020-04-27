@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-import mock
+from unittest import mock
 
 from trove.common import cfg
 from trove.common.rpc import conductor_guest_serializer as gsz

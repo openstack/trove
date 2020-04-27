@@ -14,8 +14,8 @@
 #    under the License.
 
 import abc
-import mock
 import testtools
+from unittest import mock
 
 from trove.common import cfg
 from trove.common.context import TroveContext
