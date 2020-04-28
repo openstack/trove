@@ -367,11 +367,6 @@ class ResizeInstanceTest(ActionTestBase):
     def flavor_id(self):
         return instance_info.dbaas_flavor_href
 
-    def get_flavor_href(self, flavor_id=2):
-        res = instance_info.dbaas.find_flavor_and_self_href(flavor_id)
-        _, dbaas_flavor_href = res
-        return dbaas_flavor_href
-
     def wait_for_resize(self):
         def is_finished_resizing():
             instance = self.instance
@@ -399,7 +394,12 @@ class ResizeInstanceTest(ActionTestBase):
     def test_instance_resize_to_ephemeral_in_volume_support_should_fail(self):
         flavor_name = CONFIG.values.get('instance_bigger_eph_flavor_name',
                                         'eph.rd-smaller')
-        flavors = self.dbaas.find_flavors_by_name(flavor_name)
+        flavor_id = None
+        for item in instance_info.flavors:
+            if item.name == flavor_name:
+                flavor_id = item.id
+
+        asserts.assert_is_not_none(flavor_id)
 
         def is_active():
             return self.instance.status in CONFIG.running_status
@@ -409,36 +409,42 @@ class ResizeInstanceTest(ActionTestBase):
 
         asserts.assert_raises(HTTPNotImplemented,
                               self.dbaas.instances.resize_instance,
-                              self.instance_id, flavors[0].id)
+                              self.instance_id, flavor_id)
 
     @test(enabled=EPHEMERAL_SUPPORT)
     def test_instance_resize_to_non_ephemeral_flavor_should_fail(self):
         flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
                                         'm1-small')
-        flavors = self.dbaas.find_flavors_by_name(flavor_name)
+        flavor_id = None
+        for item in instance_info.flavors:
+            if item.name == flavor_name:
+                flavor_id = item.id
+
+        asserts.assert_is_not_none(flavor_id)
         asserts.assert_raises(BadRequest, self.dbaas.instances.resize_instance,
-                              self.instance_id, flavors[0].id)
+                              self.instance_id, flavor_id)
 
     def obtain_flavor_ids(self):
         old_id = self.instance.flavor['id']
         self.expected_old_flavor_id = old_id
-        res = instance_info.dbaas.find_flavor_and_self_href(old_id)
-        self.expected_dbaas_flavor, _ = res
         if EPHEMERAL_SUPPORT:
             flavor_name = CONFIG.values.get('instance_bigger_eph_flavor_name',
                                             'eph.rd-smaller')
         else:
             flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
                                             'm1.small')
-        flavors = self.dbaas.find_flavors_by_name(flavor_name)
-        asserts.assert_equal(len(flavors), 1,
-                             "Number of flavors with name '%s' "
-                             "found was '%d'." % (flavor_name,
-                                                  len(flavors)))
-        flavor = flavors[0]
+
+        new_flavor = None
+        for item in instance_info.flavors:
+            if item.name == flavor_name:
+                new_flavor = item
+                break
+
+        asserts.assert_is_not_none(new_flavor)
+
         self.old_dbaas_flavor = instance_info.dbaas_flavor
-        instance_info.dbaas_flavor = flavor
-        self.expected_new_flavor_id = flavor.id
+        instance_info.dbaas_flavor = new_flavor
+        self.expected_new_flavor_id = new_flavor.id
 
     @test(depends_on=[test_instance_resize_same_size_should_fail])
     def test_status_changed_to_resize(self):
@@ -447,14 +453,14 @@ class ResizeInstanceTest(ActionTestBase):
         self.obtain_flavor_ids()
         self.dbaas.instances.resize_instance(
             self.instance_id,
-            self.get_flavor_href(flavor_id=self.expected_new_flavor_id))
+            self.expected_new_flavor_id)
         asserts.assert_equal(202, self.dbaas.last_http_code)
 
         # (WARNING) IF THE RESIZE IS WAY TOO FAST THIS WILL FAIL
         assert_unprocessable(
             self.dbaas.instances.resize_instance,
             self.instance_id,
-            self.get_flavor_href(flavor_id=self.expected_new_flavor_id))
+            self.expected_new_flavor_id)
 
     @test(depends_on=[test_status_changed_to_resize])
     @time_out(TIME_OUT_TIME)
@@ -493,9 +499,8 @@ class ResizeInstanceTest(ActionTestBase):
 
     @test(depends_on=[test_make_sure_mysql_is_running_after_resize])
     def test_instance_has_new_flavor_after_resize(self):
-        actual = self.get_flavor_href(self.instance.flavor['id'])
-        expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
-        asserts.assert_equal(actual, expected)
+        actual = self.instance.flavor['id']
+        asserts.assert_equal(actual, self.expected_new_flavor_id)
 
 
 @test(depends_on_classes=[ResizeInstanceTest],

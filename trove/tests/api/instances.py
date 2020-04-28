@@ -36,6 +36,7 @@ from trove.common.utils import poll_until
 from trove.datastore import models as datastore_models
 from trove import tests
 from trove.tests.config import CONFIG
+from trove.tests import util
 from trove.tests.util.check import AttrCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
@@ -88,6 +89,7 @@ class InstanceTestInfo(object):
         self.user_context = None  # A regular user context
         self.users = None  # The users created on the instance.
         self.consumer = create_usage_verifier()
+        self.flavors = None  # The cache of Nova flavors.
 
     def find_default_flavor(self):
         if EPHEMERAL_SUPPORT:
@@ -96,15 +98,17 @@ class InstanceTestInfo(object):
         else:
             flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
 
-        flavors = self.dbaas.find_flavors_by_name(flavor_name)
-        assert_equal(len(flavors), 1,
-                     "Number of flavors with name '%s' "
-                     "found was '%d'." % (flavor_name, len(flavors)))
+        flavor = None
+        flavor_href = None
 
-        flavor = flavors[0]
-        flavor_href = self.dbaas.find_flavor_self_href(flavor)
-        assert_true(flavor_href is not None,
-                    "Flavor href '%s' not found!" % flavor_name)
+        for item in self.flavors:
+            if item.name == flavor_name:
+                flavor = item
+                flavor_href = item.id
+                break
+
+        asserts.assert_is_not_none(flavor)
+        asserts.assert_is_not_none(flavor_href)
 
         return flavor, flavor_href
 
@@ -190,11 +194,10 @@ class CheckInstance(AttrCheck):
         if 'flavor' not in self.instance:
             self.fail("'flavor' not found in instance.")
         else:
-            allowed_attrs = ['id', 'links']
+            allowed_attrs = ['id']
             self.contains_allowed_attrs(
                 self.instance['flavor'], allowed_attrs,
                 msg="Flavor")
-            self.links(self.instance['flavor']['links'])
 
     def datastore(self):
         if 'datastore' not in self.instance:
@@ -315,6 +318,10 @@ class TestInstanceSetup(object):
             instance_info.user = CONFIG.users.find_user(reqs)
 
         instance_info.dbaas = create_dbaas_client(instance_info.user)
+
+        instance_info.nova_client = util.create_nova_client(instance_info.user)
+        instance_info.flavors = instance_info.nova_client.flavors.list()
+
         global dbaas
         dbaas = instance_info.dbaas
 
@@ -563,10 +570,16 @@ class CreateInstanceFail(object):
         instance_name = "instance-failure-with-no-ephemeral-flavor"
         databases = []
         flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
-        flavors = dbaas.find_flavors_by_name(flavor_name)
+
+        flavor_id = None
+        for item in instance_info.flavors:
+            if item.name == flavor_name:
+                flavor_id = item.id
+
+        asserts.assert_is_not_none(flavor_id)
 
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
-                      instance_name, flavors[0].id, None, databases,
+                      instance_name, flavor_id, None, databases,
                       nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 

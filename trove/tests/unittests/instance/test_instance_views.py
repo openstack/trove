@@ -41,10 +41,8 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
     def setUp(self):
         super(InstanceDetailViewTest, self).setUp()
         self.build_links_method = InstanceView._build_links
-        self.build_flavor_links_method = InstanceView._build_flavor_links
         self.build_config_method = InstanceDetailView._build_configuration_info
         InstanceView._build_links = Mock()
-        InstanceView._build_flavor_links = Mock()
         InstanceDetailView._build_configuration_info = Mock()
         self.instance = Mock()
         self.instance.created = 'Yesterday'
@@ -79,7 +77,6 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
         InstanceView._build_links = self.build_links_method
-        InstanceView._build_flavor_links = self.build_flavor_links_method
         InstanceDetailView._build_configuration_info = self.build_config_method
 
     def test_data_hostname(self):
