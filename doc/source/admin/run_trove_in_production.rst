@@ -311,6 +311,19 @@ datastore versions and the configuration parameters for the particular version.
 
 It's recommended to config a default version for each datastore.
 
+Command examples:
+
+.. code-block:: console
+
+    # Create a new datastore 'mysql'
+    trove-manage datastore_update mysql ""
+    # Create a new datastore version 5.7.29 for 'mysql'
+    trove-manage datastore_version_update mysql 5.7.29 mysql $imageid "" 1
+    # Use 5.7.29 as the default datastore version for 'mysql'
+    trove-manage datastore_update mysql 5.7.29
+    # Register configuration parameters for 5.7.29 version of datastore 'mysql'
+    trove-manage db_load_datastore_config_parameters mysql 5.7.29 $workdir/trove/trove/templates/mysql/validation-rules.json
+
 
 Quota Management
 ~~~~~~~~~~~~~~~~
