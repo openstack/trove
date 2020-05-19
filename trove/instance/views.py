@@ -222,7 +222,7 @@ class GuestLogsView(object):
         self.guest_logs = guest_logs
 
     def data(self):
-        return [GuestLogView(l).data() for l in self.guest_logs]
+        return [GuestLogView(guestlog).data() for guestlog in self.guest_logs]
 
 
 def convert_instance_count_to_list(instance_count):

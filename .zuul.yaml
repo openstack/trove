@@ -14,7 +14,8 @@
         - openstack-tox-pylint
         - trove-tox-bandit-baseline:
             voting: false
-        - trove-tempest
+        - trove-tempest:
+            voting: false
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
@@ -53,10 +54,10 @@
       jobs:
         - publish-trove-guest-image-mysql-ubuntu-xenial:
             branches:
-              - master
+              - stable/ussuri
         - publish-trove-guest-image-mysql-ubuntu-xenial-dev:
             branches:
-              - master
+              - stable/ussuri
 
 - job:
     name: trove-legacy-dsvm-base
@@ -152,7 +153,7 @@
     vars:
       devstack_localrc:
         TROVE_RESIZE_TIME_OUT: 1800
-        TROVE_NON_DEV_IMAGE_URL_MYSQL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-xenial.qcow2
+        TROVE_NON_DEV_IMAGE_URL_MYSQL: https://tarballs.opendev.org/openstack/trove/images/trove-ussuri-mysql-ubuntu-xenial.qcow2
       trove_resize_time_out: 1800
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
@@ -406,7 +407,7 @@
       guest_os: ubuntu
       guest_os_release: xenial
       guest_username: ubuntu
-      branch: master
+      branch: ussuri
       dev_mode: false
       image_suffix: ""
 
@@ -421,6 +422,6 @@
       guest_os: ubuntu
       guest_os_release: xenial
       guest_username: ubuntu
-      branch: master
+      branch: ussuri
       dev_mode: true
       image_suffix: "-dev"

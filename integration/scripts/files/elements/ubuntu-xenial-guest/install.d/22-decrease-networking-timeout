@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Fix the issue that 'a start job is running for the raise network' during startup takes too much time.
+
+mkdir -p /etc/systemd/system/networking.service.d/
+bash -c 'echo -e "[Service]\nTimeoutStartSec=20sec" > /etc/systemd/system/networking.service.d/timeout.conf'
+systemctl daemon-reload
