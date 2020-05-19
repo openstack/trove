@@ -11,9 +11,9 @@ RELEASE=${DIB_RELEASE:-"xenial"}
 
 # Add Percona GPG key
 mkdir -p /home/${GUEST_USERNAME}/.gnupg
-
-get_key_robust 1C4CBDCDCD2EFD2A
-get_key_robust 9334A25F8507EFA5
+for server in "pool.sks-keyservers.net" "keys.gnupg.net" "keyserver.ubuntu.com"; do
+  apt-key adv --keyserver $server --recv-keys 8507EFA5 && break
+done
 
 # Add Percona repo
 # Creates the percona sources list

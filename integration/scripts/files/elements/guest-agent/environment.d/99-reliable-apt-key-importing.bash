@@ -22,8 +22,8 @@ function get_key_robust() {
         fi
 
         echo "Importing the key, try: $tries"
-        apt-key adv --keyserver hkp://pool.sks-keyservers.net \
-            --recv-keys ${KEY} && break
+        # Behind a firewall should use the port 80 instead of the default port 11371
+        apt-key adv --keyserver hkp://pool.sks-keyservers.net:80 --recv-keys ${KEY} && break
 
         tries=$((tries+1))
     done

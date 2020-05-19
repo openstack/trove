@@ -14,7 +14,8 @@
         - openstack-tox-pylint
         - trove-tox-bandit-baseline:
             voting: false
-        - trove-tempest
+        - trove-tempest:
+            voting: false
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
