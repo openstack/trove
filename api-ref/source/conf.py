@@ -36,9 +36,10 @@ html_theme = 'openstackdocs'
 html_theme_options = {
     "sidebar_mode": "toc",
 }
-repository_name = 'openstack/trove'
-bug_project = 'trove'
-bug_tag = ''
+openstackdocs_repo_name = 'openstack/trove'
+openstack_auto_name = False
+openstackdocs_bug_project = 'trove'
+openstackdocs_bug_tag = ''
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -93,7 +94,7 @@ add_module_names = False
 show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # -- Options for man page output ----------------------------------------------
 

@@ -19,9 +19,10 @@ extensions = ['sphinx.ext.todo',
               'stevedore.sphinxext']
 
 # openstackdocstheme options
-repository_name = 'openstack/trove'
-bug_project = 'trove'
-bug_tag = ''
+openstackdocs_repo_name = 'openstack/trove'
+openstackdocs_bug_project = 'trove'
+openstack_auto_name = False
+openstackdocs_bug_tag = ''
 html_theme = 'openstackdocs'
 
 # Add any paths that contain templates here, relative to this directory.
@@ -69,7 +70,7 @@ add_module_names = True
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # A list of ignored prefixes for module index sorting.
 modindex_common_prefix = ['trove.']
@@ -113,10 +114,6 @@ modindex_common_prefix = ['trove.']
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
