@@ -68,7 +68,7 @@ Upgrading datastore
 
    .. code-block:: console
 
-      $ openstack database instance 55411e95-1670-497f-8d92-0179f3b4fdd4 3.2.7
+      $ openstack database instance upgrade 55411e95-1670-497f-8d92-0179f3b4fdd4 3.2.7
 
 #. **Wait until status changes from UPGRADE to HEALTHY**
 
