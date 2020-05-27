@@ -28,7 +28,6 @@ Bulk-configure a database or databases
    .. code-block:: console
 
       $ openstack datastore version list mysql
-
       +--------------------------------------+-----------+
       |                  id                  |    name   |
       +--------------------------------------+-----------+
@@ -42,7 +41,6 @@ Bulk-configure a database or databases
    .. code-block:: console
 
       $ openstack database configuration parameter list DATASTORE_VERSION_ID
-
       +--------------------------------+---------+---------+----------------------+------------------+
       |              name              |   type  |   min   |         max          | restart_required |
       +--------------------------------+---------+---------+----------------------+------------------+
@@ -98,17 +96,15 @@ Bulk-configure a database or databases
 
       $ openstack database configuration create NAME VALUES --datastore DATASTORE_NAME
 
-   -  *NAME*. The name you want to use for this group.
+   - *NAME*. The name you want to use for this group.
 
-   -  *VALUES*. The list of key-value pairs.
+   - *VALUES*. The list of key-value pairs. Set *VALUES* as a JSON dictionary, for example:
 
-   -  *DATASTORE_NAME*. The name of the associated data store.
+     .. code-block:: json
 
-   Set *VALUES* as a JSON dictionary, for example:
+        {"myFirstKey" : "someString", "mySecondKey" : 1}
 
-   .. code-block:: json
-
-      {"myFirstKey" : "someString", "mySecondKey" : 1}
+   - *DATASTORE_NAME*. The name of the associated data store.
 
    This example creates a configuration group called ``group1``.
    ``group1`` contains just one key and value pair, and this pair sets
@@ -117,7 +113,6 @@ Bulk-configure a database or databases
    .. code-block:: console
 
       $ openstack database configuration create group1 '{"sync_binlog" : 1}' --datastore mysql
-
       +----------------------+--------------------------------------+
       |       Property       |                Value                 |
       +----------------------+--------------------------------------+
@@ -162,7 +157,6 @@ Bulk-configure a database or databases
    .. code-block:: console
 
       $ openstack database instance list
-
       +-------------+------------------+-----------+-------------------+--------+-----------+------+
       |     id      |       name       | datastore | datastore_version | status | flavor_id | size |
       +-------------+------------------+-----------+-------------------+--------+-----------+------+
@@ -174,7 +168,6 @@ Bulk-configure a database or databases
    .. code-block:: console
 
       $ openstack database configuration list
-
       +-------------+--------+-------------+---------------------+
       |    id       |  name  | description |datastore_version_id |
       +-------------+--------+-------------+---------------------+
@@ -228,7 +221,7 @@ features for working with configuration groups. You can:
    the :command:`openstack database configuration detach` command.
 
 -  Modify a configuration group on the fly, using the
-   :command:`trove configuration-patch` command.
+   :command:`openstack database configuration parameter set` command.
 
 -  Find out what instances are using a configuration group, using the
    :command:`openstack database configuration instances` command.

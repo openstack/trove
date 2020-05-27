@@ -12,7 +12,7 @@ The possible reasons for this issue:
   to the message queue, which is expected to be received and handled by the
   trove-guestagent service which is running inside the instance. The instance
   status should be updated by trove-guestagent service after handling.
-  Apparently, If the trove-taskmanager can't connect with RabbitMQ, the
+  Apparently, If the trove-guestagent can't connect with RabbitMQ, the
   instance status won't be updated.
 * Code bug in trove-guestagent. You should be able to see some error log in
   trove-guestagent log file (by default,
@@ -55,6 +55,6 @@ openstack-discuss@lists.openstack.org if help needed.
 .. note::
 
     The Trove instance creation time varies in different environments, the
-    default value of ``usage_timeout`` option (1800 seconds) may not be applied
+    default value of ``usage_timeout`` option (3600 seconds) may not be applied
     to all, the cloud administrator should change that based on testing so that
     the instance creation should fail in a reasonable timely manner.
