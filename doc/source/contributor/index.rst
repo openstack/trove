@@ -11,4 +11,5 @@ functionality, the following resources are provided.
 
    contributing
    design
+   functional_test
    testing
