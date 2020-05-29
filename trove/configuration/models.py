@@ -378,10 +378,19 @@ def load_datastore_configuration_parameters(datastore,
             )
 
 
+def remove_datastore_configuration_parameters(datastore, datastore_version):
+    get_db_api().configure_db(CONF)
+    (ds, ds_version) = dstore_models.get_datastore_version(
+        type=datastore, version=datastore_version, return_inactive=True)
+    db_params = DatastoreConfigurationParameters.load_parameters(ds_version.id)
+    for db_param in db_params:
+        db_param.delete()
+
+
 def persisted_models():
     return {
         'configurations': DBConfiguration,
         'configuration_parameters': DBConfigurationParameter,
         'datastore_configuration_parameters':
-        DBDatastoreConfigurationParameters,
+            DBDatastoreConfigurationParameters,
     }

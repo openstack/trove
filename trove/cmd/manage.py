@@ -87,6 +87,13 @@ class Commands(object):
         config_models.load_datastore_configuration_parameters(
             datastore, datastore_version, config_file_location)
 
+    def db_remove_datastore_config_parameters(self, datastore,
+                                              datastore_version):
+        print("Removing config parameters for datastore (%s) version (%s)"
+              % (datastore, datastore_version))
+        config_models.remove_datastore_configuration_parameters(
+            datastore, datastore_version)
+
     def datastore_version_flavor_add(self, datastore_name,
                                      datastore_version_name, flavor_ids):
         """Adds flavors for a given datastore version id."""
@@ -229,6 +236,17 @@ def main():
             'config_file_location',
             help='Fully qualified file path to the configuration group '
             'parameter validation rules.')
+
+        parser = subparser.add_parser(
+            'db_remove_datastore_config_parameters',
+            description='Remove configuration group parameter validation '
+                        'rules for a datastore version from the database.')
+        parser.add_argument(
+            'datastore',
+            help='Name of the datastore.')
+        parser.add_argument(
+            'datastore_version',
+            help='Name of the datastore version.')
 
         parser = subparser.add_parser(
             'datastore_version_flavor_add', help='Adds flavor association to '

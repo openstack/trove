@@ -1,0 +1,5 @@
+---
+features:
+  - Trove admin user is able to remove the default configuration parameters for
+    datastore version, e.g.
+    ``trove-manage db_remove_datastore_config_parameters mysql 5.7.29``
