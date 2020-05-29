@@ -150,8 +150,16 @@ guest instance doesn't affect other instances nor other cloud users.
 
 Configuring Trove
 ~~~~~~~~~~~~~~~~~
-The default Trove configuration file location is ``/etc/trove/trove.conf``. The
-typical config options (not a full list) are:
+The default Trove configuration file location is ``/etc/trove/trove.conf``. You
+can generate a sample config file by running:
+
+.. code-block:: console
+
+    cd <trove dir>
+    pip install -e .
+    oslo-config-generator --namespace trove.config --namespace oslo.messaging --namespace oslo.log --namespace oslo.log oslo.policy --output-file /etc/trove/trove.conf.sample
+
+The typical config options (not a full list) are:
 
 DEFAULT group
   enable_secure_rpc_messaging

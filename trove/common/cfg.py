@@ -17,9 +17,11 @@
 
 import os.path
 
+from keystoneauth1 import loading
+from keystonemiddleware import auth_token
 from oslo_config import cfg
-from oslo_config.cfg import NoSuchOptError
 from oslo_config import types
+from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 from oslo_middleware import cors
 from osprofiler import opts as profiler
@@ -1468,6 +1470,24 @@ CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
 
 profiler.set_defaults(CONF)
 logging.register_options(CONF)
+
+
+def list_opts():
+    keystone_middleware_opts = auth_token.list_opts()
+    keystone_loading_opts = [(
+        'keystone_authtoken', loading.get_auth_plugin_conf_options('password')
+    )]
+
+    trove_opts = [
+        (None, path_opts + versions_opts + common_opts),
+        ('database', database_opts),
+        (mysql_group, mysql_opts),
+        (mariadb_group, mariadb_opts),
+        (network_group, network_opts),
+        (service_credentials_group, service_credentials_opts),
+    ]
+
+    return keystone_middleware_opts + keystone_loading_opts + trove_opts
 
 
 def custom_parser(parsername, parser):
