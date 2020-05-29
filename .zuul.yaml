@@ -397,7 +397,7 @@
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: xenial
+      guest_os_release: bionic
       guest_username: ubuntu
       branch: master
       dev_mode: true
