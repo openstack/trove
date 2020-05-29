@@ -10,6 +10,16 @@ Restoring a database instance from an incremental backup is the same as
 creating a database instance from a regular backup—the Database service
 handles the complexities of applying the chain of incremental backups.
 
+The artifacts created by backup are stored in OpenStack Swift, by default in a
+container named 'database_backups'. As the end user, you are able to access all
+the objects but make sure not to delete those objects manually. When a backup
+is deleted in Trove, the related objects are automatically removed from Swift.
+
+.. caution::
+
+    If the objects in 'database_backups' container are deleted manually, the
+    database can't be properly restored.
+
 This example shows you how to use incremental backups with a MySQL
 database.
 
@@ -44,7 +54,6 @@ Create and use incremental backups
    .. code-block:: console
 
       $ openstack database backup create INSTANCE_ID backup1.1  --parent BACKUP_ID
-
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
       +-------------+--------------------------------------+
@@ -74,7 +83,6 @@ Create and use incremental backups
    .. code-block:: console
 
       $ openstack database backup create INSTANCE_ID  backup1.2  --parent BACKUP_ID
-
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
       +-------------+--------------------------------------+
@@ -105,8 +113,7 @@ Create and use incremental backups
 
    .. code-block:: console
 
-      $ openstack database instance create guest2 10 --size 1 --backup BACKUP_ID
-
+      $ openstack database instance create guest2 10 --size 1 --nic net-id=$network_id --backup BACKUP_ID
       +-------------------+-----------------------------------------------------------+
       |      Property     |                       Value                               |
       +-------------------+-----------------------------------------------------------+

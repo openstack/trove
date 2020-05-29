@@ -287,6 +287,10 @@ particular data store.
     used in a production environment. The images are available for download and
     are located at http://tarballs.openstack.org/trove/images/.
 
+From Victoria release, Trove uses a single guest image for all the supported
+datastores. Database service is running as docker container inside the trove
+instance which simplifies the datastore management and maintenance.
+
 For use with production systems, it is recommended to create and maintain your
 own images in order to conform to standards set by the company's security team.
 In Trove community, we use `Disk Image Builder(DIB)

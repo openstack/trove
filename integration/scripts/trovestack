@@ -769,7 +769,7 @@ function cmd_build_and_upload_image() {
     glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image list --name $name -f value -c ID)
     if [[ -z ${glance_imageid} ]]; then
         mkdir -p ${output_dir}
-        output=${output_dir}/${name}
+        output=${output_dir}/${name}.qcow2
         cmd_build_image ${guest_os} ${guest_release} ${dev_mode} ${guest_username} ${output}
 
         glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image create ${name} --public --disk-format qcow2 --container-format bare --file ${output} --property hw_rng_model='virtio' --tag trove -c id -f value)

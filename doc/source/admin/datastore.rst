@@ -20,91 +20,44 @@ The Database service provides resource isolation at high performance
 levels, and automates complex administrative tasks such as deployment,
 configuration, patching, backups, restores, and monitoring.
 
-You can modify various cluster characteristics by editing the
-``/etc/trove/trove.conf`` file. A comprehensive list of the Database
-service configuration options is described in the `Database service
-<https://docs.openstack.org/ocata/config-reference/database.html>`_
-chapter in the *Configuration Reference*.
+Create datastore
+~~~~~~~~~~~~~~~~
 
-Create a data store
-~~~~~~~~~~~~~~~~~~~
-
-An administrative user can create data stores for a variety of
-databases.
+An administrative user can create datastores for a variety of databases.
 
 This section assumes you do not yet have a MySQL data store, and shows
 you how to create a MySQL data store and populate it with a MySQL 5.5
 data store version.
 
+.. note::
+
+    From Victoria release, all the datastores can be configured with a same
+    Glance image but with different datastore name and version number.
 
 **To create a data store**
 
 #. **Create a trove image**
 
-   Create an image for the type of database you want to use, for
-   example, MySQL, MongoDB, Cassandra.
-
-   This image must have the trove guest agent installed, and it must
-   have the ``trove-guestagent.conf`` file configured to connect to
-   your OpenStack environment. To configure ``trove-guestagent.conf``,
-   add the following lines to ``trove-guestagent.conf`` on the guest
-   instance you are using to build your image:
-
-   .. code-block:: ini
-
-      rabbit_host = controller
-      rabbit_password = RABBIT_PASS
-      trove_auth_url = http://controller:35357/v2.0
-
-   This example assumes you have created a MySQL 5.5 image called
-   ``mysql-5.5.qcow2``.
-
-   .. important::
-
-      If you have a guest image that was created with an OpenStack version
-      before Kilo, modify the guest agent init script for the guest image to
-      read the configuration files from the directory ``/etc/trove/conf.d``.
-
-      For a backwards compatibility with pre-Kilo guest instances, set the
-      database service configuration options ``injected_config_location`` to
-      ``/etc/trove`` and ``guest_info`` to ``/etc/guest_info``.
+   Refer to `Build images using trovestack
+   <https://docs.openstack.org/trove/latest/admin/building_guest_images.html#build-images-using-trovestack>`_
 
 #. **Register image with Image service**
 
-   You need to register your guest image with the Image service.
-
-   In this example, you use the :command:`openstack image create`
-   command to register a ``mysql-5.5.qcow2`` image.
+   You need to register your guest image with the Image service as cloud admin.
 
    .. code-block:: console
 
-      $ openstack image create mysql-5.5 --disk-format qcow2 --container-format bare --public < mysql-5.5.qcow2
-      +------------------+------------------------------------------------------+
-      | Field            | Value                                                |
-      +------------------+------------------------------------------------------+
-      | checksum         | 133eae9fb1c98f45894a4e60d8736619                     |
-      | container_format | bare                                                 |
-      | created_at       | 2016-12-21T12:10:02Z                                 |
-      | disk_format      | qcow2                                                |
-      | file             | /v2/images/d1afb4f0-2360-4400-8d97-846b1ab6af52/file |
-      | id               | d1afb4f0-2360-4400-8d97-846b1ab6af52                 |
-      | min_disk         | 0                                                    |
-      | min_ram          | 0                                                    |
-      | name             | mysql-5.5                                            |
-      | owner            | 5669caad86a04256994cdf755df4d3c1                     |
-      | protected        | False                                                |
-      | schema           | /v2/schemas/image                                    |
-      | size             | 13200896                                             |
-      | status           | active                                               |
-      | tags             |                                                      |
-      | updated_at       | 2016-12-21T12:10:03Z                                 |
-      | virtual_size     | None                                                 |
-      | visibility       | public                                               |
-      +------------------+------------------------------------------------------+
+      openstack image create \
+        trove-guest-ubuntu-bionic \
+        --private \
+        --disk-format qcow2 --container-format bare \
+        --file $image_file \
+        --property hw_rng_model='virtio' \
+        --tag trove
 
-#. **Create the data store**
+#. **Create the datastore**
 
-   Create the data store that will house the new image. To do this, use
+   Create the data store that configured with the new image. To do this, use
    the :command:`trove-manage` :command:`datastore_update` command.
 
    This example uses the following arguments:
@@ -228,23 +181,14 @@ data store version.
 
 #. **Load validation rules for configuration groups**
 
-   .. note::
-
-     **Applies only to MySQL and Percona data stores**
-
-     * If you just created a MySQL or Percona data store, then you need
-       to load the appropriate validation rules, as described in this
-       step.
-     * If you just created a different data store, skip this step.
-
    **Background.** You can manage database configuration tasks by using
    configuration groups. Configuration groups let you set configuration
    parameters, in bulk, on one or more databases.
 
-   When you set up a configuration group using the trove
-   :command:`configuration-create` command, this command compares the configuration
-   values you are setting against a list of valid configuration values
-   that are stored in the ``validation-rules.json`` file.
+   When you set up a configuration group using the :command:`openstack database
+   configuration create` command, this command compares the configuration
+   values you are setting against a list of valid configuration values that are
+   stored in the ``validation-rules.json`` file.
 
    .. list-table::
       :header-rows: 1
@@ -292,7 +236,7 @@ data store version.
 
    .. code-block:: console
 
-      $ trove datastore-list
+      $ openstack datastore list
       +--------------------------------------+--------------+
       |                  id                  |     name     |
       +--------------------------------------+--------------+
@@ -300,193 +244,13 @@ data store version.
       | e5dc1da3-f080-4589-a4c2-eff7928f969a |    mysql     |
       +--------------------------------------+--------------+
 
-   Take the ID of the MySQL data store and pass it in with the
-   :command:`datastore-version-list` command:
+   Show the versions of a specific datastore:
 
    .. code-block:: console
 
-      $ trove datastore-version-list DATASTORE_ID
+      $ openstack datastore version list mysql
       +--------------------------------------+-----------+
       |                  id                  |    name   |
       +--------------------------------------+-----------+
       | 36a6306b-efd8-4d83-9b75-8b30dd756381 | mysql-5.5 |
       +--------------------------------------+-----------+
-
-Data store classifications
---------------------------
-
-The Database service supports a variety of both relational and
-non-relational database engines, but to a varying degree of support for
-each *data store*. The Database service project has defined
-several classifications that indicate the quality of support for each
-data store. Data stores also implement different extensions.
-An extension is called a *strategy* and is classified similar to
-data stores.
-
-Valid classifications for a data store and a strategy are:
-
-* Experimental
-
-* Technical preview
-
-* Stable
-
-Each classification builds on the previous one. This means that a data store
-that meets the ``technical preview`` requirements must also meet all the
-requirements for ``experimental``, and a data store that meets the ``stable``
-requirements must also meet all the requirements for ``technical preview``.
-
-**Requirements**
-
-* Experimental
-
-  A data store is considered to be ``experimental`` if it meets these criteria:
-
-  * It implements a basic subset of the Database service API including
-    ``create`` and ``delete``.
-
-  * It has guest agent elements that allow guest agent creation.
-
-  * It has a definition of supported operating systems.
-
-  * It meets the other
-    `Documented Technical Requirements <https://specs.openstack.org/openstack/trove-specs/specs/kilo/experimental-datastores.html#requirements>`_.
-
-  A strategy is considered ``experimental`` if:
-
-  * It meets the
-    `Documented Technical Requirements <https://specs.openstack.org/openstack/trove-specs/specs/kilo/experimental-datastores.html#requirements>`_.
-
-* Technical preview
-
-  A data store is considered to be a ``technical preview`` if it meets the
-  requirements of ``experimental`` and further:
-
-  * It implements APIs required to plant and start the capabilities of the
-    data store as defined in the
-    `Datastore Compatibility Matrix <https://wiki.openstack.org/wiki/Trove/DatastoreCompatibilityMatrix>`_.
-
-    .. note::
-
-       It is not required that the data store implements all features like
-       resize, backup, replication, or clustering to meet this classification.
-
-  * It provides a mechanism for building a guest image that allows you to
-    exercise its capabilities.
-
-  * It meets the other
-    `Documented Technical Requirements <https://specs.openstack.org/openstack/trove-specs/specs/kilo/experimental-datastores.html#requirements>`_.
-
-  .. important::
-
-     A strategy is not normally considered to be ``technical
-     preview``.
-
-* Stable
-
-  A data store or a strategy is considered ``stable`` if:
-
-  * It meets the requirements of ``technical preview``.
-
-  * It meets the other
-    `Documented Technical Requirements <https://specs.openstack.org/openstack/trove-specs/specs/kilo/experimental-datastores.html#requirements>`_.
-
-**Initial Classifications**
-
-The following table shows the current classification assignments for the
-different data stores.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 30
-
-   * - Classification
-     - Data store
-   * - Stable
-     - MySQL
-   * - Technical Preview
-     - Cassandra, MongoDB
-   * - Experimental
-     - All others
-
-Redis data store replication
-----------------------------
-
-Replication strategies are available for Redis with
-several commands located in the Redis data store
-manager:
-
-- :command:`create`
-- :command:`detach-replica`
-- :command:`eject-replica-source`
-- :command:`promote-to-replica-source`
-
-Additional arguments for the :command:`create` command
-include :command:`--replica_of` and
-:command:`--replica_count`.
-
-Redis integration and unit tests
---------------------------------
-
-Unit tests and integration tests are also available for
-Redis.
-
-#. Install trovestack:
-
-   .. code-block:: console
-
-      $ ./trovestack install
-
-      .. note::
-
-         Trovestack is a development script used for integration
-         testing and Database service development installations.
-         Do not use Trovestack in a production environment. For
-         more information, see `the Database service
-         developer docs <https://docs.openstack.org/developer/trove/dev/install.html#running-trovestack-to-setup-trove>`_
-
-#. Start Redis:
-
-   .. code-block:: console
-
-      $ ./trovestack kick-start redis
-
-#. Run integration tests:
-
-   .. code-block:: console
-
-      $ ./trovestack int-tests --group=replication
-
-   You can run :command:`--group=redis_supported`
-   instead of :command:`--group=replication` if needed.
-
-Configure a cluster
-~~~~~~~~~~~~~~~~~~~
-
-An administrative user can configure various characteristics of a
-MongoDB cluster.
-
-**Query routers and config servers**
-
-**Background.** Each cluster includes at least one query router and
-one config server. Query routers and config servers count against your
-quota. When you delete a cluster, the system deletes the associated
-query router(s) and config server(s).
-
-**Configuration.** By default, the system creates one query router and
-one config server per cluster. You can change this by editing
-the ``/etc/trove/trove.conf`` file. These settings are in the
-``mongodb`` section of the file:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 30
-
-   * - Setting
-     - Valid values are:
-
-   * - num_config_servers_per_cluster
-     - 1 or 3
-
-   * - num_query_routers_per_cluster
-     - 1 or 3

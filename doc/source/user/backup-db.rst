@@ -7,6 +7,16 @@ artifact in the Object Storage service. Later on, if the original
 database is damaged, you can use the backup artifact to restore the
 database. The restore process creates a database instance.
 
+The artifacts created by backup are stored in OpenStack Swift, by default in a
+container named 'database_backups'. As the end user, you are able to access all
+the objects but make sure not to delete those objects manually. When a backup
+is deleted in Trove, the related objects are automatically removed from Swift.
+
+.. caution::
+
+    If the objects in 'database_backups' container are deleted manually, the
+    database can't be properly restored.
+
 This example shows you how to back up and restore a MySQL database.
 
 #. **Backup the database instance**
@@ -31,7 +41,6 @@ This example shows you how to back up and restore a MySQL database.
    .. code-block:: console
 
       $ openstack database instance list
-
       +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
       |                  id                  |  name  | datastore | datastore_version | status | flavor_id | size |
       +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
@@ -52,7 +61,6 @@ This example shows you how to back up and restore a MySQL database.
    .. code-block:: console
 
       $ openstack database backup create INSTANCE_ID backup1
-
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
       +-------------+--------------------------------------+
@@ -90,7 +98,6 @@ This example shows you how to back up and restore a MySQL database.
    .. code-block:: console
 
       $ openstack database backup show BACKUP_ID
-
       +-------------+----------------------------------------------------+
       |   Property  |                   Value                            |
       +-------------+----------------------------------------------------+
@@ -123,8 +130,7 @@ This example shows you how to back up and restore a MySQL database.
 
    .. code-block:: console
 
-      $ openstack database instance create guest2 10 --size 2 --backup BACKUP_ID
-
+      $ openstack database instance create guest2 10 --size 2 --nic net-id=$network_id --backup BACKUP_ID
       +-------------------+----------------------------------------------+
       |      Property     |                Value                         |
       +-------------------+----------------------------------------------+
@@ -164,7 +170,6 @@ This example shows you how to back up and restore a MySQL database.
    .. code-block:: console
 
       $ openstack database instance show INSTANCE_ID
-
       +-------------------+--------------------------------------+
       |      Property     |                Value                 |
       +-------------------+--------------------------------------+
@@ -190,7 +195,6 @@ This example shows you how to back up and restore a MySQL database.
    .. code-block:: console
 
       $ openstack database db list INSTANCE_ID
-
       +--------------------+
       |        name        |
       +--------------------+
@@ -206,7 +210,6 @@ This example shows you how to back up and restore a MySQL database.
    .. code-block:: console
 
       $ openstack database user list INSTANCE_ID
-
       +--------+------+-----------+
       |  name  | host | databases |
       +--------+------+-----------+

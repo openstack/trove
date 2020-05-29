@@ -43,7 +43,7 @@ Set up replication
 
    .. code-block:: console
 
-      $ openstack database instance create replica_1 6 --size=5 \
+      $ openstack database instance create replica_1 6 --size=5 --nic net-id=$netid \
         --datastore_version mysql-5.5 \
         --datastore mysql --replica_of ID_OF_ORIGINAL_INSTANCE
 

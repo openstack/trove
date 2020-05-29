@@ -1,0 +1,15 @@
+---
+features:
+  - Database service (mysql and mariadb) is now running as docker container
+    inside the trove instance. The image is defined by ``docker_image`` config
+    option for each datastore.
+  - The database backup and restore operations are performed by docker
+    container inside the trove instance.
+  - Only one trove guest image is needed for all the datastores.
+upgrade:
+  - Existing database services are not affected. However, in order for
+    Trove to communicate with trove guest agent, new guest image needs to be
+    built and existing trove instances need to be backed up and restored.
+deprecations:
+  - Most of the options related to backup and restore are removed, e.g.
+    backup_namespace, restore_namespace, backup_incremental_strategy
