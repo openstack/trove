@@ -7,7 +7,7 @@ Trove Design
 High Level description
 ======================
 
-Trove is designed to support a single-tenant database within a Nova
+Trove is designed to support multi-tenant database within a Nova
 instance. There will be no restrictions on how Nova is configured,
 since Trove interacts with other OpenStack components purely through
 the API.
@@ -16,11 +16,11 @@ the API.
 Trove-api
 =========
 
-The trove-api service provides a RESTful API that supports JSON and
-XML to provision and manage Trove instances.
+The trove-api service provides a RESTful API that supports JSON to
+provision and manage Trove instances.
 
 * A REST-ful component
-* Entry point - trove/bin/trove-api
+* Entry point - trove/cmd/api.py
 * Uses a WSGI launcher configured by etc/trove/api-paste.ini
 * Defines the pipeline of filters; authtoken, ratelimit, etc.
 * Defines the app_factory for the troveapp as
@@ -28,7 +28,7 @@ XML to provision and manage Trove instances.
 * The API class (a wsgi Router) wires the REST paths to the
   appropriate Controllers
 * Implementation of the Controllers are under the relevant module
-  (versions/instance/flavor/limits), in the service.py module
+  (versions/instance/backup/configuration), in the service.py module
 * Controllers usually redirect implementation to a class in the
   models.py module
 * At this point, an api module of another component (TaskManager,
@@ -44,9 +44,9 @@ provisioning instances, managing the lifecycle of instances, and
 performing operations on the Database instance.
 
 * A service that listens on a RabbitMQ topic
-* Entry point - trove/bin/trove-taskmanager
+* Entry point - trove/cmd/taskmanager.py
 * Runs as a RpcService configured by
-  etc/trove/trove.conf.sample which defines
+  etc/trove/trove.conf which defines
   trove.taskmanager.manager.Manager as the manager - basically this is
   the entry point for requests arriving through the queue
 * As described above, requests for this component are pushed to MQ
@@ -74,9 +74,9 @@ bus and performs the requested operation.
   listens on a RabbitMQ topic
 * GuestAgent runs on every DB instance, and a dedicated MQ topic is
   used (identified as the instance's id)
-* Entry point - trove/bin/trove-guestagent
+* Entry point - trove/cmd/guest.py
 * Runs as a RpcService configured by
-  etc/trove/trove-guestagent.conf.sample which defines
+  /etc/trove/conf.d/trove-guestagent.conf which defines
   trove.guestagent.datastore.manager.Manager as the manager - basically
   this is the entry point for requests arriving through the queue
 * As described above, requests for this component are pushed to MQ
@@ -88,7 +88,8 @@ bus and performs the requested operation.
   by some equivalent to reflection
 * The Manager then redirect the handling to an object (usually) from
   the dbaas.py module.
-* Actual handling is usually done in the dbaas.py module
+* The database service is running as a docker container inside the Nova
+  VM.
 
 
 Trove-conductor
@@ -107,9 +108,9 @@ bus and performs the relevant operation.
 * Guest agents communicate to conductor by putting messages on the
   topic defined in cfg as conductor_queue. By default this is
   "trove-conductor".
-* Entry point - trove/bin/trove-conductor
+* Entry point - trove/cmd/conductor.py
 * Runs as RpcService configured by
-  etc/trove/trove.conf.sample which defines
+  etc/trove/trove.conf which defines
   trove.conductor.manager.Manager as the manager. This is the entry
   point for requests arriving on the queue.
 * As guestagent above, requests are pushed to MQ from another component
@@ -121,7 +122,6 @@ bus and performs the relevant operation.
   ACTIVE and so on.
 * The "update_backup" method changes the details of a backup, including
   its current status, size of the backup, type, and checksum.
-
 
 
 .. Trove - Database as a Service: https://wiki.openstack.org/wiki/Trove
