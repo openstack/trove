@@ -27,7 +27,6 @@ from sqlalchemy.sql.expression import text
 from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import exception
-from trove.common import instance
 from trove.common import utils
 from trove.common.configurations import MySQLConfParser
 from trove.common.db.mysql import models
@@ -43,6 +42,7 @@ from trove.guestagent.datastore import service
 from trove.guestagent.datastore.mysql_common import service as commmon_service
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
+from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -77,24 +77,24 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
             cmd = 'mysql -uroot -p%s -e "select 1;"' % root_pass
             try:
                 docker_util.run_command(self.docker_client, cmd)
-                return instance.ServiceStatuses.HEALTHY
+                return service_status.ServiceStatuses.HEALTHY
             except Exception as exc:
                 LOG.warning('Failed to run docker command, error: %s',
                             str(exc))
                 container_log = docker_util.get_container_logs(
                     self.docker_client, tail='all')
-                LOG.warning('container log: %s', '\n'.join(container_log))
-                return instance.ServiceStatuses.RUNNING
+                LOG.debug('container log: \n%s', '\n'.join(container_log))
+                return service_status.ServiceStatuses.RUNNING
         elif status == "not running":
-            return instance.ServiceStatuses.SHUTDOWN
+            return service_status.ServiceStatuses.SHUTDOWN
         elif status == "paused":
-            return instance.ServiceStatuses.PAUSED
+            return service_status.ServiceStatuses.PAUSED
         elif status == "exited":
-            return instance.ServiceStatuses.SHUTDOWN
+            return service_status.ServiceStatuses.SHUTDOWN
         elif status == "dead":
-            return instance.ServiceStatuses.CRASHED
+            return service_status.ServiceStatuses.CRASHED
         else:
-            return instance.ServiceStatuses.UNKNOWN
+            return service_status.ServiceStatuses.UNKNOWN
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -638,8 +638,9 @@ class BaseMySqlApp(object):
             raise exception.TroveError(_("Failed to start mysql"))
 
         if not self.status.wait_for_real_status_to_change_to(
-            instance.ServiceStatuses.HEALTHY,
-            CONF.state_change_wait_time, update_db):
+            service_status.ServiceStatuses.HEALTHY,
+            CONF.state_change_wait_time, update_db
+        ):
             raise exception.TroveError(_("Failed to start mysql"))
 
     def start_db_with_conf_changes(self, config_contents):
@@ -662,7 +663,7 @@ class BaseMySqlApp(object):
             raise exception.TroveError("Failed to stop mysql")
 
         if not self.status.wait_for_real_status_to_change_to(
-            instance.ServiceStatuses.SHUTDOWN,
+            service_status.ServiceStatuses.SHUTDOWN,
             CONF.state_change_wait_time, update_db):
             raise exception.TroveError("Failed to stop mysql")
 
@@ -714,7 +715,7 @@ class BaseMySqlApp(object):
             raise exception.TroveError("Failed to restart mysql")
 
         if not self.status.wait_for_real_status_to_change_to(
-            instance.ServiceStatuses.HEALTHY,
+            service_status.ServiceStatuses.HEALTHY,
             CONF.state_change_wait_time, update_db=False):
             raise exception.TroveError("Failed to start mysql")
 
@@ -948,6 +949,20 @@ class BaseMySqlApp(object):
         with mysql_util.SqlClient(self.get_engine()) as client:
             q = "set global read_only = %s" % read_only
             client.execute(text(str(q)))
+
+    def upgrade(self, upgrade_info):
+        """Upgrade the database."""
+        new_version = upgrade_info.get('datastore_version')
+
+        LOG.info('Stopping db container for upgrade')
+        self.stop_db()
+
+        LOG.info('Deleting db container for upgrade')
+        docker_util.remove_container(self.docker_client)
+
+        LOG.info('Starting new db container with version %s for upgrade',
+                 new_version)
+        self.start_db(update_db=True, ds_version=new_version)
 
 
 class BaseMySqlRootAccess(object):

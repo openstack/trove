@@ -380,6 +380,14 @@ class API(object):
                    self.agent_high_timeout, version=version,
                    upgrade_info=upgrade_info)
 
+    def upgrade(self, upgrade_info):
+        """Upgrade database service."""
+        LOG.debug("Sending the call to upgrade database service.")
+        version = self.API_BASE_VERSION
+
+        return self._cast("upgrade", version=version,
+                          upgrade_info=upgrade_info)
+
     def restart(self):
         """Restart the database server."""
         LOG.debug("Sending the call to restart the database process "
@@ -418,16 +426,6 @@ class API(object):
 
         self._call("stop_db", self.agent_low_timeout,
                    version=version)
-
-    def upgrade(self, instance_version, location, metadata=None):
-        """Make an asynchronous call to self upgrade the guest agent."""
-        LOG.debug("Sending an upgrade call to nova-guest.")
-        version = self.API_BASE_VERSION
-
-        self._cast("upgrade", version=version,
-                   instance_version=instance_version,
-                   location=location,
-                   metadata=metadata)
 
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container."""

@@ -267,6 +267,15 @@ class RebootTestBase(ActionTestBase):
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
+    def wait_for_status(self, status, timeout=60):
+        def is_status():
+            instance = self.instance
+            if instance.status in status:
+                return True
+            return False
+
+        poll_until(is_status, time_out=timeout)
+
 
 @test(groups=[tests.DBAAS_API_INSTANCE_ACTIONS],
       depends_on_groups=[tests.DBAAS_API_DATABASES],
@@ -312,9 +321,9 @@ class StopTests(RebootTestBase):
 
     @test(depends_on=[test_ensure_mysql_is_running])
     def test_stop_mysql(self):
-        """Stops MySQL."""
+        """Stops MySQL by admin."""
         instance_info.dbaas_admin.management.stop(self.instance_id)
-        self.wait_for_failure_status()
+        self.wait_for_status(['SHUTDOWN'], timeout=60)
 
     @test(depends_on=[test_stop_mysql])
     def test_volume_info_while_mysql_is_down(self):

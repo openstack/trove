@@ -25,7 +25,6 @@ from oslo_service import periodic_task
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common import instance
 from trove.common.i18n import _
 from trove.common.notification import EndNotification
 from trove.guestagent import dbaas
@@ -37,6 +36,7 @@ from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.module import driver_manager
 from trove.guestagent.module import module_manager
 from trove.guestagent.strategies import replication as repl_strategy
+from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -305,6 +305,10 @@ class Manager(periodic_task.PeriodicTasks):
         to post_upgrade
         """
         return {}
+
+    def upgrade(self, context, upgrade_info):
+        """Upgrade the database."""
+        pass
 
     def post_upgrade(self, context, upgrade_info):
         """Recovers the guest after the image is upgraded using information
@@ -588,7 +592,8 @@ class Manager(periodic_task.PeriodicTasks):
             self.configuration_manager.apply_system_override(
                 config_man_values, change_id=apply_label, pre_user=True)
         if restart_required:
-            self.status.set_status(instance.ServiceStatuses.RESTART_REQUIRED)
+            self.status.set_status(
+                service_status.ServiceStatuses.RESTART_REQUIRED)
         else:
             self.apply_overrides(context, cfg_values)
 

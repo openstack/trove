@@ -21,17 +21,16 @@ from mock import patch
 
 from trove.cluster.models import ClusterTasks as ClusterTaskStatus
 from trove.cluster.models import DBCluster
+from trove.common import utils
 from trove.common.strategies.cluster.experimental.mongodb.taskmanager import (
     MongoDbClusterTasks as ClusterTasks)
-from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.instance.models import BaseInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceTasks
-# from trove.taskmanager.models import BuiltInstanceTasks
-from trove.taskmanager.models import ServiceStatuses
+from trove.instance.service_status import ServiceStatuses
 from trove.tests.unittests import trove_testtools
 
 

@@ -11,15 +11,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from mock import Mock
+from mock import patch
 import uuid
-
-from mock import Mock, patch
 
 from trove.backup import models as backup_models
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
-from trove.common.instance import ServiceStatuses
 from trove.common import neutron
 from trove.datastore import models as datastore_models
 from trove.instance import models
@@ -29,6 +28,7 @@ from trove.instance.models import Instance
 from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
+from trove.instance.service_status import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.tests.fakes import nova

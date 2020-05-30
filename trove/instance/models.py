@@ -19,13 +19,13 @@ from datetime import datetime
 from datetime import timedelta
 import os.path
 import re
-import six
 
 from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 from oslo_utils import netutils
+import six
 from sqlalchemy import func
 
 from trove.backup.models import Backup
@@ -33,15 +33,14 @@ from trove.common import cfg
 from trove.common import clients
 from trove.common import crypto_utils as cu
 from trove.common import exception
-from trove.common.i18n import _
-from trove.common import instance as tr_instance
 from trove.common import neutron
 from trove.common import notification
 from trove.common import server_group as srv_grp
 from trove.common import template
 from trove.common import timeutils
-from trove.common.trove_remote import create_trove_client
 from trove.common import utils
+from trove.common.i18n import _
+from trove.common.trove_remote import create_trove_client
 from trove.configuration.models import Configuration
 from trove.datastore import models as datastore_models
 from trove.datastore.models import DatastoreVersionMetadata as dvm
@@ -49,6 +48,7 @@ from trove.datastore.models import DBDatastoreVersionMetadata
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.extensions.security_group.models import SecurityGroup
+from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
 from trove.module import models as module_models
@@ -339,25 +339,25 @@ class SimpleInstance(object):
         action = self.db_info.task_status.action
 
         # Check if we are resetting status or force deleting
-        if (tr_instance.ServiceStatuses.UNKNOWN == self.datastore_status.status
+        if (srvstatus.ServiceStatuses.UNKNOWN == self.datastore_status.status
                 and action == InstanceTasks.DELETING.action):
             return InstanceStatus.SHUTDOWN
-        elif (tr_instance.ServiceStatuses.UNKNOWN ==
+        elif (srvstatus.ServiceStatuses.UNKNOWN ==
                 self.datastore_status.status):
             return InstanceStatus.ERROR
 
         # Check for taskmanager status.
-        if 'BUILDING' == action:
+        if InstanceTasks.BUILDING.action == action:
             if 'ERROR' == self.db_info.server_status:
                 return InstanceStatus.ERROR
             return InstanceStatus.BUILD
-        if 'REBOOTING' == action:
+        if InstanceTasks.REBOOTING.action == action:
             return InstanceStatus.REBOOT
-        if 'RESIZING' == action:
+        if InstanceTasks.RESIZING.action == action:
             return InstanceStatus.RESIZE
-        if 'UPGRADING' == action:
+        if InstanceTasks.UPGRADING.action == action:
             return InstanceStatus.UPGRADE
-        if 'RESTART_REQUIRED' == action:
+        if InstanceTasks.RESTART_REQUIRED.action == action:
             return InstanceStatus.RESTART_REQUIRED
         if InstanceTasks.PROMOTING.action == action:
             return InstanceStatus.PROMOTE
@@ -396,10 +396,10 @@ class SimpleInstance(object):
 
         # Check against the service status.
         # The service is only paused during a reboot.
-        if tr_instance.ServiceStatuses.PAUSED == self.datastore_status.status:
+        if srvstatus.ServiceStatuses.PAUSED == self.datastore_status.status:
             return InstanceStatus.REBOOT
         # If the service status is NEW, then we are building.
-        if tr_instance.ServiceStatuses.NEW == self.datastore_status.status:
+        if srvstatus.ServiceStatuses.NEW == self.datastore_status.status:
             return InstanceStatus.BUILD
 
         # For everything else we can look at the service status mapping.
@@ -594,14 +594,19 @@ def load_instance(cls, context, id, needs_server=False,
 
 def load_instance_with_info(cls, context, id, cluster_id=None):
     db_info = get_db_info(context, id, cluster_id)
+    LOG.debug('Task status for instance %s: %s', id, db_info.task_status)
+
+    service_status = InstanceServiceStatus.find_by(instance_id=id)
+    if (db_info.task_status == InstanceTasks.NONE and
+            not service_status.is_uptodate()):
+        LOG.warning('Guest agent heartbeat for instance %s has expried', id)
+        service_status.status = \
+            srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
 
     load_simple_instance_server_status(context, db_info)
 
     load_simple_instance_addresses(context, db_info)
 
-    service_status = InstanceServiceStatus.find_by(instance_id=id)
-    LOG.debug("Instance %(instance_id)s service status is %(service_status)s.",
-              {'instance_id': id, 'service_status': service_status.status})
     instance = cls(context, db_info, service_status)
 
     load_guest_info(instance, context, id)
@@ -879,7 +884,7 @@ class BaseInstance(SimpleInstance):
 
     def set_servicestatus_deleted(self):
         del_instance = InstanceServiceStatus.find_by(instance_id=self.id)
-        del_instance.set_status(tr_instance.ServiceStatuses.DELETED)
+        del_instance.set_status(srvstatus.ServiceStatuses.DELETED)
         del_instance.save()
 
     def set_instance_fault_deleted(self):
@@ -956,7 +961,12 @@ class BaseInstance(SimpleInstance):
         self.reset_task_status()
 
         reset_instance = InstanceServiceStatus.find_by(instance_id=self.id)
-        reset_instance.set_status(tr_instance.ServiceStatuses.UNKNOWN)
+        reset_instance.set_status(srvstatus.ServiceStatuses.UNKNOWN)
+        reset_instance.save()
+
+    def set_service_status(self, status):
+        reset_instance = InstanceServiceStatus.find_by(instance_id=self.id)
+        reset_instance.set_status(status)
         reset_instance.save()
 
 
@@ -1267,7 +1277,7 @@ class Instance(BuiltInstance):
                 overrides = config.get_configuration_overrides()
                 service_status = InstanceServiceStatus.create(
                     instance_id=instance_id,
-                    status=tr_instance.ServiceStatuses.NEW)
+                    status=srvstatus.ServiceStatuses.NEW)
 
                 if CONF.trove_dns_support:
                     dns_client = clients.create_dns_client(context)
@@ -1762,19 +1772,32 @@ class Instances(object):
                         db.server_status = "SHUTDOWN"  # Fake it...
                         db.addresses = []
 
-                # volumes = find_volumes(server.id)
                 datastore_status = InstanceServiceStatus.find_by(
                     instance_id=db.id)
                 if not datastore_status.status:  # This should never happen.
                     LOG.error("Server status could not be read for "
                               "instance id(%s).", db.id)
                     continue
-                LOG.debug("Server api_status(%s).",
-                          datastore_status.status.api_status)
+
+                # Get the real-time service status.
+                LOG.debug('Task status for instance %s: %s', db.id,
+                          db.task_status)
+                if db.task_status == InstanceTasks.NONE:
+                    last_heartbeat_delta = (
+                        timeutils.utcnow() - datastore_status.updated_at)
+                    agent_expiry_interval = timedelta(
+                        seconds=CONF.agent_heartbeat_expiry)
+                    if last_heartbeat_delta > agent_expiry_interval:
+                        LOG.warning(
+                            'Guest agent heartbeat for instance %s has '
+                            'expried', id)
+                        datastore_status.status = \
+                            srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
             except exception.ModelNotFoundError:
                 LOG.error("Server status could not be read for "
                           "instance id(%s).", db.id)
                 continue
+
             ret.append(load_instance(context, db, datastore_status,
                                      server=server))
         return ret
@@ -2001,7 +2024,7 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
     def _validate(self, errors):
         if self.status is None:
             errors['status'] = "Cannot be None."
-        if tr_instance.ServiceStatus.from_code(self.status_id) is None:
+        if srvstatus.ServiceStatus.from_code(self.status_id) is None:
             errors['status_id'] = "Not valid."
 
     def get_status(self):
@@ -2012,7 +2035,7 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
         status of the service
         :rtype: trove.common.instance.ServiceStatus
         """
-        return tr_instance.ServiceStatus.from_code(self.status_id)
+        return srvstatus.ServiceStatus.from_code(self.status_id)
 
     def set_status(self, value):
         """
@@ -2027,6 +2050,15 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
         self['updated_at'] = timeutils.utcnow()
         return get_db_api().save(self)
 
+    def is_uptodate(self):
+        """Check if the service status heartbeat is up to date."""
+        heartbeat_expiry = timedelta(seconds=CONF.agent_heartbeat_expiry)
+        last_update = (timeutils.utcnow() - self.updated_at)
+        if last_update < heartbeat_expiry:
+            return True
+
+        return False
+
     status = property(get_status, set_status)
 
 
@@ -2039,6 +2071,6 @@ def persisted_models():
 
 
 MYSQL_RESPONSIVE_STATUSES = [
-    tr_instance.ServiceStatuses.RUNNING,
-    tr_instance.ServiceStatuses.HEALTHY
+    srvstatus.ServiceStatuses.RUNNING,
+    srvstatus.ServiceStatuses.HEALTHY
 ]

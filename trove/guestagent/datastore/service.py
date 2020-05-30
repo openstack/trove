@@ -20,11 +20,11 @@ from oslo_utils import timeutils
 
 from trove.common import cfg
 from trove.common import context as trove_context
-from trove.common import instance
 from trove.common.i18n import _
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
+from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -74,7 +74,7 @@ class BaseDbStatus(object):
         operating_system.write_file(prepare_start_file, '')
         self.__refresh_prepare_completed()
 
-        self.set_status(instance.ServiceStatuses.BUILDING, True)
+        self.set_status(service_status.ServiceStatuses.BUILDING, True)
 
     def set_ready(self):
         prepare_end_file = guestagent_utils.build_file_path(
@@ -92,9 +92,9 @@ class BaseDbStatus(object):
 
         final_status = None
         if error_occurred:
-            final_status = instance.ServiceStatuses.FAILED
+            final_status = service_status.ServiceStatuses.FAILED
         elif post_processing:
-            final_status = instance.ServiceStatuses.INSTANCE_READY
+            final_status = service_status.ServiceStatuses.INSTANCE_READY
 
         if final_status:
             LOG.info("Set final status to %s.", final_status)
@@ -126,8 +126,8 @@ class BaseDbStatus(object):
     def is_running(self):
         """True if DB server is running."""
         return (self.status is not None and
-                self.status in [instance.ServiceStatuses.RUNNING,
-                                instance.ServiceStatuses.HEALTHY])
+                self.status in [service_status.ServiceStatuses.RUNNING,
+                                service_status.ServiceStatuses.HEALTHY])
 
     def set_status(self, status, force=False):
         """Use conductor to update the DB app status."""
@@ -199,7 +199,7 @@ class BaseDbStatus(object):
         """
         LOG.debug("Waiting for database to start up.")
         if not self._wait_for_database_service_status(
-                instance.ServiceStatuses.RUNNING, timeout, update_db):
+                service_status.ServiceStatuses.RUNNING, timeout, update_db):
             raise RuntimeError(_("Database failed to start."))
 
         LOG.info("Database has started successfully.")
@@ -229,7 +229,7 @@ class BaseDbStatus(object):
 
         LOG.debug("Waiting for database to shutdown.")
         if not self._wait_for_database_service_status(
-                instance.ServiceStatuses.SHUTDOWN, timeout, update_db):
+                service_status.ServiceStatuses.SHUTDOWN, timeout, update_db):
             raise RuntimeError(_("Database failed to stop."))
 
         LOG.info("Database has stopped successfully.")
@@ -283,9 +283,19 @@ class BaseDbStatus(object):
         # outside.
         loop = True
 
+        # We need 3 (by default) consecutive success db connections for status
+        # 'HEALTHY'
+        healthy_count = 0
+
         while loop:
             self.status = self.get_actual_db_status()
             if self.status == status:
+                if (status == service_status.ServiceStatuses.HEALTHY and
+                        healthy_count < 2):
+                    healthy_count += 1
+                    time.sleep(CONF.state_change_poll_time)
+                    continue
+
                 if update_db:
                     self.set_status(self.status)
                 return True

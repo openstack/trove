@@ -2,6 +2,11 @@
 Upgrade cluster datastore
 =========================
 
+.. caution::
+
+   Database clustering function is still in experimental, should not be used
+   in production environment.
+
 Upgrading datastore for cluster instances is very similar to upgrading
 a single instance.
 

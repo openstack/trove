@@ -20,7 +20,7 @@ import eventlet
 from oslo_log import log as logging
 
 from trove.common import exception as rd_exception
-from trove.common import instance as rd_instance
+from trove.instance import service_status as srvstatus
 from trove.tests.util import unquote_user_host
 
 DB = {}
@@ -236,9 +236,9 @@ class FakeGuest(object):
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             if instance_name.endswith('GUEST_ERROR'):
-                status.status = rd_instance.ServiceStatuses.FAILED
+                status.status = srvstatus.ServiceStatuses.FAILED
             else:
-                status.status = rd_instance.ServiceStatuses.HEALTHY
+                status.status = srvstatus.ServiceStatuses.HEALTHY
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
         eventlet.spawn_after(3.5, update_db)
@@ -246,8 +246,8 @@ class FakeGuest(object):
     def _set_task_status(self, new_status='HEALTHY'):
         from trove.instance.models import InstanceServiceStatus
         print("Setting status to %s" % new_status)
-        states = {'HEALTHY': rd_instance.ServiceStatuses.HEALTHY,
-                  'SHUTDOWN': rd_instance.ServiceStatuses.SHUTDOWN,
+        states = {'HEALTHY': srvstatus.ServiceStatuses.HEALTHY,
+                  'SHUTDOWN': srvstatus.ServiceStatuses.SHUTDOWN,
                   }
         status = InstanceServiceStatus.find_by(instance_id=self.id)
         status.status = states[new_status]

@@ -16,29 +16,34 @@ from tempfile import NamedTemporaryFile
 from unittest import mock
 
 from cinderclient import exceptions as cinder_exceptions
-import cinderclient.v2.client as cinderclient
 from cinderclient.v2 import volumes as cinderclient_volumes
-from mock import Mock, MagicMock, patch, PropertyMock, call
+import cinderclient.v2.client as cinderclient
+from mock import call
+from mock import MagicMock
+from mock import Mock
+from mock import patch
+from mock import PropertyMock
 import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
 import novaclient.v2.servers
 from oslo_config import cfg
 from swiftclient.client import ClientException
-from testtools.matchers import Equals, Is
+from testtools.matchers import Equals
+from testtools.matchers import Is
 
-import trove.backup.models
+from trove import rpc
 from trove.backup import models as backup_models
 from trove.backup import state
+import trove.backup.models
+from trove.common import timeutils
+from trove.common import utils
 import trove.common.context
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
-from trove.common.instance import ServiceStatuses
 from trove.common.notification import TroveInstanceModifyVolume
 import trove.common.template as template
-from trove.common import timeutils
-from trove.common import utils
 from trove.datastore import models as datastore_models
 import trove.db.models
 from trove.extensions.common import models as common_models
@@ -48,8 +53,8 @@ from trove.instance.models import BaseInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
+from trove.instance.service_status import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
-from trove import rpc
 from trove.taskmanager import models as taskmanager_models
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
@@ -962,27 +967,20 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.instance_task.demote_replication_master()
         self.instance_task._guest.demote_replication_master.assert_any_call()
 
-    @patch.multiple(taskmanager_models.BuiltInstanceTasks,
-                    get_injected_files=Mock(return_value="the-files"))
-    def test_upgrade(self, *args):
-        pre_rebuild_server = self.instance_task.server
-        dsv = Mock(image_id='foo_image')
-        mock_volume = Mock(attachments=[{'device': '/dev/mock_dev'}])
-        with patch.object(self.instance_task._volume_client.volumes, "get",
-                          Mock(return_value=mock_volume)):
-            mock_server = Mock(status='ACTIVE')
-            with patch.object(self.instance_task._nova_client.servers,
-                              'get', Mock(return_value=mock_server)):
-                with patch.multiple(self.instance_task._guest,
-                                    pre_upgrade=Mock(return_value={}),
-                                    post_upgrade=Mock()):
-                    self.instance_task.upgrade(dsv)
+    @patch('trove.taskmanager.models.BuiltInstanceTasks.set_service_status')
+    @patch('trove.taskmanager.models.BuiltInstanceTasks.is_service_healthy')
+    @patch('trove.taskmanager.models.BuiltInstanceTasks.reset_task_status')
+    def test_upgrade(self, mock_resetstatus, mock_check, mock_setstatus):
+        dsv = MagicMock()
+        attrs = {'name': 'new_version'}
+        dsv.configure_mock(**attrs)
+        mock_check.return_value = True
+        self.instance_task._guest.pre_upgrade.return_value = {}
 
-                    self.instance_task._guest.pre_upgrade.assert_called_with()
-                    pre_rebuild_server.rebuild.assert_called_with(
-                        dsv.image_id, files="the-files")
-                    self.instance_task._guest.post_upgrade.assert_called_with(
-                        mock_volume.attachments[0])
+        self.instance_task.upgrade(dsv)
+
+        self.instance_task._guest.upgrade.assert_called_once_with(
+            {'datastore_version': 'new_version'})
 
     def test_fix_device_path(self):
         self.assertEqual("/dev/vdb", self.instance_task.

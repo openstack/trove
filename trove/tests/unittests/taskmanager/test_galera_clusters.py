@@ -29,7 +29,7 @@ from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceTasks
-from trove.taskmanager.models import ServiceStatuses
+from trove.instance.service_status import ServiceStatuses
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 

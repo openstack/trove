@@ -12,23 +12,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from unittest import mock
+
 from novaclient.v2.servers import Server
 from proboscis import after_class
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_raises
 from proboscis import before_class
 from proboscis import SkipTest
 from proboscis import test
-from unittest import mock
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_raises
 
 from trove.backup import models as backup_models
 from trove.backup import state
-from trove.common.context import TroveContext
 from trove.common import exception
-import trove.common.instance as tr_instance
+from trove.common.context import TroveContext
 from trove.extensions.mgmt.instances.models import MgmtInstance
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.instance import models as imodels
+from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
 from trove.tests.config import CONFIG
@@ -65,7 +66,7 @@ class MgmtInstanceBase(object):
             self.db_info,
             self.server,
             datastore_status=imodels.InstanceServiceStatus(
-                tr_instance.ServiceStatuses.RUNNING))
+                srvstatus.ServiceStatuses.RUNNING))
 
     def _make_request(self, path='/', context=None, **kwargs):
         from webob import Request
