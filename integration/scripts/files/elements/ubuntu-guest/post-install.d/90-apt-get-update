@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# CONTEXT: GUEST after packages installed
-# PURPOSE: do apt-get update to save each instance having to do all the work
-
-set -e
-set -o xtrace
-
-apt-get update

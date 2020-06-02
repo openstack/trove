@@ -815,6 +815,10 @@ function cmd_test_init() {
         cat $KEY_DIR/authorized_keys >> $USERHOME/.ssh/authorized_keys
         chmod 600 $USERHOME/.ssh/authorized_keys
     fi
+
+    exclaim "Re-installing python-troveclient from git"
+    pip3 uninstall -y python-troveclient
+    pip3 install -U git+https://opendev.org/openstack/python-troveclient@stable/train#egg=python-troveclient
 }
 
 function cmd_build_image() {

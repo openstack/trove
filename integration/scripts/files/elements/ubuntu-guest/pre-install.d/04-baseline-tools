@@ -4,4 +4,4 @@
 set -e
 set -o xtrace
 
-apt-get --allow-unauthenticated install -y language-pack-en python-software-properties
+apt-get --allow-unauthenticated install -y language-pack-en python-software-properties software-properties-common

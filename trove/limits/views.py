@@ -53,6 +53,6 @@ class LimitViews(object):
             abs_view["max_" + resource_name] = abs_limit
 
         data.append(abs_view)
-        for l in self.rate_limits:
-            data.append(LimitView(l).data()["limit"])
+        for limit in self.rate_limits:
+            data.append(LimitView(limit).data()["limit"])
         return {"limits": data}
