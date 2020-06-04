@@ -14,6 +14,7 @@
 
 import copy
 import os.path
+import time
 import traceback
 
 from cinderclient import exceptions as cinder_exceptions
@@ -21,7 +22,6 @@ from eventlet import greenthread
 from eventlet.timeout import Timeout
 from oslo_log import log as logging
 from swiftclient.client import ClientException
-import time
 
 from trove import rpc
 from trove.backup import models as bkup_models
@@ -33,9 +33,7 @@ from trove.cluster.models import Cluster
 from trove.cluster.models import DBCluster
 from trove.common import cfg
 from trove.common import clients
-from trove.common import crypto_utils as cu
 from trove.common import exception
-from trove.common import instance as rd_instance
 from trove.common import neutron
 from trove.common import template
 from trove.common import timeutils
@@ -51,7 +49,6 @@ from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.exception import VolumeCreationFailure
 from trove.common.i18n import _
-from trove.common.instance import ServiceStatuses
 from trove.common.notification import DBaaSInstanceRestart
 from trove.common.notification import DBaaSInstanceUpgrade
 from trove.common.notification import EndNotification
@@ -63,6 +60,7 @@ from trove.common.strategies.cluster import strategy
 from trove.common.utils import try_recover
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as inst_models
+from trove.instance import service_status as srvstatus
 from trove.instance.models import BuiltInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import FreshInstance
@@ -202,24 +200,36 @@ class ClusterTasks(Cluster):
                              shard_id=None):
         """Wait for all instances to get READY."""
         return self._all_instances_acquire_status(
-            instance_ids, cluster_id, shard_id, ServiceStatuses.INSTANCE_READY,
-            fast_fail_statuses=[ServiceStatuses.FAILED,
-                                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT])
+            instance_ids, cluster_id, shard_id,
+            srvstatus.ServiceStatuses.INSTANCE_READY,
+            fast_fail_statuses=[
+                srvstatus.ServiceStatuses.FAILED,
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+            ]
+        )
 
     def _all_instances_shutdown(self, instance_ids, cluster_id,
                                 shard_id=None):
         """Wait for all instances to go SHUTDOWN."""
         return self._all_instances_acquire_status(
-            instance_ids, cluster_id, shard_id, ServiceStatuses.SHUTDOWN,
-            fast_fail_statuses=[ServiceStatuses.FAILED,
-                                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT])
+            instance_ids, cluster_id, shard_id,
+            srvstatus.ServiceStatuses.SHUTDOWN,
+            fast_fail_statuses=[
+                srvstatus.ServiceStatuses.FAILED,
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+            ]
+        )
 
     def _all_instances_running(self, instance_ids, cluster_id, shard_id=None):
         """Wait for all instances to become ACTIVE."""
         return self._all_instances_acquire_status(
-            instance_ids, cluster_id, shard_id, ServiceStatuses.RUNNING,
-            fast_fail_statuses=[ServiceStatuses.FAILED,
-                                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT])
+            instance_ids, cluster_id, shard_id,
+            srvstatus.ServiceStatuses.RUNNING,
+            fast_fail_statuses=[
+                srvstatus.ServiceStatuses.FAILED,
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+            ]
+        )
 
     def _all_instances_acquire_status(
         self, instance_ids, cluster_id, shard_id, expected_status,
@@ -427,7 +437,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             utils.poll_until(self._service_is_active,
                              sleep_time=CONF.usage_sleep_time,
                              time_out=timeout)
+
             LOG.info("Created instance %s successfully.", self.id)
+            if not self.db_info.task_status.is_error:
+                self.reset_task_status()
             TroveInstanceCreate(instance=self,
                                 instance_size=flavor['ram']).notify()
         except (TroveError, PollTimeOut) as ex:
@@ -582,9 +595,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if root_password:
             self.report_root_enabled()
 
-        if not self.db_info.task_status.is_error:
-            self.reset_task_status()
-
         # when DNS is supported, we attempt to add this after the
         # instance is prepared.  Otherwise, if DNS fails, instances
         # end up in a poorer state and there's no tooling around
@@ -723,12 +733,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if CONF.update_status_on_fail:
             # Updating service status
             service = InstanceServiceStatus.find_by(instance_id=self.id)
-            service.set_status(ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
+            service.set_status(
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
             service.save()
             LOG.error(
                 "Service status: %s, service error description: %s",
-                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT.api_status,
-                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT.description
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT.api_status,
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT.description
             )
 
             # Updating instance status
@@ -756,14 +767,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         status = service.get_status()
 
-        if (status == rd_instance.ServiceStatuses.RUNNING or
-            status == rd_instance.ServiceStatuses.INSTANCE_READY or
-            status == rd_instance.ServiceStatuses.HEALTHY):
+        if (status == srvstatus.ServiceStatuses.RUNNING or
+            status == srvstatus.ServiceStatuses.INSTANCE_READY or
+            status == srvstatus.ServiceStatuses.HEALTHY):
             return True
-        elif status not in [rd_instance.ServiceStatuses.NEW,
-                            rd_instance.ServiceStatuses.BUILDING,
-                            rd_instance.ServiceStatuses.UNKNOWN,
-                            rd_instance.ServiceStatuses.DELETED]:
+        elif status not in [srvstatus.ServiceStatuses.NEW,
+                            srvstatus.ServiceStatuses.BUILDING,
+                            srvstatus.ServiceStatuses.UNKNOWN,
+                            srvstatus.ServiceStatuses.DELETED]:
             raise TroveError(_("Service not active, status: %s") % status)
 
         c_id = self.db_info.compute_instance_id
@@ -1069,6 +1080,27 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     associated with a compute server.
     """
 
+    def is_service_healthy(self):
+        """Wait for the db service up and running.
+
+        This method is supposed to be called with poll_until against an
+        existing db instance.
+        """
+        service = InstanceServiceStatus.find_by(instance_id=self.id)
+        status = service.get_status()
+
+        if service.is_uptodate():
+            if status in [srvstatus.ServiceStatuses.HEALTHY]:
+                return True
+            elif status in [
+                srvstatus.ServiceStatuses.FAILED,
+                srvstatus.ServiceStatuses.UNKNOWN,
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+            ]:
+                raise TroveError('Database service error, status: %s' % status)
+
+        return False
+
     def resize_volume(self, new_size):
         LOG.info("Resizing volume for instance %(instance_id)s from "
                  "%(old_size)s GB to %(new_size)s GB.",
@@ -1219,6 +1251,10 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             LOG.info("Starting database on instance %s.", self.id)
             self.guest.restart()
 
+            # Wait for database service up and running
+            utils.poll_until(self.is_service_healthy,
+                             time_out=CONF.report_interval * 2)
+
             LOG.info("Rebooted instance %s successfully.", self.id)
         except Exception as e:
             LOG.error("Failed to reboot instance %(id)s: %(e)s",
@@ -1276,79 +1312,40 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         This does not change the reference for this BuiltInstanceTask
         """
         datastore_status = InstanceServiceStatus.find_by(instance_id=self.id)
-        datastore_status.status = rd_instance.ServiceStatuses.PAUSED
+        datastore_status.status = srvstatus.ServiceStatuses.PAUSED
         datastore_status.save()
 
     def upgrade(self, datastore_version):
         LOG.info("Upgrading instance %s to new datastore version %s",
                  self.id, datastore_version)
 
-        def server_finished_rebuilding():
-            self.refresh_compute_server_info()
-            return not self.server_status_matches(['REBUILD'])
+        self.set_service_status(srvstatus.ServiceStatuses.UPGRADING)
 
         try:
             upgrade_info = self.guest.pre_upgrade()
+            upgrade_info = upgrade_info if upgrade_info else {}
+            upgrade_info.update({'datastore_version': datastore_version.name})
+            self.guest.upgrade(upgrade_info)
 
-            if self.volume_id:
-                volume = self.volume_client.volumes.get(self.volume_id)
-                volume_device = self._fix_device_path(
-                    volume.attachments[0]['device'])
-                if volume:
-                    upgrade_info['device'] = volume_device
-
-            # BUG(1650518): Cleanup in the Pike release some instances
-            # that we will be upgrading will be pre secureserialier
-            # and will have no instance_key entries. If this is one of
-            # those instances, make a key. That will make it appear in
-            # the injected files that are generated next. From this
-            # point, and until the guest comes up, attempting to send
-            # messages to it will fail because the RPC framework will
-            # encrypt messages to a guest which potentially doesn't
-            # have the code to handle it.
-            if CONF.enable_secure_rpc_messaging and (
-                self.db_info.encrypted_key is None):
-                encrypted_key = cu.encode_data(cu.encrypt_data(
-                    cu.generate_random_key(),
-                    CONF.inst_rpc_key_encr_key))
-                self.update_db(encrypted_key=encrypted_key)
-                LOG.debug("Generated unique RPC encryption key for "
-                          "instance = %(id)s, key = %(key)s",
-                          {'id': self.id, 'key': encrypted_key})
-
-            injected_files = self.get_injected_files(
-                datastore_version.manager)
-            LOG.debug("Rebuilding instance %(instance)s with image %(image)s.",
-                      {'instance': self, 'image': datastore_version.image_id})
-            self.server.rebuild(datastore_version.image_id,
-                                files=injected_files)
-            utils.poll_until(
-                server_finished_rebuilding,
-                sleep_time=5, time_out=600)
-
-            if not self.server_status_matches(['ACTIVE']):
-                raise TroveError(_("Instance %(instance)s failed to "
-                                   "upgrade to %(datastore_version)s"),
-                                 instance=self,
-                                 datastore_version=datastore_version)
-
-            LOG.info('Finished rebuilding server for instance %s', self.id)
-
-            self.guest.post_upgrade(upgrade_info)
+            # Wait for db instance healthy
+            LOG.info('Waiting for instance %s to be healthy after upgrading',
+                     self.id)
+            utils.poll_until(self.is_service_healthy, time_out=600,
+                             sleep_time=5)
 
             self.reset_task_status()
             LOG.info("Finished upgrading instance %s to new datastore "
-                     "version %s",
-                     self.id, datastore_version)
+                     "version %s", self.id, datastore_version)
         except Exception as e:
-            LOG.exception(e)
-            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
-            self.update_db(task_status=err)
-            raise e
+            LOG.error('Failed to upgrade instance %s, error: %s', self.id, e)
+            self.update_db(
+                task_status=inst_models.InstanceTasks.BUILDING_ERROR_SERVER)
 
-    # Some cinder drivers appear to return "vdb" instead of "/dev/vdb".
-    # We need to account for that.
     def _fix_device_path(self, device):
+        """Get correct device path.
+
+        Some cinder drivers appear to return "vdb" instead of "/dev/vdb".
+        """
         if device.startswith("/dev"):
             return device
         else:
@@ -1515,7 +1512,7 @@ class ResizeVolumeAction(object):
                       "status to failed.", {'func': orig_func.__name__,
                                             'id': self.instance.id})
         service = InstanceServiceStatus.find_by(instance_id=self.instance.id)
-        service.set_status(ServiceStatuses.FAILED)
+        service.set_status(srvstatus.ServiceStatuses.FAILED)
         service.save()
 
     def _recover_restart(self, orig_func):
@@ -1790,7 +1787,7 @@ class ResizeActionBase(object):
     def _datastore_is_offline(self):
         self.instance._refresh_datastore_status()
         return (self.instance.datastore_status_matches(
-            rd_instance.ServiceStatuses.SHUTDOWN))
+            srvstatus.ServiceStatuses.SHUTDOWN))
 
     def _revert_nova_action(self):
         LOG.debug("Instance %s calling Compute revert resize...",
@@ -1811,7 +1808,7 @@ class ResizeActionBase(object):
     def _guest_is_awake(self):
         self.instance._refresh_datastore_status()
         return not self.instance.datastore_status_matches(
-            rd_instance.ServiceStatuses.PAUSED)
+            srvstatus.ServiceStatuses.PAUSED)
 
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""

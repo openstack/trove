@@ -13,26 +13,32 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from testtools.matchers import Equals
+from testtools.matchers import Is
+from testtools.matchers import Not
 import uuid
 
-from mock import MagicMock, patch, ANY
+from mock import ANY
+from mock import MagicMock
+from mock import patch
 from novaclient.client import Client
-from novaclient.v2.flavors import FlavorManager, Flavor
-from novaclient.v2.servers import Server, ServerManager
+from novaclient.v2.flavors import Flavor
+from novaclient.v2.flavors import FlavorManager
+from novaclient.v2.servers import Server
+from novaclient.v2.servers import ServerManager
 from oslo_config import cfg
-from testtools.matchers import Equals, Is, Not
 
+from trove import rpc
 from trove.backup.models import Backup
 from trove.common import clients
 from trove.common import exception
-from trove.common import instance as rd_instance
 from trove.datastore import models as datastore_models
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.guestagent.api import API
+from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
-from trove import rpc
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
@@ -98,12 +104,12 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
                               compute_instance_id='compute_id_1',
                               server_id='server_id_1',
                               tenant_id='tenant_id_1',
-                              server_status=rd_instance.ServiceStatuses.
+                              server_status=srvstatus.ServiceStatuses.
                               BUILDING.api_status,
                               deleted=False)
         instance.save()
         service_status = InstanceServiceStatus(
-            rd_instance.ServiceStatuses.RUNNING,
+            srvstatus.ServiceStatuses.RUNNING,
             id=str(uuid.uuid4()),
             instance_id=instance.id,
         )
@@ -122,7 +128,7 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
 
     @patch('trove.instance.models.LOG')
     def test_transformer(self, mock_logging):
-        status = rd_instance.ServiceStatuses.BUILDING.api_status
+        status = srvstatus.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
         payloads = mgmtmodels.NotificationTransformer(
@@ -184,7 +190,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
                             Equals('unknown'))
 
     def test_transformer(self):
-        status = rd_instance.ServiceStatuses.BUILDING.api_status
+        status = srvstatus.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
 
@@ -223,7 +229,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
 
     @patch('trove.extensions.mgmt.instances.models.LOG')
     def test_transformer_invalid_datastore_manager(self, mock_logging):
-        status = rd_instance.ServiceStatuses.BUILDING.api_status
+        status = srvstatus.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
         version = datastore_models.DBDatastoreVersion.get_by(
@@ -268,9 +274,9 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.addCleanup(self.do_cleanup, instance, service_status)
 
     def test_transformer_shutdown_instance(self):
-        status = rd_instance.ServiceStatuses.SHUTDOWN.api_status
+        status = srvstatus.ServiceStatuses.SHUTDOWN.api_status
         instance, service_status = self.build_db_instance(status)
-        service_status.set_status(rd_instance.ServiceStatuses.SHUTDOWN)
+        service_status.set_status(srvstatus.ServiceStatuses.SHUTDOWN)
         server = MagicMock(spec=Server)
         server.user_id = 'test_user_id'
 
@@ -296,9 +302,9 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.addCleanup(self.do_cleanup, instance, service_status)
 
     def test_transformer_no_nova_instance(self):
-        status = rd_instance.ServiceStatuses.SHUTDOWN.api_status
+        status = srvstatus.ServiceStatuses.SHUTDOWN.api_status
         instance, service_status = self.build_db_instance(status)
-        service_status.set_status(rd_instance.ServiceStatuses.SHUTDOWN)
+        service_status.set_status(srvstatus.ServiceStatuses.SHUTDOWN)
         mgmt_instance = mgmtmodels.SimpleMgmtInstance(self.context,
                                                       instance,
                                                       None,
@@ -321,7 +327,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.addCleanup(self.do_cleanup, instance, service_status)
 
     def test_transformer_flavor_cache(self):
-        status = rd_instance.ServiceStatuses.BUILDING.api_status
+        status = srvstatus.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
 
@@ -366,7 +372,7 @@ class TestMgmtInstanceTasks(MockMgmtInstanceTest):
         super(TestMgmtInstanceTasks, cls).setUpClass()
 
     def test_public_exists_events(self):
-        status = rd_instance.ServiceStatuses.BUILDING.api_status
+        status = srvstatus.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, task_status=InstanceTasks.BUILDING)
         server = MagicMock(spec=Server)
@@ -443,7 +449,7 @@ class TestMgmtInstanceDeleted(MockMgmtInstanceTest):
 class TestMgmtInstancePing(MockMgmtInstanceTest):
 
     def test_rpc_ping(self):
-        status = rd_instance.ServiceStatuses.RUNNING.api_status
+        status = srvstatus.ServiceStatuses.RUNNING.api_status
         instance, service_status = self.build_db_instance(
             status, task_status=InstanceTasks.NONE)
         mgmt_instance = mgmtmodels.MgmtInstance(instance,

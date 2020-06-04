@@ -19,12 +19,12 @@ from oslo_service import periodic_task
 from trove.backup import models as bkup_models
 from trove.common import cfg
 from trove.common import exception as trove_exception
-from trove.common.instance import ServiceStatus
 from trove.common.rpc import version as rpc_version
 from trove.common.serializable_notification import SerializableNotification
 from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as inst_models
+from trove.instance.service_status import ServiceStatus
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -89,8 +89,8 @@ class Manager(periodic_task.PeriodicTasks):
         if self._message_too_old(instance_id, 'heartbeat', sent):
             return
         if payload.get('service_status') is not None:
-            status.set_status(ServiceStatus.from_description(
-                payload['service_status']))
+            status.set_status(
+                ServiceStatus.from_description(payload['service_status']))
         status.save()
 
     def update_backup(self, context, instance_id, backup_id,

@@ -22,7 +22,6 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
-from trove.common import instance as rd_instance
 from trove.common import utils
 from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
@@ -32,6 +31,7 @@ from trove.guestagent.datastore import manager
 from trove.guestagent.strategies import replication as repl_strategy
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
+from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -71,7 +71,7 @@ class MySqlManager(manager.Manager):
                 client.execute(cmd)
 
             LOG.debug("Database service check: database query is responsive")
-            return rd_instance.ServiceStatuses.HEALTHY
+            return service_status.ServiceStatuses.HEALTHY
         except Exception:
             return super(MySqlManager, self).get_service_status()
 
@@ -295,7 +295,7 @@ class MySqlManager(manager.Manager):
             self.app.restore_backup(context, backup_info, restore_location)
         except Exception:
             LOG.error("Failed to restore from backup %s.", backup_info['id'])
-            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            self.status.set_status(service_status.ServiceStatuses.FAILED)
             raise
 
         LOG.info("Finished restore data from backup %s", backup_info['id'])
@@ -365,7 +365,7 @@ class MySqlManager(manager.Manager):
                                              slave_config)
         except Exception as err:
             LOG.error("Error enabling replication, error: %s", str(err))
-            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            self.status.set_status(service_status.ServiceStatuses.FAILED)
             raise
 
     def detach_replica(self, context, for_failover=False):
@@ -431,3 +431,9 @@ class MySqlManager(manager.Manager):
     def demote_replication_master(self, context):
         LOG.info("Demoting replication master.")
         self.replication.demote_master(self.app)
+
+    def upgrade(self, context, upgrade_info):
+        """Upgrade the database."""
+        LOG.info('Starting to upgrade database, upgrade_info: %s',
+                 upgrade_info)
+        self.app.upgrade(upgrade_info)

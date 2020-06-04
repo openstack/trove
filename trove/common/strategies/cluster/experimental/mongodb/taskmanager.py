@@ -17,17 +17,16 @@ from eventlet.timeout import Timeout
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common.exception import PollTimeOut
-from trove.common.instance import ServiceStatuses
-from trove.common.strategies.cluster import base
 from trove.common import utils
+from trove.common.exception import PollTimeOut
+from trove.common.strategies.cluster import base
 from trove.instance import models
+from trove.instance import tasks as inst_tasks
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
-from trove.instance import tasks as inst_tasks
+from trove.instance.service_status import ServiceStatuses
 from trove.taskmanager import api as task_api
-import trove.taskmanager.models as task_models
-
+from trove.taskmanager import models as task_models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

@@ -1,0 +1,4 @@
+---
+fixes:
+  - When the trove-guestagent failed to update the datastore service status,
+    the instance status should be ERROR.

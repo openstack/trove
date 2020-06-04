@@ -13,21 +13,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from novaclient.exceptions import BadRequest
-from novaclient.v2.servers import Server
 from unittest import mock
 
+from novaclient.exceptions import BadRequest
+from novaclient.v2.servers import Server
 from oslo_messaging._drivers.common import RPCException
 from proboscis import test
 from testtools import TestCase
 
-from trove.common.exception import PollTimeOut
-from trove.common.exception import TroveError
-from trove.common import instance as rd_instance
 from trove.common import template
 from trove.common import utils
+from trove.common.exception import PollTimeOut
+from trove.common.exception import TroveError
 from trove.datastore.models import DatastoreVersion
 from trove.guestagent import api as guest
+from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
@@ -63,7 +63,7 @@ class ResizeTestBase(TestCase):
             self.server,
             datastore_status=InstanceServiceStatus.create(
                 instance_id=self.db_info.id,
-                status=rd_instance.ServiceStatuses.RUNNING))
+                status=srvstatus.ServiceStatuses.RUNNING))
         self.instance.server.flavor = {'id': OLD_FLAVOR_ID}
         self.guest = mock.MagicMock(spec=guest.API)
         self.instance._guest = self.guest
@@ -124,7 +124,7 @@ class ResizeTests(ResizeTestBase):
             task_status=InstanceTasks.NONE)
 
     def test_nova_wont_resize(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
         self.server.resize.side_effect = BadRequest(400)
         self.server.status = "ACTIVE"
         self.assertRaises(BadRequest, self.action.execute)
@@ -135,7 +135,7 @@ class ResizeTests(ResizeTestBase):
             task_status=InstanceTasks.NONE)
 
     def test_nova_resize_timeout(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
         self.server.status = "ACTIVE"
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
@@ -150,7 +150,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_nova_doesnt_change_flavor(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -177,7 +177,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_nova_resize_fails(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -200,7 +200,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_nova_resizes_in_weird_state(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -224,7 +224,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_guest_is_not_okay(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -237,7 +237,7 @@ class ResizeTests(ResizeTestBase):
 
             self.instance.set_datastore_status_to_paused.side_effect = (
                 lambda: self._datastore_changes_to(
-                    rd_instance.ServiceStatuses.PAUSED))
+                    srvstatus.ServiceStatuses.PAUSED))
 
             self.assertRaises(PollTimeOut, self.action.execute)
 
@@ -257,7 +257,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_mysql_is_not_okay(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -269,7 +269,7 @@ class ResizeTests(ResizeTestBase):
 
             self.instance.set_datastore_status_to_paused.side_effect = (
                 lambda: self._datastore_changes_to(
-                    rd_instance.ServiceStatuses.SHUTDOWN))
+                    srvstatus.ServiceStatuses.SHUTDOWN))
 
             self._start_mysql()
             self.assertRaises(PollTimeOut, self.action.execute)
@@ -290,7 +290,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_confirm_resize_fails(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -303,7 +303,7 @@ class ResizeTests(ResizeTestBase):
 
             self.instance.set_datastore_status_to_paused.side_effect = (
                 lambda: self._datastore_changes_to(
-                    rd_instance.ServiceStatuses.RUNNING))
+                    srvstatus.ServiceStatuses.RUNNING))
             self.server.confirm_resize.side_effect = BadRequest(400)
 
             self._start_mysql()
@@ -322,7 +322,7 @@ class ResizeTests(ResizeTestBase):
                 task_status=InstanceTasks.NONE)
 
     def test_revert_nova_fails(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -335,7 +335,7 @@ class ResizeTests(ResizeTestBase):
 
             self.instance.set_datastore_status_to_paused.side_effect = (
                 lambda: self._datastore_changes_to(
-                    rd_instance.ServiceStatuses.PAUSED))
+                    srvstatus.ServiceStatuses.PAUSED))
 
             self.assertRaises(PollTimeOut, self.action.execute)
 
@@ -363,7 +363,7 @@ class MigrateTests(ResizeTestBase):
         self.action = models.MigrateAction(self.instance)
 
     def test_successful_migrate(self):
-        self._datastore_changes_to(rd_instance.ServiceStatuses.SHUTDOWN)
+        self._datastore_changes_to(srvstatus.ServiceStatuses.SHUTDOWN)
 
         with mock.patch.object(utils, 'poll_until') as mock_poll_until:
             self.poll_until_side_effects.extend([
@@ -375,7 +375,7 @@ class MigrateTests(ResizeTestBase):
 
             self.instance.set_datastore_status_to_paused.side_effect = (
                 lambda: self._datastore_changes_to(
-                    rd_instance.ServiceStatuses.RUNNING))
+                    srvstatus.ServiceStatuses.RUNNING))
 
             self.action.execute()
 

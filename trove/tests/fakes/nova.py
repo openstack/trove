@@ -13,17 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
+import uuid
+
+import eventlet
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 from trove.common.exception import PollTimeOut
-from trove.common import instance as rd_instance
+from trove.instance import service_status as srvstatus
 from trove.tests.fakes.common import authorize
-
-import collections
-import eventlet
-import uuid
-
 
 LOG = logging.getLogger(__name__)
 FAKE_HOSTS = ["fake_host_1", "fake_host_2"]
@@ -326,7 +325,7 @@ class FakeServers(object):
             instance = DBInstance.find_by(compute_instance_id=id)
             LOG.debug("Setting server %s to running", instance.id)
             status = InstanceServiceStatus.find_by(instance_id=instance.id)
-            status.status = rd_instance.ServiceStatuses.RUNNING
+            status.status = srvstatus.ServiceStatuses.RUNNING
             status.save()
         eventlet.spawn_after(time_from_now, set_server_running)
 

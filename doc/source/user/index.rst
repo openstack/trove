@@ -17,6 +17,6 @@ handling complex administrative tasks.
    backup-db-incremental.rst
    manage-db-config.rst
    set-up-replication.rst
-   set-up-clustering.rst
    upgrade-datastore.rst
+   set-up-clustering.rst
    upgrade-cluster-datastore.rst

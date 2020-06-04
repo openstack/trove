@@ -8,58 +8,71 @@ configuration files of your database.
 
 To perform datastore upgrade, you need:
 
+- A Trove database instance to be upgrade.
 - A guest image with the target datastore version.
 
-- A Trove database instance to be upgrade.
+This guide shows you how to upgrade MySQL datastore from 5.7.29 to 5.7.30 for a
+database instance.
 
-This example shows you how to upgrade Redis datastore (version 3.2.6)
-for a single instance database.
+.. warning::
 
-.. note::
-
-   **Before** upgrading, make sure that:
-
-   -  Your target datastore is binary compatible with the current
-      datastore. Each database provider has its own compatibilty
-      policy. Usually there shouldn't be any problem when
-      performing an upgrade within minor versions.
-
-   -  You **do not** downgrade your datastore.
-
-   -  Target versions is supported by Trove. For instance, Trove
-      doesn't support Cassandra >=2.2 at this moment so you
-      shouldn't perform an upgrade from 2.1 to 2.2.
+   Datastore upgrade could cause downtime of the database service.
 
 Upgrading datastore
 ~~~~~~~~~~~~~~~~~~~
 
-#. **Check instance status**
+#. **Check datastore versions in the system**
+
+   In my environment, both datastore version 5.7.29 and 5.7.30 are defined for
+   MySQL.
+
+   .. code-block:: console
+
+      $ openstack datastore list
+      +--------------------------------------+-------+
+      | ID                                   | Name  |
+      +--------------------------------------+-------+
+      | 50bed39d-6788-4a0d-8d74-321012bb6b55 | mysql |
+      +--------------------------------------+-------+
+      $ openstack datastore version list mysql
+      +--------------------------------------+--------+
+      | ID                                   | Name   |
+      +--------------------------------------+--------+
+      | 70c68d0a-27e1-4fbd-bd3b-f29d42ce1a7d | 5.7.29 |
+      | cf91aa9a-2192-4ec4-b7ce-5cac3b1e7dbe | 5.7.30 |
+      +--------------------------------------+--------+
+
+#. **Create a new instance with datastore version 5.7.29**
 
    Make sure the instance status is HEALTHY before upgrading.
 
    .. code-block:: console
 
+      $ openstack database instance create test-mysql-upgrade \
+        d2 \
+        --size 1 \
+        --nic net-id=$netid \
+        --datastore mysql --datastore_version 5.7.29 \
+        --databases testdb --users user:password
       $ openstack database instance list
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
-      | ID                                   | Name       | Datastore | Datastore Version | Status  | Addresses | Flavor ID | Size | Region    |
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
-      | 55411e95-1670-497f-8d92-0179f3b4fdd4 | redis_test | redis     | 3.2.6             | HEALTHY | 10.1.0.25 |  6        |    1 | RegionOne |
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
+      | ID                                   | Name               | Datastore | Datastore Version | Status  | Addresses                                     | Flavor ID | Size | Region    | Role    |
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
+      | 32eb56b0-d10d-43e9-b59e-1e4b0979e5dd | test-mysql-upgrade | mysql     | 5.7.29            | HEALTHY | [{'address': '10.0.0.54', 'type': 'private'}] | d2        |    1 | RegionOne |         |
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
 
-#. **Check if target version is available**
-
-   Use :command:`openstack datastore version list` command to list
-   all available versions your datastore.
+   Check the MySQL version by connecting with the database:
 
    .. code-block:: console
 
-      $ openstack datastore version list redis
-      +--------------------------------------+-------+
-      | ID                                   | Name  |
-      +--------------------------------------+-------+
-      | 483debec-b7c3-4167-ab1d-1765795ed7eb | 3.2.6 |
-      | 507f666e-193c-4194-9d9d-da8342dcb4f1 | 3.2.7 |
-      +--------------------------------------+-------+
+      $ ip=10.0.0.54
+      $ mysql -u user -ppassword -h $ip testdb
+      mysql> SELECT @@GLOBAL.innodb_version;
+      +-------------------------+
+      | @@GLOBAL.innodb_version |
+      +-------------------------+
+      | 5.7.29                  |
+      +-------------------------+
 
 #. **Run upgrade**
 
@@ -68,7 +81,7 @@ Upgrading datastore
 
    .. code-block:: console
 
-      $ openstack database instance upgrade 55411e95-1670-497f-8d92-0179f3b4fdd4 3.2.7
+      $ openstack database instance upgrade 32eb56b0-d10d-43e9-b59e-1e4b0979e5dd cf91aa9a-2192-4ec4-b7ce-5cac3b1e7dbe
 
 #. **Wait until status changes from UPGRADE to HEALTHY**
 
@@ -78,24 +91,26 @@ Upgrading datastore
    .. code-block:: console
 
       $ openstack database instance list
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
-      | ID                                   | Name       | Datastore | Datastore Version | Status  | Addresses | Flavor ID | Size | Region    |
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
-      | 55411e95-1670-497f-8d92-0179f3b4fdd4 | redis_test | redis     | 3.2.7             | UPGRADE | 10.1.0.25 | 6         |    5 | RegionOne |
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
+      | ID                                   | Name               | Datastore | Datastore Version | Status  | Addresses                                     | Flavor ID | Size | Region    | Role    |
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
+      | 32eb56b0-d10d-43e9-b59e-1e4b0979e5dd | test-mysql-upgrade | mysql     | 5.7.30            | UPGRADE | [{'address': '10.0.0.54', 'type': 'private'}] | d2        |    1 | RegionOne |         |
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
       $ openstack database instance list
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
-      | ID                                   | Name       | Datastore | Datastore Version | Status  | Addresses | Flavor ID | Size | Region    |
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
-      | 55411e95-1670-497f-8d92-0179f3b4fdd4 | redis_test | redis     | 3.2.7             | HEALTHY | 10.1.0.25 | 6         |    5 | RegionOne |
-      +--------------------------------------+------------+-----------+-------------------+---------+-----------+-----------+------+-----------+
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
+      | ID                                   | Name               | Datastore | Datastore Version | Status  | Addresses                                     | Flavor ID | Size | Region    | Role    |
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
+      | 32eb56b0-d10d-43e9-b59e-1e4b0979e5dd | test-mysql-upgrade | mysql     | 5.7.30            | HEALTHY | [{'address': '10.0.0.54', 'type': 'private'}] | d2        |    1 | RegionOne |         |
+      +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
 
-Other datastores
-~~~~~~~~~~~~~~~~
+   Check the MySQL version again:
 
-Upgrade for other datastores works in the same way. Currently Trove
-supports upgrades for the following datastores:
+   .. code-block:: console
 
-- MySQL
-- MariaDB
-- Redis
+      $ mysql -u user -ppassword -h $ip testdb
+      mysql> SELECT @@GLOBAL.innodb_version;
+      +-------------------------+
+      | @@GLOBAL.innodb_version |
+      +-------------------------+
+      | 5.7.30                  |
+      +-------------------------+

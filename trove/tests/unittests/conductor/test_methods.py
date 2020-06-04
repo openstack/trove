@@ -18,13 +18,12 @@ from oslo_utils import timeutils
 from trove.backup import models as bkup_models
 from trove.backup import state
 from trove.common import exception as t_exception
-from trove.common.instance import ServiceStatuses
 from trove.common import utils
 from trove.conductor import manager as conductor_manager
 from trove.instance import models as t_models
+from trove.instance.service_status import ServiceStatuses
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
-
 
 # See LP bug #1255178
 OLD_DBB_SAVE = bkup_models.DBBackup.save
