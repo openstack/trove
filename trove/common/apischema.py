@@ -106,6 +106,13 @@ uuid = {
                "-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}$"
 }
 
+ip_address_v4 = {
+    "type": "string",
+    "minLength": 7,
+    "maxLength": 15,
+    "pattern": r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+}
+
 volume = {
     "type": "object",
     "required": ["size"],
@@ -116,7 +123,6 @@ volume = {
                 non_empty_string,
                 {"type": "null"}
             ]
-
         }
     }
 }
@@ -128,7 +134,10 @@ nics = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "net-id": uuid
+            "net-id": uuid,
+            "network_id": uuid,
+            "subnet_id": uuid,
+            "ip_address": ip_address_v4
         }
     }
 }

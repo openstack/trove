@@ -372,7 +372,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
 
         mock_create_secgroup.assert_called_with('mysql', [])
         mock_create_port.assert_called_once_with(
-            'fake-net-id',
+            {'net-id': 'fake-net-id'},
             ['fake_security_group_id'],
             is_mgmt=False,
             is_public=False

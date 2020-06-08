@@ -622,7 +622,16 @@ class PublicNetworkNotFound(TroveError):
 
 
 class NetworkConflict(BadRequest):
-    message = _("User network conflicts with the management network.")
+    message = _("User network conflicts with the reserved network.")
+
+
+class NetworkNotProvided(BadRequest):
+    message = _("Instance %(resource)s needs to be specified.")
+
+
+class SubnetNotFound(BadRequest):
+    message = _("Subnet %(subnet_id)s not found in the network "
+                "%(network_id)s.")
 
 
 class ClusterVolumeSizeRequired(TroveError):

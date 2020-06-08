@@ -1,0 +1,7 @@
+---
+features:
+  - Support ``subnet_id`` and ``ip_address`` for creating instance. When
+    creating instance, trove will check the network conflicts between user's
+    network and the management network, additionally, the cloud admin is able
+    to define other reserved networks by configuring
+    ``reserved_network_cidrs``.

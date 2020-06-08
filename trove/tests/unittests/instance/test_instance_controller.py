@@ -13,9 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import copy
+import uuid
+
 import jsonschema
 from mock import Mock
-from testtools.matchers import Is, Equals
+from testtools.matchers import Equals
+from testtools.matchers import Is
 from testtools.testcase import skip
 
 from trove.common import apischema
@@ -164,6 +168,20 @@ class TestInstanceController(trove_testtools.TestCase):
         self.assertIn("'$%^' does not match '^.*[0-9a-zA-Z]+.*$'",
                       error_messages)
         self.assertIn("locality", error_paths)
+
+    def test_validate_create_valid_nics(self):
+        body = copy.copy(self.instance)
+        body['instance']['nics'] = [
+            {
+                'network_id': str(uuid.uuid4()),
+                'subnet_id': str(uuid.uuid4()),
+                'ip_address': '192.168.1.11'
+            }
+        ]
+
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
 
     def test_validate_restart(self):
         body = {"restart": {}}

@@ -624,11 +624,10 @@ name:
   type: string
 nics:
   description: |
-     Network interfaces for database service inside Nova instances.
-     ``NOTE:`` For backward compatibility, this parameter uses the same schema
-     as novaclient creating servers, but only ``net-id`` is supported and can
-     only be specified once. This parameter is required in service tenant
-     deployment model.
+    Network interface definition for database instance. This is a list of
+    mappings for backward compatibility, but only one item is allowed. The
+    allowed keys in the mapping are: network_id, subnet_id, ip_address and
+    net-id (for backward compatibility, deprecated).
   in: body
   required: false
   type: array

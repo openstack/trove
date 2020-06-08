@@ -282,17 +282,62 @@ class InstanceController(wsgi.Controller):
             instance.delete()
         return wsgi.Result(None, 202)
 
-    def _check_network_overlap(self, context, user_network):
+    def _check_nic(self, context, nic):
+        """Check user provided nic.
+
+        :param context: User context.
+        :param nic: A dict may contain network_id(net-id), subnet_id or
+            ip_address.
+        """
         neutron_client = clients.create_neutron_client(context)
-        user_cidrs = neutron.get_subnet_cidrs(neutron_client, user_network)
+        network_id = nic.get('network_id', nic.get('net-id'))
+        subnet_id = nic.get('subnet_id')
+        ip_address = nic.get('ip_address')
+
+        if not network_id and not subnet_id:
+            raise exception.NetworkNotProvided(resource='network or subnet')
+
+        if not subnet_id and ip_address:
+            raise exception.NetworkNotProvided(resource='subnet')
+
+        if subnet_id:
+            actual_network = neutron_client.show_subnet(
+                subnet_id)['subnet']['network_id']
+            if network_id and actual_network != network_id:
+                raise exception.SubnetNotFound(subnet_id=subnet_id,
+                                               network_id=network_id)
+            network_id = actual_network
+
+        nic['network_id'] = network_id
+        nic.pop('net-id', None)
+
+        self._check_network_overlap(context, network_id, subnet_id)
+
+    def _check_network_overlap(self, context, user_network=None,
+                               user_subnet=None):
+        """Check if the network contains IP address belongs to reserved
+        network.
+
+        :param context: User context.
+        :param user_network: Network ID.
+        :param user_subnet: Subnet ID.
+        """
+        neutron_client = clients.create_neutron_client(context)
+        user_cidrs = neutron.get_subnet_cidrs(neutron_client, user_network,
+                                              user_subnet)
+
+        reserved_cidrs = CONF.reserved_network_cidrs
         mgmt_cidrs = neutron.get_mamangement_subnet_cidrs(neutron_client)
-        LOG.debug("Cidrs of the user network: %s, cidrs of the management "
-                  "network: %s", user_cidrs, mgmt_cidrs)
+        reserved_cidrs.extend(mgmt_cidrs)
+
+        LOG.debug("Cidrs of the user network: %s, cidrs of the reserved "
+                  "network: %s", user_cidrs, reserved_cidrs)
+
         for user_cidr in user_cidrs:
             user_net = ipaddress.ip_network(user_cidr)
-            for mgmt_cidr in mgmt_cidrs:
-                mgmt_net = ipaddress.ip_network(mgmt_cidr)
-                if user_net.overlaps(mgmt_net):
+            for reserved_cidr in reserved_cidrs:
+                res_net = ipaddress.ip_network(reserved_cidr)
+                if user_net.overlaps(res_net):
                     raise exception.NetworkConflict()
 
     def create(self, req, body, tenant_id):
@@ -359,9 +404,12 @@ class InstanceController(wsgi.Controller):
 
         availability_zone = body['instance'].get('availability_zone')
 
+        # Only 1 nic is allowed as defined in API jsonschema.
+        # Use list here just for backward compatibility.
         nics = body['instance'].get('nics', [])
         if len(nics) > 0:
-            self._check_network_overlap(context, nics[0].get('net-id'))
+            LOG.info('Checking user provided instance network %s', nics[0])
+            self._check_nic(context, nics[0])
 
         slave_of_id = body['instance'].get('replica_of',
                                            # also check for older name

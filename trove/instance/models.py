@@ -1207,7 +1207,7 @@ class Instance(BuiltInstance):
         if CONF.management_networks:
             # Make sure management network interface is always configured after
             # user defined instance.
-            nics = nics + [{"net-id": net_id}
+            nics = nics + [{"network_id": net_id}
                            for net_id in CONF.management_networks]
         if nics:
             call_args['nics'] = nics

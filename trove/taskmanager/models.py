@@ -461,7 +461,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     skip_delta=CONF.usage_sleep_time + 1
                 )
 
-    def _create_port(self, network, security_groups, is_mgmt=False,
+    def _create_port(self, network_info, security_groups, is_mgmt=False,
                      is_public=False):
         name = 'trove-%s' % self.id
         type = 'Management' if is_mgmt else 'User'
@@ -470,9 +470,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         try:
             port_id = neutron.create_port(
                 self.neutron_client, name,
-                description, network,
+                description, network_info.get('network_id'),
                 security_groups,
-                is_public=is_public
+                is_public=is_public,
+                subnet_id=network_info.get('subnet_id'),
+                ip=network_info.get('ip_address')
             )
         except Exception:
             error = ("Failed to create %s port for instance %s"
@@ -491,6 +493,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         'nics' contains the networks that management network always comes at
         last.
+
+        returns a list of dicts which only contains port-id.
         """
         LOG.info("Preparing networks for the instance %s", self.id)
         security_group = None
@@ -515,7 +519,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             # The management network is always the last one
             networks.pop(-1)
             port_id = self._create_port(
-                CONF.management_networks[-1],
+                {'network_id': CONF.management_networks[-1]},
                 port_sgs,
                 is_mgmt=True
             )
@@ -526,10 +530,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # Create port in the user defined network, associate floating IP if
         # needed
         if len(networks) > 1 or not CONF.management_networks:
-            network = networks.pop(0).get("net-id")
+            network_info = networks.pop(0)
             port_sgs = [security_group] if security_group else []
             port_id = self._create_port(
-                network,
+                network_info,
                 port_sgs,
                 is_mgmt=False,
                 is_public=access.get('is_public', False)

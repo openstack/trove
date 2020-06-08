@@ -55,7 +55,7 @@ def reset_management_networks():
 
 
 def create_port(client, name, description, network_id, security_groups,
-                is_public=False):
+                is_public=False, subnet_id=None, ip=None):
     port_body = {
         "port": {
             "name": name,
@@ -64,6 +64,15 @@ def create_port(client, name, description, network_id, security_groups,
             "security_groups": security_groups
         }
     }
+
+    if subnet_id:
+        fixed_ips = {
+            "fixed_ips": [{"subnet_id": subnet_id}]
+        }
+        if ip:
+            fixed_ips['fixed_ips'][0].update({'ip_address': ip})
+        port_body['port'].update(fixed_ips)
+
     port = client.create_port(body=port_body)
     port_id = port['port']['id']
 
@@ -150,12 +159,16 @@ def create_security_group_rule(client, sg_id, protocol, ports, remote_ips):
             client.create_security_group_rule(body)
 
 
-def get_subnet_cidrs(client, network_id):
+def get_subnet_cidrs(client, network_id=None, subnet_id=None):
     cidrs = []
 
-    subnets = client.list_subnets(network_id=network_id)['subnets']
-    for subnet in subnets:
-        cidrs.append(subnet.get('cidr'))
+    # Check subnet first.
+    if subnet_id:
+        cidrs.append(client.show_subnet(subnet_id)['subnet']['cidr'])
+    elif network_id:
+        subnets = client.list_subnets(network_id=network_id)['subnets']
+        for subnet in subnets:
+            cidrs.append(subnet.get('cidr'))
 
     return cidrs
 
