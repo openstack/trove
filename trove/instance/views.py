@@ -63,6 +63,9 @@ class InstanceView(object):
         if self.instance.slave_of_id is not None:
             instance_dict['replica_of'] = self._build_master_info()
 
+        if self.instance.slaves:
+            instance_dict['replicas'] = self._build_slaves_info()
+
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
@@ -80,6 +83,16 @@ class InstanceView(object):
             "links": create_links("instances", self.req,
                                   self.instance.slave_of_id)
         }
+
+    def _build_slaves_info(self):
+        data = []
+        for slave in self.instance.slaves:
+            data.append({
+                "id": slave.id,
+                "links": create_links("instances", self.req, slave.id)
+            })
+
+        return data
 
 
 class InstanceDetailView(InstanceView):
@@ -103,9 +116,6 @@ class InstanceDetailView(InstanceView):
 
         if self.instance.fault:
             result['instance']['fault'] = self._build_fault_info()
-
-        if self.instance.slaves:
-            result['instance']['replicas'] = self._build_slaves_info()
 
         if self.instance.configuration is not None:
             result['instance']['configuration'] = (self.
@@ -146,15 +156,6 @@ class InstanceDetailView(InstanceView):
             "created": self.instance.fault.updated,
             "details": self.instance.fault.details,
         }
-
-    def _build_slaves_info(self):
-        data = []
-        for slave in self.instance.slaves:
-            data.append({
-                "id": slave.id,
-                "links": create_links("instances", self.req, slave.id)
-            })
-        return data
 
     def _build_configuration_info(self):
         return {
