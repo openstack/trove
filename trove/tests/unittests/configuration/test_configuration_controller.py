@@ -14,7 +14,7 @@
 #    under the License.
 #
 import jsonschema
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from trove.common import configurations
 from trove.common.exception import UnprocessableEntity

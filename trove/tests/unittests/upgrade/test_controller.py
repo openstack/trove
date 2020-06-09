@@ -14,7 +14,7 @@
 #    under the License.
 #
 import jsonschema
-from mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove.extensions.mgmt.upgrade.service import UpgradeController

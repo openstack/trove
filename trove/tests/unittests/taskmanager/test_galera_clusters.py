@@ -13,8 +13,8 @@
 
 import datetime
 
-from mock import Mock
-from mock import patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 from trove.cluster.models import ClusterTasks as ClusterTaskStatus
 from trove.cluster.models import DBCluster

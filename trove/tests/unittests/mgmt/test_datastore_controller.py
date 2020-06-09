@@ -14,7 +14,7 @@
 
 import jsonschema
 
-from mock import Mock, patch, MagicMock, PropertyMock
+from unittest.mock import Mock, patch, MagicMock, PropertyMock
 from testtools.matchers import Is, Equals
 
 from trove.common import clients

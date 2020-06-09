@@ -11,7 +11,7 @@
 # limitations under the License.
 import re
 
-from mock import Mock
+from unittest.mock import Mock
 
 from trove.common import template
 from trove.datastore.models import DatastoreVersion

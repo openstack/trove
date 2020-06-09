@@ -18,7 +18,7 @@ Tests dealing with HTTP rate-limiting.
 """
 
 
-from mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 from oslo_serialization import jsonutils
 import six
 from six.moves import http_client

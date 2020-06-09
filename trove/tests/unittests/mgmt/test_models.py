@@ -18,9 +18,9 @@ from testtools.matchers import Is
 from testtools.matchers import Not
 import uuid
 
-from mock import ANY
-from mock import MagicMock
-from mock import patch
+from unittest.mock import ANY
+from unittest.mock import MagicMock
+from unittest.mock import patch
 from novaclient.client import Client
 from novaclient.v2.flavors import Flavor
 from novaclient.v2.flavors import FlavorManager

@@ -15,7 +15,7 @@
 #
 
 import copy
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 from trove.common import server_group as srv_grp
 from trove.tests.unittests import trove_testtools

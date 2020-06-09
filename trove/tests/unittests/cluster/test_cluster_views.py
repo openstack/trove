@@ -14,9 +14,9 @@
 #    under the License.
 #
 
-from mock import MagicMock
-from mock import Mock
-from mock import patch
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
 
 from trove.cluster.views import ClusterInstanceDetailView
 from trove.cluster.views import ClusterView

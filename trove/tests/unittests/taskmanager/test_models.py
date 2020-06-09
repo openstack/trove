@@ -18,11 +18,11 @@ from unittest import mock
 from cinderclient import exceptions as cinder_exceptions
 from cinderclient.v2 import volumes as cinderclient_volumes
 import cinderclient.v2.client as cinderclient
-from mock import call
-from mock import MagicMock
-from mock import Mock
-from mock import patch
-from mock import PropertyMock
+from unittest.mock import call
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
+from unittest.mock import PropertyMock
 import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors

@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 from trove.datastore import models
 from trove.module.views import DetailedModuleView
 from trove.tests.unittests import trove_testtools

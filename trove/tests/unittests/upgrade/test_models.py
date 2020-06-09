@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from mock import patch
+from unittest.mock import patch
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove import rpc
 from trove.tests.unittests import trove_testtools

@@ -14,10 +14,10 @@
 #    under the License.
 #
 import copy
+from unittest.mock import Mock
 import uuid
 
 import jsonschema
-from mock import Mock
 from testtools.matchers import Equals
 from testtools.matchers import Is
 from testtools.testcase import skip
