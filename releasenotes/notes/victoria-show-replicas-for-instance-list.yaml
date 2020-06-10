@@ -1,0 +1,4 @@
+---
+features:
+  - Added ``replicas`` attribute for listing instances when the instance is the
+    master of the replication cluster.
