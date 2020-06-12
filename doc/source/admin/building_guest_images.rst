@@ -26,6 +26,12 @@ stored in Glance. This document shows you the steps to build the guest images.
     periodically built and published in
     http://tarballs.openstack.org/trove/images/ in Trove upstream CI.
 
+    Since Victoria release, Trove supports to run database service as docker
+    container inside the guest instance, so that we don't need to maintain
+    multiple images for different database service. That's the reason that you
+    can see images for MySQL and MariaDB for Ussuri and Train releases in
+    http://tarballs.openstack.org/trove/images/.
+
     Additionally, if you install Trove in devstack environment, the guest image
     is created and registered in Glance automatically, unless it's disabled by
     setting ``TROVE_ENABLE_IMAGE_BUILD=false`` in devstack local.conf file.
@@ -130,7 +136,7 @@ The trove guest image could be created by running the following command:
       guest_os_release=bionic
       dev_mode=true
       guest_username=ubuntu
-      output_image_path=$HOME/images/trove-guest--${guest_os}-${guest_os_release}-dev
+      output_image_path=$HOME/images/trove-guest-${guest_os}-${guest_os_release}-dev.qcow2
 
 * ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
   necessary to build the image on the trove controller host, because the host
@@ -148,6 +154,10 @@ The trove guest image could be created by running the following command:
   * ``HOST_SCP_USERNAME``: Only used in dev mode, this is the user name used by
     guest agent to connect to the controller host, e.g. in devstack
     environment, it should be the ``stack`` user.
+
+* The image type can be easily changed by specifying a different image file
+  extension, e.g. to build a raw image, you can specify
+  ``$your-image-name.raw`` as the ``output_image_path`` parameter.
 
 For example, in order to build a guest image for Ubuntu Bionic operating
 system in development mode:
@@ -169,6 +179,11 @@ image in Glance and register a new datastore or version in Trove using
       --file ~/images/trove-guest-ubuntu-bionic-dev.qcow2
     $ trove-manage datastore_version_update mysql 5.7.29 mysql $image_id "" 1
     $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 ${trove_repo_dir}/trove/templates/mysql/validation-rules.json
+
+.. note::
+
+    The command ``trove-manage`` needs to run on Trove controller node.
+    Otherwise, you can use ``openstack datastore version create`` CLI.
 
 If you see anything error or need help for the image creation, please ask help
 either in ``#openstack-trove`` IRC channel or sending emails to
