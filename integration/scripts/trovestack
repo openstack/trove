@@ -781,7 +781,7 @@ function cmd_build_image() {
     if [[ -z "$output" ]]; then
         image_name="trove-datastore-${IMAGE_GUEST_OS}-${IMAGE_GUEST_RELEASE}-${IMAGE_DATASTORE_TYPE}"
         image_folder=$HOME/images
-        output="${image_folder}/${image_name}"
+        output="${image_folder}/${image_name}.qcow2"
     fi
     # Always rebuild the image.
     sudo rm -f $output

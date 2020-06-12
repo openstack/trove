@@ -141,7 +141,7 @@ The trove guest agent image could be created by running the following command:
       guest_os_release=xenial
       dev_mode=true
       guest_username=ubuntu
-      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}
+      imagepath=$HOME/images/trove-${guest_os}-${guest_os_release}-${datastore_type}.qcow2
 
 * ``dev_mode=true`` is mainly for testing purpose for trove developers and it's
   necessary to build the image on the trove controller host, because the host
@@ -164,6 +164,10 @@ The trove guest agent image could be created by running the following command:
   * ``TROVE_BRANCH``: Only used in dev mode. The branch name of Trove code
     repository, by default it's master, use other branches as needed such as
     stable/train.
+
+* The image type can be easily changed by specifying a different image file
+  extension, e.g. to build a raw image, you can specify
+  ``$your-image-name.raw`` as the ``imagepath`` parameter.
 
 For example, in order to build a MySQL image for Ubuntu Xenial operating
 system in development mode:
