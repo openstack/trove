@@ -18,7 +18,6 @@ function build_vm() {
 
     local elementes="base vm"
     local trove_elements_path=${PATH_TROVE}/integration/scripts/files/elements
-    local GUEST_IMAGETYPE=${GUEST_IMAGETYPE:-"qcow2"}
     local GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-4}
     local GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
 
@@ -81,7 +80,6 @@ function build_vm() {
       -a amd64 \
       -o ${image_output} \
       -t ${image_type} \
-      -t ${GUEST_IMAGETYPE} \
       --image-size ${GUEST_IMAGESIZE} \
       --image-cache ${GUEST_CACHEDIR} \
       $elementes
