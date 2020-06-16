@@ -273,8 +273,8 @@ databases:
   type: array
 datastore:
   description: |
-    Data store assigned to the configuration group.
-    Required if you did not configure the default data store.
+    Data store type and version assigned to the configuration group.
+    Required if the default data store is not configured.
   in: body
   required: true
   type: string
