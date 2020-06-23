@@ -198,14 +198,14 @@ data store version.
         - Location of :file:`validation-rules.json`
         - Notes
 
-      * - Ubuntu 14.04
-        - :file:`/usr/lib/python2.7/dist-packages/trove/templates/DATASTORE_NAME`
+      * - Ubuntu 18.04
+        - :file:`/usr/lib/python3/dist-packages/trove/templates/DATASTORE_NAME`
         - DATASTORE_NAME is the name of either the MySQL data store or
           the Percona data store. This is typically either ``mysql``
           or ``percona``.
 
       * - RHEL 7, CentOS 7, Fedora 20, and Fedora 21
-        - :file:`/usr/lib/python2.7/site-packages/trove/templates/DATASTORE_NAME`
+        - :file:`/usr/lib/python3/site-packages/trove/templates/DATASTORE_NAME`
         - DATASTORE_NAME is the name of either the MySQL data store or
           the Percona data store. This is typically either ``mysql`` or ``percona``.
 
@@ -223,11 +223,11 @@ data store version.
    |
 
    This example loads the ``validation-rules.json`` file for a MySQL
-   database on Ubuntu 14.04:
+   database on Ubuntu 18.04:
 
    .. code-block:: console
 
-      $ trove-manage db_load_datastore_config_parameters mysql mysql-5.5 /usr/lib/python2.7/dist-packages/trove/templates/mysql/validation-rules.json
+      $ trove-manage db_load_datastore_config_parameters mysql mysql-5.5 /usr/lib/python3/dist-packages/trove/templates/mysql/validation-rules.json
 
 #. **Validate data store**
 
