@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import ANY
-from mock import MagicMock
-from mock import Mock
-from mock import patch
+from unittest.mock import ANY
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
 
 from trove.cluster import models
 from trove.common.strategies.cluster.experimental.cassandra.api \

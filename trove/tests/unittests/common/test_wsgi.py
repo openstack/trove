@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 from testtools.matchers import Equals, Is, Not
 import webob.exc
 

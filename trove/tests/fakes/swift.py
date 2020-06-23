@@ -14,7 +14,7 @@
 #    under the License.
 
 from hashlib import md5
-from mock import MagicMock, patch
+from unittest.mock import MagicMock, patch
 import json
 import os
 import socket

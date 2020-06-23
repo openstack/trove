@@ -16,7 +16,7 @@
 #    under the License.
 #
 
-from mock import Mock
+from unittest.mock import Mock
 
 from trove.common import pagination
 from trove.tests.unittests import trove_testtools

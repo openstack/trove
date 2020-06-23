@@ -15,9 +15,9 @@
 #
 import jsonschema
 
-from mock import MagicMock
-from mock import Mock
-from mock import patch
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
 from testtools.matchers import Is, Equals
 from trove.cluster import models
 from trove.cluster.models import Cluster, DBCluster

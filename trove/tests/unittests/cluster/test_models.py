@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import ANY
-from mock import call
-from mock import DEFAULT
-from mock import MagicMock
-from mock import Mock
-from mock import patch
-from mock import PropertyMock
+from unittest.mock import ANY
+from unittest.mock import call
+from unittest.mock import DEFAULT
+from unittest.mock import MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
+from unittest.mock import PropertyMock
 
 from neutronclient.common import exceptions as neutron_exceptions
 

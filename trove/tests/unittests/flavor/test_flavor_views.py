@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 from trove.flavor.views import FlavorView
 from trove.tests.unittests import trove_testtools
 

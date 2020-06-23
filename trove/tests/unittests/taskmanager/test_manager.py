@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import MagicMock, Mock, patch, PropertyMock
+from unittest.mock import MagicMock, Mock, patch, PropertyMock
 from proboscis.asserts import assert_equal
 
 from trove.backup.models import Backup

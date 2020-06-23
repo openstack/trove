@@ -14,8 +14,8 @@
 import base64
 import hashlib
 
-from mock import MagicMock
-from mock import patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
 import six
 
 from trove.common import exception

@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import MagicMock
-from mock import NonCallableMock
-from mock import patch
+from unittest.mock import MagicMock
+from unittest.mock import NonCallableMock
+from unittest.mock import patch
 
 from trove.common import exception as trove_exceptions
 from trove.common import policy as trove_policy

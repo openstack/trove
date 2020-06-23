@@ -15,7 +15,7 @@
 #
 import uuid
 
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 from trove.common import exception
 from trove.datastore import models as datastore_models

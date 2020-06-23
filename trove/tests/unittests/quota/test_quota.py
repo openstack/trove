@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 from testtools import skipIf
 
 from trove.common import cfg

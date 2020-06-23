@@ -15,7 +15,7 @@
 #
 
 import copy
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 from trove.common import crypto_utils
 from trove.common import exception
