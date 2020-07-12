@@ -23,8 +23,8 @@ from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
+from trove.common.i18n import _
 from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
 from trove.quota.quota import run_with_quotas
@@ -49,7 +49,7 @@ class Backup(object):
 
     @classmethod
     def create(cls, context, instance, name, description=None,
-               parent_id=None, incremental=False):
+               parent_id=None, incremental=False, swift_container=None):
         """
         create db record for Backup
         :param cls:
@@ -60,6 +60,7 @@ class Backup(object):
         :param parent_id:
         :param incremental: flag to indicate incremental backup
         based on previous backup
+        :param swift_container: Swift container name.
         :return:
         """
 
@@ -73,7 +74,9 @@ class Backup(object):
             instance_model.validate_can_perform_action()
             cls.validate_can_perform_action(
                 instance_model, 'backup_create')
+
             cls.verify_swift_auth_token(context)
+
             if instance_model.cluster_id is not None:
                 raise exception.ClusterInstanceOperationNotSupported()
 
@@ -121,6 +124,7 @@ class Backup(object):
                            'parent': parent,
                            'datastore': ds.name,
                            'datastore_version': ds_version.name,
+                           'swift_container': swift_container
                            }
             api.API(context).create_backup(backup_info, instance_id)
             return db_info
@@ -295,8 +299,55 @@ class Backup(object):
             raise exception.SwiftConnectionError()
 
 
+class BackupStrategy(object):
+    @classmethod
+    def create(cls, context, instance_id, swift_container):
+        try:
+            existing = DBBackupStrategy.find_by(tenant_id=context.project_id,
+                                                instance_id=instance_id)
+            existing.swift_container = swift_container
+            existing.save()
+            return existing
+        except exception.NotFound:
+            return DBBackupStrategy.create(
+                tenant_id=context.project_id,
+                instance_id=instance_id,
+                backend='swift',
+                swift_container=swift_container,
+            )
+
+    @classmethod
+    def list(cls, context, tenant_id, instance_id=None):
+        kwargs = {'tenant_id': tenant_id}
+        if instance_id:
+            kwargs['instance_id'] = instance_id
+        result = DBBackupStrategy.find_by_filter(**kwargs)
+        return result
+
+    @classmethod
+    def get(cls, context, instance_id):
+        try:
+            return DBBackupStrategy.find_by(tenant_id=context.project_id,
+                                            instance_id=instance_id)
+        except exception.NotFound:
+            try:
+                return DBBackupStrategy.find_by(tenant_id=context.project_id,
+                                                instance_id='')
+            except exception.NotFound:
+                return None
+
+    @classmethod
+    def delete(cls, context, tenant_id, instance_id):
+        try:
+            existing = DBBackupStrategy.find_by(tenant_id=tenant_id,
+                                                instance_id=instance_id)
+            existing.delete()
+        except exception.NotFound:
+            pass
+
+
 def persisted_models():
-    return {'backups': DBBackup}
+    return {'backups': DBBackup, 'backup_strategy': DBBackupStrategy}
 
 
 class DBBackup(DatabaseModelBase):
@@ -328,6 +379,13 @@ class DBBackup(DatabaseModelBase):
                 raise ValueError(_("Bad location for backup object: %s")
                                  % self.location)
             return self.location[last_slash + 1:]
+        else:
+            return None
+
+    @property
+    def container_name(self):
+        if self.location:
+            return self.location.split('/')[-2]
         else:
             return None
 
@@ -366,3 +424,9 @@ class DBBackup(DatabaseModelBase):
                 return False
             else:
                 raise exception.SwiftAuthError(tenant_id=context.project_id)
+
+
+class DBBackupStrategy(DatabaseModelBase):
+    """A table for backup strategy records."""
+    _data_fields = ['tenant_id', 'instance_id', 'backend', 'swift_container']
+    _table_name = 'backup_strategy'

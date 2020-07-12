@@ -12,7 +12,7 @@
 
 from oslo_policy import policy
 
-from trove.common.policies.base import PATH_BACKUPS, PATH_BACKUP
+from trove.common.policies import base
 
 rules = [
     policy.DocumentedRuleDefault(
@@ -21,7 +21,7 @@ rules = [
         description='Create a backup of a database instance.',
         operations=[
             {
-                'path': PATH_BACKUPS,
+                'path': base.PATH_BACKUPS,
                 'method': 'POST'
             }
         ]),
@@ -31,7 +31,7 @@ rules = [
         description='Delete a backup of a database instance.',
         operations=[
             {
-                'path': PATH_BACKUP,
+                'path': base.PATH_BACKUP,
                 'method': 'DELETE'
             }
         ]),
@@ -41,7 +41,7 @@ rules = [
         description='List all backups.',
         operations=[
             {
-                'path': PATH_BACKUPS,
+                'path': base.PATH_BACKUPS,
                 'method': 'GET'
             }
         ]),
@@ -51,7 +51,7 @@ rules = [
         description='List backups for all the projects.',
         operations=[
             {
-                'path': PATH_BACKUPS,
+                'path': base.PATH_BACKUPS,
                 'method': 'GET'
             }
         ]),
@@ -61,10 +61,40 @@ rules = [
         description='Get informations of a backup.',
         operations=[
             {
-                'path': PATH_BACKUP,
+                'path': base.PATH_BACKUP,
                 'method': 'GET'
             }
-        ])
+        ]),
+    policy.DocumentedRuleDefault(
+        name='backup_strategy:create',
+        check_str='rule:admin_or_owner',
+        description='Create a backup strategy.',
+        operations=[
+            {
+                'path': base.PATH_BACKUP_STRATEGIES,
+                'method': 'POST'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
+        name='backup_strategy:index',
+        check_str='rule:admin_or_owner',
+        description='List all backup strategies.',
+        operations=[
+            {
+                'path': base.PATH_BACKUP_STRATEGIES,
+                'method': 'GET'
+            }
+        ]),
+    policy.DocumentedRuleDefault(
+        name='backup_strategy:delete',
+        check_str='rule:admin_or_owner',
+        description='Delete backup strategies.',
+        operations=[
+            {
+                'path': base.PATH_BACKUP_STRATEGIES,
+                'method': 'DELETE'
+            }
+        ]),
 ]
 
 

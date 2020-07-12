@@ -15,6 +15,7 @@
 import routes
 
 from trove.backup.service import BackupController
+from trove.backup.service import BackupStrategyController
 from trove.cluster.service import ClusterController
 from trove.common import wsgi
 from trove.configuration.service import ConfigurationsController
@@ -37,6 +38,7 @@ class API(wsgi.Router):
         self._versions_router(mapper)
         self._limits_router(mapper)
         self._backups_router(mapper)
+        self._backup_strategy_router(mapper)
         self._configurations_router(mapper)
         self._modules_router(mapper)
 
@@ -189,6 +191,21 @@ class API(wsgi.Router):
                        conditions={'method': ['GET']})
         mapper.connect("/{tenant_id}/backups/{id}",
                        controller=backups_resource,
+                       action="delete",
+                       conditions={'method': ['DELETE']})
+
+    def _backup_strategy_router(self, mapper):
+        backup_strategy_resource = BackupStrategyController().create_resource()
+        mapper.connect("/{tenant_id}/backup_strategies",
+                       controller=backup_strategy_resource,
+                       action="create",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/backup_strategies",
+                       controller=backup_strategy_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/backup_strategies",
+                       controller=backup_strategy_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
 

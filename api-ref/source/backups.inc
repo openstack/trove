@@ -70,8 +70,8 @@ Create database backup
 Creates a database backup for instance.
 
 In the Trove deployment with service tenant enabled, The backup data is
-stored as objects in OpenStack Swift service in the user's
-container(``database_backups`` by default)
+stored as objects in OpenStack Swift service in the user's container. If not
+specified, the container name is defined by the cloud admin.
 
 Normal response codes: 202
 
@@ -86,6 +86,7 @@ Request
    - parent_id: backup_parentId
    - incremental: backup_incremental
    - description: backup_description
+   - swift_container: swift_container
 
 Request Example
 ---------------

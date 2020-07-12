@@ -14,15 +14,15 @@
 import os
 from tempfile import NamedTemporaryFile
 from unittest import mock
-
-from cinderclient import exceptions as cinder_exceptions
-from cinderclient.v2 import volumes as cinderclient_volumes
-import cinderclient.v2.client as cinderclient
 from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 from unittest.mock import PropertyMock
+
+from cinderclient import exceptions as cinder_exceptions
+from cinderclient.v2 import volumes as cinderclient_volumes
+import cinderclient.v2.client as cinderclient
 import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
@@ -999,7 +999,7 @@ class BackupTasksTest(trove_testtools.TestCase):
         self.backup.id = 'backup_id'
         self.backup.name = 'backup_test',
         self.backup.description = 'test desc'
-        self.backup.location = 'http://xxx/z_CLOUD/12e48.xbstream.gz'
+        self.backup.location = 'http://xxx/z_CLOUD/container/12e48.xbstream.gz'
         self.backup.instance_id = 'instance id'
         self.backup.created = 'yesterday'
         self.backup.updated = 'today'
@@ -1048,6 +1048,18 @@ class BackupTasksTest(trove_testtools.TestCase):
             self.backup.state,
             "backup should be in DELETE_FAILED status"
         )
+
+    @patch('trove.common.clients.create_swift_client')
+    def test_delete_backup_delete_swift(self, mock_swift_client):
+        client_mock = MagicMock()
+        mock_swift_client.return_value = client_mock
+
+        taskmanager_models.BackupTasks.delete_backup(mock.ANY, self.backup.id)
+
+        client_mock.head_object.assert_called_once_with('container',
+                                                        '12e48.xbstream.gz')
+        client_mock.delete_object.assert_called_once_with('container',
+                                                          '12e48.xbstream.gz')
 
     def test_parse_manifest(self):
         manifest = 'container/prefix'

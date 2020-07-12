@@ -1,0 +1,6 @@
+---
+features:
+  - The user can create backup strategy to define the configurations for
+    creating backups, e.g. the swift container to store the backup data. Users
+    can also specify the container name when creating backups which takes
+    precedence over the backup strategy configuration.

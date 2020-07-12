@@ -741,8 +741,19 @@ class BaseMySqlApp(object):
         user_token = context.auth_token
         auth_url = CONF.service_credentials.auth_url
         user_tenant = context.project_id
-        metadata = f'datastore:{backup_info["datastore"]},' \
-                   f'datastore_version:{backup_info["datastore_version"]}'
+
+        swift_metadata = (
+            f'datastore:{backup_info["datastore"]},'
+            f'datastore_version:{backup_info["datastore_version"]}'
+        )
+        swift_params = f'--swift-extra-metadata={swift_metadata}'
+        swift_container = backup_info.get('swift_container',
+                                          CONF.backup_swift_container)
+        if backup_info.get('swift_container'):
+            swift_params = (
+                f'{swift_params} '
+                f'--swift-container {swift_container}'
+            )
 
         command = (
             f'/usr/bin/python3 main.py --backup --backup-id={backup_id} '
@@ -751,7 +762,7 @@ class BaseMySqlApp(object):
             f'--db-host=127.0.0.1 '
             f'--os-token={user_token} --os-auth-url={auth_url} '
             f'--os-tenant-id={user_tenant} '
-            f'--swift-extra-metadata={metadata} '
+            f'{swift_params} '
             f'{incremental}'
         )
 
@@ -792,6 +803,7 @@ class BaseMySqlApp(object):
                     'state': BackupState.COMPLETED,
                 })
             else:
+                LOG.error(f'Cannot parse backup output: {result}')
                 backup_state.update({
                     'success': False,
                     'state': BackupState.FAILED,

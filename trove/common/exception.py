@@ -457,6 +457,12 @@ class BackupDatastoreMismatchError(TroveError):
                 " datastore of %(datastore2)s.")
 
 
+class BackupTooLarge(TroveError):
+    message = _("Backup is too large for given flavor or volume. "
+                "Backup size: %(backup_size)s GBs. "
+                "Available size: %(disk_size)s GBs.")
+
+
 class ReplicaCreateWithUsersDatabasesError(TroveError):
     message = _("Cannot create a replica with users or databases.")
 
@@ -686,12 +692,6 @@ class TroveOperationAuthError(TroveError):
 class ClusterDatastoreNotSupported(TroveError):
     message = _("Clusters not supported for "
                 "%(datastore)s-%(datastore_version)s.")
-
-
-class BackupTooLarge(TroveError):
-    message = _("Backup is too large for given flavor or volume. "
-                "Backup size: %(backup_size)s GBs. "
-                "Available size: %(disk_size)s GBs.")
 
 
 class ImageNotFound(NotFound):

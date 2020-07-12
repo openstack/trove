@@ -54,6 +54,8 @@ def map(engine, models):
                Table('reservations', meta, autoload=True))
     orm.mapper(models['backups'],
                Table('backups', meta, autoload=True))
+    orm.mapper(models['backup_strategy'],
+               Table('backup_strategy', meta, autoload=True))
     orm.mapper(models['security_groups'],
                Table('security_groups', meta, autoload=True))
     orm.mapper(models['security_group_rules'],

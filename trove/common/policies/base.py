@@ -33,6 +33,8 @@ PATH_CLUSTER_INSTANCE = PATH_CLUSTER_INSTANCES + '/{instance}'
 PATH_BACKUPS = PATH_BASE + '/backups'
 PATH_BACKUP = PATH_BACKUPS + '/{backup}'
 
+PATH_BACKUP_STRATEGIES = PATH_BASE + '/backup_strategies'
+
 PATH_CONFIGS = PATH_BASE + '/configurations'
 PATH_CONFIG = PATH_CONFIGS + '/{config}'
 

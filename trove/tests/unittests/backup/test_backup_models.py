@@ -557,3 +557,48 @@ class OrderingTests(trove_testtools.TestCase):
         actual = [b.name for b in backups]
         expected = [u'one', u'two', u'three', u'four']
         self.assertEqual(expected, actual)
+
+
+class TestBackupStrategy(trove_testtools.TestCase):
+    def setUp(self):
+        super(TestBackupStrategy, self).setUp()
+        util.init_db()
+        self.context, self.instance_id = _prep_conf(timeutils.utcnow())
+
+    def test_create(self):
+        db_backstg = models.BackupStrategy.create(self.context,
+                                                  self.instance_id,
+                                                  'test-container')
+        self.addCleanup(models.BackupStrategy.delete, self.context,
+                        self.context.project_id, self.instance_id)
+
+        self.assertEqual('test-container', db_backstg.swift_container)
+
+    def test_list(self):
+        models.BackupStrategy.create(self.context, self.instance_id,
+                                     'test_list')
+        self.addCleanup(models.BackupStrategy.delete, self.context,
+                        self.context.project_id, self.instance_id)
+
+        db_backstgs = models.BackupStrategy.list(self.context,
+                                                 self.context.project_id,
+                                                 self.instance_id).all()
+
+        self.assertEqual(1, len(db_backstgs))
+        self.assertEqual('test_list', db_backstgs[0].swift_container)
+
+    def test_delete(self):
+        models.BackupStrategy.create(self.context, self.instance_id,
+                                     'test_delete')
+        db_backstgs = models.BackupStrategy.list(self.context,
+                                                 self.context.project_id,
+                                                 self.instance_id).all()
+        self.assertEqual(1, len(db_backstgs))
+
+        models.BackupStrategy.delete(self.context, self.context.project_id,
+                                     self.instance_id)
+
+        db_backstgs = models.BackupStrategy.list(self.context,
+                                                 self.context.project_id,
+                                                 self.instance_id).all()
+        self.assertEqual(0, len(db_backstgs))

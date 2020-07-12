@@ -54,3 +54,31 @@ class BackupViews(object):
         for b in self.backups:
             backups.append(BackupView(b).data()["backup"])
         return {"backups": backups}
+
+
+class BackupStrategyView(object):
+    def __init__(self, backup_strategy):
+        self.backup_strategy = backup_strategy
+
+    def data(self):
+        result = {
+            "backup_strategy": {
+                "project_id": self.backup_strategy.tenant_id,
+                "instance_id": self.backup_strategy.instance_id,
+                'backend': self.backup_strategy.backend,
+                "swift_container": self.backup_strategy.swift_container,
+            }
+        }
+        return result
+
+
+class BackupStrategiesView(object):
+    def __init__(self, backup_strategies):
+        self.backup_strategies = backup_strategies
+
+    def data(self):
+        backup_strategies = []
+        for item in self.backup_strategies:
+            backup_strategies.append(
+                BackupStrategyView(item).data()["backup_strategy"])
+        return {"backup_strategies": backup_strategies}

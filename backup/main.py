@@ -92,7 +92,8 @@ def stream_backup_to_storage(runner_cls, storage):
         with runner_cls(filename=CONF.backup_id, **parent_metadata) as bkup:
             checksum, location = storage.save(
                 bkup,
-                metadata=CONF.swift_extra_metadata
+                metadata=CONF.swift_extra_metadata,
+                container=CONF.swift_container
             )
             LOG.info('Backup successfully, checksum: %s, location: %s',
                      checksum, location)

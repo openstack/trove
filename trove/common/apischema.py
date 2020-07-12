@@ -601,10 +601,30 @@ backup = {
                     "instance": uuid,
                     "name": non_empty_string,
                     "parent_id": uuid,
-                    "incremental": boolean_string
+                    "incremental": boolean_string,
+                    "swift_container": non_empty_string
                 }
             }
         }
+    }
+}
+
+backup_strategy = {
+    "create": {
+        "name": "backup_strategy:create",
+        "type": "object",
+        "required": ["backup_strategy"],
+        "properties": {
+            "backup_strategy": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["swift_container"],
+                "properties": {
+                    "instance_id": uuid,
+                    "swift_container": non_empty_string
+                }
+            }
+        },
     }
 }
 

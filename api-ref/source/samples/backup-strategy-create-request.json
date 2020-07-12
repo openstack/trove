@@ -1,0 +1,6 @@
+{
+  "backup_strategy": {
+    "instance_id": "0602db72-c63d-11ea-b87c-00224d6b7bc1",
+    "swift_container": "my_trove_backups"
+  }
+}

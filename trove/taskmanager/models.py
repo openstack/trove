@@ -1371,8 +1371,8 @@ class BackupTasks(object):
         return container, prefix
 
     @classmethod
-    def delete_files_from_swift(cls, context, filename):
-        container = CONF.backup_swift_container
+    def delete_files_from_swift(cls, context, container, filename):
+        container = container or CONF.backup_swift_container
         client = clients.create_swift_client(context)
         obj = client.head_object(container, filename)
         if 'x-static-large-object' in obj:
@@ -1404,7 +1404,9 @@ class BackupTasks(object):
         try:
             filename = backup.filename
             if filename:
-                BackupTasks.delete_files_from_swift(context, filename)
+                BackupTasks.delete_files_from_swift(context,
+                                                    backup.container_name,
+                                                    filename)
         except ValueError:
             _delete(backup)
         except ClientException as e:

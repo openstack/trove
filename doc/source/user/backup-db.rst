@@ -3,64 +3,67 @@ Backup and restore a database
 =============================
 
 You can use Database services to backup a database and store the backup
-artifact in the Object Storage service. Later on, if the original
-database is damaged, you can use the backup artifact to restore the
-database. The restore process creates a database instance.
+artifact in the Object Storage service. Later on, if the original database is
+damaged, you can use the backup artifact to restore the database. The restore
+process creates a new database instance.
 
-The artifacts created by backup are stored in OpenStack Swift, by default in a
-container named 'database_backups'. As the end user, you are able to access all
-the objects but make sure not to delete those objects manually. When a backup
-is deleted in Trove, the related objects are automatically removed from Swift.
+The backup data is stored in OpenStack Swift, the user is able to customize
+which container to store the data. The following ways are described in the
+order of precedence from greatest to least:
+
+1. The container name can be specified when creating backups, this could
+   override either the backup strategy setting or the default setting in Trove
+   configuration.
+
+2. Users could create backup strategy either for the project scope or for a
+   particular instance.
+
+3. If not configured by the end user, will use the default value in Trove
+   configuration.
 
 .. caution::
 
-    If the objects in 'database_backups' container are deleted manually, the
+    If the objects in the backup container are manually deleted, the
     database can't be properly restored.
 
-This example shows you how to back up and restore a MySQL database.
+This example shows you how to create backup strategy, create backup and restore
+instance from the backup.
+
+#. **Before creating backup**
+
+   1. Make sure you have created an instance, e.g. in this example, we use the following instance:
+
+      .. code-block:: console
+
+          $ openstack database instance list
+          +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
+          |                  id                  |  name  | datastore | datastore_version | status | flavor_id | size |
+          +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
+          | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 | guest1 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
+          +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
+
+   2. Optionally, create a backup strategy for the instance. You can also specify a different swift container name (``--swift-container``) when creating the backup.
+
+      .. code-block:: console
+
+          $ openstack database backup strategy create --instance-id 97b4b853-80f6-414f-ba6f-c6f455a79ae6 --swift-container my-trove-backups
+          +-----------------+--------------------------------------+
+          | Field           | Value                                |
+          +-----------------+--------------------------------------+
+          | backend         | swift                                |
+          | instance_id     | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 |
+          | project_id      | 922b47766bcb448f83a760358337f2b4     |
+          | swift_container | my-trove-backups                     |
+          +-----------------+--------------------------------------+
 
 #. **Backup the database instance**
 
-   As background, assume that you have created a database
-   instance with the following
-   characteristics:
-
-   -  Name of the database instance: ``guest1``
-
-   -  Flavor ID: ``10``
-
-   -  Root volume size: ``2``
-
-   -  Databases: ``db1`` and ``db2``
-
-   -  Users: The ``user1`` user with the ``password`` password
-
-   First, get the ID of the ``guest1`` database instance by using the
-   :command:`openstack database instance list` command:
-
-   .. code-block:: console
-
-      $ openstack database instance list
-      +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
-      |                  id                  |  name  | datastore | datastore_version | status | flavor_id | size |
-      +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
-      | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 | guest1 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
-      +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
-
    Back up the database instance by using the :command:`openstack database backup create`
-   command. In this example, the backup is called ``backup1``. In this
-   example, replace ``INSTANCE_ID`` with
-   ``97b4b853-80f6-414f-ba6f-c6f455a79ae6``:
-
-   .. note::
-
-      This command syntax pertains only to python-troveclient version
-      1.0.6 and later. Earlier versions require you to pass in the backup
-      name as the first argument.
+   command. In this example, the backup is called ``backup1``.
 
    .. code-block:: console
 
-      $ openstack database backup create INSTANCE_ID backup1
+      $ openstack database backup create 97b4b853-80f6-414f-ba6f-c6f455a79ae6 backup1
       +-------------+--------------------------------------+
       |   Property  |                Value                 |
       +-------------+--------------------------------------+
@@ -76,11 +79,9 @@ This example shows you how to back up and restore a MySQL database.
       |   updated   |         2014-03-18T17:09:07          |
       +-------------+--------------------------------------+
 
-   Note that the command returns both the ID of the original instance
-   (``instance_id``) and the ID of the backup artifact (``id``).
-
-   Later on, use the :command:`openstack database backup list` command to get this
-   information:
+   Later on, use either :command:`openstack database backup list` command or
+   :command:`openstack database backup show` command to check the backup
+   status:
 
    .. code-block:: console
 
@@ -90,14 +91,7 @@ This example shows you how to back up and restore a MySQL database.
       +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
       | 8af30763-61fd-4aab-8fe8-57d528911138 | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 | backup1 | COMPLETED |    None   | 2014-03-18T17:09:11 |
       +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
-
-   You can get additional information about the backup by using the
-   :command:`openstack database backup show` command and passing in the ``BACKUP_ID``,
-   which is ``8af30763-61fd-4aab-8fe8-57d528911138``.
-
-   .. code-block:: console
-
-      $ openstack database backup show BACKUP_ID
+      $ openstack database backup show 8af30763-61fd-4aab-8fe8-57d528911138
       +-------------+----------------------------------------------------+
       |   Property  |                   Value                            |
       +-------------+----------------------------------------------------+
@@ -113,17 +107,36 @@ This example shows you how to back up and restore a MySQL database.
       |   updated   |           2014-03-18T17:09:11                      |
       +-------------+----------------------------------------------------+
 
+#. **Check the backup data in Swift**
+
+   Check the container is created and the backup data is saved as objects inside the container.
+
+   .. code-block:: console
+
+      $ openstack container list
+      +------------------+
+      | Name             |
+      +------------------+
+      | my-trove-backups |
+      +------------------+
+      $ openstack object list my-trove-backups
+      +--------------------------------------------------+
+      | Name                                             |
+      +--------------------------------------------------+
+      | 8af30763-61fd-4aab-8fe8-57d528911138.xbstream.gz |
+      +--------------------------------------------------+
+
 #. **Restore a database instance**
 
-   Now assume that your ``guest1`` database instance is damaged and you
+   Now assume that the ``guest1`` database instance is damaged and you
    need to restore it. In this example, you use the :command:`openstack database instance create`
    command to create a new database instance called ``guest2``.
 
-   -  You specify that the new ``guest2`` instance has the same flavor
+   -  Specify that the new ``guest2`` instance has the same flavor
       (``10``) and the same root volume size (``2``) as the original
       ``guest1`` instance.
 
-   -  You use the ``--backup`` argument to indicate that this new
+   -  Use the ``--backup`` argument to indicate that this new
       instance is based on the backup artifact identified by
       ``BACKUP_ID``. In this example, replace ``BACKUP_ID`` with
       ``8af30763-61fd-4aab-8fe8-57d528911138``.
@@ -233,3 +246,33 @@ This example shows you how to back up and restore a MySQL database.
 
       $ openstack database instance delete INSTANCE_ID
 
+Create incremental backups
+--------------------------
+
+Incremental backups let you chain together a series of backups. You start with
+a regular backup. Then, when you want to create a subsequent incremental
+backup, you specify the parent backup.
+
+Restoring a database instance from an incremental backup is the same as
+creating a database instance from a regular backup. the Database service
+handles the process of applying the chain of incremental backups.
+
+Create an incremental backup based on a parent backup:
+
+.. code-block:: console
+
+    $ openstack database backup create INSTANCE_ID backup1.1  --parent BACKUP_ID
+    +-------------+--------------------------------------+
+    |   Property  |                Value                 |
+    +-------------+--------------------------------------+
+    |   created   |         2014-03-19T14:09:13          |
+    | description |                 None                 |
+    |      id     | 1d474981-a006-4f62-b25f-43d7b8a7097e |
+    | instance_id | 792a6a56-278f-4a01-9997-d997fa126370 |
+    | locationRef |                 None                 |
+    |     name    |              backup1.1               |
+    |  parent_id  | 6dc3a9b7-1f3e-4954-8582-3f2e4942cddd |
+    |     size    |                 None                 |
+    |    status   |                 NEW                  |
+    |   updated   |         2014-03-19T14:09:13          |
+    +-------------+--------------------------------------+

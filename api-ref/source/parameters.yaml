@@ -105,6 +105,12 @@ availability_zone:
   in: body
   required: false
   type: string
+backup_backend:
+  description: |
+    The storage backend of instance backups, currently only swift is supported.
+  in: body
+  required: true
+  type: string
 backup_description:
   description: |
     An optional description for the backup.
@@ -173,6 +179,12 @@ backup_status:
   in: body
   required: true
   type: string
+backup_strategy_list:
+  description: |
+    A list of ``backup_strategy`` objects.
+  in: body
+  required: true
+  type: array
 characterSet:
   description: |
     A set of symbols and encodings. Default is
@@ -416,6 +428,12 @@ instance_hostname:
     The hostname of an instance.
   in: body
   require: false
+  type: string
+instance_id_optional:
+  description: |
+    The ID of the database instance.
+  in: body
+  required: false
   type: string
 instance_ip_address:
   description: |
@@ -737,6 +755,16 @@ slave_of:
     ``replica_of``
   in: body
   required: false
+  type: string
+swift_container:
+  description: User defined swift container name.
+  in: body
+  required: false
+  type: string
+swift_container_required:
+  description: User defined swift container name.
+  in: body
+  required: true
   type: string
 tenant_id:
   description: |

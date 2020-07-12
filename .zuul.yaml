@@ -11,7 +11,6 @@
       jobs:
         - openstack-tox-cover:
             voting: false
-        - openstack-tox-pylint
         - trove-tox-bandit-baseline:
             voting: false
         - trove-tempest:
@@ -21,7 +20,6 @@
     gate:
       queue: trove
       jobs:
-        - openstack-tox-pylint
         - trove-tempest:
             voting: false
     experimental:
