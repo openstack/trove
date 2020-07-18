@@ -626,6 +626,7 @@ class BaseMySqlApp(object):
                 user=user,
                 environment={
                     "MYSQL_ROOT_PASSWORD": root_pass,
+                    "MYSQL_INITDB_SKIP_TZINFO": 1,
                 },
                 command=command
             )
