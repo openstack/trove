@@ -39,10 +39,10 @@ import trove.backup.models
 from trove.common import timeutils
 from trove.common import utils
 import trove.common.context
+from trove.common import exception
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
-from trove.common.notification import TroveInstanceModifyVolume
 import trove.common.template as template
 from trove.datastore import models as datastore_models
 import trove.db.models
@@ -627,11 +627,10 @@ class ResizeVolumeTest(trove_testtools.TestCase):
         self.instance.volume_client.volumes.extend.side_effect = None
         self.instance.reset_mock()
 
-    @patch('trove.taskmanager.models.LOG')
-    def test_resize_volume_verify_extend_no_volume(self, mock_logging):
+    def test_resize_volume_verify_extend_no_volume(self):
         self.instance.volume_client.volumes.get = Mock(
             return_value=None)
-        self.assertRaises(cinder_exceptions.ClientException,
+        self.assertRaises(exception.TroveError,
                           self.action._verify_extend)
         self.instance.reset_mock()
 
@@ -643,29 +642,20 @@ class ResizeVolumeTest(trove_testtools.TestCase):
         utils.poll_until.side_effect = None
         self.instance.reset_mock()
 
-    @patch.object(TroveInstanceModifyVolume, 'notify')
     def test_resize_volume_active_server_succeeds(self, *args):
         server = Mock(status=InstanceStatus.ACTIVE)
         self.instance.attach_mock(server, 'server')
+
         self.action.execute()
-        self.assertEqual(1, self.instance.guest.stop_db.call_count)
-        self.assertEqual(1, self.instance.guest.unmount_volume.call_count)
-        detach_count = (
-            self.instance.nova_client.volumes.delete_server_volume.call_count)
-        self.assertEqual(1, detach_count)
+
         extend_count = self.instance.volume_client.volumes.extend.call_count
         self.assertEqual(1, extend_count)
-        attach_count = (
-            self.instance.nova_client.volumes.create_server_volume.call_count)
-        self.assertEqual(1, attach_count)
-        self.assertEqual(1, self.instance.guest.resize_fs.call_count)
-        self.assertEqual(1, self.instance.guest.mount_volume.call_count)
-        self.assertEqual(1, self.instance.restart.call_count)
         self.instance.reset_mock()
 
     def test_resize_volume_server_error_fails(self):
         server = Mock(status=InstanceStatus.ERROR)
         self.instance.attach_mock(server, 'server')
+
         self.assertRaises(TroveError, self.action.execute)
         self.instance.reset_mock()
 

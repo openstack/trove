@@ -13,17 +13,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 from oslo_utils import timeutils
 
+from trove import rpc
 from trove.common import cfg
-from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common import notification
-from trove.common.notification import EndNotification, StartNotification
+from trove.common.context import TroveContext
+from trove.common.notification import EndNotification
+from trove.common.notification import StartNotification
 from trove.conductor import api as conductor_api
-from trove import rpc
 from trove.tests.unittests import trove_testtools
 
 
@@ -223,30 +225,6 @@ class TestTroveInstanceDelete(trove_testtools.TestCase):
         serialized = orig_notify.serialize(None)
         new_notify = notification.TroveInstanceDelete().deserialize(None,
                                                                     serialized)
-        new_notify.notify()
-        self.assertTrue(notifier().info.called)
-
-
-class TestTroveInstanceModifyVolume(trove_testtools.TestCase):
-
-    def setUp(self):
-        super(TestTroveInstanceModifyVolume, self).setUp()
-        self.instance = Mock(db_info=Mock(created=timeutils.utcnow()))
-
-    @patch.object(cfg.CONF, 'get', Mock())
-    @patch.object(rpc, 'get_notifier')
-    def test_notification(self, notifier):
-        notification.TroveInstanceModifyVolume(instance=self.instance).notify()
-        self.assertTrue(notifier().info.called)
-
-    @patch.object(cfg.CONF, 'get', Mock())
-    @patch.object(rpc, 'get_notifier')
-    def test_notification_after_serialization(self, notifier):
-        orig_notify = notification.TroveInstanceModifyVolume(
-            instance=self.instance)
-        serialized = orig_notify.serialize(None)
-        new_notify = notification.TroveInstanceModifyVolume().deserialize(
-            None, serialized)
         new_notify.notify()
         self.assertTrue(notifier().info.called)
 

@@ -330,7 +330,7 @@ class FakeGuest(object):
     def unmount_volume(self, device_path=None, mount_point=None):
         pass
 
-    def resize_fs(self, device_path=None, mount_point=None):
+    def resize_fs(self, device_path=None, mount_point=None, online=False):
         pass
 
     def update_overrides(self, overrides, remove=False):

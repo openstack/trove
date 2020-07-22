@@ -364,10 +364,11 @@ class Manager(periodic_task.PeriodicTasks):
         device = volume.VolumeDevice(device_path)
         device.unmount(mount_point)
 
-    def resize_fs(self, context, device_path=None, mount_point=None):
-        LOG.debug("Resizing the filesystem at %s.", mount_point)
+    def resize_fs(self, context, device_path=None, mount_point=None,
+                  online=False):
+        LOG.info(f"Resizing the filesystem at {mount_point}, online: {online}")
         device = volume.VolumeDevice(device_path)
-        device.resize_fs(mount_point)
+        device.resize_fs(mount_point, online=online)
 
     ###############
     # Configuration

@@ -1,0 +1,7 @@
+---
+features:
+  - Trove now supports to resize volume without downtime. To use this feature,
+    the version of Nova and Cinder needs to be at least Pike, the config option
+    ``cinder_service_type`` needs to be set to ``volumev3``. The cloud admin
+    can disable this feature by setting ``online_volume_resize=False``, default
+    is enabled.
