@@ -157,7 +157,7 @@ can generate a sample config file by running:
 
     cd <trove dir>
     pip install -e .
-    oslo-config-generator --namespace trove.config --namespace oslo.messaging --namespace oslo.log --namespace oslo.log oslo.policy --output-file /etc/trove/trove.conf.sample
+    oslo-config-generator --namespace trove.config --namespace oslo.messaging --namespace oslo.log --namespace oslo.policy --output-file /etc/trove/trove.conf.sample
 
 The typical config options (not a full list) are:
 
