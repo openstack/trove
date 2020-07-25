@@ -88,10 +88,7 @@ class ReplicationRunner(TestRunner):
         client = self.auth_client
         client.instances.create(
             self.instance_info.name + '_' + replica_name,
-            self.instance_info.dbaas_flavor_href,
-            self.instance_info.volume, replica_of=master_id,
-            datastore=self.instance_info.dbaas_datastore,
-            datastore_version=self.instance_info.dbaas_datastore_version,
+            replica_of=master_id,
             nics=self.instance_info.nics,
             replica_count=replica_count)
         self.assert_client_code(client, expected_http_code)
@@ -154,10 +151,6 @@ class ReplicationRunner(TestRunner):
         client = self.auth_client
         self.non_affinity_repl_id = client.instances.create(
             self.instance_info.name + '_non-affinity-repl',
-            self.instance_info.dbaas_flavor_href,
-            self.instance_info.volume,
-            datastore=self.instance_info.dbaas_datastore,
-            datastore_version=self.instance_info.dbaas_datastore_version,
             nics=self.instance_info.nics,
             replica_of=self.non_affinity_master_id,
             replica_count=1).id

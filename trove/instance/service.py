@@ -32,7 +32,7 @@ from trove.common import pagination
 from trove.common import policy
 from trove.common import utils
 from trove.common import wsgi
-from trove.datastore import models as datastore_models
+from trove.datastore import models as ds_models
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.instance import models, views
@@ -341,24 +341,81 @@ class InstanceController(wsgi.Controller):
                     raise exception.NetworkConflict()
 
     def create(self, req, body, tenant_id):
-        # TODO(hub-cap): turn this into middleware
         LOG.info("Creating a database instance for tenant '%s'",
                  tenant_id)
         LOG.debug("req : '%s'\n\n", strutils.mask_password(req))
         LOG.debug("body : '%s'\n\n", strutils.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'instance:create')
-        context.notification = notification.DBaaSInstanceCreate(context,
-                                                                request=req)
-        datastore_args = body['instance'].get('datastore', {})
-        datastore, datastore_version = (
-            datastore_models.get_datastore_version(**datastore_args))
-        image_id = datastore_version.image_id
+        context.notification = notification.DBaaSInstanceCreate(
+            context, request=req)
+
         name = body['instance']['name']
-        flavor_ref = body['instance']['flavorRef']
+        slave_of_id = body['instance'].get('replica_of')
+        replica_count = body['instance'].get('replica_count')
+        flavor_ref = body['instance'].get('flavorRef')
+        datastore_args = body['instance'].get('datastore', {})
+        volume_info = body['instance'].get('volume', {})
+        availability_zone = body['instance'].get('availability_zone')
+        nics = body['instance'].get('nics', [])
+        locality = body['instance'].get('locality')
+        region_name = body['instance'].get(
+            'region_name', CONF.service_credentials.region_name
+        )
+        access = body['instance'].get('access', None)
+
+        if slave_of_id:
+            if flavor_ref:
+                msg = 'Cannot specify flavor when creating replicas.'
+                raise exception.BadRequest(message=msg)
+            if datastore_args:
+                msg = 'Cannot specify datastore when creating replicas.'
+                raise exception.BadRequest(message=msg)
+            if volume_info:
+                msg = 'Cannot specify volume when creating replicas.'
+                raise exception.BadRequest(message=msg)
+            if locality:
+                msg = 'Cannot specify locality when creating replicas.'
+                raise exception.BadRequest(message=msg)
+            backup_model.verify_swift_auth_token(context)
+        else:
+            if replica_count and replica_count > 1:
+                msg = (f"Replica count only valid when creating replicas. "
+                       f"Cannot create {replica_count} instances.")
+                raise exception.BadRequest(message=msg)
+
         flavor_id = utils.get_id_from_href(flavor_ref)
 
-        configuration = self._configuration_parse(context, body)
+        if volume_info:
+            volume_size = int(volume_info.get('size'))
+            volume_type = volume_info.get('type')
+        else:
+            volume_size = None
+            volume_type = None
+
+        if slave_of_id:
+            try:
+                replica_source = models.DBInstance.find_by(
+                    context, id=slave_of_id, deleted=False)
+                flavor_id = replica_source.flavor_id
+            except exception.ModelNotFoundError:
+                LOG.error(f"Cannot create a replica of {slave_of_id} as that "
+                          f"instance could not be found.")
+                raise exception.NotFound(uuid=slave_of_id)
+            if replica_source.slave_of_id:
+                raise exception.Forbidden(
+                    f"Cannot create a replica of a replica {slave_of_id}")
+
+            datastore_version = ds_models.DatastoreVersion.load_by_uuid(
+                replica_source.datastore_version_id)
+            datastore = ds_models.Datastore.load(
+                datastore_version.datastore_id)
+        else:
+            datastore, datastore_version = ds_models.get_datastore_version(
+                **datastore_args)
+
+        image_id = datastore_version.image_id
+
         databases = populate_validated_databases(
             body['instance'].get('databases', []))
         database_names = [database.get('_name', '') for database in databases]
@@ -368,7 +425,10 @@ class InstanceController(wsgi.Controller):
                                    database_names)
         except ValueError as ve:
             raise exception.BadRequest(message=ve)
+        if slave_of_id and (databases or users):
+            raise exception.ReplicaCreateWithUsersDatabasesError()
 
+        configuration = self._configuration_parse(context, body)
         modules = body['instance'].get('modules')
 
         # The following operations have their own API calls.
@@ -388,34 +448,22 @@ class InstanceController(wsgi.Controller):
             policy.authorize_on_tenant(
                 context, 'instance:extension:database:create')
 
-        if 'volume' in body['instance']:
-            volume_info = body['instance']['volume']
-            volume_size = int(volume_info['size'])
-            volume_type = volume_info.get('type')
-        else:
-            volume_size = None
-            volume_type = None
-
         if 'restorePoint' in body['instance']:
             backupRef = body['instance']['restorePoint']['backupRef']
             backup_id = utils.get_id_from_href(backupRef)
         else:
             backup_id = None
 
-        availability_zone = body['instance'].get('availability_zone')
-
         # Only 1 nic is allowed as defined in API jsonschema.
-        # Use list here just for backward compatibility.
-        nics = body['instance'].get('nics', [])
+        # Use list just for backward compatibility.
         if len(nics) > 0:
-            LOG.info('Checking user provided instance network %s', nics[0])
-            self._check_nic(context, nics[0])
+            nic = nics[0]
+            LOG.info('Checking user provided instance network %s', nic)
+            if slave_of_id and nic.get('ip_address'):
+                msg = "Cannot specify IP address when creating replicas."
+                raise exception.BadRequest(message=msg)
+            self._check_nic(context, nic)
 
-        slave_of_id = body['instance'].get('replica_of',
-                                           # also check for older name
-                                           body['instance'].get('slave_of'))
-        replica_count = body['instance'].get('replica_count')
-        locality = body['instance'].get('locality')
         if locality:
             locality_domain = ['affinity', 'anti-affinity']
             locality_domain_msg = ("Invalid locality '%s'. "
@@ -424,16 +472,6 @@ class InstanceController(wsgi.Controller):
                                     "', '".join(locality_domain)))
             if locality not in locality_domain:
                 raise exception.BadRequest(message=locality_domain_msg)
-            if slave_of_id:
-                dupe_locality_msg = (
-                    'Cannot specify locality when adding replicas to existing '
-                    'master.')
-                raise exception.BadRequest(message=dupe_locality_msg)
-
-        region_name = body['instance'].get(
-            'region_name', CONF.service_credentials.region_name
-        )
-        access = body['instance'].get('access', None)
 
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
@@ -480,7 +518,7 @@ class InstanceController(wsgi.Controller):
                 with StartNotification(context, instance_id=instance.id):
                     instance.detach_configuration()
         if 'datastore_version' in kwargs:
-            datastore_version = datastore_models.DatastoreVersion.load(
+            datastore_version = ds_models.DatastoreVersion.load(
                 instance.datastore, kwargs['datastore_version'])
             context.notification = (
                 notification.DBaaSInstanceUpgrade(context, request=req))

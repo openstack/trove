@@ -343,6 +343,7 @@ class TestReplication(trove_testtools.TestCase):
             id=str(uuid.uuid4()),
             name="TestMasterInstance",
             datastore_version_id=self.datastore_version.id,
+            flavor_id=str(uuid.uuid4()),
             volume_size=2)
         self.master.set_task_status(InstanceTasks.NONE)
         self.master.save()
@@ -371,63 +372,12 @@ class TestReplication(trove_testtools.TestCase):
         super(TestReplication, self).tearDown()
 
     @patch('trove.instance.models.LOG')
-    def test_replica_of_not_active_master(self, mock_logging):
-        self.master.set_task_status(InstanceTasks.BUILDING)
-        self.master.save()
-        self.master_status.set_status(ServiceStatuses.BUILDING)
-        self.master_status.save()
-        self.assertRaises(exception.UnprocessableEntity,
-                          Instance.create,
-                          None, 'name', 1, "UUID", [], [], self.datastore,
-                          self.datastore_version, 2,
-                          None, slave_of_id=self.master.id)
-
-    @patch('trove.instance.models.LOG')
     def test_replica_with_invalid_slave_of_id(self, mock_logging):
         self.assertRaises(exception.NotFound,
                           Instance.create,
                           None, 'name', 1, "UUID", [], [], self.datastore,
                           self.datastore_version, 2,
                           None, slave_of_id=str(uuid.uuid4()))
-
-    def test_create_replica_from_replica(self):
-        self.replica_datastore_version = Mock(
-            spec=datastore_models.DBDatastoreVersion)
-        self.replica_datastore_version.id = "UUID"
-        self.replica_datastore_version.manager = 'mysql'
-        self.replica_info = DBInstance(
-            InstanceTasks.NONE,
-            id="UUID",
-            name="TestInstance",
-            datastore_version_id=self.replica_datastore_version.id,
-            slave_of_id=self.master.id)
-        self.replica_info.save()
-        self.assertRaises(exception.Forbidden, Instance.create,
-                          None, 'name', 2, "UUID", [], [], self.datastore,
-                          self.datastore_version, 2,
-                          None, slave_of_id=self.replica_info.id)
-
-    def test_create_replica_with_users(self):
-        self.users.append({"name": "testuser", "password": "123456"})
-        self.assertRaises(exception.ReplicaCreateWithUsersDatabasesError,
-                          Instance.create, None, 'name', 2, "UUID", [],
-                          self.users, self.datastore, self.datastore_version,
-                          1, None, slave_of_id=self.master.id)
-
-    def test_create_replica_with_databases(self):
-        self.databases.append({"name": "testdb"})
-        self.assertRaises(exception.ReplicaCreateWithUsersDatabasesError,
-                          Instance.create, None, 'name', 1, "UUID",
-                          self.databases, [], self.datastore,
-                          self.datastore_version, 2, None,
-                          slave_of_id=self.master.id)
-
-    def test_replica_volume_size_smaller_than_master(self):
-        self.assertRaises(exception.Forbidden,
-                          Instance.create,
-                          None, 'name', 1, "UUID", [], [], self.datastore,
-                          self.datastore_version, 1,
-                          None, slave_of_id=self.master.id)
 
 
 def trivial_key_function(id):

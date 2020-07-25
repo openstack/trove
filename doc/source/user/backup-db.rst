@@ -143,7 +143,7 @@ instance from the backup.
 
    .. code-block:: console
 
-      $ openstack database instance create guest2 10 --size 2 --nic net-id=$network_id --backup BACKUP_ID
+      $ openstack database instance create guest2 --flavor 10 --size 2 --nic net-id=$network_id --backup BACKUP_ID
       +-------------------+----------------------------------------------+
       |      Property     |                Value                         |
       +-------------------+----------------------------------------------+

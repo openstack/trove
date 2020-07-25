@@ -359,8 +359,8 @@ class Manager(periodic_task.PeriodicTasks):
         try:
             for replica_index in range(0, len(ids)):
                 replica_number += 1
-                LOG.info("Creating replica %(num)d of %(count)d.",
-                         {'num': replica_number, 'count': len(ids)})
+                LOG.info(f"Creating replica {replica_number} "
+                         f"({ids[replica_index]}) of {len(ids)}.")
 
                 instance_tasks = FreshInstanceTasks.load(
                     context, ids[replica_index])
