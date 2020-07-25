@@ -71,7 +71,7 @@ class FSBase(object):
         """
 
     @abc.abstractmethod
-    def resize(self, device_path):
+    def resize(self, device_path, online=False):
         """
         Resize the filesystem on device
         """
@@ -113,9 +113,10 @@ class FSExt(FSBase):
             exc_fmt = _("Volume '%s' was not formatted.")
             log_and_raise(log_fmt, exc_fmt, device_path)
 
-    def resize(self, device_path):
-        utils.execute("e2fsck", "-f", "-p", device_path,
-                      run_as_root=True, root_helper="sudo")
+    def resize(self, device_path, online=False):
+        if not online:
+            utils.execute("e2fsck", "-f", "-p", device_path,
+                          run_as_root=True, root_helper="sudo")
         utils.execute("resize2fs", device_path,
                       run_as_root=True, root_helper="sudo")
 
@@ -158,7 +159,7 @@ class FSXFS(FSBase):
                 device_path)
             raise exception.GuestError(original_message=msg)
 
-    def resize(self, device_path):
+    def resize(self, device_path, online=False):
         utils.execute("xfs_repair", device_path,
                       run_as_root=True, root_helper="sudo")
         utils.execute("mount", device_path,
@@ -263,18 +264,18 @@ class VolumeDevice(object):
 
         return True
 
-    def resize_fs(self, mount_point):
+    def resize_fs(self, mount_point, online=False):
         """Resize the filesystem on the specified device."""
         self._check_device_exists()
         # Some OS's will mount a file systems after it's attached if
         # an entry is put in the fstab file (like Trove does).
         # Thus it may be necessary to wait for the mount and then unmount
         # the fs again (since the volume was just attached).
-        if self._wait_for_mount(mount_point, timeout=2):
+        if not online and self._wait_for_mount(mount_point, timeout=2):
             LOG.debug("Unmounting '%s' before resizing.", mount_point)
             self.unmount(mount_point)
         try:
-            self.volume_fs.resize(self.device_path)
+            self.volume_fs.resize(self.device_path, online=online)
         except exception.ProcessExecutionError:
             log_fmt = "Error resizing the filesystem with device '%s'."
             exc_fmt = _("Error resizing the filesystem with device '%s'.")

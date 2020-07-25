@@ -473,7 +473,7 @@ class API(object):
                    self.agent_low_timeout, version=version,
                    device_path=device_path, mount_point=mount_point)
 
-    def resize_fs(self, device_path=None, mount_point=None):
+    def resize_fs(self, device_path=None, mount_point=None, online=False):
         """Resize the filesystem."""
         LOG.debug("Resize device %(device)s on instance %(id)s.", {
             'device': device_path, 'id': self.id})
@@ -481,7 +481,8 @@ class API(object):
 
         self._call("resize_fs",
                    self.agent_high_timeout, version=version,
-                   device_path=device_path, mount_point=mount_point)
+                   device_path=device_path, mount_point=mount_point,
+                   online=online)
 
     def update_overrides(self, overrides, remove=False):
         """Update the overrides."""

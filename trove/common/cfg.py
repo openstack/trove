@@ -93,7 +93,7 @@ common_opts = [
     cfg.BoolOpt('neutron_api_insecure', default=False,
                 help="Allow to perform insecure SSL requests to neutron."),
     cfg.URIOpt('cinder_url', help='URL without the tenant segment.'),
-    cfg.StrOpt('cinder_service_type', default='volumev2',
+    cfg.StrOpt('cinder_service_type', default='volumev3',
                help='Service type to use when searching catalog.'),
     cfg.StrOpt('cinder_endpoint_type', default='publicURL',
                help='Service endpoint type to use when searching catalog.'),
@@ -475,7 +475,10 @@ common_opts = [
                help='The docker image used for backup and restore.'),
     cfg.ListOpt('reserved_network_cidrs', default=[],
                 help='Network CIDRs reserved for Trove guest instance '
-                     'management.')
+                     'management.'),
+    cfg.BoolOpt(
+        'online_volume_resize', default=True,
+        help='If online volume resize is supported.')
 ]
 
 

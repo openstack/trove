@@ -205,23 +205,6 @@ class TroveInstanceCreate(TroveCommonTraits):
         super(TroveInstanceCreate, self).notify('create')
 
 
-class TroveInstanceModifyVolume(TroveCommonTraits):
-
-    '''
-    Additional traits for trove.instance.create notifications that describe
-    instance action events
-
-    This class should correspond to trove_instance_modify_volume in
-    ceilometer/event_definitions.yaml
-    '''
-
-    def __init__(self, **kwargs):
-        super(TroveInstanceModifyVolume, self).__init__(**kwargs)
-
-    def notify(self):
-        super(TroveInstanceModifyVolume, self).notify('modify_volume')
-
-
 class TroveInstanceModifyFlavor(TroveCommonTraits):
 
     '''

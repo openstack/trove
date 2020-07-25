@@ -546,7 +546,6 @@ class ResizeInstanceVolumeTest(ActionTestBase):
                                                     self.new_volume_size)
 
     @test(depends_on=[test_volume_resize])
-    @time_out(300)
     def test_volume_resize_success(self):
         """test_volume_resize_success"""
 
@@ -559,7 +558,8 @@ class ResizeInstanceVolumeTest(ActionTestBase):
             else:
                 asserts.fail("Status should not be %s" % instance.status)
 
-        poll_until(check_resize_status, sleep_time=2, time_out=300)
+        poll_until(check_resize_status, sleep_time=5, time_out=300,
+                   initial_delay=5)
         instance = instance_info.dbaas.instances.get(instance_info.id)
         asserts.assert_equal(instance.volume['size'], self.new_volume_size)
 

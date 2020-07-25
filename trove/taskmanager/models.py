@@ -17,7 +17,6 @@ import os.path
 import time
 import traceback
 
-from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from eventlet.timeout import Timeout
 from oslo_log import log as logging
@@ -55,7 +54,6 @@ from trove.common.notification import EndNotification
 from trove.common.notification import StartNotification
 from trove.common.notification import TroveInstanceCreate
 from trove.common.notification import TroveInstanceModifyFlavor
-from trove.common.notification import TroveInstanceModifyVolume
 from trove.common.strategies.cluster import strategy
 from trove.common.utils import try_recover
 from trove.extensions.mysql import models as mysql_models
@@ -1512,11 +1510,11 @@ class ResizeVolumeAction(object):
         return self.instance.device_path
 
     def _fail(self, orig_func):
-        LOG.exception("%(func)s encountered an error when "
-                      "attempting to resize the volume for "
-                      "instance %(id)s. Setting service "
-                      "status to failed.", {'func': orig_func.__name__,
-                                            'id': self.instance.id})
+        LOG.error("%(func)s encountered an error when "
+                  "attempting to resize the volume for "
+                  "instance %(id)s. Setting service "
+                  "status to failed.", {'func': orig_func.__name__,
+                                        'id': self.instance.id})
         service = InstanceServiceStatus.find_by(instance_id=self.instance.id)
         service.set_status(srvstatus.ServiceStatuses.FAILED)
         service.save()
@@ -1539,12 +1537,12 @@ class ResizeVolumeAction(object):
         self.instance.restart()
 
     def _recover_full(self, orig_func):
-        LOG.exception("%(func)s encountered an error when attempting to "
-                      "resize the volume for instance %(id)s. Trying to "
-                      "recover by attaching and"
-                      " mounting the volume and then restarting the "
-                      "guest.", {'func': orig_func.__name__,
-                                 'id': self.instance.id})
+        LOG.error("%(func)s encountered an error when attempting to "
+                  "resize the volume for instance %(id)s. Trying to "
+                  "recover by attaching and"
+                  " mounting the volume and then restarting the "
+                  "guest.", {'func': orig_func.__name__,
+                             'id': self.instance.id})
         self._attach_volume()
         self._mount_volume()
         self.instance.restart()
@@ -1609,16 +1607,16 @@ class ResizeVolumeAction(object):
                              'id': self.instance.id})
 
     @try_recover
-    def _resize_fs(self):
-        LOG.debug("Resizing the filesystem for instance %(id)s", {
-            'id': self.instance.id})
+    def _resize_fs(self, online=False):
+        LOG.info(f"Resizing the filesystem for instance {self.instance.id}, "
+                 f"online: {online}")
         mount_point = self.get_mount_point()
         device_path = self.get_device_path()
         self.instance.guest.resize_fs(device_path=device_path,
-                                      mount_point=mount_point)
-        LOG.debug("Successfully resized volume %(vol_id)s filesystem for "
-                  "instance %(id)s", {'vol_id': self.instance.volume_id,
-                                      'id': self.instance.id})
+                                      mount_point=mount_point,
+                                      online=online)
+        LOG.debug(f"Successfully resized volume {self.instance.volume_id} "
+                  f"filesystem for instance {self.instance.id}")
 
     @try_recover
     def _mount_volume(self):
@@ -1634,10 +1632,8 @@ class ResizeVolumeAction(object):
 
     @try_recover
     def _extend(self):
-        LOG.debug("Extending volume %(vol_id)s for instance %(id)s to "
-                  "size %(size)s", {'vol_id': self.instance.volume_id,
-                                    'id': self.instance.id,
-                                    'size': self.new_size})
+        LOG.info(f"Calling Cinder to extend volume {self.instance.volume_id} "
+                 f"for instance {self.instance.id} to size {self.new_size}")
         self.instance.volume_client.volumes.extend(self.instance.volume_id,
                                                    self.new_size)
         LOG.debug("Successfully extended the volume %(vol_id)s for instance "
@@ -1649,9 +1645,8 @@ class ResizeVolumeAction(object):
             volume = self.instance.volume_client.volumes.get(
                 self.instance.volume_id)
             if not volume:
-                msg = (_('Failed to get volume %(vol_id)s') % {
-                    'vol_id': self.instance.volume_id})
-                raise cinder_exceptions.ClientException(msg)
+                msg = f'Failed to get volume {self.instance.volume_id}'
+                raise exception.TroveError(msg)
 
             def volume_is_new_size():
                 volume = self.instance.volume_client.volumes.get(
@@ -1659,34 +1654,46 @@ class ResizeVolumeAction(object):
                 return volume.size == self.new_size
 
             utils.poll_until(volume_is_new_size,
-                             sleep_time=2,
+                             sleep_time=5,
                              time_out=CONF.volume_time_out)
 
             self.instance.update_db(volume_size=self.new_size)
         except PollTimeOut:
-            LOG.exception("Timeout trying to extend the volume %(vol_id)s "
-                          "for instance %(id)s",
-                          {'vol_id': self.instance.volume_id,
-                           'id': self.instance.id})
+            LOG.error("Timeout trying to extend the volume %(vol_id)s "
+                      "for instance %(id)s",
+                      {'vol_id': self.instance.volume_id,
+                       'id': self.instance.id})
             volume = self.instance.volume_client.volumes.get(
                 self.instance.volume_id)
             if volume.status == 'extending':
                 self._fail(self._verify_extend)
             elif volume.size != self.new_size:
                 self.instance.update_db(volume_size=volume.size)
-                self._recover_full(self._verify_extend)
+                if not CONF.online_volume_resize:
+                    self._recover_full(self._verify_extend)
             raise
-        except Exception:
-            LOG.exception("Error encountered trying to verify extend for "
-                          "the volume %(vol_id)s for instance %(id)s",
-                          {'vol_id': self.instance.volume_id,
-                           'id': self.instance.id})
-            self._recover_full(self._verify_extend)
+        except Exception as e:
+            LOG.error("Error encountered trying to verify extend for "
+                      "the volume %(vol_id)s for instance %(id)s, "
+                      "error: %(error)s",
+                      {'vol_id': self.instance.volume_id,
+                       'id': self.instance.id,
+                       'error': str(e)})
+            if not CONF.online_volume_resize:
+                self._recover_full(self._verify_extend)
             raise
 
     def _resize_active_volume(self):
-        LOG.debug("Begin _resize_active_volume for id: %(id)s", {
-            'id': self.instance.id})
+        if CONF.online_volume_resize:
+            try:
+                self._extend()
+            except Exception as e:
+                LOG.error(f'Failed to extend volume, error: {str(e)}')
+
+            self._verify_extend()
+            self._resize_fs(recover_func=self._fail, online=True)
+            return
+
         self._stop_db()
         self._unmount_volume(recover_func=self._recover_restart)
         self._detach_volume(recover_func=self._recover_mount_restart)
@@ -1694,11 +1701,9 @@ class ResizeVolumeAction(object):
         self._verify_extend()
         # if anything fails after this point, recovery is futile
         self._attach_volume(recover_func=self._fail)
-        self._resize_fs(recover_func=self._fail)
+        self._resize_fs(recover_func=self._fail, online=False)
         self._mount_volume(recover_func=self._fail)
         self.instance.restart()
-        LOG.debug("End _resize_active_volume for id: %(id)s", {
-            'id': self.instance.id})
 
     def execute(self):
         LOG.debug("%(gt)s: Resizing instance %(id)s volume for server "
@@ -1711,19 +1716,11 @@ class ResizeVolumeAction(object):
 
         if self.instance.server.status in [InstanceStatus.ACTIVE,
                                            InstanceStatus.HEALTHY]:
-            self._resize_active_volume()
-            self.instance.reset_task_status()
-            # send usage event for size reported by cinder
-            volume = self.instance.volume_client.volumes.get(
-                self.instance.volume_id)
-            launched_time = timeutils.isotime(self.instance.updated)
-            modified_time = timeutils.isotime(self.instance.updated)
-            TroveInstanceModifyVolume(instance=self.instance,
-                                      old_volume_size=self.old_size,
-                                      launched_at=launched_time,
-                                      modify_at=modified_time,
-                                      volume_size=volume.size,
-                                      ).notify()
+            try:
+                self._resize_active_volume()
+            finally:
+                self.instance.reset_task_status()
+
         else:
             self.instance.reset_task_status()
             msg = (

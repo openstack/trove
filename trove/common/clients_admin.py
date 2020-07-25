@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cinderclient.v2 import client as CinderClient
+from cinderclient import client as CinderClient
 import glanceclient
 from keystoneauth1 import loading
 from keystoneauth1 import session
@@ -95,13 +95,17 @@ def cinder_client_trove_admin(context, region_name=None):
         LOG.debug('Re-use admin cinder client')
         return ADMIN_CINDER_CLIENT
 
+    version = CONF.cinder_service_type.split('v')[-1] or '3'
+
     ks_session = get_keystone_session()
     ADMIN_CINDER_CLIENT = CinderClient.Client(
+        version,
         session=ks_session,
         service_type=CONF.cinder_service_type,
         region_name=region_name or CONF.service_credentials.region_name,
         insecure=CONF.cinder_api_insecure,
-        endpoint_type=CONF.cinder_endpoint_type)
+        endpoint_type=CONF.cinder_endpoint_type,
+        additional_headers={'OpenStack-API-Version': 'volumev3 latest'})
 
     if CONF.cinder_url and CONF.service_credentials.project_id:
         ADMIN_CINDER_CLIENT.client.management_url = "%s/%s/" % (
