@@ -1353,28 +1353,41 @@ class Instance(BuiltInstance):
                                                  new_flavor)
 
     def resize_volume(self, new_size):
-        def _resize_resources():
-            self.validate_can_perform_action()
-            LOG.info("Resizing volume of instance %s.", self.id)
-            if self.db_info.cluster_id is not None:
-                raise exception.ClusterInstanceOperationNotSupported()
-            old_size = self.volume_size
-            if int(new_size) <= old_size:
-                raise exception.BadRequest(_("The new volume 'size' must be "
-                                             "larger than the current volume "
-                                             "size of '%s'.") % old_size)
-            # Set the task to Resizing before sending off to the taskmanager
-            self.update_db(task_status=InstanceTasks.RESIZING)
-            task_api.API(self.context).resize_volume(new_size, self.id)
+        """Resize instance volume.
 
+        If the instance is primary in a replication cluster, volumes of all the
+        replicas are also resized.
+        """
+
+        def _resize_resources(instance):
+            LOG.info("Resizing volume of instance %s.", instance.id)
+            instance.update_db(task_status=InstanceTasks.RESIZING)
+            task_api.API(self.context).resize_volume(new_size, instance.id)
+
+        new_size_l = int(new_size)
+
+        if self.db_info.cluster_id is not None:
+            raise exception.ClusterInstanceOperationNotSupported()
         if not self.volume_size:
             raise exception.BadRequest(_("Instance %s has no volume.")
                                        % self.id)
-        new_size_l = int(new_size)
+        if new_size_l <= self.volume_size:
+            raise exception.BadRequest(_("The new volume 'size' must be "
+                                         "larger than the current volume "
+                                         "size of '%s'.") % self.volume_size)
         validate_volume_size(new_size_l)
-        return run_with_quotas(self.tenant_id,
-                               {'volumes': new_size_l - self.volume_size},
-                               _resize_resources)
+        self.validate_can_perform_action()
+
+        instances = [self]
+        for dbinfo in self.slaves:
+            replica = Instance.load(self.context, dbinfo.id, needs_server=True)
+            replica.validate_can_perform_action()
+            instances.append(replica)
+
+        for instance in instances:
+            run_with_quotas(
+                self.tenant_id, {'volumes': new_size_l - self.volume_size},
+                _resize_resources, instance)
 
     def reboot(self):
         LOG.info("Rebooting instance %s.", self.id)

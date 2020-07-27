@@ -82,6 +82,9 @@ size. A valid volume size is an integer value in gigabytes (GB).
 You cannot increase the volume to a size that is larger than the
 API volume size limit.
 
+For replication cluster, resizing volume of the primary will also resize
+replicas automatically.
+
 Normal response codes: 202
 
 Request

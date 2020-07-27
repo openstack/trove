@@ -356,13 +356,13 @@ resources = [Resource(Resource.INSTANCES, 'max_instances_per_tenant'),
 QUOTAS.register_resources(resources)
 
 
-def run_with_quotas(tenant_id, deltas, f):
+def run_with_quotas(tenant_id, deltas, f, *args, **kwargs):
     """Quota wrapper."""
 
     reservations = QUOTAS.reserve(tenant_id, **deltas)
     result = None
     try:
-        result = f()
+        result = f(*args, **kwargs)
     except Exception:
         QUOTAS.rollback(reservations)
         raise

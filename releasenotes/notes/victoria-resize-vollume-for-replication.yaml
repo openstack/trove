@@ -1,0 +1,4 @@
+---
+features:
+  - When resizing volume for an instance which is the primary of a replication
+    cluster, Trove also resizes the volume for all the replicas automatically.
