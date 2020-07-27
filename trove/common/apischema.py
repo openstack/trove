@@ -381,7 +381,7 @@ instance = {
         "properties": {
             "instance": {
                 "type": "object",
-                "required": ["name", "flavorRef"],
+                "required": ["name"],
                 "additionalProperties": True,
                 "properties": {
                     "name": non_empty_string,
@@ -397,6 +397,12 @@ instance = {
                         "properties": {
                             "backupRef": uuid
                         }
+                    },
+                    "replica_of": uuid,
+                    "replica_count": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 3
                     },
                     "availability_zone": non_empty_string,
                     "datastore": {

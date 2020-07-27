@@ -1059,8 +1059,10 @@ class Instance(BuiltInstance):
                configuration_id=None, slave_of_id=None, cluster_config=None,
                replica_count=None, volume_type=None, modules=None,
                locality=None, region_name=None, access=None):
-
-        region_name = region_name or CONF.service_credentials.region_name
+        nova_client = clients.create_nova_client(context)
+        cinder_client = clients.create_cinder_client(context)
+        datastore_cfg = CONF.get(datastore_version.manager)
+        volume_support = datastore_cfg.volume_support
 
         call_args = {
             'name': name,
@@ -1070,7 +1072,10 @@ class Instance(BuiltInstance):
             'image_id': image_id,
             'availability_zone': availability_zone,
             'region_name': region_name,
+            'locality': locality
         }
+        if cluster_config:
+            call_args['cluster_id'] = cluster_config.get("id", None)
 
         # All nova flavors are permitted for a datastore-version unless one
         # or more entries are found in datastore_version_metadata,
@@ -1086,13 +1091,15 @@ class Instance(BuiltInstance):
                     datastore=datastore.name,
                     datastore_version=datastore_version.name,
                     flavor_id=flavor_id)
-
-        datastore_cfg = CONF.get(datastore_version.manager)
-        client = clients.create_nova_client(context)
         try:
-            flavor = client.flavors.get(flavor_id)
+            flavor = nova_client.flavors.get(flavor_id)
         except nova_exceptions.NotFound:
             raise exception.FlavorNotFound(uuid=flavor_id)
+
+        replica_source = None
+        if slave_of_id:
+            replica_source = DBInstance.find_by(
+                context, id=slave_of_id, deleted=False)
 
         # If a different region is specified for the instance, ensure
         # that the flavor and image are the same in both regions
@@ -1101,13 +1108,23 @@ class Instance(BuiltInstance):
                                            datastore, datastore_version)
 
         deltas = {'instances': 1}
-        volume_support = datastore_cfg.volume_support
         if volume_support:
-            call_args['volume_type'] = volume_type
+            if replica_source:
+                try:
+                    volume = cinder_client.volumes.get(
+                        replica_source.volume_id)
+                except Exception as e:
+                    LOG.error(f'Failed to get volume from Cinder, error: '
+                              f'{str(e)}')
+                    raise exception.NotFound(uuid=replica_source.volume_id)
+                volume_type = volume.volume_type
+                volume_size = volume.size
+
             dvm.validate_volume_type(context, volume_type,
                                      datastore.name, datastore_version.name)
-            call_args['volume_size'] = volume_size
             validate_volume_size(volume_size)
+            call_args['volume_type'] = volume_type
+            call_args['volume_size'] = volume_size
             deltas['volumes'] = volume_size
             # Instance volume should have enough space for the backup
             # Backup, and volume sizes are in GBs
@@ -1147,60 +1164,36 @@ class Instance(BuiltInstance):
                     datastore2=datastore.name)
 
         if slave_of_id:
-            Backup.verify_swift_auth_token(context)
-
-            if databases or users:
-                raise exception.ReplicaCreateWithUsersDatabasesError()
             call_args['replica_of'] = slave_of_id
             call_args['replica_count'] = replica_count
+
             replication_support = datastore_cfg.replication_strategy
             if not replication_support:
                 raise exception.ReplicationNotSupported(
                     datastore=datastore.name)
-            try:
-                # looking for replica source
-                replica_source = DBInstance.find_by(
+            if (CONF.verify_replica_volume_size
+                    and replica_source.volume_size > volume_size):
+                raise exception.Forbidden(
+                    _("Replica volume size should not be smaller than"
+                      " master's, replica volume size: %(replica_size)s"
+                      " and master volume size: %(master_size)s.")
+                    % {'replica_size': volume_size,
+                       'master_size': replica_source.volume_size})
+            # load the replica source status to check if
+            # source is available
+            load_simple_instance_server_status(
+                context,
+                replica_source)
+            replica_source_instance = Instance(
+                context, replica_source,
+                None,
+                InstanceServiceStatus.find_by(
                     context,
-                    id=slave_of_id,
-                    deleted=False)
-                if replica_source.slave_of_id:
-                    raise exception.Forbidden(
-                        _("Cannot create a replica of a replica %(id)s.")
-                        % {'id': slave_of_id})
-                if (CONF.verify_replica_volume_size
-                        and replica_source.volume_size > volume_size):
-                    raise exception.Forbidden(
-                        _("Replica volume size should not be smaller than"
-                          " master's, replica volume size: %(replica_size)s"
-                          " and master volume size: %(master_size)s.")
-                        % {'replica_size': volume_size,
-                           'master_size': replica_source.volume_size})
-                # load the replica source status to check if
-                # source is available
-                load_simple_instance_server_status(
-                    context,
-                    replica_source)
-                replica_source_instance = Instance(
-                    context, replica_source,
-                    None,
-                    InstanceServiceStatus.find_by(
-                        context,
-                        instance_id=slave_of_id))
-                replica_source_instance.validate_can_perform_action()
-            except exception.ModelNotFoundError:
-                LOG.exception(
-                    "Cannot create a replica of %(id)s "
-                    "as that instance could not be found.",
-                    {'id': slave_of_id})
-                raise exception.NotFound(uuid=slave_of_id)
-        elif replica_count and replica_count != 1:
-            raise exception.Forbidden(_(
-                "Replica count only valid when creating replicas. Cannot "
-                "create %(count)d instances.") % {'count': replica_count})
+                    instance_id=slave_of_id))
+            replica_source_instance.validate_can_perform_action()
+
         multi_replica = slave_of_id and replica_count and replica_count > 1
         instance_count = replica_count if multi_replica else 1
-        if locality:
-            call_args['locality'] = locality
 
         if not nics:
             nics = []
@@ -1211,8 +1204,6 @@ class Instance(BuiltInstance):
                            for net_id in CONF.management_networks]
         if nics:
             call_args['nics'] = nics
-        if cluster_config:
-            call_args['cluster_id'] = cluster_config.get("id", None)
 
         if not modules:
             modules = []
@@ -1228,7 +1219,6 @@ class Instance(BuiltInstance):
         module_list = module_views.convert_modules_to_list(modules)
 
         def _create_resources():
-
             if cluster_config:
                 cluster_id = cluster_config.get("id", None)
                 shard_id = cluster_config.get("shard_id", None)
@@ -1251,17 +1241,15 @@ class Instance(BuiltInstance):
                     slave_of_id=slave_of_id, cluster_id=cluster_id,
                     shard_id=shard_id, type=instance_type,
                     region_id=region_name)
-                LOG.debug("Tenant %(tenant)s created new Trove instance "
-                          "%(db)s in region %(region)s.",
-                          {'tenant': context.project_id, 'db': db_info.id,
-                           'region': region_name})
-
                 instance_id = db_info.id
-                cls.add_instance_modules(context, instance_id, modules)
                 instance_name = name
+                LOG.debug(f"Creating new instance {instance_id}")
                 ids.append(instance_id)
                 names.append(instance_name)
                 root_passwords.append(None)
+
+                cls.add_instance_modules(context, instance_id, modules)
+
                 # change the name to be name + replica_number if more than one
                 if multi_replica:
                     replica_number = instance_index + 1
@@ -1272,9 +1260,9 @@ class Instance(BuiltInstance):
                 # if a configuration group is associated with an instance,
                 # generate an overrides dict to pass into the instance creation
                 # method
-
                 config = Configuration(context, configuration_id)
                 overrides = config.get_configuration_overrides()
+
                 service_status = InstanceServiceStatus.create(
                     instance_id=instance_id,
                     status=srvstatus.ServiceStatuses.NEW)

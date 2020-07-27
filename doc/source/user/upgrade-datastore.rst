@@ -49,7 +49,7 @@ Upgrading datastore
    .. code-block:: console
 
       $ openstack database instance create test-mysql-upgrade \
-        d2 \
+        --flavor d2 \
         --size 1 \
         --nic net-id=$netid \
         --datastore mysql --datastore_version 5.7.29 \

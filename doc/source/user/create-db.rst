@@ -107,7 +107,7 @@ Create and access a database
    .. code-block:: console
 
       $ openstack database instance create mysql_instance_1 \
-          6 \
+          --flavor 6 \
           --size 5 \
           --nic net-id=8799cf10-01ef-40e2-b04e-06da7cfa5668 \
           --databases test --users userA:password \

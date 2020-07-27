@@ -108,10 +108,6 @@ def instance_is_active(id):
 def create_slave():
     result = instance_info.dbaas.instances.create(
         instance_info.name + "_slave",
-        instance_info.dbaas_flavor_href,
-        {'size': 2},
-        datastore=instance_info.dbaas_datastore,
-        datastore_version=instance_info.dbaas_datastore_version,
         nics=instance_info.nics,
         replica_of=instance_info.id)
     assert_equal(200, instance_info.dbaas.last_http_code)
@@ -141,20 +137,6 @@ def validate_master(master, slaves):
       groups=[tests.DBAAS_API_REPLICATION],
       enabled=CONFIG.swift_enabled)
 class CreateReplicationSlave(object):
-
-    @test
-    def test_replica_provisioning_with_missing_replica_source(self):
-        assert_raises(exceptions.NotFound,
-                      instance_info.dbaas.instances.create,
-                      instance_info.name + "_slave",
-                      instance_info.dbaas_flavor_href,
-                      instance_info.volume,
-                      datastore=instance_info.dbaas_datastore,
-                      datastore_version=instance_info.dbaas_datastore_version,
-                      nics=instance_info.nics,
-                      replica_of="Missing replica source")
-        assert_equal(404, instance_info.dbaas.last_http_code)
-
     @test
     def test_create_db_on_master(self):
         """test_create_db_on_master"""
