@@ -926,34 +926,6 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
             self.assertRaises(GuestError, self.instance_task.attach_replica,
                               Mock())
 
-    def test_get_floating_ips(self):
-        floating_ips = self.instance_task._get_floating_ips()
-        self.assertEqual({'192.168.10.1': 'fake-floatingip-id'},
-                         floating_ips)
-
-    @patch.object(BaseInstance, 'get_visible_ip_addresses',
-                  return_value=['192.168.10.1'])
-    def test_detach_public_ips(self, mock_address):
-        removed_ips = self.instance_task.detach_public_ips()
-        self.assertEqual(['fake-floatingip-id'], removed_ips)
-        mock_update_floatingip = (self.instance_task.neutron_client
-                                  .update_floatingip)
-        mock_update_floatingip.assert_called_once_with(
-            removed_ips[0], {'floatingip': {'port_id': None}})
-
-    def test_attach_public_ips(self):
-        self.instance_task.attach_public_ips(['fake-floatingip-id'])
-        mock_list_ports = (self.instance_task.neutron_client
-                           .list_ports)
-        mock_list_ports.assert_called_once_with(device_id='computeinst-id-1')
-
-        mock_update_floatingip = (self.instance_task.neutron_client
-                                  .update_floatingip)
-        mock_update_floatingip.assert_called_once_with(
-            'fake-floatingip-id',
-            {'floatingip': {'port_id': 'fake-port-id',
-                            'fixed_ip_address': '10.0.0.1'}})
-
     @patch.object(BaseInstance, 'update_db')
     def test_enable_as_master(self, mock_update_db):
         test_func = self.instance_task._guest.enable_as_master

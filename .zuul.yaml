@@ -11,7 +11,6 @@
       jobs:
         - openstack-tox-cover:
             voting: false
-        - openstack-tox-pylint
         - trove-tox-bandit-baseline:
             voting: false
         - trove-tempest:
@@ -33,7 +32,6 @@
     gate:
       queue: trove
       jobs:
-        - openstack-tox-pylint
         - trove-functional-mysql
         - trove-scenario-mysql-single
         - trove-scenario-mysql-multi
@@ -361,6 +359,10 @@
           $TROVE_CONF:
             DEFAULT:
               usage_timeout: 1800
+        test-config:
+          $TEMPEST_CONFIG:
+            database:
+              default_datastore_versions: mysql:5.7
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
@@ -378,13 +380,13 @@
         c-api: true
         c-vol: true
         c-bak: false
-        swift: true
-        s-account: true
-        s-container: true
-        s-object: true
-        s-proxy: true
+        swift: false
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
         tempest: true
-      tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_regex: trove_tempest_plugin.tests.scenario.test_instance_basic.TestInstanceBasicMySQL.test_database_access
 
 - job:
     name: publish-trove-guest-image
