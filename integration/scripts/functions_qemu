@@ -41,6 +41,7 @@ function build_guest_image() {
 
     export DIB_RELEASE=${guest_release}
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
+    export DIB_CLOUD_INIT_ETC_HOSTS="localhost"
 
     # https://cloud-images.ubuntu.com/releases is more stable than the daily
     # builds (https://cloud-images.ubuntu.com/xenial/current/),

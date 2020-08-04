@@ -548,6 +548,21 @@ mgmt_instance = {
                     "type": "object"
                 }
             }
+        },
+        "rebuild": {
+            "type": "object",
+            "required": ["rebuild"],
+            "additionalProperties": True,
+            "properties": {
+                "rebuild": {
+                    "type": "object",
+                    "required": ["image_id"],
+                    "additionalProperties": False,
+                    "properties": {
+                        "image_id": uuid
+                    }
+                }
+            }
         }
     }
 }

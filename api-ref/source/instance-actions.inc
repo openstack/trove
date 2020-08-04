@@ -312,3 +312,33 @@ Request Example
 
 .. literalinclude:: samples/instance-mgmt-action-reset-task-status-request.json
    :language: javascript
+
+
+Rebuild instance
+~~~~~~~~~~~~~~~~
+
+.. rest_method::  POST /v1.0/{project_id}/mgmt/instances/{instanceId}/action
+
+Admin only API. Rebuild the Nova server's operating system for the database
+instance. The rebuild operation is mainly for Trove upgrade, especially when
+the interface between Trove controller and guest agent changes. After Trove
+controller is upgraded, the cloud administrator needs to send rebuild request
+with the new guest image ID. Communication with the end users is needed as the
+database service goes offline during the process. User's data in the database
+is not affected.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+
+Request Example
+---------------
+
+.. literalinclude:: samples/instance-mgmt-action-rebuild-instance-request.json
+   :language: javascript

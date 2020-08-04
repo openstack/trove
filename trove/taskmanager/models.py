@@ -13,7 +13,6 @@
 #    under the License.
 
 import copy
-import os.path
 import time
 import traceback
 
@@ -952,19 +951,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                        'mount_point': mount_point}
         return volume_info
 
-    def _prepare_userdata(self, datastore_manager):
-        userdata = None
-        cloudinit = os.path.join(CONF.get('cloudinit_location'),
-                                 "%s.cloudinit" % datastore_manager)
-        if os.path.isfile(cloudinit):
-            with open(cloudinit, "r") as f:
-                userdata = f.read()
-        return userdata
-
     def _create_server(self, flavor_id, image_id, datastore_manager,
                        block_device_mapping_v2, availability_zone,
                        nics, files={}, scheduler_hints=None):
-        userdata = self._prepare_userdata(datastore_manager)
+        userdata = self.prepare_userdata(datastore_manager)
         name = self.hostname or self.name
         bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive
@@ -1124,6 +1114,11 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     def migrate(self, host):
         LOG.info("Initiating migration to host %s.", host)
         action = MigrateAction(self, host)
+        action.execute()
+
+    def rebuild(self, image_id):
+        LOG.info(f"Rebuilding instance {self.id}, new image {image_id}")
+        action = RebuildAction(self, image_id)
         action.execute()
 
     def create_backup(self, backup_info):
@@ -1747,6 +1742,8 @@ class ResizeActionBase(object):
         :type instance: trove.taskmanager.models.BuiltInstanceTasks
         """
         self.instance = instance
+        self.wait_status = ['VERIFY_RESIZE']
+        self.ignore_stop_error = False
 
     def _assert_guest_is_ok(self):
         # The guest will never set the status to PAUSED.
@@ -1766,6 +1763,9 @@ class ResizeActionBase(object):
                       "act_status": self.instance.server.status,
                       "exp_status": 'VERIFY_RESIZE'}
             raise TroveError(msg)
+
+    def _assert_nova_action_was_successful(self):
+        pass
 
     def _assert_datastore_is_ok(self):
         self._start_datastore()
@@ -1797,11 +1797,22 @@ class ResizeActionBase(object):
                   self.instance.id)
         self.instance.server.revert_resize()
 
+    def _record_action_success(self):
+        pass
+
     def execute(self):
         """Initiates the action."""
         try:
             LOG.debug("Instance %s calling stop_db...", self.instance.id)
             self.instance.guest.stop_db()
+        except Exception as e:
+            if self.ignore_stop_error:
+                LOG.warning(f"Failed to stop db {self.instance.id}, error: "
+                            f"{str(e)}")
+            else:
+                raise
+
+        try:
             self._perform_nova_action()
         finally:
             if self.instance.db_info.task_status != (
@@ -1855,15 +1866,20 @@ class ResizeActionBase(object):
                   self.instance.id)
 
     def _wait_for_nova_action(self):
-        # Wait for the flavor to change.
+        LOG.info(f"Waiting for Nova server status changed to "
+                 f"{self.wait_status}")
+
         def update_server_info():
             self.instance.refresh_compute_server_info()
-            return not self.instance.server_status_matches(['RESIZE'])
+            if self.instance.server.status.upper() == 'ERROR':
+                raise TroveError("Nova server is in ERROR status")
+            return self.instance.server_status_matches(self.wait_status)
 
         utils.poll_until(
             update_server_info,
-            sleep_time=3,
-            time_out=CONF.resize_time_out)
+            sleep_time=5,
+            time_out=CONF.resize_time_out,
+            initial_delay=10)
 
     def _wait_for_revert_nova_action(self):
         # Wait for the server to return to ACTIVE after revert.
@@ -1926,7 +1942,9 @@ class ResizeAction(ResizeActionBase):
 
     def _start_datastore(self):
         config = self.instance._render_config(self.new_flavor)
-        self.instance.guest.start_db_with_conf_changes(config.config_contents)
+        self.instance.guest.start_db_with_conf_changes(
+            config.config_contents,
+            self.instance.datastore_version.name)
 
 
 class MigrateAction(ResizeActionBase):
@@ -1954,6 +1972,59 @@ class MigrateAction(ResizeActionBase):
 
     def _start_datastore(self):
         self.instance.guest.restart()
+
+
+class RebuildAction(ResizeActionBase):
+    def __init__(self, instance, image_id):
+        super(RebuildAction, self).__init__(instance)
+        self.image_id = image_id
+        self.ignore_stop_error = True
+        self.wait_status = ['ACTIVE']
+
+    def _initiate_nova_action(self):
+        files = self.instance.get_injected_files(self.instance.datastore.name)
+
+        LOG.debug(f"Rebuilding Nova server {self.instance.server.id}")
+        # Before Nova version 2.57, userdata is not supported when doing
+        # rebuild, have to use injected files instead.
+        self.instance.server.rebuild(
+            self.image_id,
+            files=files,
+        )
+
+    def _assert_nova_status_is_ok(self):
+        pass
+
+    def _assert_nova_action_was_successful(self):
+        if self.instance.server.image['id'] != self.image_id:
+            msg = (f"Assertion failed! The service image ID is "
+                   f"{self.instance.server.image['id']} not {self.image_id}")
+            raise TroveError(msg)
+
+    def _assert_processes_are_ok(self):
+        pass
+
+    def _revert_nova_action(self):
+        pass
+
+    def _wait_for_revert_nova_action(self):
+        pass
+
+    def _confirm_nova_action(self):
+        """Send rebuild async request to the guest."""
+        flavor = self.instance.nova_client.flavors.get(self.instance.flavor_id)
+        config = self.instance._render_config(flavor)
+        config_contents = config.config_contents
+
+        overrides = {}
+        if self.instance.configuration:
+            overrides = self.instance.configuration. \
+                get_configuration_overrides()
+
+        LOG.info(f"Sending rebuild request to the instance {self.instance.id}")
+        self.instance.guest.rebuild(
+            self.instance.datastore_version.name,
+            config_contents=config_contents, config_overrides=overrides)
 
 
 def load_cluster_tasks(context, cluster_id):

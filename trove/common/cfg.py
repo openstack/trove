@@ -188,6 +188,10 @@ common_opts = [
                     'commands to complete.'),
     # The guest_id opt definition must match the one in cmd/guest.py
     cfg.StrOpt('guest_id', default=None, help="ID of the Guest Instance."),
+    cfg.StrOpt('controller_address',
+               help='The address used to download Trove code by guest agent '
+                    'in developer mode. This address is inserted into the '
+                    'file /etc/trove/controller.conf inside the guest.'),
     cfg.IntOpt('state_change_wait_time', default=180,
                help='Maximum time (in seconds) to wait for database state '
                     'change.'),

@@ -19,8 +19,12 @@ import re
 
 import six
 
+from trove.common import cfg
 from trove.common import pagination
 from trove.common import utils
+from trove.guestagent.common import operating_system
+
+CONF = cfg.CONF
 
 
 def update_dict(updates, target):
@@ -164,3 +168,16 @@ def get_filesystem_volume_stats(fs_path):
         'used': used_gb
     }
     return output
+
+
+def get_conf_dir():
+    """Get the config directory for the database related settings.
+
+    For now, the files inside the config dir are mainly for instance rebuild.
+    """
+    mount_point = CONF.get(CONF.datastore_manager).mount_point
+    conf_dir = os.path.join(mount_point, 'conf.d')
+    if not operating_system.exists(conf_dir, is_directory=True, as_root=True):
+        operating_system.create_directory(conf_dir, as_root=True)
+
+    return conf_dir

@@ -934,12 +934,15 @@ class BaseInstance(SimpleInstance):
             guest_info_file = os.path.join(injected_config_location,
                                            guest_info)
 
-        files = {guest_info_file: (
-            "[DEFAULT]\n"
-            "guest_id=%s\n"
-            "datastore_manager=%s\n"
-            "tenant_id=%s\n"
-            % (self.id, datastore_manager, self.tenant_id))}
+        files = {
+            guest_info_file: (
+                "[DEFAULT]\n"
+                "guest_id=%s\n"
+                "datastore_manager=%s\n"
+                "tenant_id=%s\n"
+                % (self.id, datastore_manager, self.tenant_id)
+            )
+        }
 
         instance_key = get_instance_encryption_key(self.id)
         if instance_key:
@@ -952,6 +955,14 @@ class BaseInstance(SimpleInstance):
             with open(CONF.get('guest_config'), "r") as f:
                 files[os.path.join(injected_config_location,
                                    "trove-guestagent.conf")] = f.read()
+
+        # For trove guest agent service init in dev mode
+        # Before Nova version 2.57, userdata is not supported when doing
+        # rebuild, have to use injected files instead.
+        if CONF.controller_address:
+            files['/etc/trove/controller.conf'] = (
+                f"CONTROLLER={CONF.controller_address}"
+            )
 
         return files
 
@@ -968,6 +979,15 @@ class BaseInstance(SimpleInstance):
         reset_instance = InstanceServiceStatus.find_by(instance_id=self.id)
         reset_instance.set_status(status)
         reset_instance.save()
+
+    def prepare_userdata(self, datastore_manager):
+        userdata = None
+        cloudinit = os.path.join(CONF.get('cloudinit_location'),
+                                 "%s.cloudinit" % datastore_manager)
+        if os.path.isfile(cloudinit):
+            with open(cloudinit, "r") as f:
+                userdata = f.read()
+        return userdata
 
 
 class FreshInstance(BaseInstance):
@@ -1666,6 +1686,10 @@ class Instance(BuiltInstance):
                        task_status=InstanceTasks.UPGRADING)
         task_api.API(self.context).upgrade(self.id,
                                            datastore_version.id)
+
+    def rebuild(self, image_id):
+        self.update_db(task_status=InstanceTasks.BUILDING)
+        task_api.API(self.context).rebuild(self.id, image_id)
 
 
 def create_server_list_matcher(server_list):

@@ -301,7 +301,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                   new_callable=PropertyMock,
                   return_value='fake-hostname')
     def test_servers_create_block_device_mapping_v2(self, mock_hostname):
-        self.freshinstancetasks._prepare_userdata = Mock(return_value=None)
+        self.freshinstancetasks.prepare_userdata = Mock(return_value=None)
         mock_nova_client = self.freshinstancetasks.nova_client = Mock()
         mock_servers_create = mock_nova_client.servers.create
         self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
@@ -698,7 +698,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     def setUp(self):
         super(BuiltInstanceTasksTest, self).setUp()
         self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
-        stub_nova_server = MagicMock()
+        stub_nova_server = MagicMock(id='fake_id')
         self.rpc_patches = patch.multiple(
             rpc, get_notifier=MagicMock(), get_client=MagicMock())
         self.rpc_mocks = self.rpc_patches.start()
@@ -749,6 +749,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.stub_running_server.flavor = {'id': 6, 'ram': 512}
         self.stub_verifying_server = MagicMock(
             spec=novaclient.v2.servers.Server)
+        self.stub_verifying_server.id = 'fake_id'
         self.stub_verifying_server.status = 'VERIFY_RESIZE'
         self.stub_verifying_server.flavor = {'id': 8, 'ram': 768}
         self.stub_server_mgr.get = MagicMock(

@@ -218,6 +218,7 @@ function configure_trove {
     iniset_conditional $TROVE_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
     iniset_conditional $TROVE_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
     iniset_conditional $TROVE_CONF DEFAULT reboot_time_out 300
+    iniset $TROVE_CONF DEFAULT controller_address ${SERVICE_HOST}
 
     configure_keystone_authtoken_middleware $TROVE_CONF trove
     iniset $TROVE_CONF service_credentials username trove

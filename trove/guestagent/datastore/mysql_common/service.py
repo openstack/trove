@@ -473,7 +473,7 @@ class BaseMySqlApp(object):
     @classmethod
     def get_auth_password(cls, file="os_admin.cnf"):
         auth_config = operating_system.read_file(
-            cls.get_client_auth_file(file), codec=cls.CFG_CODEC)
+            cls.get_client_auth_file(file), codec=cls.CFG_CODEC, as_root=True)
         return auth_config['client']['password']
 
     @classmethod
@@ -488,7 +488,10 @@ class BaseMySqlApp(object):
 
     @classmethod
     def get_client_auth_file(cls, file="os_admin.cnf"):
-        return guestagent_utils.build_file_path("/opt/trove-guestagent", file)
+        # Save the password inside the mount point directory so we could
+        # restore everyting when rebuilding the instance.
+        conf_dir = guestagent_utils.get_conf_dir()
+        return guestagent_utils.build_file_path(conf_dir, file)
 
     def _create_admin_user(self, client, password):
         """
@@ -522,8 +525,10 @@ class BaseMySqlApp(object):
         content = {'client': {'user': user,
                               'password': password,
                               'host': "localhost"}}
-        operating_system.write_file('/opt/trove-guestagent/%s.cnf' % user,
-                                    content, codec=IniCodec())
+
+        conf_dir = guestagent_utils.get_conf_dir()
+        operating_system.write_file(
+            f'{conf_dir}/{user}.cnf', content, codec=IniCodec(), as_root=True)
 
     def secure(self):
         LOG.info("Securing MySQL now.")
@@ -587,6 +592,7 @@ class BaseMySqlApp(object):
 
     def start_db(self, update_db=False, ds_version=None, command=None,
                  extra_volumes=None):
+        """Start and wait for database service."""
         docker_image = CONF.get(CONF.datastore_manager).docker_image
         image = (f'{docker_image}:latest' if not ds_version else
                  f'{docker_image}:{ds_version}')
@@ -644,15 +650,16 @@ class BaseMySqlApp(object):
         ):
             raise exception.TroveError(_("Failed to start mysql"))
 
-    def start_db_with_conf_changes(self, config_contents):
+    def start_db_with_conf_changes(self, config_contents, ds_version):
+        LOG.info(f"Starting database service with new configuration and "
+                 f"datastore version {ds_version}.")
+
         if self.status.is_running:
             LOG.info("Stopping MySQL before applying changes.")
             self.stop_db()
 
-        LOG.info("Resetting configuration.")
         self._reset_configuration(config_contents)
-
-        self.start_db(update_db=True)
+        self.start_db(update_db=True, ds_version=ds_version)
 
     def stop_db(self, update_db=False):
         LOG.info("Stopping MySQL.")

@@ -239,8 +239,14 @@ class VolumeDevice(object):
     def format(self):
         """Formats the device at device_path and checks the filesystem."""
         self._check_device_exists()
-        self._format()
-        self._check_format()
+
+        try:
+            self._check_format()
+            LOG.debug(f"Device {self.device_path} already formatted.")
+            return
+        except exception.GuestError:
+            self._format()
+            self._check_format()
 
     def mount(self, mount_point, write_to_fstab=True):
         """Mounts, and writes to fstab."""

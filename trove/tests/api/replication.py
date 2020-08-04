@@ -50,7 +50,7 @@ backup_count = None
 
 def _get_user_count(server_info):
     cmd = (
-        'docker exec -e MYSQL_PWD=$(sudo cat /opt/trove-guestagent/root.cnf | '
+        'docker exec -e MYSQL_PWD=$(sudo cat /var/lib/mysql/conf.d/root.cnf | '
         'grep password | awk "{print \$3}") database mysql -uroot -N -e '
         '"select count(*) from mysql.user where user like \\"slave_%\\""'
     )
@@ -68,7 +68,7 @@ def slave_is_running(running=True):
         server = create_server_connection(slave_instance.id)
         cmd = (
             'docker exec -e MYSQL_PWD=$(sudo cat '
-            '/opt/trove-guestagent/root.cnf | grep password '
+            '/var/lib/mysql/conf.d/root.cnf | grep password '
             '| awk "{print \$3}") database mysql -uroot -N -e '
             '"SELECT SERVICE_STATE FROM '
             'performance_schema.replication_connection_status"'
@@ -198,7 +198,7 @@ class VerifySlave(object):
         """test_slave_is_read_only"""
         cmd = (
             'docker exec -e MYSQL_PWD=$(sudo cat '
-            '/opt/trove-guestagent/root.cnf | grep password | '
+            '/var/lib/mysql/conf.d/root.cnf | grep password | '
             'awk "{print \$3}") database mysql -uroot -NBq -e '
             '"select @@read_only"'
         )
@@ -403,7 +403,7 @@ class DetachReplica(object):
         def check_not_read_only():
             cmd = (
                 'docker exec -e MYSQL_PWD=$(sudo cat '
-                '/opt/trove-guestagent/root.cnf | grep password | '
+                '/var/lib/mysql/conf.d/root.cnf | grep password | '
                 'awk "{print \$3}") database mysql -uroot -NBq -e '
                 '"select @@read_only"'
             )

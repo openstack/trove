@@ -290,6 +290,10 @@ class Manager(periodic_task.PeriodicTasks):
                                                             instance_id)
             instance_tasks.migrate(host)
 
+    def rebuild(self, context, instance_id, image_id):
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+        instance_tasks.rebuild(image_id)
+
     def delete_instance(self, context, instance_id):
         with EndNotification(context):
             try:

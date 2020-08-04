@@ -265,7 +265,7 @@ class FakeGuest(object):
         # There's nothing to do here, since there is no config to update.
         pass
 
-    def start_db_with_conf_changes(self, config_contents):
+    def start_db_with_conf_changes(self, config_contents, ds_version):
         time.sleep(2)
         self._set_task_status('HEALTHY')
 

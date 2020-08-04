@@ -23,6 +23,7 @@ from trove.common import debug_utils
 from trove.common.i18n import _
 from trove.guestagent import api as guest_api
 from trove.guestagent.common import operating_system
+from trove.guestagent import volume
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
@@ -63,6 +64,21 @@ def main():
     LOG.info('Creating user and group for database service')
     uid = cfg.get_configuration_property('database_service_uid')
     operating_system.create_user('database', uid)
+
+    # Mount device if needed.
+    # When doing rebuild, the device should be already formatted but not
+    # mounted.
+    device_path = CONF.get(CONF.datastore_manager).device_path
+    mount_point = CONF.get(CONF.datastore_manager).mount_point
+    device = volume.VolumeDevice(device_path)
+    if not device.mount_points(device_path):
+        LOG.info('Preparing the storage for %s, mount path %s',
+                 device_path, mount_point)
+        device.format()
+        device.mount(mount_point)
+        operating_system.chown(mount_point, CONF.database_service_uid,
+                               CONF.database_service_uid,
+                               recursive=True, as_root=True)
 
     # rpc module must be loaded after decision about thread monkeypatching
     # because if thread module is not monkeypatched we can't use eventlet

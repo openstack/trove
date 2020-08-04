@@ -895,3 +895,8 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Waiting for transaction.")
         raise exception.DatastoreOperationNotSupported(
             operation='wait_for_txn', datastore=self.manager)
+
+    def rebuild(self, context, ds_version, config_contents=None,
+                config_overrides=None):
+        raise exception.DatastoreOperationNotSupported(
+            operation='rebuild', datastore=self.manager)

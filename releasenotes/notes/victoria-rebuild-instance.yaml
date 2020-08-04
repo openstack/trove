@@ -1,0 +1,8 @@
+---
+features:
+  - Support db instance rebuild. The rebuild operation is mainly for Trove
+    upgrade, especially when the interface between Trove controller and guest
+    agent changes. After Trove controller is upgraded, the cloud administrator
+    needs to send rebuild request with the new guest image ID. Communication
+    with the end users is needed as the database service is offline during the
+    process. User's data in the database is not affected.

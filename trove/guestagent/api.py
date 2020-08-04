@@ -396,7 +396,7 @@ class API(object):
 
         self._call("restart", self.agent_high_timeout, version=version)
 
-    def start_db_with_conf_changes(self, config_contents):
+    def start_db_with_conf_changes(self, config_contents, ds_version):
         """Start the database server."""
         LOG.debug("Sending the call to start the database process on "
                   "the Guest with a timeout of %s.",
@@ -404,7 +404,8 @@ class API(object):
         version = self.API_BASE_VERSION
 
         self._call("start_db_with_conf_changes", self.agent_high_timeout,
-                   version=version, config_contents=config_contents)
+                   version=version, config_contents=config_contents,
+                   ds_version=ds_version)
 
     def reset_configuration(self, configuration):
         """Ignore running state of the database server; just change
@@ -650,3 +651,18 @@ class API(object):
 
         return self._call("module_remove", self.agent_high_timeout,
                           version=version, module=module)
+
+    def rebuild(self, ds_version, config_contents=None, config_overrides=None):
+        """Make an asynchronous call to rebuild the database service."""
+        LOG.debug("Sending the call to rebuild database service in the guest.")
+        version = self.API_BASE_VERSION
+
+        # Taskmanager is a publisher, guestagent is a consumer. Usually
+        # consumer creates a queue, but in this case we have to make sure
+        # "prepare" doesn't get lost if for some reason guest was delayed and
+        # didn't create a queue on time.
+        self._create_guest_queue()
+
+        self._cast("rebuild", version=version,
+                   ds_version=ds_version, config_contents=config_contents,
+                   config_overrides=config_overrides)

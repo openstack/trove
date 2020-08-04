@@ -106,7 +106,8 @@ class MgmtInstanceController(InstanceController):
             'stop': self._action_stop,
             'reboot': self._action_reboot,
             'migrate': self._action_migrate,
-            'reset-task-status': self._action_reset_task_status
+            'reset-task-status': self._action_reset_task_status,
+            'rebuild': self._action_rebuild
         }
         selected_action = None
         for key in body:
@@ -159,6 +160,14 @@ class MgmtInstanceController(InstanceController):
         LOG.debug("Failing backups for instance %s.", instance.id)
         Backup.fail_for_instance(instance.id)
 
+        return wsgi.Result(None, 202)
+
+    def _action_rebuild(self, context, instance, req, body):
+        LOG.info("Rebuild instance %s.", instance.id)
+        req_body = body['rebuild']
+        image_id = req_body['image_id']
+
+        instance.rebuild(image_id)
         return wsgi.Result(None, 202)
 
     @admin_context

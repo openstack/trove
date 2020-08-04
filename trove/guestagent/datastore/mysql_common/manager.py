@@ -25,7 +25,6 @@ from trove.common import exception
 from trove.common import utils
 from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
-from trove.guestagent import volume
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
 from trove.guestagent.strategies import replication as repl_strategy
@@ -137,31 +136,13 @@ class MySqlManager(manager.Manager):
                    cluster_config, snapshot, ds_version=None):
         """This is called from prepare in the base class."""
         data_dir = mount_point + '/data'
-        if device_path:
-            LOG.info('Preparing the storage for %s, mount path %s',
-                     device_path, mount_point)
-
-            self.app.stop_db()
-
-            device = volume.VolumeDevice(device_path)
-            # unmount if device is already mounted
-            device.unmount_device(device_path)
-            device.format()
-            if operating_system.list_files_in_directory(mount_point):
-                # rsync existing data to a "data" sub-directory
-                # on the new volume
-                device.migrate_data(mount_point, target_subdir="data")
-            # mount the volume
-            device.mount(mount_point)
-            operating_system.chown(mount_point, CONF.database_service_uid,
-                                   CONF.database_service_uid,
-                                   recursive=True, as_root=True)
-
-            operating_system.create_directory(data_dir,
-                                              user=CONF.database_service_uid,
-                                              group=CONF.database_service_uid,
-                                              as_root=True)
-            self.app.set_data_dir(data_dir)
+        self.app.stop_db()
+        operating_system.create_directory(data_dir,
+                                          user=CONF.database_service_uid,
+                                          group=CONF.database_service_uid,
+                                          as_root=True)
+        # This makes sure the include dir is created.
+        self.app.set_data_dir(data_dir)
 
         # Prepare mysql configuration
         LOG.info('Preparing database configuration')
@@ -177,7 +158,11 @@ class MySqlManager(manager.Manager):
         # Start database service.
         # Cinder volume initialization(after formatted) may leave a
         # lost+found folder
-        command = f'--ignore-db-dir=lost+found --datadir={data_dir}'
+        # The --ignore-db-dir option is deprecated in MySQL 5.7. With the
+        # introduction of the data dictionary in MySQL 8.0, it became
+        # superfluous and was removed in that version.
+        command = (f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
+                   f'--datadir={data_dir}')
         self.app.start_db(ds_version=ds_version, command=command)
 
         self.app.secure()
@@ -212,8 +197,8 @@ class MySqlManager(manager.Manager):
     def restart(self, context):
         self.app.restart()
 
-    def start_db_with_conf_changes(self, context, config_contents):
-        self.app.start_db_with_conf_changes(config_contents)
+    def start_db_with_conf_changes(self, context, config_contents, ds_version):
+        self.app.start_db_with_conf_changes(config_contents, ds_version)
 
     def get_datastore_log_defs(self):
         owner = cfg.get_configuration_property('database_service_uid')
@@ -437,3 +422,41 @@ class MySqlManager(manager.Manager):
         LOG.info('Starting to upgrade database, upgrade_info: %s',
                  upgrade_info)
         self.app.upgrade(upgrade_info)
+
+    def rebuild(self, context, ds_version, config_contents=None,
+                config_overrides=None):
+        """Restore datastore service after instance rebuild."""
+        LOG.info("Starting to restore database service")
+        self.status.begin_install()
+
+        mount_point = CONF.get(CONF.datastore_manager).mount_point
+        data_dir = mount_point + '/data'
+        operating_system.create_directory(data_dir,
+                                          user=CONF.database_service_uid,
+                                          group=CONF.database_service_uid,
+                                          as_root=True)
+        # This makes sure the include dir is created.
+        self.app.set_data_dir(data_dir)
+
+        try:
+            # Prepare mysql configuration
+            LOG.debug('Preparing database configuration')
+            self.app.configuration_manager.save_configuration(config_contents)
+            self.app.update_overrides(config_overrides)
+
+            # Start database service.
+            # Cinder volume initialization(after formatted) may leave a
+            # lost+found folder
+            # The --ignore-db-dir option is deprecated in MySQL 5.7. With the
+            # introduction of the data dictionary in MySQL 8.0, it became
+            # superfluous and was removed in that version.
+            command = (f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
+                       f'--datadir={data_dir}')
+            self.app.start_db(ds_version=ds_version, command=command)
+        except Exception as e:
+            LOG.error(f"Failed to restore database service after rebuild, "
+                      f"error: {str(e)}")
+            self.prepare_error = True
+            raise
+        finally:
+            self.status.end_install(error_occurred=self.prepare_error)
