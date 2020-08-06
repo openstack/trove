@@ -1824,6 +1824,17 @@ class ResizeActionBase(object):
         return not self.instance.datastore_status_matches(
             srvstatus.ServiceStatuses.PAUSED)
 
+    def _guest_is_healthy(self):
+        self.instance._refresh_datastore_status()
+        return self.instance.datastore_status_matches(
+            srvstatus.ServiceStatuses.HEALTHY)
+
+    def wait_for_healthy(self):
+        utils.poll_until(
+            self._guest_is_healthy,
+            sleep_time=3,
+            time_out=CONF.resize_time_out)
+
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""
         LOG.debug("Begin resize method _perform_nova_action instance: %s",
@@ -2002,16 +2013,7 @@ class RebuildAction(ResizeActionBase):
             raise TroveError(msg)
 
     def _assert_processes_are_ok(self):
-        pass
-
-    def _revert_nova_action(self):
-        pass
-
-    def _wait_for_revert_nova_action(self):
-        pass
-
-    def _confirm_nova_action(self):
-        """Send rebuild async request to the guest."""
+        """Send rebuild async request to the guest and wait."""
         flavor = self.instance.nova_client.flavors.get(self.instance.flavor_id)
         config = self.instance._render_config(flavor)
         config_contents = config.config_contents
@@ -2025,6 +2027,20 @@ class RebuildAction(ResizeActionBase):
         self.instance.guest.rebuild(
             self.instance.datastore_version.name,
             config_contents=config_contents, config_overrides=overrides)
+
+        LOG.info(f"Waiting for instance {self.instance.id} healthy")
+        self._assert_guest_is_ok()
+        self.wait_for_healthy()
+        LOG.info(f"Finished to rebuild {self.instance.id}")
+
+    def _revert_nova_action(self):
+        pass
+
+    def _wait_for_revert_nova_action(self):
+        pass
+
+    def _confirm_nova_action(self):
+        pass
 
 
 def load_cluster_tasks(context, cluster_id):
