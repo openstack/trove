@@ -9,4 +9,5 @@
    datastore
    building_guest_images
    secure_oslo_messaging
+   upgrade-trove-guest-agent
    troubleshooting
