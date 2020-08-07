@@ -13,6 +13,7 @@ function build_guest_image() {
     local image_output=$5
     local image_type=${image_output##*.}
     local working_dir=$(dirname ${image_output})
+    local root_password=${TROVE_ROOT_PASSWORD}
 
     local elementes="base vm"
     local trove_elements_path=${PATH_TROVE}/integration/scripts/files/elements
@@ -59,6 +60,11 @@ function build_guest_image() {
     elementes="$elementes pip-cache"
     elementes="$elementes guest-agent"
     elementes="$elementes ${guest_os}-docker"
+
+    if [[ -n ${root_password} ]]; then
+        elementes="$elementes root-passwd"
+        export DIB_PASSWORD=${root_password}
+    fi
 
     # Build the image
     disk-image-create -x \
