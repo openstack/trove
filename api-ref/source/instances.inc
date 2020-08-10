@@ -260,6 +260,9 @@ Response Parameters
    - server_id: server_id
    - volume_id: volume_id
    - encrypted_rpc_messaging: encrypted_rpc_messaging
+   - access: access
+   - access.is_public: access_is_public
+   - access.allowed_cidrs: access_allowed_cidrs
 
 
 Response Example

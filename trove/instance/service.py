@@ -250,11 +250,11 @@ class InstanceController(wsgi.Controller):
         LOG.debug("req : '%s'\n\n", req)
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        server = models.load_instance_with_info(models.DetailInstance,
-                                                context, id)
-        self.authorize_instance_action(context, 'show', server)
+        instance = models.load_instance_with_info(models.DetailInstance,
+                                                  context, id)
+        self.authorize_instance_action(context, 'show', instance)
         return wsgi.Result(
-            views.InstanceDetailView(server, req=req).data(), 200
+            views.InstanceDetailView(instance, req=req).data(), 200
         )
 
     def delete(self, req, tenant_id, id):

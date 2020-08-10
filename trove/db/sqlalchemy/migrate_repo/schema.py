@@ -63,6 +63,11 @@ class Float(sqlalchemy.types.Float):
         super(Float, self).__init__(*args, **kwargs)
 
 
+class Json(sqlalchemy.types.JSON):
+    def __init__(self, *args, **kwargs):
+        super(Json, self).__init__(*args, **kwargs)
+
+
 def create_tables(tables):
     for table in tables:
         logger.info("creating table %(table)s", {'table': table})
