@@ -1348,6 +1348,60 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         else:
             return "/dev/%s" % device
 
+    def update_access(self, access):
+        LOG.info(f"Updating access for instance {self.id}, access {access}")
+
+        new_is_public = access.get('is_public', False)
+        new_allowed_cidrs = access.get('allowed_cidrs', [])
+        is_public = (self.access.get('is_public', False) if self.access
+                     else None)
+        allowed_cidrs = (self.access.get('allowed_cidrs', []) if self.access
+                         else None)
+
+        ports = self.neutron_client.list_ports(
+            name='trove-%s' % self.id)['ports']
+
+        if is_public != new_is_public:
+            for port in ports:
+                if 'User port' in port['description']:
+                    LOG.debug(f"Updating port {port['id']}, is_public: "
+                              f"{new_is_public}")
+                    neutron.ensure_port_access(self.neutron_client, port['id'],
+                                               new_is_public)
+
+        if CONF.trove_security_groups_support:
+            if allowed_cidrs != new_allowed_cidrs:
+                name = f"{CONF.trove_security_group_name_prefix}-{self.id}"
+                sgs = self.neutron_client.list_security_groups(
+                    name=name)['security_groups']
+
+                LOG.debug(f"Updating security group rules for instance "
+                          f"{self.id}")
+                for sg in sgs:
+                    neutron.clear_ingress_security_group_rules(
+                        self.neutron_client,
+                        sg['id'])
+
+                    if new_allowed_cidrs:
+                        tcp_ports = CONF.get(self.datastore.name).tcp_ports
+                        udp_ports = CONF.get(self.datastore.name).udp_ports
+
+                        neutron.create_security_group_rule(
+                            self.neutron_client, sg['id'], 'tcp', tcp_ports,
+                            new_allowed_cidrs)
+                        neutron.create_security_group_rule(
+                            self.neutron_client, sg['id'], 'udp', udp_ports,
+                            new_allowed_cidrs)
+        else:
+            LOG.warning('Security group not supported.')
+
+        LOG.info(f"Finished to update access for instance {self.id}")
+        self.update_db(
+            task_status=InstanceTasks.NONE,
+            access={'is_public': new_is_public,
+                    'allowed_cidrs': new_allowed_cidrs}
+        )
+
 
 class BackupTasks(object):
     @classmethod

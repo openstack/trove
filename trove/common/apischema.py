@@ -456,6 +456,41 @@ instance = {
             }
         }
     },
+    "update": {
+        "name": "instance:update",
+        "type": "object",
+        "required": ["instance"],
+        "properties": {
+            "instance": {
+                "type": "object",
+                "required": [],
+                "additionalProperties": False,
+                "properties": {
+                    "name": non_empty_string,
+                    "replica_of": {},
+                    "configuration": configuration_id,
+                    "datastore_version": non_empty_string,
+                    "access": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "is_public": {"type": "boolean"},
+                            "allowed_cidrs": {
+                                "type": "array",
+                                "uniqueItems": True,
+                                "items": {
+                                    "type": "string",
+                                    "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}"
+                                               "(\\/([0-9]|[1-2][0-9]|3[0-2]))"
+                                               "?$"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
     "action": {
         "resize": {
             "volume": {

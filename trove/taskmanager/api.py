@@ -179,6 +179,13 @@ class API(object):
         self._cast("delete_instance", version=version,
                    instance_id=instance_id)
 
+    def update_access(self, instance_id, access):
+        LOG.debug(f"Making async call to update instance: {instance_id}")
+        version = self.API_BASE_VERSION
+
+        self._cast("update_access", version=version,
+                   instance_id=instance_id, access=access)
+
     def create_backup(self, backup_info, instance_id):
         LOG.debug("Making async call to create a backup for instance: %s",
                   instance_id)

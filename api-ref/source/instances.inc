@@ -334,7 +334,7 @@ Request Example
 Update instance name
 ~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{project_id}/instances/{instanceId}
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
 Update the instance name.
 
@@ -362,7 +362,7 @@ Request Example
 Upgrade datastore version for instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{project_id}/instances/{instanceId}
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
 Upgrade datastore version.
 
@@ -394,7 +394,7 @@ Request Example
 Detach replica
 ~~~~~~~~~~~~~~
 
-.. rest_method::  PATCH /v1.0/{project_id}/instances/{instanceId}
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
 Detaches a replica from its replication source.
 
@@ -425,6 +425,38 @@ Request Example
    :language: javascript
 
 
+
+Update instance accessbility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
+
+The following operations are supported:
+
+* If the instance should be exposed to public or not. Not providing
+  ``is_public`` means private.
+* The list of CIDRs that are allowed to access the database service. Not
+  providing ``allowed_cidrs`` means allowing everything.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+   - instance: instance
+   - access: access
+   - access.is_public: access_is_public
+   - access.allowed_cidrs: access_allowed_cidrs
+
+Request Example
+---------------
+
+.. literalinclude:: samples/instance-update-access-request.json
+   :language: javascript
 
 
 Delete database instance

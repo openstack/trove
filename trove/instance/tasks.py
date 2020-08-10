@@ -82,6 +82,7 @@ class InstanceTasks(object):
     LOGGING = InstanceTask(0x0a, 'LOGGING', 'Transferring guest logs.')
     DETACHING = InstanceTask(0x0b, 'DETACHING',
                              'Detaching the instance from replica source.')
+    UPDATING = InstanceTask(0x0c, 'UPDATING', 'Updating the instance.')
 
     BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING', 'Build error: DNS.',
                                       is_error=True)
@@ -121,6 +122,9 @@ class InstanceTasks(object):
     BUILDING_ERROR_PORT = InstanceTask(0x5c, 'BUILDING',
                                        'Build error: Port.',
                                        is_error=True)
+    UPDATING_ERROR_ACCESS = InstanceTask(0x5d, 'UPDATING',
+                                         'Update error: Access.',
+                                         is_error=True)
 
 
 # Dissuade further additions at run-time.

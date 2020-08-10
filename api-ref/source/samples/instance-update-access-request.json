@@ -1,0 +1,8 @@
+{
+    "instance": {
+        "access": {
+            "is_public": true,
+            "allowed_cidrs": ["10.0.0.0/24"]
+        }
+    }
+}
