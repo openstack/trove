@@ -386,8 +386,8 @@ class DetachReplica(object):
         if CONFIG.fake_mode:
             raise SkipTest("Detach replica not supported in fake mode")
 
-        instance_info.dbaas.instances.edit(slave_instance.id,
-                                           detach_replica_source=True)
+        instance_info.dbaas.instances.update(slave_instance.id,
+                                             detach_replica_source=True)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
         poll_until(slave_is_running(False))

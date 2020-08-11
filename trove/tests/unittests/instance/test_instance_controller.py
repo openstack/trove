@@ -14,6 +14,8 @@
 #    under the License.
 #
 import copy
+from unittest import mock
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 import uuid
 
@@ -23,6 +25,7 @@ from testtools.matchers import Is
 from testtools.testcase import skip
 
 from trove.common import apischema
+from trove.common import exception
 from trove.instance.service import InstanceController
 from trove.tests.unittests import trove_testtools
 
@@ -359,12 +362,61 @@ class TestInstanceController(trove_testtools.TestCase):
 
         self.assertEqual(1, instance.detach_configuration.call_count)
 
-    def test_modify_instance_with_access(self):
-        instance = self._setup_modify_instance_mocks()
-        args = {}
-        args['access'] = {'is_public': True}
+    def test_update_api_invalid_field(self):
+        body = {
+            'instance': {
+                'invalid': 'invalid'
+            }
+        }
+        schema = self.controller.get_schema('update', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
 
-        self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_update_name(self, load_mock):
+        body = {
+            'instance': {
+                'name': 'new_name'
+            }
+        }
+        ins_mock = MagicMock()
+        load_mock.return_value = ins_mock
 
-        instance.update_access.assert_called_once_with({'is_public': True})
+        self.controller.update(MagicMock(), 'fake_id', body, 'fake_tenant_id')
+
+        ins_mock.update_db.assert_called_once_with(name='new_name')
+
+    def test_update_multiple_operations(self):
+        body = {
+            'instance': {
+                'name': 'new_name',
+                'replica_of': None,
+                'configuration': 'fake_config_id'
+            }
+        }
+
+        self.assertRaises(
+            exception.BadRequest,
+            self.controller.update,
+            MagicMock(), 'fake_id', body, 'fake_tenant_id'
+        )
+
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_update_name_and_access(self, load_mock):
+        body = {
+            'instance': {
+                'name': 'new_name',
+                'access': {
+                    'is_public': True,
+                    'allowed_cidrs': []
+                }
+            }
+        }
+        ins_mock = MagicMock()
+        load_mock.return_value = ins_mock
+
+        self.controller.update(MagicMock(), 'fake_id', body, 'fake_tenant_id')
+
+        ins_mock.update_db.assert_called_once_with(name='new_name')
+        ins_mock.update_access.assert_called_once_with(
+            body['instance']['access'])

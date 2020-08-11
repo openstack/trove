@@ -686,14 +686,13 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @time_out(30)
     def test_unassign_configuration_from_instances(self):
         """test to unassign configuration from instance"""
-        instance_info.dbaas.instances.modify(configuration_instance.id,
-                                             configuration="")
+        instance_info.dbaas.instances.update(configuration_instance.id,
+                                             remove_configuration=True)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
-        instance_info.dbaas.instances.get(configuration_instance.id)
-        # test that config group is not removed
-        instance_info.dbaas.instances.modify(instance_info.id,
-                                             configuration=None)
+
+        instance_info.dbaas.instances.update(instance_info.id,
+                                             remove_configuration=True)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
         instance_info.dbaas.instances.get(instance_info.id)
@@ -704,10 +703,12 @@ class DeleteConfigurations(ConfigurationsTestBase):
                 return False
             else:
                 return True
+
         inst_info = instance_info
         poll_until(result_has_no_configuration)
         inst_info = configuration_instance
         poll_until(result_has_no_configuration)
+
         instance = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal('RESTART_REQUIRED', instance.status)
 
@@ -780,17 +781,17 @@ class DeleteConfigurations(ConfigurationsTestBase):
         report.log("instance new name:%s" % new_name)
         saved_name = instance_info.name
         config_id = configuration_info.id
-        instance_info.dbaas.instances.edit(instance_info.id,
-                                           configuration=config_id,
-                                           name=new_name)
+        instance_info.dbaas.instances.update(instance_info.id,
+                                             configuration=config_id,
+                                             name=new_name)
         assert_equal(202, instance_info.dbaas.last_http_code)
         check = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal(200, instance_info.dbaas.last_http_code)
         assert_equal(check.name, new_name)
 
         # restore instance name
-        instance_info.dbaas.instances.edit(instance_info.id,
-                                           name=saved_name)
+        instance_info.dbaas.instances.update(instance_info.id,
+                                             name=saved_name)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
         instance = instance_info.dbaas.instances.get(instance_info.id)
@@ -813,14 +814,14 @@ class DeleteConfigurations(ConfigurationsTestBase):
         # already has an assigned configuration with patch
         config_id = configuration_info.id
         assert_raises(exceptions.BadRequest,
-                      instance_info.dbaas.instances.edit,
+                      instance_info.dbaas.instances.update,
                       instance_info.id, configuration=config_id)
 
     @test(runs_after=[test_assign_config_and_name_to_instance_using_patch])
     def test_unassign_configuration_after_patch(self):
         """Remove the configuration from the instance"""
-        instance_info.dbaas.instances.edit(instance_info.id,
-                                           remove_configuration=True)
+        instance_info.dbaas.instances.update(instance_info.id,
+                                             remove_configuration=True)
         assert_equal(202, instance_info.dbaas.last_http_code)
         instance = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal('RESTART_REQUIRED', instance.status)
@@ -847,8 +848,8 @@ class DeleteConfigurations(ConfigurationsTestBase):
         # test unassign config group from an invalid instance
         invalid_id = "invalid-inst-id"
         try:
-            instance_info.dbaas.instances.edit(invalid_id,
-                                               remove_configuration=True)
+            instance_info.dbaas.instances.update(invalid_id,
+                                                 remove_configuration=True)
         except exceptions.NotFound:
             resp, body = instance_info.dbaas.client.last_response
             assert_equal(resp.status, 404)

@@ -354,7 +354,7 @@ class ReplicationRunner(TestRunner):
     def assert_detach_replica(
             self, replica_id, expected_states, expected_http_code):
         client = self.auth_client
-        client.instances.edit(replica_id, detach_replica_source=True)
+        client.instances.update(replica_id, detach_replica_source=True)
         self.assert_client_code(client, expected_http_code)
         self.assert_instance_action(replica_id, expected_states)
 
