@@ -489,6 +489,13 @@ class SimpleInstance(object):
     def encrypted_rpc_messaging(self):
         return True if self.db_info.encrypted_key is not None else False
 
+    @property
+    def access(self):
+        if hasattr(self.db_info, 'access'):
+            return self.db_info.access
+        else:
+            return None
+
 
 class DetailInstance(SimpleInstance):
     """A detailed view of an Instance.
@@ -1260,7 +1267,7 @@ class Instance(BuiltInstance):
                     configuration_id=configuration_id,
                     slave_of_id=slave_of_id, cluster_id=cluster_id,
                     shard_id=shard_id, type=instance_type,
-                    region_id=region_name)
+                    region_id=region_name, access=access)
                 instance_id = db_info.id
                 instance_name = name
                 LOG.debug(f"Creating new instance {instance_id}")
@@ -1836,7 +1843,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
                     'volume_size', 'tenant_id', 'server_status',
                     'deleted', 'deleted_at', 'datastore_version_id',
                     'configuration_id', 'slave_of_id', 'cluster_id',
-                    'shard_id', 'type', 'region_id', 'encrypted_key']
+                    'shard_id', 'type', 'region_id', 'encrypted_key', 'access']
     _table_name = 'instances'
 
     def __init__(self, task_status, **kwargs):
