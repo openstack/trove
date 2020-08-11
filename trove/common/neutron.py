@@ -77,17 +77,7 @@ def create_port(client, name, description, network_id, security_groups,
     port_id = port['port']['id']
 
     if is_public:
-        public_network_id = get_public_network(client)
-        if not public_network_id:
-            raise exception.PublicNetworkNotFound()
-
-        fip_body = {
-            "floatingip": {
-                'floating_network_id': public_network_id,
-                'port_id': port_id,
-            }
-        }
-        client.create_floatingip(fip_body)
+        make_port_public(client, port_id)
 
     return port_id
 
@@ -107,6 +97,26 @@ def delete_port(client, id):
     client.delete_port(id)
 
 
+def make_port_public(client, port_id):
+    public_network_id = get_public_network(client)
+    if not public_network_id:
+        raise exception.PublicNetworkNotFound()
+
+    fip_body = {
+        "floatingip": {
+            'floating_network_id': public_network_id,
+            'port_id': port_id,
+        }
+    }
+
+    try:
+        client.create_floatingip(fip_body)
+    except Exception as e:
+        LOG.error(f"Failed to associate public IP with port {port_id}: "
+                  f"{str(e)}")
+        raise exception.TroveError('Failed to expose instance port to public.')
+
+
 def get_public_network(client):
     """Get public network ID.
 
@@ -123,6 +133,24 @@ def get_public_network(client):
         return None
 
     return ret['networks'][0].get('id')
+
+
+def ensure_port_access(client, port_id, is_public):
+    fips = client.list_floatingips(port_id=port_id)["floatingips"]
+
+    if is_public and not fips:
+        # Associate floating IP
+        LOG.debug(f"Associate public IP with port {port_id}")
+        make_port_public(client, port_id)
+        return
+
+    if not is_public and fips:
+        # Disassociate floating IP
+        for fip in fips:
+            LOG.debug(f"Disassociate public IP {fip['floating_ip_address']} "
+                      f"from port {port_id}")
+            client.delete_floatingip(fip["id"])
+        return
 
 
 def create_security_group(client, name, instance_id):
@@ -157,6 +185,15 @@ def create_security_group_rule(client, sg_id, protocol, ports, remote_ips):
             }
 
             client.create_security_group_rule(body)
+
+
+def clear_ingress_security_group_rules(client, sg_id):
+    rules = client.list_security_group_rules(
+        security_group_id=sg_id)['security_group_rules']
+
+    for rule in rules:
+        if rule['direction'] == 'ingress':
+            client.delete_security_group_rule(rule['id'])
 
 
 def get_subnet_cidrs(client, network_id=None, subnet_id=None):

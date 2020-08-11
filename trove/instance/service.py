@@ -502,7 +502,9 @@ class InstanceController(wsgi.Controller):
                 context, request=req)
             with StartNotification(context, instance_id=instance.id):
                 instance.detach_replica()
-        if 'configuration_id' in kwargs:
+
+            instance.update_db(**kwargs)
+        elif 'configuration_id' in kwargs:
             if kwargs['configuration_id']:
                 context.notification = (
                     notification.DBaaSInstanceAttachConfiguration(context,
@@ -517,7 +519,9 @@ class InstanceController(wsgi.Controller):
                                                                   request=req))
                 with StartNotification(context, instance_id=instance.id):
                     instance.detach_configuration()
-        if 'datastore_version' in kwargs:
+
+            instance.update_db(**kwargs)
+        elif 'datastore_version' in kwargs:
             datastore_version = ds_models.DatastoreVersion.load(
                 instance.datastore, kwargs['datastore_version'])
             context.notification = (
@@ -525,11 +529,17 @@ class InstanceController(wsgi.Controller):
             with StartNotification(context, instance_id=instance.id,
                                    datastore_version_id=datastore_version.id):
                 instance.upgrade(datastore_version)
-        if kwargs:
+
             instance.update_db(**kwargs)
+        elif 'access' in kwargs:
+            instance.update_access(kwargs['access'])
 
     def update(self, req, id, body, tenant_id):
-        """Updates the instance to attach/detach configuration."""
+        """Updates the instance.
+
+        - attach/detach configuration.
+        - access information.
+        """
         LOG.info("Updating database instance '%(instance_id)s' for tenant "
                  "'%(tenant_id)s'",
                  {'instance_id': id, 'tenant_id': tenant_id})
@@ -537,12 +547,31 @@ class InstanceController(wsgi.Controller):
         LOG.debug("body: %s", body)
         context = req.environ[wsgi.CONTEXT_KEY]
 
+        name = body['instance'].get('name')
+        if ((name and len(body['instance']) != 2) or
+                (not name and len(body['instance']) == 2)):
+            raise exception.BadRequest("Only one attribute (except 'name') is "
+                                       "allowed to update.")
+
         instance = models.Instance.load(context, id)
         self.authorize_instance_action(context, 'update', instance)
 
-        # Make sure args contains a 'configuration_id' argument,
         args = {}
-        args['configuration_id'] = self._configuration_parse(context, body)
+        if name:
+            instance.update_db(name=name)
+
+        detach_replica = ('replica_of' in body['instance'] or
+                          'slave_of' in body['instance'])
+        if detach_replica:
+            args['detach_replica'] = detach_replica
+
+        configuration_id = self._configuration_parse(context, body)
+        if configuration_id:
+            args['configuration_id'] = configuration_id
+
+        if 'access' in body['instance']:
+            args['access'] = body['instance']['access']
+
         self._modify_instance(context, req, instance, **args)
         return wsgi.Result(None, 202)
 

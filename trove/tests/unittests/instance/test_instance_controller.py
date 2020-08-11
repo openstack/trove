@@ -304,6 +304,7 @@ class TestInstanceController(trove_testtools.TestCase):
         instance.attach_configuration = Mock()
         instance.detach_configuration = Mock()
         instance.update_db = Mock()
+        instance.update_access = Mock()
         return instance
 
     def test_modify_instance_with_empty_args(self):
@@ -317,16 +318,6 @@ class TestInstanceController(trove_testtools.TestCase):
         self.assertEqual(0, instance.detach_configuration.call_count)
         self.assertEqual(0, instance.attach_configuration.call_count)
         self.assertEqual(0, instance.update_db.call_count)
-
-    def test_modify_instance_with_nonempty_args_calls_update_db(self):
-        instance = self._setup_modify_instance_mocks()
-        args = {}
-        args['any'] = 'anything'
-
-        self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
-
-        instance.update_db.assert_called_once_with(**args)
 
     def test_modify_instance_with_False_detach_replica_arg(self):
         instance = self._setup_modify_instance_mocks()
@@ -368,15 +359,12 @@ class TestInstanceController(trove_testtools.TestCase):
 
         self.assertEqual(1, instance.detach_configuration.call_count)
 
-    def test_modify_instance_with_all_args(self):
+    def test_modify_instance_with_access(self):
         instance = self._setup_modify_instance_mocks()
         args = {}
-        args['detach_replica'] = True
-        args['configuration_id'] = 'some_id'
+        args['access'] = {'is_public': True}
 
         self.controller._modify_instance(self.context, self.req,
                                          instance, **args)
 
-        self.assertEqual(1, instance.detach_replica.call_count)
-        self.assertEqual(1, instance.attach_configuration.call_count)
-        instance.update_db.assert_called_once_with(**args)
+        instance.update_access.assert_called_once_with({'is_public': True})

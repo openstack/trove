@@ -458,6 +458,16 @@ class Manager(periodic_task.PeriodicTasks):
         with EndNotification(context):
             instance_tasks.upgrade(datastore_version)
 
+    def update_access(self, context, instance_id, access):
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+
+        try:
+            instance_tasks.update_access(access)
+        except Exception as e:
+            LOG.error(f"Failed to update access configuration for "
+                      f"{instance_id}: {str(e)}")
+            self.update_db(task_status=InstanceTasks.UPDATING_ERROR_ACCESS)
+
     def create_cluster(self, context, cluster_id):
         with EndNotification(context, cluster_id=cluster_id):
             cluster_tasks = models.load_cluster_tasks(context, cluster_id)
