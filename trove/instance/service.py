@@ -495,6 +495,7 @@ class InstanceController(wsgi.Controller):
             if configuration_ref:
                 configuration_id = utils.get_id_from_href(configuration_ref)
                 return configuration_id
+            return ""
 
     def _modify_instance(self, context, req, instance, **kwargs):
         if 'detach_replica' in kwargs and kwargs['detach_replica']:
@@ -502,8 +503,6 @@ class InstanceController(wsgi.Controller):
                 context, request=req)
             with StartNotification(context, instance_id=instance.id):
                 instance.detach_replica()
-
-            instance.update_db(**kwargs)
         elif 'configuration_id' in kwargs:
             if kwargs['configuration_id']:
                 context.notification = (
@@ -519,8 +518,6 @@ class InstanceController(wsgi.Controller):
                                                                   request=req))
                 with StartNotification(context, instance_id=instance.id):
                     instance.detach_configuration()
-
-            instance.update_db(**kwargs)
         elif 'datastore_version' in kwargs:
             datastore_version = ds_models.DatastoreVersion.load(
                 instance.datastore, kwargs['datastore_version'])
@@ -529,8 +526,6 @@ class InstanceController(wsgi.Controller):
             with StartNotification(context, instance_id=instance.id,
                                    datastore_version_id=datastore_version.id):
                 instance.upgrade(datastore_version)
-
-            instance.update_db(**kwargs)
         elif 'access' in kwargs:
             instance.update_access(kwargs['access'])
 
@@ -538,6 +533,7 @@ class InstanceController(wsgi.Controller):
         """Updates the instance.
 
         - attach/detach configuration.
+        - detach from primary.
         - access information.
         """
         LOG.info("Updating database instance '%(instance_id)s' for tenant "
@@ -548,8 +544,8 @@ class InstanceController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
 
         name = body['instance'].get('name')
-        if ((name and len(body['instance']) != 2) or
-                (not name and len(body['instance']) == 2)):
+        if ((name and len(body['instance'].keys()) > 2) or
+            (not name and len(body['instance'].keys()) >= 2)):
             raise exception.BadRequest("Only one attribute (except 'name') is "
                                        "allowed to update.")
 
@@ -566,7 +562,7 @@ class InstanceController(wsgi.Controller):
             args['detach_replica'] = detach_replica
 
         configuration_id = self._configuration_parse(context, body)
-        if configuration_id:
+        if configuration_id is not None:
             args['configuration_id'] = configuration_id
 
         if 'access' in body['instance']:
@@ -576,31 +572,11 @@ class InstanceController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
     def edit(self, req, id, body, tenant_id):
+        """Updates the instance to set or unset one or more attributes.
+
+        Deprecated. Use update method instead.
         """
-        Updates the instance to set or unset one or more attributes.
-        """
-        LOG.info("Editing instance for tenant id %s.", tenant_id)
-        LOG.debug("req: %s", strutils.mask_password(req))
-        LOG.debug("body: %s", strutils.mask_password(body))
-        context = req.environ[wsgi.CONTEXT_KEY]
-
-        instance = models.Instance.load(context, id)
-        self.authorize_instance_action(context, 'edit', instance)
-
-        args = {}
-        args['detach_replica'] = ('replica_of' in body['instance'] or
-                                  'slave_of' in body['instance'])
-
-        if 'name' in body['instance']:
-            args['name'] = body['instance']['name']
-        if 'configuration' in body['instance']:
-            args['configuration_id'] = self._configuration_parse(context, body)
-        if 'datastore_version' in body['instance']:
-            args['datastore_version'] = body['instance'].get(
-                'datastore_version')
-
-        self._modify_instance(context, req, instance, **args)
-        return wsgi.Result(None, 202)
+        self.update(req, id, body, tenant_id)
 
     def configuration(self, req, tenant_id, id):
         """
