@@ -69,6 +69,13 @@ class InstanceView(object):
 
         if self.instance.access:
             instance_dict['access'] = self.instance.access
+        elif 'addresses' in instance_dict:
+            for addr in instance_dict['addresses']:
+                if addr.get('type') == 'public':
+                    instance_dict['access']['is_public'] = True
+                    break
+            else:
+                instance_dict['access']['is_public'] = False
 
         LOG.debug(instance_dict)
         return {"instance": instance_dict}

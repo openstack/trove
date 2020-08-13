@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from trove.common import cfg
 from trove.instance.views import InstanceDetailView
@@ -133,3 +134,27 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         result = view.data()
         self.assertNotIn('server_id', result['instance'])
         self.assertNotIn('volume_id', result['instance'])
+
+    def test_access(self):
+        instance = MagicMock()
+        instance.hostname = None
+        instance.get_visible_ip_addresses.return_value = [
+            {'address': '10.111.0.27', 'type': 'private'}
+        ]
+        instance.access = None
+        instance.slaves = []
+
+        view = InstanceDetailView(instance, self.req)
+        data = view.data()['instance']
+
+        self.assertFalse(data['access']['is_public'])
+
+        instance.get_visible_ip_addresses.return_value = [
+            {'address': '10.111.0.27', 'type': 'private'},
+            {'address': '172.30.5.107', 'type': 'public'}
+        ]
+
+        view = InstanceDetailView(instance, self.req)
+        data = view.data()['instance']
+
+        self.assertTrue(data['access']['is_public'])
