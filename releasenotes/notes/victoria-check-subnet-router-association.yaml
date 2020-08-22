@@ -1,0 +1,7 @@
+---
+features:
+  - Added a config option ``enable_access_check`` (default True) to decide if
+    Trove should check the subnet of the user port is associated with a Neutron
+    router. This check is needed for creating public-facing instances and the
+    instance initialization. This check could be skipped When using Neutron
+    provider network.

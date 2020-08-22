@@ -417,12 +417,21 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         }
         mock_client.create_port.side_effect = [
             {'port': {'id': 'fake-mgmt-port-id'}},
-            {'port': {'id': 'fake-user-port-id'}}
+            {
+                'port': {
+                    'id': 'fake-user-port-id',
+                    'fixed_ips': [{'subnet_id': 'fake-subnet-id'}]
+                }
+            }
         ]
         mock_client.list_networks.return_value = {
             'networks': [{'id': 'fake-public-net-id'}]
         }
+        mock_client.list_ports.return_value = {
+            'ports': [{'id': 'fake-port-id'}]
+        }
         mock_neutron_client.return_value = mock_client
+
         mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
         config_content = {'config_contents': 'some junk'}
         mock_single_instance_template.return_value.config_contents = (

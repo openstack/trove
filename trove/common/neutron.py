@@ -54,8 +54,21 @@ def reset_management_networks():
     MGMT_NETWORKS = None
 
 
+def check_subnet_router(client, subnet_id):
+    """Check if the subnet is associated with a router."""
+    router_ports = client.list_ports(
+        device_owner="network:router_interface",
+        fixed_ips=f"subnet_id={subnet_id}")["ports"]
+    if not router_ports:
+        raise exception.TroveError(f"Subnet {subnet_id} is not "
+                                   f"associated with router.")
+
+
 def create_port(client, name, description, network_id, security_groups,
-                is_public=False, subnet_id=None, ip=None):
+                is_public=False, subnet_id=None, ip=None, is_mgmt=False):
+    enable_access_check = (not is_mgmt and
+                           (CONF.network.enable_access_check or is_public))
+
     port_body = {
         "port": {
             "name": name,
@@ -66,6 +79,9 @@ def create_port(client, name, description, network_id, security_groups,
     }
 
     if subnet_id:
+        if enable_access_check:
+            check_subnet_router(client, subnet_id)
+
         fixed_ips = {
             "fixed_ips": [{"subnet_id": subnet_id}]
         }
@@ -75,6 +91,11 @@ def create_port(client, name, description, network_id, security_groups,
 
     port = client.create_port(body=port_body)
     port_id = port['port']['id']
+
+    if not subnet_id and enable_access_check:
+        # Check if the subnet has been associated with a router.
+        subnet_id = port['port']['fixed_ips'][0]['subnet_id']
+        check_subnet_router(client, subnet_id)
 
     if is_public:
         make_port_public(client, port_id)

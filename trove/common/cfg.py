@@ -1396,7 +1396,14 @@ network_opts = [
         help='ID of the Neutron public network to create floating IP for the '
              'public trove instance. If not given, Trove will try to query '
              'all the public networks and use the first one in the list.'
-    )
+    ),
+    cfg.BoolOpt(
+        'enable_access_check', default=True,
+        help='Check if the user provided network is associated with router. '
+             'This is needed for the instance initialization. The check is '
+             'also necessary when creating public facing instance. A scenario '
+             'to set this option False is when using Neutron provider '
+             'network.')
 ]
 
 service_credentials_group = cfg.OptGroup(

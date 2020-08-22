@@ -471,15 +471,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 security_groups,
                 is_public=is_public,
                 subnet_id=network_info.get('subnet_id'),
-                ip=network_info.get('ip_address')
+                ip=network_info.get('ip_address'),
+                is_mgmt=is_mgmt
             )
-        except Exception:
-            error = ("Failed to create %s port for instance %s"
-                     % (type, self.id))
-            LOG.exception(error)
+        except Exception as e:
             self.update_db(
                 task_status=inst_models.InstanceTasks.BUILDING_ERROR_PORT
             )
+            error = (f"Failed to create {type} port for instance {self.id}: "
+                     f"{str(e)}")
             raise TroveError(message=error)
 
         return port_id
@@ -518,7 +518,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             port_id = self._create_port(
                 {'network_id': CONF.management_networks[-1]},
                 port_sgs,
-                is_mgmt=True
+                is_mgmt=True,
             )
             LOG.info("Management port %s created for instance: %s", port_id,
                      self.id)
@@ -533,7 +533,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 network_info,
                 port_sgs,
                 is_mgmt=False,
-                is_public=access.get('is_public', False)
+                is_public=access.get('is_public', False),
             )
             LOG.info("User port %s created for instance %s", port_id,
                      self.id)
