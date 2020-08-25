@@ -448,7 +448,13 @@ class ConfigurationRunner(TestRunner):
             self, instance_id, group_id, expected_states, expected_http_code,
             restart_inst=False):
         client = self.auth_client
-        client.instances.modify(instance_id, configuration=group_id)
+        params = {}
+        if group_id:
+            params['configuration'] = group_id
+        else:
+            params['remove_configuration'] = True
+        client.instances.update(instance_id, **params)
+
         self.assert_client_code(client, expected_http_code)
         self.assert_instance_action(instance_id, expected_states)
 

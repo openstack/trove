@@ -342,7 +342,7 @@ class VolumeMountPoint(object):
     def mount(self):
         if not operating_system.exists(self.mount_point, is_directory=True,
                                        as_root=True):
-            operating_system.create_directory(self.mount_point, as_root=True)
+            operating_system.ensure_directory(self.mount_point, as_root=True)
         LOG.debug("Mounting volume. Device path:{0}, mount_point:{1}, "
                   "volume_type:{2}, mount options:{3}".format(
                       self.device_path, self.mount_point, self.volume_fstype,

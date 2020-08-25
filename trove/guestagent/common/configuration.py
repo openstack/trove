@@ -81,7 +81,7 @@ class ConfigurationManager(object):
         :type override_strategy     ConfigurationOverrideStrategy
         """
         base_config_dir = os.path.dirname(base_config_path)
-        operating_system.create_directory(
+        operating_system.ensure_directory(
             base_config_dir, user=owner, group=group, force=True, as_root=True
         )
 
@@ -348,6 +348,8 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
         self._codec = codec
         self._requires_root = requires_root
 
+        self._initialize_import_directory()
+
     def exists(self, group_name, change_id):
         return self._find_revision_file(group_name, change_id) is not None
 
@@ -381,7 +383,7 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
         """Lazy-initialize the directory for imported revision files.
         """
         if not os.path.exists(self._revision_dir):
-            operating_system.create_directory(
+            operating_system.ensure_directory(
                 self._revision_dir, user=self._owner, group=self._group,
                 force=True, as_root=self._requires_root)
 

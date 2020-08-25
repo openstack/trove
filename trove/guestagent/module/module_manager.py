@@ -94,7 +94,7 @@ class ModuleManager(object):
         module_dir = guestagent_utils.build_file_path(
             cls.MODULE_BASE_DIR, sub_dir)
         if not operating_system.exists(module_dir, is_directory=True):
-            operating_system.create_directory(module_dir, force=True)
+            operating_system.ensure_directory(module_dir, force=True)
         return module_dir
 
     @classmethod

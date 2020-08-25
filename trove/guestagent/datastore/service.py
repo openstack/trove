@@ -20,10 +20,13 @@ from oslo_utils import timeutils
 
 from trove.common import cfg
 from trove.common import context as trove_context
+from trove.common import exception
 from trove.common.i18n import _
+from trove.common import stream_codecs
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
+from trove.guestagent.utils import docker as docker_util
 from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)
@@ -266,10 +269,10 @@ class BaseDbStatus(object):
 
         return True
 
-    def wait_for_real_status_to_change_to(self, status, max_time,
-                                          update_db=False):
+    def wait_for_status(self, status, max_time, update_db=False):
         """Waits the given time for the real status to change to the one
         specified.
+
         The internal status is always updated. The public instance
         state stored in the Trove database is updated only if "update_db" is
         True.
@@ -330,3 +333,71 @@ class BaseDbStatus(object):
         LOG.debug("Casting report_root message to conductor.")
         conductor_api.API(context).report_root(CONF.guest_id)
         LOG.debug("Successfully cast report_root.")
+
+
+class BaseDbApp(object):
+    CFG_CODEC = stream_codecs.IniCodec()
+
+    def __init__(self, status, docker_client):
+        self.status = status
+        self.docker_client = docker_client
+
+    @classmethod
+    def get_client_auth_file(cls, file="os_admin.cnf"):
+        # Save the password inside the mount point directory so we could
+        # restore everyting when rebuilding the instance.
+        conf_dir = guestagent_utils.get_conf_dir()
+        return guestagent_utils.build_file_path(conf_dir, file)
+
+    @classmethod
+    def get_auth_password(cls, file="os_admin.cnf"):
+        auth_config = operating_system.read_file(
+            cls.get_client_auth_file(file), codec=cls.CFG_CODEC, as_root=True)
+        return auth_config['client']['password']
+
+    @classmethod
+    def save_password(cls, user, password):
+        content = {
+            'client': {
+                'user': user,
+                'password': password,
+                'host': "localhost"
+            }
+        }
+
+        conf_dir = guestagent_utils.get_conf_dir()
+        operating_system.write_file(
+            f'{conf_dir}/{user}.cnf', content, codec=cls.CFG_CODEC,
+            as_root=True)
+
+    def remove_overrides(self):
+        self.configuration_manager.remove_user_override()
+
+    def reset_configuration(self, configuration):
+        pass
+
+    def stop_db(self, update_db=False):
+        LOG.info("Stopping database.")
+
+        try:
+            docker_util.stop_container(self.docker_client)
+        except Exception:
+            LOG.exception("Failed to stop database")
+            raise exception.TroveError("Failed to stop database")
+
+        if not self.status.wait_for_status(
+            service_status.ServiceStatuses.SHUTDOWN,
+            CONF.state_change_wait_time, update_db
+        ):
+            raise exception.TroveError("Failed to stop database")
+
+    def start_db_with_conf_changes(self, config_contents, ds_version):
+        LOG.info(f"Starting database service with new configuration and "
+                 f"datastore version {ds_version}.")
+
+        if self.status.is_running:
+            LOG.info("Stopping database before applying changes.")
+            self.stop_db()
+
+        self.reset_configuration(config_contents)
+        self.start_db(update_db=True, ds_version=ds_version)

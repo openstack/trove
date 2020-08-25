@@ -178,6 +178,6 @@ def get_conf_dir():
     mount_point = CONF.get(CONF.datastore_manager).mount_point
     conf_dir = os.path.join(mount_point, 'conf.d')
     if not operating_system.exists(conf_dir, is_directory=True, as_root=True):
-        operating_system.create_directory(conf_dir, as_root=True)
+        operating_system.ensure_directory(conf_dir, as_root=True)
 
     return conf_dir

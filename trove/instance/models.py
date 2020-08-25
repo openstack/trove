@@ -1614,7 +1614,7 @@ class Instance(BuiltInstance):
         return False
 
     def detach_configuration(self):
-        LOG.debug("Detaching configuration from instance: %s", self.id)
+        LOG.info("Detaching configuration from instance: %s", self.id)
         if self.configuration and self.configuration.id:
             self._validate_can_perform_assign()
             LOG.debug("Detaching configuration: %s", self.configuration.id)
