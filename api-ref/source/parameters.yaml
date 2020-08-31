@@ -757,7 +757,9 @@ slave_of:
   required: false
   type: string
 swift_container:
-  description: User defined swift container name.
+  description: |
+    User defined swift container name. When creating backups, the swift
+    container is created automatically if does not exist.
   in: body
   required: false
   type: string
