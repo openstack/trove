@@ -178,7 +178,8 @@ Delete database backup
 
 .. rest_method::  DELETE /v1.0/{project_id}/backups/{backupId}
 
-Deletes a database backup.
+Deletes a database backup. All the child backups are deleted automatically when
+a parent backup is deleted.
 
 Normal response codes: 202
 
