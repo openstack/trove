@@ -1050,6 +1050,10 @@ postgresql_group = cfg.OptGroup(
     'postgresql', title='PostgreSQL options',
     help="Oslo option group for the PostgreSQL datastore.")
 postgresql_opts = [
+    cfg.StrOpt(
+        'docker_image', default='postgres',
+        help='Database docker image.'
+    ),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -1087,7 +1091,7 @@ postgresql_opts = [
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb'),
-    cfg.ListOpt('ignore_users', default=['os_admin', 'postgres', 'root']),
+    cfg.ListOpt('ignore_users', default=['os_admin', 'postgres']),
     cfg.ListOpt('ignore_dbs', default=['os_admin', 'postgres']),
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',

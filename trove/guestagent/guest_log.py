@@ -215,7 +215,6 @@ class GuestLog(object):
             raise exception.LogAccessForbidden(action='show', log=self._name)
 
     def _refresh_details(self):
-
         if self._published_size is None:
             # Initializing, so get all the values
             try:
@@ -259,29 +258,23 @@ class GuestLog(object):
             self._size = logstat.st_size
             self._update_log_header_digest(self._file)
 
-            if self._log_rotated():
-                self.status = LogStatus.Rotated
-            # See if we have stuff to publish
-            elif logstat.st_size > self._published_size:
-                self._set_status(self._published_size,
-                                 LogStatus.Partial, LogStatus.Ready)
-            # We've published everything so far
-            elif logstat.st_size == self._published_size:
-                self._set_status(self._published_size,
-                                 LogStatus.Published, LogStatus.Enabled)
-            # We've already handled this case (log rotated) so what gives?
-            else:
-                raise Exception(_("Bug in _log_rotated ?"))
+            if self.status != LogStatus.Disabled:
+                if self._log_rotated():
+                    self.status = LogStatus.Rotated
+                # See if we have stuff to publish
+                elif logstat.st_size > self._published_size:
+                    self._set_status(self._published_size,
+                                     LogStatus.Partial, LogStatus.Ready)
+                # We've published everything so far
+                elif logstat.st_size == self._published_size:
+                    self._set_status(self._published_size,
+                                     LogStatus.Published, LogStatus.Enabled)
+                # We've already handled this case (log rotated) so what gives?
+                else:
+                    raise Exception(_("Bug in _log_rotated ?"))
         else:
             self._published_size = 0
             self._size = 0
-
-        if not self._size or not self.enabled:
-            user_status = LogStatus.Disabled
-            if self.enabled:
-                user_status = LogStatus.Enabled
-            self._set_status(self._type == LogType.USER,
-                             user_status, LogStatus.Unavailable)
 
     def _log_rotated(self):
         """If the file is smaller than the last reported size
@@ -306,7 +299,7 @@ class GuestLog(object):
                 LOG.debug("Log file rotation detected for '%s' - "
                           "discarding old log", self._name)
                 self._delete_log_components()
-            if os.path.isfile(self._file):
+            if operating_system.exists(self._file, as_root=True):
                 self._publish_to_container(self._file)
             else:
                 raise RuntimeError(_(
@@ -334,8 +327,6 @@ class GuestLog(object):
         swift_files.append(self._metafile_name())
         for swift_file in swift_files:
             self.swift_client.delete_object(container_name, swift_file)
-        self._set_status(self._type == LogType.USER,
-                         LogStatus.Disabled, LogStatus.Enabled)
         self._published_size = 0
 
     def _publish_to_container(self, log_filename):

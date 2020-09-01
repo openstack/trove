@@ -38,6 +38,8 @@ defaults = {
         'trove.guestagent.datastore.mysql.manager.Manager',
     'mariadb':
         'trove.guestagent.datastore.mariadb.manager.Manager',
+    'postgresql':
+        'trove.guestagent.datastore.postgres.manager.PostgresManager',
     'percona':
         'trove.guestagent.datastore.experimental.percona.manager.Manager',
     'pxc':
@@ -50,8 +52,6 @@ defaults = {
         'trove.guestagent.datastore.experimental.couchbase.manager.Manager',
     'mongodb':
         'trove.guestagent.datastore.experimental.mongodb.manager.Manager',
-    'postgresql':
-        'trove.guestagent.datastore.experimental.postgresql.manager.Manager',
     'couchdb':
         'trove.guestagent.datastore.experimental.couchdb.manager.Manager',
     'vertica':

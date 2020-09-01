@@ -31,7 +31,6 @@ from trove.common import utils
 from trove.common.configurations import MySQLConfParser
 from trove.common.db.mysql import models
 from trove.common.i18n import _
-from trove.common.stream_codecs import IniCodec
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
@@ -39,7 +38,6 @@ from trove.guestagent.common import sql_query
 from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.datastore import service
-from trove.guestagent.datastore.mysql_common import service as commmon_service
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
 from trove.instance import service_status
@@ -72,8 +70,7 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
         """Check database service status."""
         status = docker_util.get_container_status(self.docker_client)
         if status == "running":
-            root_pass = commmon_service.BaseMySqlApp.get_auth_password(
-                file="root.cnf")
+            root_pass = service.BaseDbApp.get_auth_password(file="root.cnf")
             cmd = 'mysql -uroot -p%s -e "select 1;"' % root_pass
             try:
                 docker_util.run_command(self.docker_client, cmd)
@@ -86,6 +83,8 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
                 LOG.debug('container log: \n%s', '\n'.join(container_log))
                 return service_status.ServiceStatuses.RUNNING
         elif status == "not running":
+            return service_status.ServiceStatuses.SHUTDOWN
+        elif status == "restarting":
             return service_status.ServiceStatuses.SHUTDOWN
         elif status == "paused":
             return service_status.ServiceStatuses.PAUSED
@@ -165,7 +164,7 @@ class BaseMySqlAdmin(object):
                     t = text(str(uu))
                     client.execute(t)
 
-    def create_database(self, databases):
+    def create_databases(self, databases):
         """Create the list of specified databases."""
         with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
             for item in databases:
@@ -178,7 +177,7 @@ class BaseMySqlAdmin(object):
                 LOG.debug('Creating database, command: %s', str(cd))
                 client.execute(t)
 
-    def create_user(self, users):
+    def create_users(self, users):
         """Create users and grant them privileges for the
            specified databases.
         """
@@ -424,21 +423,12 @@ class BaseMySqlAdmin(object):
         return user.databases
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseMySqlApp(object):
-    """Prepares DBaaS on a Guest container."""
-
-    CFG_CODEC = IniCodec()
+class BaseMySqlApp(service.BaseDbApp):
     configuration_manager = ConfigurationManager(
         MYSQL_CONFIG, CONF.database_service_uid, CONF.database_service_uid,
-        CFG_CODEC, requires_root=True,
+        service.BaseDbApp.CFG_CODEC, requires_root=True,
         override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT)
     )
-
-    def __init__(self, status, docker_client):
-        """By default login with root no password for initial setup."""
-        self.status = status
-        self.docker_client = docker_client
 
     def get_engine(self):
         """Create the default engine with the updated admin user.
@@ -471,12 +461,6 @@ class BaseMySqlApp(object):
             return client.execute(sql_statement)
 
     @classmethod
-    def get_auth_password(cls, file="os_admin.cnf"):
-        auth_config = operating_system.read_file(
-            cls.get_client_auth_file(file), codec=cls.CFG_CODEC, as_root=True)
-        return auth_config['client']['password']
-
-    @classmethod
     def get_data_dir(cls):
         return cls.configuration_manager.get_value(
             MySQLConfParser.SERVER_CONF_SECTION).get('datadir')
@@ -485,13 +469,6 @@ class BaseMySqlApp(object):
     def set_data_dir(cls, value):
         cls.configuration_manager.apply_system_override(
             {MySQLConfParser.SERVER_CONF_SECTION: {'datadir': value}})
-
-    @classmethod
-    def get_client_auth_file(cls, file="os_admin.cnf"):
-        # Save the password inside the mount point directory so we could
-        # restore everyting when rebuilding the instance.
-        conf_dir = guestagent_utils.get_conf_dir()
-        return guestagent_utils.build_file_path(conf_dir, file)
 
     def _create_admin_user(self, client, password):
         """
@@ -519,16 +496,6 @@ class BaseMySqlApp(object):
         t = text(str(g))
         client.execute(t)
         LOG.info("Trove admin user '%s' created.", ADMIN_USER_NAME)
-
-    @staticmethod
-    def save_password(user, password):
-        content = {'client': {'user': user,
-                              'password': password,
-                              'host': "localhost"}}
-
-        conf_dir = guestagent_utils.get_conf_dir()
-        operating_system.write_file(
-            f'{conf_dir}/{user}.cnf', content, codec=IniCodec(), as_root=True)
 
     def secure(self):
         LOG.info("Securing MySQL now.")
@@ -572,9 +539,6 @@ class BaseMySqlApp(object):
             self.configuration_manager.apply_user_override(
                 {MySQLConfParser.SERVER_CONF_SECTION: overrides})
 
-    def remove_overrides(self):
-        self.configuration_manager.remove_user_override()
-
     def apply_overrides(self, overrides):
         LOG.info("Applying overrides to running MySQL, overrides: %s",
                  overrides)
@@ -608,7 +572,7 @@ class BaseMySqlApp(object):
 
         # Create folders for mysql on localhost
         for folder in ['/etc/mysql', '/var/run/mysqld']:
-            operating_system.create_directory(
+            operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
                 group=CONF.database_service_uid, force=True,
                 as_root=True)
@@ -644,36 +608,11 @@ class BaseMySqlApp(object):
             LOG.exception("Failed to start mysql")
             raise exception.TroveError(_("Failed to start mysql"))
 
-        if not self.status.wait_for_real_status_to_change_to(
+        if not self.status.wait_for_status(
             service_status.ServiceStatuses.HEALTHY,
             CONF.state_change_wait_time, update_db
         ):
             raise exception.TroveError(_("Failed to start mysql"))
-
-    def start_db_with_conf_changes(self, config_contents, ds_version):
-        LOG.info(f"Starting database service with new configuration and "
-                 f"datastore version {ds_version}.")
-
-        if self.status.is_running:
-            LOG.info("Stopping MySQL before applying changes.")
-            self.stop_db()
-
-        self._reset_configuration(config_contents)
-        self.start_db(update_db=True, ds_version=ds_version)
-
-    def stop_db(self, update_db=False):
-        LOG.info("Stopping MySQL.")
-
-        try:
-            docker_util.stop_container(self.docker_client)
-        except Exception:
-            LOG.exception("Failed to stop mysql")
-            raise exception.TroveError("Failed to stop mysql")
-
-        if not self.status.wait_for_real_status_to_change_to(
-            service_status.ServiceStatuses.SHUTDOWN,
-            CONF.state_change_wait_time, update_db):
-            raise exception.TroveError("Failed to stop mysql")
 
     def wipe_ib_logfiles(self):
         """Destroys the iblogfiles.
@@ -695,23 +634,17 @@ class BaseMySqlApp(object):
                 LOG.exception("Could not delete logfile.")
                 raise
 
-    def _reset_configuration(self, configuration, admin_password=None):
-        self.configuration_manager.save_configuration(configuration)
-        if admin_password:
-            self.save_password(ADMIN_USER_NAME, admin_password)
-        self.wipe_ib_logfiles()
-
     def reset_configuration(self, configuration):
-        config_contents = configuration['config_contents']
         LOG.info("Resetting configuration.")
-        self._reset_configuration(config_contents)
+        self.configuration_manager.save_configuration(configuration)
+        self.wipe_ib_logfiles()
 
     def restart(self):
         LOG.info("Restarting mysql")
 
         # Ensure folders permission for database.
         for folder in ['/etc/mysql', '/var/run/mysqld']:
-            operating_system.create_directory(
+            operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
                 group=CONF.database_service_uid, force=True,
                 as_root=True)
@@ -722,9 +655,10 @@ class BaseMySqlApp(object):
             LOG.exception("Failed to restart mysql")
             raise exception.TroveError("Failed to restart mysql")
 
-        if not self.status.wait_for_real_status_to_change_to(
+        if not self.status.wait_for_status(
             service_status.ServiceStatuses.HEALTHY,
-            CONF.state_change_wait_time, update_db=False):
+            CONF.state_change_wait_time, update_db=False
+        ):
             raise exception.TroveError("Failed to start mysql")
 
         LOG.info("Finished restarting mysql")
@@ -754,14 +688,10 @@ class BaseMySqlApp(object):
             f'datastore:{backup_info["datastore"]},'
             f'datastore_version:{backup_info["datastore_version"]}'
         )
-        swift_params = f'--swift-extra-metadata={swift_metadata}'
         swift_container = backup_info.get('swift_container',
                                           CONF.backup_swift_container)
-        if backup_info.get('swift_container'):
-            swift_params = (
-                f'{swift_params} '
-                f'--swift-container {swift_container}'
-            )
+        swift_params = (f'--swift-extra-metadata={swift_metadata} '
+                        f'--swift-container {swift_container}')
 
         command = (
             f'/usr/bin/python3 main.py --backup --backup-id={backup_id} '

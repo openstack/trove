@@ -23,7 +23,6 @@ from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
 from trove.common import utils
-from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
@@ -74,62 +73,6 @@ class MySqlManager(manager.Manager):
         except Exception:
             return super(MySqlManager, self).get_service_status()
 
-    def create_database(self, context, databases):
-        with EndNotification(context):
-            return self.adm.create_database(databases)
-
-    def create_user(self, context, users):
-        with EndNotification(context):
-            self.adm.create_user(users)
-
-    def delete_database(self, context, database):
-        with EndNotification(context):
-            return self.adm.delete_database(database)
-
-    def delete_user(self, context, user):
-        with EndNotification(context):
-            self.adm.delete_user(user)
-
-    def list_databases(self, context, limit=None, marker=None,
-                       include_marker=False):
-        return self.adm.list_databases(limit, marker, include_marker)
-
-    def list_users(self, context, limit=None, marker=None,
-                   include_marker=False):
-        return self.adm.list_users(limit, marker, include_marker)
-
-    def get_user(self, context, username, hostname):
-        return self.adm.get_user(username, hostname)
-
-    def update_attributes(self, context, username, hostname, user_attrs):
-        with EndNotification(context):
-            self.adm.update_attributes(username, hostname, user_attrs)
-
-    def grant_access(self, context, username, hostname, databases):
-        return self.adm.grant_access(username, hostname, databases)
-
-    def revoke_access(self, context, username, hostname, database):
-        return self.adm.revoke_access(username, hostname, database)
-
-    def list_access(self, context, username, hostname):
-        return self.adm.list_access(username, hostname)
-
-    def enable_root(self, context):
-        return self.adm.enable_root()
-
-    def enable_root_with_password(self, context, root_password=None):
-        return self.adm.enable_root(root_password)
-
-    def is_root_enabled(self, context):
-        return self.adm.is_root_enabled()
-
-    def disable_root(self, context):
-        return self.adm.disable_root()
-
-    def change_passwords(self, context, users):
-        with EndNotification(context):
-            self.adm.change_passwords(users)
-
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,
                    config_contents, root_password, overrides,
@@ -137,7 +80,7 @@ class MySqlManager(manager.Manager):
         """This is called from prepare in the base class."""
         data_dir = mount_point + '/data'
         self.app.stop_db()
-        operating_system.create_directory(data_dir,
+        operating_system.ensure_directory(data_dir,
                                           user=CONF.database_service_uid,
                                           group=CONF.database_service_uid,
                                           as_root=True)
@@ -176,26 +119,8 @@ class MySqlManager(manager.Manager):
             # This instance is a replication slave
             self.attach_replica(context, snapshot, snapshot['config'])
 
-    def _validate_slave_for_replication(self, context, replica_info):
-        if replica_info['replication_strategy'] != self.replication_strategy:
-            raise exception.IncompatibleReplicationStrategy(
-                replica_info.update({
-                    'guest_strategy': self.replication_strategy
-                }))
-
-        volume_stats = self.get_filesystem_stats(context, None)
-        if (volume_stats.get('total', 0.0) <
-            replica_info['dataset']['dataset_size']):
-            raise exception.InsufficientSpaceForReplica(
-                replica_info.update({
-                    'slave_volume_size': volume_stats.get('total', 0.0)
-                }))
-
     def stop_db(self, context):
         self.app.stop_db()
-
-    def restart(self, context):
-        self.app.restart()
 
     def start_db_with_conf_changes(self, context, config_contents, ds_version):
         self.app.start_db_with_conf_changes(config_contents, ds_version)
@@ -249,28 +174,20 @@ class MySqlManager(manager.Manager):
             },
         }
 
+    def is_log_enabled(self, logname):
+        if logname == self.GUEST_LOG_DEFS_GENERAL_LABEL:
+            value = self.configuration_manager.get_value('general_log', 'off')
+            return value == 'on'
+        elif logname == self.GUEST_LOG_DEFS_SLOW_QUERY_LABEL:
+            value = self.configuration_manager.get_value('slow_query_log',
+                                                         'off')
+            return value == 'on'
+
+        return False
+
     def apply_overrides(self, context, overrides):
         LOG.info("Applying overrides (%s).", overrides)
         self.app.apply_overrides(overrides)
-
-    def update_overrides(self, context, overrides, remove=False):
-        if remove:
-            self.app.remove_overrides()
-        self.app.update_overrides(overrides)
-
-    def create_backup(self, context, backup_info):
-        """
-        Entry point for initiating a backup for this guest agents db instance.
-        The call currently blocks until the backup is complete or errors. If
-        device_path is specified, it will be mounted based to a point specified
-        in configuration.
-
-        :param context: User context object.
-        :param backup_info: a dictionary containing the db instance id of the
-                            backup task, location, type, and other data.
-        """
-        with EndNotification(context):
-            self.app.create_backup(context, backup_info)
 
     def perform_restore(self, context, restore_location, backup_info):
         LOG.info("Starting to restore database from backup %s, "
@@ -339,6 +256,21 @@ class MySqlManager(manager.Manager):
                 docker_util.remove_container(self.app.docker_client)
 
         LOG.info('Finished to reset password for restore')
+
+    def _validate_slave_for_replication(self, context, replica_info):
+        if replica_info['replication_strategy'] != self.replication_strategy:
+            raise exception.IncompatibleReplicationStrategy(
+                replica_info.update({
+                    'guest_strategy': self.replication_strategy
+                }))
+
+        volume_stats = self.get_filesystem_stats(context, None)
+        if (volume_stats.get('total', 0.0) <
+            replica_info['dataset']['dataset_size']):
+            raise exception.InsufficientSpaceForReplica(
+                replica_info.update({
+                    'slave_volume_size': volume_stats.get('total', 0.0)
+                }))
 
     def attach_replica(self, context, replica_info, slave_config):
         LOG.info("Attaching replica, replica_info: %s", replica_info)
@@ -431,7 +363,7 @@ class MySqlManager(manager.Manager):
 
         mount_point = CONF.get(CONF.datastore_manager).mount_point
         data_dir = mount_point + '/data'
-        operating_system.create_directory(data_dir,
+        operating_system.ensure_directory(data_dir,
                                           user=CONF.database_service_uid,
                                           group=CONF.database_service_uid,
                                           as_root=True)

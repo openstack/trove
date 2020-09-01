@@ -62,7 +62,7 @@ class MysqlReplicationBase(base.Replication):
 
                 LOG.debug("Trying to create replication user %s",
                           mysql_user.name)
-                adm.create_user([mysql_user.serialize()])
+                adm.create_users([mysql_user.serialize()])
 
                 replication_user = {
                     'name': mysql_user.name,

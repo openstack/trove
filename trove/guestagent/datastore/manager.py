@@ -16,7 +16,6 @@
 
 import abc
 import operator
-import os
 
 import docker
 from oslo_config import cfg as oslo_cfg
@@ -74,7 +73,6 @@ class Manager(periodic_task.PeriodicTasks):
         self.__manager_name = manager_name
         self.__manager = None
         self.__prepare_error = False
-        self.status = None
 
         # Guest log
         self._guest_log_context = None
@@ -84,6 +82,11 @@ class Manager(periodic_task.PeriodicTasks):
 
         # Module
         self.module_driver_manager = driver_manager.ModuleDriverManager()
+
+        # Drivers should implement
+        self.adm = None
+        self.app = None
+        self.status = None
 
     @property
     def manager_name(self):
@@ -300,6 +303,14 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info('No post_prepare work has been defined.')
         pass
 
+    def restart(self, context):
+        self.app.restart()
+
+    def rebuild(self, context, ds_version, config_contents=None,
+                config_overrides=None):
+        raise exception.DatastoreOperationNotSupported(
+            operation='rebuild', datastore=self.manager)
+
     def pre_upgrade(self, context):
         """Prepares the guest for upgrade, returning a dict to be passed
         to post_upgrade
@@ -314,29 +325,6 @@ class Manager(periodic_task.PeriodicTasks):
         """Recovers the guest after the image is upgraded using information
         from the pre_upgrade step
         """
-        pass
-
-    def _restore_directory(self, restore_dir, target_dir, owner=None):
-        restore_path = os.path.join(restore_dir, ".")
-        operating_system.copy(restore_path, target_dir,
-                              preserve=True, as_root=True)
-        if owner is not None:
-            operating_system.chown(path=target_dir, user=owner, group=owner,
-                                   recursive=True, as_root=True)
-
-    def _restore_home_directory(self, saved_home_dir):
-        home_dir = os.path.expanduser("~")
-        home_owner = operating_system.get_current_user()
-        self._restore_directory(restore_dir=saved_home_dir,
-                                target_dir=home_dir,
-                                owner=home_owner)
-
-    #################
-    # Service related
-    #################
-    @abc.abstractmethod
-    def restart(self, context):
-        """Restart the database service."""
         pass
 
     #####################
@@ -379,7 +367,7 @@ class Manager(periodic_task.PeriodicTasks):
         method needs to be implemented to allow the rollback of
         flavor-resize on the guestagent side.
         """
-        LOG.debug("Resetting configuration.")
+        LOG.info("Resetting configuration.")
         if self.configuration_manager:
             config_contents = configuration['config_contents']
             self.configuration_manager.save_configuration(config_contents)
@@ -389,12 +377,13 @@ class Manager(periodic_task.PeriodicTasks):
         self.restart(context)
 
     def update_overrides(self, context, overrides, remove=False):
-        LOG.debug("Updating overrides.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='update_overrides', datastore=self.manager)
+        LOG.info(f"Updating config options: {overrides}, remove={remove}")
+        if remove:
+            self.app.remove_overrides()
+        self.app.update_overrides(overrides)
 
     def apply_overrides(self, context, overrides):
-        LOG.debug("Applying overrides.")
+        LOG.info(f"Applying overrides {overrides}.")
         raise exception.DatastoreOperationNotSupported(
             operation='apply_overrides', datastore=self.manager)
 
@@ -402,7 +391,7 @@ class Manager(periodic_task.PeriodicTasks):
     # Cluster related
     #################
     def cluster_complete(self, context):
-        LOG.debug("Cluster creation complete, starting status checks.")
+        LOG.info("Cluster creation complete, starting status checks.")
         self.status.end_install()
 
     #############
@@ -430,6 +419,9 @@ class Manager(periodic_task.PeriodicTasks):
         See guestagent_log_defs for an example.
         """
         return {}
+
+    def is_log_enabled(self, logname):
+        return False
 
     def get_guest_log_defs(self):
         """Return all the guest log defs."""
@@ -464,19 +456,25 @@ class Manager(periodic_task.PeriodicTasks):
                 exposed_logs = exposed_logs.lower().replace(',', ' ').split()
                 LOG.debug("Exposing log defs: %s", ",".join(exposed_logs))
                 expose_all = 'all' in exposed_logs
+
                 for log_name in gl_defs.keys():
                     gl_def = gl_defs[log_name]
                     exposed = expose_all or log_name in exposed_logs
-                    LOG.debug("Building guest log '%(name)s' from def: %(def)s"
-                              " (exposed: %(exposed)s)",
-                              {'name': log_name, 'def': gl_def,
-                               'exposed': exposed})
-                    self._guest_log_cache[log_name] = guest_log.GuestLog(
+                    guestlog = guest_log.GuestLog(
                         self.guest_log_context, log_name,
                         gl_def[self.GUEST_LOG_TYPE_LABEL],
                         gl_def[self.GUEST_LOG_USER_LABEL],
                         gl_def[self.GUEST_LOG_FILE_LABEL],
                         exposed)
+
+                    if (gl_def[self.GUEST_LOG_TYPE_LABEL] ==
+                        guest_log.LogType.USER):
+                        guestlog.enabled = self.is_log_enabled(log_name)
+                        guestlog.status = (guest_log.LogStatus.Enabled
+                                           if guestlog.enabled
+                                           else guest_log.LogStatus.Disabled)
+
+                    self._guest_log_cache[log_name] = guestlog
 
         self._guest_log_loaded_context = self.guest_log_context
 
@@ -487,7 +485,6 @@ class Manager(periodic_task.PeriodicTasks):
         result = filter(None, [gl_cache[log_name].show()
                                if gl_cache[log_name].exposed else None
                                for log_name in gl_cache.keys()])
-        LOG.info("Returning list of logs: %s", result)
         return result
 
     def guest_log_action(self, context, log_name, enable, disable,
@@ -503,9 +500,15 @@ class Manager(periodic_task.PeriodicTasks):
                  "publish=%(pub)s, discard=%(disc)s).",
                  {'log': log_name, 'en': enable, 'dis': disable,
                   'pub': publish, 'disc': discard})
+
         self.guest_log_context = context
         gl_cache = self.get_guest_log_cache()
+
         if log_name in gl_cache:
+            LOG.debug(f"Found log {log_name}, type={gl_cache[log_name].type}, "
+                      f"enable={gl_cache[log_name].enabled}")
+
+            # system log can only be published
             if ((gl_cache[log_name].type == guest_log.LogType.SYS) and
                     not publish):
                 if enable or disable:
@@ -515,22 +518,26 @@ class Manager(periodic_task.PeriodicTasks):
                         action_text = "disable"
                     raise exception.BadRequest("Cannot %s a SYSTEM log ('%s')."
                                                % (action_text, log_name))
+
             if gl_cache[log_name].type == guest_log.LogType.USER:
                 requires_change = (
                     (gl_cache[log_name].enabled and disable) or
                     (not gl_cache[log_name].enabled and enable))
                 if requires_change:
-                    restart_required = self.guest_log_enable(
-                        context, log_name, disable)
-                    if restart_required:
-                        self.set_guest_log_status(
-                            guest_log.LogStatus.Restart_Required, log_name)
+                    self.guest_log_enable(context, log_name, disable)
                     gl_cache[log_name].enabled = enable
+                    gl_cache[log_name].status = (
+                        guest_log.LogStatus.Enabled
+                        if enable
+                        else guest_log.LogStatus.Disabled
+                    )
+
             log_details = gl_cache[log_name].show()
             if discard:
                 log_details = gl_cache[log_name].discard_log()
             if publish:
                 log_details = gl_cache[log_name].publish_log()
+
             LOG.info("Details for log '%(log)s': %(det)s",
                      {'log': log_name, 'det': log_details})
             return log_details
@@ -598,23 +605,8 @@ class Manager(periodic_task.PeriodicTasks):
         else:
             self.apply_overrides(context, cfg_values)
 
-    def set_guest_log_status(self, status, log_name=None):
-        """Sets the status of log_name to 'status' - if log_name is not
-        provided, sets the status on all logs.
-        """
-        gl_cache = self.get_guest_log_cache()
-        names = [log_name]
-        if not log_name or log_name not in gl_cache:
-            names = gl_cache.keys()
-        for name in names:
-            # If we're already in restart mode and we're asked to set the
-            # status to restart, assume enable/disable has been flipped
-            # without a restart and set the status to restart done
-            if (gl_cache[name].status == guest_log.LogStatus.Restart_Required
-                    and status == guest_log.LogStatus.Restart_Required):
-                gl_cache[name].status = guest_log.LogStatus.Restart_Completed
-            else:
-                gl_cache[name].status = status
+    def get_log_status(self, label):
+        self.configuration_manager.get_value(label)
 
     def build_log_file_name(self, log_name, owner, datastore_dir=None):
         """Build a log file name based on the log_name and make sure the
@@ -623,14 +615,14 @@ class Manager(periodic_task.PeriodicTasks):
         if datastore_dir is None:
             base_dir = self.GUEST_LOG_BASE_DIR
             if not operating_system.exists(base_dir, is_directory=True):
-                operating_system.create_directory(
+                operating_system.ensure_directory(
                     base_dir, user=owner, group=owner, force=True,
                     as_root=True)
             datastore_dir = guestagent_utils.build_file_path(
                 base_dir, self.GUEST_LOG_DATASTORE_DIRNAME)
 
         if not operating_system.exists(datastore_dir, is_directory=True):
-            operating_system.create_directory(
+            operating_system.ensure_directory(
                 datastore_dir, user=owner, group=owner, force=True,
                 as_root=True)
         log_file_name = guestagent_utils.build_file_path(
@@ -648,7 +640,7 @@ class Manager(periodic_task.PeriodicTasks):
                                as_root=True)
         operating_system.chmod(log_file, FileMode.ADD_USR_RW_GRP_RW_OTH_R,
                                as_root=True)
-        LOG.debug("Set log file '%s' as readable", log_file)
+
         return log_file
 
     ################
@@ -734,117 +726,94 @@ class Manager(periodic_task.PeriodicTasks):
             driver, module_type, id, name, datastore, ds_version)
         LOG.info("Deleted module: %s", name)
 
-    def change_passwords(self, context, users):
-        LOG.debug("Changing passwords.")
+    ################
+    # Backup and restore
+    ################
+    def create_backup(self, context, backup_info):
+        """Create backup for the database.
+
+        :param context: User context object.
+        :param backup_info: a dictionary containing the db instance id of the
+                            backup task, location, type, and other data.
+        """
         with EndNotification(context):
-            raise exception.DatastoreOperationNotSupported(
-                operation='change_passwords', datastore=self.manager)
+            self.app.create_backup(context, backup_info)
+
+    def perform_restore(self, context, restore_location, backup_info):
+        raise exception.DatastoreOperationNotSupported(
+            operation='_perform_restore', datastore=self.manager)
+
+    ################
+    # Database and user management
+    ################
+    def create_database(self, context, databases):
+        with EndNotification(context):
+            return self.adm.create_databases(databases)
+
+    def list_databases(self, context, limit=None, marker=None,
+                       include_marker=False):
+        return self.adm.list_databases(limit, marker, include_marker)
+
+    def delete_database(self, context, database):
+        with EndNotification(context):
+            return self.adm.delete_database(database)
+
+    def change_passwords(self, context, users):
+        with EndNotification(context):
+            self.adm.change_passwords(users)
 
     def get_root_password(self, context):
-        LOG.debug("Getting root password.")
         raise exception.DatastoreOperationNotSupported(
             operation='get_root_password', datastore=self.manager)
 
     def enable_root(self, context):
-        LOG.debug("Enabling root.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root', datastore=self.manager)
+        LOG.info("Enabling root for the database.")
+        return self.adm.enable_root()
 
     def enable_root_on_prepare(self, context, root_password):
         self.enable_root_with_password(context, root_password)
 
     def enable_root_with_password(self, context, root_password=None):
-        LOG.debug("Enabling root with password.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root_with_password', datastore=self.manager)
+        return self.adm.enable_root(root_password)
 
     def disable_root(self, context):
-        LOG.debug("Disabling root.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='disable_root', datastore=self.manager)
+        LOG.info("Disabling root for the database.")
+        return self.adm.disable_root()
 
     def is_root_enabled(self, context):
-        LOG.debug("Checking if root was ever enabled.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='is_root_enabled', datastore=self.manager)
-
-    def create_backup(self, context, backup_info):
-        LOG.debug("Creating backup.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_backup', datastore=self.manager)
-
-    def perform_restore(self, context, restore_location, backup_info):
-        LOG.debug("Performing restore.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='_perform_restore', datastore=self.manager)
-
-    def create_database(self, context, databases):
-        LOG.debug("Creating databases.")
-        with EndNotification(context):
-            raise exception.DatastoreOperationNotSupported(
-                operation='create_database', datastore=self.manager)
-
-    def list_databases(self, context, limit=None, marker=None,
-                       include_marker=False):
-        LOG.debug("Listing databases.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_databases', datastore=self.manager)
-
-    def delete_database(self, context, database):
-        LOG.debug("Deleting database.")
-        with EndNotification(context):
-            raise exception.DatastoreOperationNotSupported(
-                operation='delete_database', datastore=self.manager)
+        return self.adm.is_root_enabled()
 
     def create_user(self, context, users):
-        LOG.debug("Creating users.")
         with EndNotification(context):
-            raise exception.DatastoreOperationNotSupported(
-                operation='create_user', datastore=self.manager)
+            self.adm.create_users(users)
 
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
-        LOG.debug("Listing users.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_users', datastore=self.manager)
+        return self.adm.list_users(limit, marker, include_marker)
 
     def delete_user(self, context, user):
-        LOG.debug("Deleting user.")
         with EndNotification(context):
-            raise exception.DatastoreOperationNotSupported(
-                operation='delete_user', datastore=self.manager)
+            self.adm.delete_user(user)
 
     def get_user(self, context, username, hostname):
-        LOG.debug("Getting user.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_user', datastore=self.manager)
+        return self.adm.get_user(username, hostname)
 
     def update_attributes(self, context, username, hostname, user_attrs):
-        LOG.debug("Updating user attributes.")
         with EndNotification(context):
-            raise exception.DatastoreOperationNotSupported(
-                operation='update_attributes', datastore=self.manager)
+            self.adm.update_attributes(username, hostname, user_attrs)
 
     def grant_access(self, context, username, hostname, databases):
-        LOG.debug("Granting user access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='grant_access', datastore=self.manager)
+        return self.adm.grant_access(username, hostname, databases)
 
     def revoke_access(self, context, username, hostname, database):
-        LOG.debug("Revoking user access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='revoke_access', datastore=self.manager)
+        return self.adm.revoke_access(username, hostname, database)
 
     def list_access(self, context, username, hostname):
-        LOG.debug("Listing user access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_access', datastore=self.manager)
+        return self.adm.list_access(username, hostname)
 
-    def get_config_changes(self, cluster_config, mount_point=None):
-        LOG.debug("Get configuration changes.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_configuration_changes', datastore=self.manager)
-
+    ################
+    # Replication related
+    ################
     def get_replication_snapshot(self, context, snapshot_info,
                                  replica_source_config=None):
         LOG.debug("Getting replication snapshot.")
@@ -895,8 +864,3 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Waiting for transaction.")
         raise exception.DatastoreOperationNotSupported(
             operation='wait_for_txn', datastore=self.manager)
-
-    def rebuild(self, context, ds_version, config_contents=None,
-                config_overrides=None):
-        raise exception.DatastoreOperationNotSupported(
-            operation='rebuild', datastore=self.manager)

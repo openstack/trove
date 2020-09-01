@@ -16,7 +16,7 @@
 import abc
 import ast
 import csv
-import json
+import io
 import re
 import sys
 
@@ -26,6 +26,8 @@ import xmltodict
 import yaml
 
 from oslo_serialization import base64
+from oslo_serialization import jsonutils
+from oslo_utils import strutils
 
 from trove.common import utils as trove_utils
 
@@ -282,7 +284,7 @@ class PropertiesCodec(StreamCodec):
         :type comment_markers:    list
 
         :param unpack_singletons: Whether to unpack singleton collections
-                                  (collections with only a single value).
+                                  (collections with only a single item).
         :type unpack_singletons:  boolean
 
         :param string_mappings:   User-defined string representations of
@@ -469,6 +471,8 @@ class KeyValueCodec(StreamCodec):
                 v = v.lstrip(
                     self._value_quote_char).rstrip(
                     self._value_quote_char)
+            elif v.lower() in ['true', 'false']:
+                v = strutils.bool_from_string(v.lower())
             else:
                 # remove trailing comments
                 v = re.sub('%s.*$' % self._comment_marker, '', v)
@@ -509,10 +513,13 @@ class KeyValueCodec(StreamCodec):
 class JsonCodec(StreamCodec):
 
     def serialize(self, dict_data):
-        return json.dumps(dict_data)
+        return jsonutils.dumps(dict_data)
 
     def deserialize(self, stream):
-        return json.load(six.StringIO(stream))
+        if type(stream) == str:
+            return jsonutils.load(io.StringIO(stream))
+        if type(stream) == bytes:
+            return jsonutils.load(io.BytesIO(stream))
 
 
 class Base64Codec(StreamCodec):

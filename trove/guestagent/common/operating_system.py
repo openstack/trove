@@ -143,6 +143,7 @@ def _read_file_as_root(path, open_flag, convert_func):
 
 def write_file(path, data, codec=IdentityCodec(), as_root=False, encode=True):
     """Write data into file using a given codec.
+
     Overwrite any existing contents.
     The written file can be read back into its original
     form by 'read_file'.
@@ -514,7 +515,7 @@ def _execute_shell_cmd(cmd, options, *args, **kwargs):
     return stdout
 
 
-def create_directory(dir_path, user=None, group=None, force=True, **kwargs):
+def ensure_directory(dir_path, user=None, group=None, force=True, **kwargs):
     """Create a given directory and update its ownership
     (recursively) to the given user and group if any.
 
@@ -756,6 +757,7 @@ def move(source, destination, force=False, **kwargs):
 def copy(source, destination, force=False, preserve=False, recursive=True,
          dereference=False, **kwargs):
     """Copy a given file or directory to another location.
+
     Copy does NOT attempt to preserve ownership, permissions and timestamps
     unless the 'preserve' option is enabled.
 
