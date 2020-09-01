@@ -16,10 +16,11 @@ import os
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.postgres import service
-from trove.guestagent.datastore import manager
+from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
+from trove.guestagent.common import operating_system
+from trove.guestagent.datastore import manager
+from trove.guestagent.datastore.postgres import service
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -45,17 +46,26 @@ class PostgresManager(manager.Manager):
                                           user=CONF.database_service_uid,
                                           group=CONF.database_service_uid,
                                           as_root=True)
+        operating_system.ensure_directory(service.WAL_ARCHIVE_DIR,
+                                          user=CONF.database_service_uid,
+                                          group=CONF.database_service_uid,
+                                          as_root=True)
 
         LOG.info('Preparing database config files')
         self.app.configuration_manager.save_configuration(config_contents)
         self.app.set_data_dir(self.app.datadir)
         self.app.update_overrides(overrides)
 
-        # # Restore data from backup and reset root password
-        # if backup_info:
-        #     self.perform_restore(context, data_dir, backup_info)
-        #     self.reset_password_for_restore(ds_version=ds_version,
-        #                                     data_dir=data_dir)
+        # Restore data from backup and reset root password
+        if backup_info:
+            self.perform_restore(context, self.app.datadir, backup_info)
+
+            signal_file = f"{self.app.datadir}/recovery.signal"
+            operating_system.execute_shell_cmd(
+                f"touch {signal_file}", [], shell=True, as_root=True)
+            operating_system.chown(signal_file, CONF.database_service_uid,
+                                   CONF.database_service_uid, force=True,
+                                   as_root=True)
 
         # config_file can only be set on the postgres command line
         command = f"postgres -c config_file={service.CONFIG_FILE}"
@@ -101,3 +111,26 @@ class PostgresManager(manager.Manager):
 
     def is_log_enabled(self, logname):
         return self.configuration_manager.get_value('logging_collector', False)
+
+    def create_backup(self, context, backup_info):
+        """Create backup for the database.
+
+        :param context: User context object.
+        :param backup_info: a dictionary containing the db instance id of the
+                            backup task, location, type, and other data.
+        """
+        LOG.info(f"Creating backup {backup_info['id']}")
+        with EndNotification(context):
+            volumes_mapping = {
+                '/var/lib/postgresql/data': {
+                    'bind': '/var/lib/postgresql/data', 'mode': 'rw'
+                },
+                "/var/run/postgresql": {"bind": "/var/run/postgresql",
+                                        "mode": "ro"},
+            }
+            extra_params = f"--pg-wal-archive-dir {service.WAL_ARCHIVE_DIR}"
+
+            self.app.create_backup(context, backup_info,
+                                   volumes_mapping=volumes_mapping,
+                                   need_dbuser=False,
+                                   extra_params=extra_params)

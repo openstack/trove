@@ -13,16 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
+import re
 import time
 
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
+from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import context as trove_context
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import stream_codecs
+from trove.common.i18n import _
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
@@ -31,6 +33,8 @@ from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+BACKUP_LOG_RE = re.compile(r'.*Backup successfully, checksum: '
+                           r'(?P<checksum>.*), location: (?P<location>.*)')
 
 
 class BaseDbStatus(object):
@@ -401,3 +405,109 @@ class BaseDbApp(object):
 
         self.reset_configuration(config_contents)
         self.start_db(update_db=True, ds_version=ds_version)
+
+    def create_backup(self, context, backup_info, volumes_mapping={},
+                      need_dbuser=True, extra_params=''):
+        storage_driver = CONF.storage_strategy
+        backup_driver = cfg.get_configuration_property('backup_strategy')
+        incremental = ''
+        backup_type = 'full'
+        if backup_info.get('parent'):
+            incremental = (
+                f'--incremental '
+                f'--parent-location={backup_info["parent"]["location"]} '
+                f'--parent-checksum={backup_info["parent"]["checksum"]}')
+            backup_type = 'incremental'
+
+        backup_id = backup_info["id"]
+        image = cfg.get_configuration_property('backup_docker_image')
+        name = 'db_backup'
+
+        os_cred = (f"--os-token={context.auth_token} "
+                   f"--os-auth-url={CONF.service_credentials.auth_url} "
+                   f"--os-tenant-id={context.project_id}")
+
+        db_userinfo = ''
+        if need_dbuser:
+            admin_pass = self.get_auth_password()
+            db_userinfo = (f"--db-host=127.0.0.1 --db-user=os_admin "
+                           f"--db-password={admin_pass}")
+
+        swift_metadata = (
+            f'datastore:{backup_info["datastore"]},'
+            f'datastore_version:{backup_info["datastore_version"]}'
+        )
+        swift_container = (backup_info.get('swift_container') or
+                           CONF.backup_swift_container)
+        swift_params = (f'--swift-extra-metadata={swift_metadata} '
+                        f'--swift-container {swift_container}')
+
+        command = (
+            f'/usr/bin/python3 main.py --backup --backup-id={backup_id} '
+            f'--storage-driver={storage_driver} --driver={backup_driver} '
+            f'{os_cred} '
+            f'{db_userinfo} '
+            f'{swift_params} '
+            f'{incremental} '
+            f'{extra_params} '
+        )
+
+        # Update backup status in db
+        conductor = conductor_api.API(context)
+        mount_point = cfg.get_configuration_property('mount_point')
+        stats = guestagent_utils.get_filesystem_volume_stats(mount_point)
+        backup_state = {
+            'backup_id': backup_id,
+            'size': stats.get('used', 0.0),
+            'state': BackupState.BUILDING,
+            'backup_type': backup_type
+        }
+        conductor.update_backup(CONF.guest_id,
+                                sent=timeutils.utcnow_ts(microsecond=True),
+                                **backup_state)
+        LOG.debug(f"Updated state for backup {backup_id} to {backup_state}")
+
+        # Start to run backup inside a separate docker container
+        try:
+            LOG.info(f'Starting to create backup {backup_id}, '
+                     f'command: {command}')
+            output, ret = docker_util.run_container(
+                self.docker_client, image, name,
+                volumes=volumes_mapping, command=command)
+            result = output[-1]
+            if not ret:
+                msg = f'Failed to run backup container, error: {result}'
+                LOG.error(msg)
+                raise Exception(msg)
+
+            backup_result = BACKUP_LOG_RE.match(result)
+            if backup_result:
+                backup_state.update({
+                    'checksum': backup_result.group('checksum'),
+                    'location': backup_result.group('location'),
+                    'success': True,
+                    'state': BackupState.COMPLETED,
+                })
+            else:
+                LOG.error(f'Cannot parse backup output: {result}')
+                backup_state.update({
+                    'success': False,
+                    'state': BackupState.FAILED,
+                })
+        except Exception as err:
+            LOG.error("Failed to create backup %s", backup_id)
+            backup_state.update({
+                'success': False,
+                'state': BackupState.FAILED,
+            })
+            raise exception.TroveError(
+                "Failed to create backup %s, error: %s" %
+                (backup_id, str(err))
+            )
+        finally:
+            LOG.info("Completed backup %s.", backup_id)
+            conductor.update_backup(
+                CONF.guest_id,
+                sent=timeutils.utcnow_ts(microsecond=True),
+                **backup_state)
+            LOG.debug("Updated state for %s to %s.", backup_id, backup_state)

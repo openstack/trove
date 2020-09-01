@@ -23,6 +23,7 @@ from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
 from trove.common import utils
+from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
@@ -119,11 +120,24 @@ class MySqlManager(manager.Manager):
             # This instance is a replication slave
             self.attach_replica(context, snapshot, snapshot['config'])
 
-    def stop_db(self, context):
-        self.app.stop_db()
-
     def start_db_with_conf_changes(self, context, config_contents, ds_version):
         self.app.start_db_with_conf_changes(config_contents, ds_version)
+
+    def create_backup(self, context, backup_info):
+        """Create backup for the database.
+
+        :param context: User context object.
+        :param backup_info: a dictionary containing the db instance id of the
+                            backup task, location, type, and other data.
+        """
+        LOG.info(f"Creating backup {backup_info['id']}")
+        with EndNotification(context):
+            volumes_mapping = {
+                '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}
+            }
+            self.app.create_backup(context, backup_info,
+                                   volumes_mapping=volumes_mapping,
+                                   need_dbuser=True)
 
     def get_datastore_log_defs(self):
         owner = cfg.get_configuration_property('database_service_uid')
@@ -188,19 +202,6 @@ class MySqlManager(manager.Manager):
     def apply_overrides(self, context, overrides):
         LOG.info("Applying overrides (%s).", overrides)
         self.app.apply_overrides(overrides)
-
-    def perform_restore(self, context, restore_location, backup_info):
-        LOG.info("Starting to restore database from backup %s, "
-                 "backup_info: %s", backup_info['id'], backup_info)
-
-        try:
-            self.app.restore_backup(context, backup_info, restore_location)
-        except Exception:
-            LOG.error("Failed to restore from backup %s.", backup_info['id'])
-            self.status.set_status(service_status.ServiceStatuses.FAILED)
-            raise
-
-        LOG.info("Finished restore data from backup %s", backup_info['id'])
 
     def reset_password_for_restore(self, ds_version=None,
                                    data_dir='/var/lib/mysql/data'):

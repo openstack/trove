@@ -480,7 +480,7 @@ def service_discovery(service_candidates):
     return result
 
 
-def _execute_shell_cmd(cmd, options, *args, **kwargs):
+def execute_shell_cmd(cmd, options, *args, **kwargs):
     """Execute a given shell command passing it
     given options (flags) and arguments.
 
@@ -519,7 +519,7 @@ def ensure_directory(dir_path, user=None, group=None, force=True, **kwargs):
     """Create a given directory and update its ownership
     (recursively) to the given user and group if any.
 
-    seealso:: _execute_shell_cmd for valid optional keyword arguments.
+    seealso:: execute_shell_cmd for valid optional keyword arguments.
 
     :param dir_path:        Path to the created directory.
     :type dir_path:         string
@@ -549,7 +549,7 @@ def ensure_directory(dir_path, user=None, group=None, force=True, **kwargs):
 def chown(path, user, group, recursive=True, force=False, **kwargs):
     """Changes the owner and group of a given file.
 
-    seealso:: _execute_shell_cmd for valid optional keyword arguments.
+    seealso:: execute_shell_cmd for valid optional keyword arguments.
 
     :param path:         Path to the modified file.
     :type path:          string
@@ -579,7 +579,7 @@ def chown(path, user, group, recursive=True, force=False, **kwargs):
 
     owner_group_modifier = _build_user_group_pair(user, group)
     options = (('f', force), ('R', recursive))
-    _execute_shell_cmd('chown', options, owner_group_modifier, path, **kwargs)
+    execute_shell_cmd('chown', options, owner_group_modifier, path, **kwargs)
 
 
 def _build_user_group_pair(user, group):
@@ -599,14 +599,14 @@ def _create_directory(dir_path, force=True, **kwargs):
     """
 
     options = (('p', force),)
-    _execute_shell_cmd('mkdir', options, dir_path, **kwargs)
+    execute_shell_cmd('mkdir', options, dir_path, **kwargs)
 
 
 def chmod(path, mode, recursive=True, force=False, **kwargs):
     """Changes the mode of a given file.
 
     :seealso: Modes for more information on the representation of modes.
-    :seealso: _execute_shell_cmd for valid optional keyword arguments.
+    :seealso: execute_shell_cmd for valid optional keyword arguments.
 
     :param path:            Path to the modified file.
     :type path:             string
@@ -629,7 +629,7 @@ def chmod(path, mode, recursive=True, force=False, **kwargs):
     if path:
         options = (('f', force), ('R', recursive))
         shell_modes = _build_shell_chmod_mode(mode)
-        _execute_shell_cmd('chmod', options, shell_modes, path, **kwargs)
+        execute_shell_cmd('chmod', options, shell_modes, path, **kwargs)
     else:
         raise exception.UnprocessableEntity(
             _("Cannot change mode of a blank file."))
@@ -639,7 +639,7 @@ def change_user_group(user, group, append=True, add_group=True, **kwargs):
     """Adds a user to groups by using the usermod linux command with -a and
     -G options.
 
-    seealso:: _execute_shell_cmd for valid optional keyword arguments.
+    seealso:: execute_shell_cmd for valid optional keyword arguments.
 
     :param user:            Username.
     :type user:             string
@@ -668,7 +668,7 @@ def change_user_group(user, group, append=True, add_group=True, **kwargs):
         raise exception.UnprocessableEntity(_("Missing group."))
 
     options = (('a', append), ('G', add_group))
-    _execute_shell_cmd('usermod', options, group, user, **kwargs)
+    execute_shell_cmd('usermod', options, group, user, **kwargs)
 
 
 def _build_shell_chmod_mode(mode):
@@ -704,7 +704,7 @@ def _build_shell_chmod_mode(mode):
 def remove(path, force=False, recursive=True, **kwargs):
     """Remove a given file or directory.
 
-    :seealso: _execute_shell_cmd for valid optional keyword arguments.
+    :seealso: execute_shell_cmd for valid optional keyword arguments.
 
     :param path:            Path to the removed file.
     :type path:             string
@@ -720,7 +720,7 @@ def remove(path, force=False, recursive=True, **kwargs):
 
     if path:
         options = (('f', force), ('R', recursive))
-        _execute_shell_cmd('rm', options, path, **kwargs)
+        execute_shell_cmd('rm', options, path, **kwargs)
     else:
         raise exception.UnprocessableEntity(_("Cannot remove a blank file."))
 
@@ -730,7 +730,7 @@ def move(source, destination, force=False, **kwargs):
     Move attempts to preserve the original ownership, permissions and
     timestamps.
 
-    :seealso: _execute_shell_cmd for valid optional keyword arguments.
+    :seealso: execute_shell_cmd for valid optional keyword arguments.
 
     :param source:          Path to the source location.
     :type source:           string
@@ -751,7 +751,7 @@ def move(source, destination, force=False, **kwargs):
         raise exception.UnprocessableEntity(_("Missing destination path."))
 
     options = (('f', force),)
-    _execute_shell_cmd('mv', options, source, destination, **kwargs)
+    execute_shell_cmd('mv', options, source, destination, **kwargs)
 
 
 def copy(source, destination, force=False, preserve=False, recursive=True,
@@ -761,7 +761,7 @@ def copy(source, destination, force=False, preserve=False, recursive=True,
     Copy does NOT attempt to preserve ownership, permissions and timestamps
     unless the 'preserve' option is enabled.
 
-    :seealso: _execute_shell_cmd for valid optional keyword arguments.
+    :seealso: execute_shell_cmd for valid optional keyword arguments.
 
     :param source:          Path to the source location.
     :type source:           string
@@ -793,7 +793,7 @@ def copy(source, destination, force=False, preserve=False, recursive=True,
 
     options = (('f', force), ('p', preserve), ('R', recursive),
                ('L', dereference))
-    _execute_shell_cmd('cp', options, source, destination, **kwargs)
+    execute_shell_cmd('cp', options, source, destination, **kwargs)
 
 
 def get_bytes_free_on_fs(path):
@@ -830,7 +830,7 @@ def list_files_in_directory(root_dir, recursive=False, pattern=None,
         if pattern:
             cmd_args.extend(['-regextype', 'posix-extended',
                              '-regex', os.path.join('.*', pattern) + '$'])
-        files = _execute_shell_cmd('find', [], *cmd_args, as_root=True)
+        files = execute_shell_cmd('find', [], *cmd_args, as_root=True)
         return {fp for fp in files.splitlines()}
 
     return {os.path.abspath(os.path.join(root, name))
@@ -851,7 +851,7 @@ def _build_command_options(options):
 
 def get_device(path, as_root=False):
     """Get the device that a given path exists on."""
-    stdout = _execute_shell_cmd('df', [], path, as_root=as_root)
+    stdout = execute_shell_cmd('df', [], path, as_root=as_root)
     return stdout.splitlines()[1].split()[0]
 
 
@@ -879,8 +879,8 @@ def create_user(user_name, user_id, group_name=None, group_id=None):
     group_id = group_id or user_id
 
     try:
-        _execute_shell_cmd('groupadd', [], '--gid', group_id, group_name,
-                           as_root=True)
+        execute_shell_cmd('groupadd', [], '--gid', group_id, group_name,
+                          as_root=True)
     except exception.ProcessExecutionError as err:
         if 'already exists' not in err.stderr:
             raise exception.UnprocessableEntity(
@@ -888,8 +888,8 @@ def create_user(user_name, user_id, group_name=None, group_id=None):
             )
 
     try:
-        _execute_shell_cmd('useradd', [], '--uid', user_id, '--gid', group_id,
-                           '-M', user_name, as_root=True)
+        execute_shell_cmd('useradd', [], '--uid', user_id, '--gid', group_id,
+                          '-M', user_name, as_root=True)
     except exception.ProcessExecutionError as err:
         if 'already exists' not in err.stderr:
             raise exception.UnprocessableEntity(
@@ -903,4 +903,4 @@ def remove_dir_contents(folder):
     Use shell=True here because shell=False doesn't support '*'
     """
     path = os.path.join(folder, '*')
-    _execute_shell_cmd(f'rm -rf {path}', [], shell=True, as_root=True)
+    execute_shell_cmd(f'rm -rf {path}', [], shell=True, as_root=True)

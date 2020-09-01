@@ -303,6 +303,9 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info('No post_prepare work has been defined.')
         pass
 
+    def stop_db(self, context):
+        self.app.stop_db()
+
     def restart(self, context):
         self.app.restart()
 
@@ -736,12 +739,20 @@ class Manager(periodic_task.PeriodicTasks):
         :param backup_info: a dictionary containing the db instance id of the
                             backup task, location, type, and other data.
         """
-        with EndNotification(context):
-            self.app.create_backup(context, backup_info)
+        pass
 
     def perform_restore(self, context, restore_location, backup_info):
-        raise exception.DatastoreOperationNotSupported(
-            operation='_perform_restore', datastore=self.manager)
+        LOG.info("Starting to restore database from backup %s, "
+                 "backup_info: %s", backup_info['id'], backup_info)
+
+        try:
+            self.app.restore_backup(context, backup_info, restore_location)
+        except Exception:
+            LOG.error("Failed to restore from backup %s.", backup_info['id'])
+            self.status.set_status(service_status.ServiceStatuses.FAILED)
+            raise
+
+        LOG.info("Finished restore data from backup %s", backup_info['id'])
 
     ################
     # Database and user management

@@ -27,12 +27,11 @@ class BaseRunner(object):
     """Base class for Backup Strategy implementations."""
 
     # Subclass should provide the commands.
-    cmd = None
-    restore_cmd = None
-    prepare_cmd = None
+    cmd = ''
+    restore_cmd = ''
+    prepare_cmd = ''
 
     encrypt_key = CONF.backup_encryption_key
-    default_data_dir = '/var/lib/mysql/data'
 
     def __init__(self, *args, **kwargs):
         self.process = None
@@ -43,8 +42,9 @@ class BaseRunner(object):
         self.checksum = kwargs.pop('checksum', '')
 
         if 'restore_location' not in kwargs:
-            kwargs['restore_location'] = self.default_data_dir
+            kwargs['restore_location'] = self.datadir
         self.restore_location = kwargs['restore_location']
+        self.restore_content_length = 0
 
         self.command = self.cmd % kwargs
         self.restore_command = (self.decrypt_cmd +

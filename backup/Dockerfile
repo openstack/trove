@@ -4,8 +4,9 @@ LABEL maintainer="anlin.kong@gmail.com"
 ARG DATASTORE="mysql"
 ARG APTOPTS="-y -qq --no-install-recommends --allow-unauthenticated"
 ARG PERCONA_XTRABACKUP_VERSION=24
-ENV DEBIAN_FRONTEND noninteractive \
-    APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
+
+RUN export DEBIAN_FRONTEND="noninteractive" \
+    && export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 
 RUN apt-get update \
     && apt-get install $APTOPTS gnupg2 lsb-release apt-utils apt-transport-https ca-certificates software-properties-common curl \

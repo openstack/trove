@@ -240,10 +240,11 @@ min_wal_size = 80MB
 archive_mode = on		# enables archiving; off, on, or always
 				# (change requires restart)
         # (Trove default)
-#archive_command = ''		# command to use to archive a logfile segment
+archive_command = 'test ! -f /var/lib/postgresql/data/wal_archive/%f && cp %p /var/lib/postgresql/data/wal_archive/%f'		# command to use to archive a logfile segment
 				# placeholders: %p = path of file to archive
 				#               %f = file name only
 				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
+				# (Trove default)
 #archive_timeout = 0		# force a logfile segment switch after this
 				# number of seconds; 0 disables
 
@@ -251,11 +252,12 @@ archive_mode = on		# enables archiving; off, on, or always
 
 # These are only used in recovery mode.
 
-#restore_command = ''		# command to use to restore an archived logfile segment
+restore_command = 'cp /var/lib/postgresql/data/wal_archive/%f "%p"'		# command to use to restore an archived logfile segment
 				# placeholders: %p = path of file to restore
 				#               %f = file name only
 				# e.g. 'cp /mnt/server/archivedir/%f %p'
 				# (change requires restart)
+				# (Trove default)
 #archive_cleanup_command = ''	# command to execute at every restartpoint
 #recovery_end_command = ''	# command to execute at completion of recovery
 
@@ -294,7 +296,8 @@ archive_mode = on		# enables archiving; off, on, or always
 
 #max_wal_senders = 10		# max number of walsender processes
 				# (change requires restart)
-#wal_keep_segments = 0		# in logfile segments; 0 disables
+wal_keep_segments = 5		# in logfile segments; 0 disables
+        # (Trove default)
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
 
 #max_replication_slots = 10	# max number of replication slots

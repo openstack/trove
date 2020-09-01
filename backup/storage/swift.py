@@ -185,7 +185,7 @@ class SwiftStorage(base.Storage):
         for key, value in metadata.items():
             headers[_set_attr(key)] = value
 
-        LOG.debug('Metadata headers: %s', headers)
+        LOG.info('Metadata headers: %s', headers)
         if large_object:
             manifest_data = json.dumps(segment_results)
             LOG.info('Creating the SLO manifest file, manifest content: %s',
@@ -212,8 +212,8 @@ class SwiftStorage(base.Storage):
                                    headers=headers)
 
             # Delete the old segment file that was copied
-            LOG.debug('Deleting the old segment file %s.',
-                      stream_reader.first_segment)
+            LOG.info('Deleting the old segment file %s.',
+                     stream_reader.first_segment)
             self.client.delete_object(container,
                                       stream_reader.first_segment)
 
@@ -288,7 +288,7 @@ class SwiftStorage(base.Storage):
         return False
 
     def get_backup_lsn(self, location):
-        """Get the backup LSN."""
+        """Get the backup LSN if exists."""
         _, container, filename = self._explodeLocation(location)
         headers = self.client.head_object(container, filename)
         return headers.get('x-object-meta-lsn')

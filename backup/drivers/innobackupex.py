@@ -102,7 +102,6 @@ class InnoBackupExIncremental(InnoBackupEx):
             raise AttributeError('lsn attribute missing')
         self.parent_location = kwargs.pop('parent_location', '')
         self.parent_checksum = kwargs.pop('parent_checksum', '')
-        self.restore_content_length = 0
 
         super(InnoBackupExIncremental, self).__init__(*args, **kwargs)
 

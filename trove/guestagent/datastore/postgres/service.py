@@ -39,6 +39,8 @@ CNF_EXT = 'conf'
 # The same with include_dir config option
 CNF_INCLUDE_DIR = '/etc/postgresql/conf.d'
 HBA_CONFIG_FILE = '/etc/postgresql/pg_hba.conf'
+# The same with the path in archive_command config option.
+WAL_ARCHIVE_DIR = '/var/lib/postgresql/data/wal_archive'
 
 
 class PgSqlAppStatus(service.BaseDbStatus):
@@ -113,6 +115,8 @@ class PgSqlApp(service.BaseDbApp):
         admin_password = utils.generate_random_password()
         os_admin = models.PostgreSQLUser(ADMIN_USER_NAME, admin_password)
 
+        # Drop os_admin user if exists, this is needed for restore.
+        PgSqlAdmin(SUPER_USER_NAME).delete_user({'_name': ADMIN_USER_NAME})
         PgSqlAdmin(SUPER_USER_NAME).create_admin_user(os_admin,
                                                       encrypt_password=True)
         self.save_password(ADMIN_USER_NAME, admin_password)
@@ -176,9 +180,9 @@ class PgSqlApp(service.BaseDbApp):
         command = command if command else ''
 
         try:
-            root_pass = self.get_auth_password(file="root.cnf")
+            postgres_pass = self.get_auth_password(file="postgres.cnf")
         except exception.UnprocessableEntity:
-            root_pass = utils.generate_random_password()
+            postgres_pass = utils.generate_random_password()
 
         # Get uid and gid
         user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
@@ -211,7 +215,7 @@ class PgSqlApp(service.BaseDbApp):
                 network_mode="host",
                 user=user,
                 environment={
-                    "POSTGRES_PASSWORD": root_pass,
+                    "POSTGRES_PASSWORD": postgres_pass,
                     "PGDATA": self.datadir,
                 },
                 command=command
@@ -219,7 +223,7 @@ class PgSqlApp(service.BaseDbApp):
 
             # Save root password
             LOG.debug("Saving root credentials to local host.")
-            self.save_password('postgres', root_pass)
+            self.save_password('postgres', postgres_pass)
         except Exception:
             LOG.exception("Failed to start database service")
             raise exception.TroveError("Failed to start database service")
@@ -253,6 +257,55 @@ class PgSqlApp(service.BaseDbApp):
             raise exception.TroveError("Failed to start database")
 
         LOG.info("Finished restarting database")
+
+    def restore_backup(self, context, backup_info, restore_location):
+        backup_id = backup_info['id']
+        storage_driver = CONF.storage_strategy
+        backup_driver = cfg.get_configuration_property('backup_strategy')
+        image = cfg.get_configuration_property('backup_docker_image')
+        name = 'db_restore'
+        volumes = {
+            '/var/lib/postgresql/data': {
+                'bind': '/var/lib/postgresql/data',
+                'mode': 'rw'
+            }
+        }
+
+        os_cred = (f"--os-token={context.auth_token} "
+                   f"--os-auth-url={CONF.service_credentials.auth_url} "
+                   f"--os-tenant-id={context.project_id}")
+
+        command = (
+            f'/usr/bin/python3 main.py --nobackup '
+            f'--storage-driver={storage_driver} --driver={backup_driver} '
+            f'{os_cred} '
+            f'--restore-from={backup_info["location"]} '
+            f'--restore-checksum={backup_info["checksum"]} '
+            f'--pg-wal-archive-dir {WAL_ARCHIVE_DIR}'
+        )
+
+        LOG.debug('Stop the database and clean up the data before restore '
+                  'from %s', backup_id)
+        self.stop_db()
+        for dir in [WAL_ARCHIVE_DIR, self.datadir]:
+            operating_system.remove_dir_contents(dir)
+
+        # Start to run restore inside a separate docker container
+        LOG.info('Starting to restore backup %s, command: %s', backup_id,
+                 command)
+        output, ret = docker_util.run_container(
+            self.docker_client, image, name,
+            volumes=volumes, command=command)
+        result = output[-1]
+        if not ret:
+            msg = f'Failed to run restore container, error: {result}'
+            LOG.error(msg)
+            raise Exception(msg)
+
+        for dir in [WAL_ARCHIVE_DIR, self.datadir]:
+            operating_system.chown(dir, CONF.database_service_uid,
+                                   CONF.database_service_uid, force=True,
+                                   as_root=True)
 
 
 class PgSqlAdmin(object):
@@ -352,10 +405,7 @@ class PgSqlAdmin(object):
         Return a list of serialized Postgres databases.
         """
         user = self._find_user(username)
-        if user is not None:
-            return user.databases
-
-        raise exception.UserNotFound(username)
+        return user.databases if user is not None else []
 
     def create_databases(self, databases):
         """Create the list of specified databases.

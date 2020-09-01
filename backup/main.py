@@ -36,13 +36,14 @@ cli_opts = [
     cfg.StrOpt(
         'driver',
         default='innobackupex',
-        choices=['innobackupex', 'xtrabackup', 'mariabackup']
+        choices=['innobackupex', 'mariabackup', 'pg_basebackup']
     ),
     cfg.BoolOpt('backup'),
     cfg.StrOpt('backup-encryption-key'),
     cfg.StrOpt('db-user'),
     cfg.StrOpt('db-password'),
     cfg.StrOpt('db-host'),
+    cfg.StrOpt('db-datadir'),
     cfg.StrOpt('os-token'),
     cfg.StrOpt('os-auth-url'),
     cfg.StrOpt('os-tenant-id'),
@@ -57,6 +58,7 @@ cli_opts = [
         help='It is up to the storage driver to decide to validate the '
              'checksum or not. '
     ),
+    cfg.StrOpt('pg-wal-archive-dir'),
 ]
 
 driver_mapping = {
@@ -64,6 +66,8 @@ driver_mapping = {
     'innobackupex_inc': 'backup.drivers.innobackupex.InnoBackupExIncremental',
     'mariabackup': 'backup.drivers.mariabackup.MariaBackup',
     'mariabackup_inc': 'backup.drivers.mariabackup.MariaBackupIncremental',
+    'pg_basebackup': 'backup.drivers.postgres.PgBasebackup',
+    'pg_basebackup_inc': 'backup.drivers.postgres.PgBasebackupIncremental',
 }
 storage_mapping = {
     'swift': 'backup.storage.swift.SwiftStorage',
@@ -72,6 +76,7 @@ storage_mapping = {
 
 def stream_backup_to_storage(runner_cls, storage):
     parent_metadata = {}
+    extra_params = {}
 
     if CONF.incremental:
         if not CONF.parent_location:
@@ -88,8 +93,13 @@ def stream_backup_to_storage(runner_cls, storage):
             }
         )
 
+    if CONF.pg_wal_archive_dir:
+        extra_params['wal_archive_dir'] = CONF.pg_wal_archive_dir
+
+    extra_params.update(parent_metadata)
+
     try:
-        with runner_cls(filename=CONF.backup_id, **parent_metadata) as bkup:
+        with runner_cls(filename=CONF.backup_id, **extra_params) as bkup:
             checksum, location = storage.save(
                 bkup,
                 metadata=CONF.swift_extra_metadata,
@@ -103,13 +113,19 @@ def stream_backup_to_storage(runner_cls, storage):
 
 
 def stream_restore_from_storage(runner_cls, storage):
-    lsn = ""
+    params = {
+        'storage': storage,
+        'location': CONF.restore_from,
+        'checksum': CONF.restore_checksum,
+        'wal_archive_dir': CONF.pg_wal_archive_dir,
+        'lsn': None
+    }
+
     if storage.is_incremental_backup(CONF.restore_from):
-        lsn = storage.get_backup_lsn(CONF.restore_from)
+        params['lsn'] = storage.get_backup_lsn(CONF.restore_from)
 
     try:
-        runner = runner_cls(storage=storage, location=CONF.restore_from,
-                            checksum=CONF.restore_checksum, lsn=lsn)
+        runner = runner_cls(**params)
         restore_size = runner.restore()
         LOG.info('Restore successfully, restore_size: %s', restore_size)
     except Exception as err:

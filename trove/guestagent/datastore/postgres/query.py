@@ -138,7 +138,7 @@ class UserQuery(object):
     @classmethod
     def drop(cls, name):
         """Query to drop a user."""
-        return f'DROP USER "{name}"'
+        return f'DROP USER IF EXISTS "{name}"'
 
 
 class AccessQuery(object):

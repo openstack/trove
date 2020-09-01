@@ -1056,6 +1056,11 @@ postgresql_opts = [
         'docker_image', default='postgres',
         help='Database docker image.'
     ),
+    cfg.StrOpt(
+        'backup_docker_image',
+        default='openstacktrove/db-backup-postgresql:1.0.0',
+        help='The docker image used for backup and restore.'
+    ),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -1069,7 +1074,7 @@ postgresql_opts = [
                      'if trove_security_groups_support is True).'),
     cfg.PortOpt('postgresql_port', default=5432,
                 help='The TCP port the server listens on.'),
-    cfg.StrOpt('backup_strategy', default='PgBaseBackup',
+    cfg.StrOpt('backup_strategy', default='pg_basebackup',
                help='Default strategy to perform backups.'),
     cfg.StrOpt('replication_strategy',
                default='PostgresqlReplicationStreaming',

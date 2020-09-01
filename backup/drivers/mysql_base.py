@@ -27,6 +27,8 @@ LOG = logging.getLogger(__name__)
 
 class MySQLBaseRunner(base.BaseRunner):
     def __init__(self, *args, **kwargs):
+        self.datadir = kwargs.pop('db_datadir', '/var/lib/mysql/data')
+
         super(MySQLBaseRunner, self).__init__(*args, **kwargs)
 
     @property
@@ -113,8 +115,8 @@ class MySQLBaseRunner(base.BaseRunner):
         incremental_dir = None
 
         if 'parent_location' in metadata:
-            LOG.info("Restoring parent: %(parent_location)s"
-                     " checksum: %(parent_checksum)s.", metadata)
+            LOG.info("Restoring parent: %(parent_location)s, "
+                     "checksum: %(parent_checksum)s.", metadata)
 
             parent_location = metadata['parent_location']
             parent_checksum = metadata['parent_checksum']
@@ -129,6 +131,7 @@ class MySQLBaseRunner(base.BaseRunner):
         else:
             # The parent (full backup) use the same command from InnobackupEx
             # super class and do not set an incremental_dir.
+            LOG.info("Restoring back to full backup.")
             command = self.restore_command
 
         self.restore_content_length += self.unpack(location, checksum, command)
