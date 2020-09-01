@@ -39,26 +39,6 @@
               - master
 
 - job:
-    name: trove-legacy-dsvm-base
-    parent: legacy-dsvm-base
-    abstract: true
-    timeout: 10800
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/diskimage-builder
-      - openstack/tripleo-image-elements
-      - openstack/trove
-      - openstack/trove-dashboard
-    irrelevant-files:
-      - ^.*\.rst$
-      - ^api-ref/.*$
-      - ^doc/.*$
-      - ^releasenotes/.*$
-      - ^tools/.*$
-      - ^trove/hacking/.*$
-      - ^trove/tests/unittests/.*$
-
-- job:
     name: trove-devstack-base
     parent: devstack
     abstract: true
@@ -137,17 +117,6 @@
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
       trove_test_datastore_version: '5.7.29'
-
-- job:
-    name: trove-grenade
-    parent: trove-legacy-dsvm-base
-    run: playbooks/legacy/grenade-dsvm-trove/run.yaml
-    post-run: playbooks/legacy/grenade-dsvm-trove/post.yaml
-    required-projects:
-      - openstack/grenade
-      - openstack/devstack-gate
-      - openstack/trove
-      - openstack/trove-dashboard
 
 - job:
     name: trove-scenario-cassandra-single
