@@ -475,8 +475,6 @@ common_opts = [
                help='Key (OpenSSL aes_cbc) for instance RPC encryption.'),
     cfg.StrOpt('database_service_uid', default='1001',
                help='The UID(GID) of database service user.'),
-    cfg.StrOpt('backup_docker_image', default='openstacktrove/db-backup:1.0.1',
-               help='The docker image used for backup and restore.'),
     cfg.ListOpt('reserved_network_cidrs', default=[],
                 help='Network CIDRs reserved for Trove guest instance '
                      'management.'),
@@ -613,7 +611,11 @@ mysql_opts = [
     cfg.StrOpt(
         'docker_image', default='mysql',
         help='Database docker image.'
-    )
+    ),
+    cfg.StrOpt(
+        'backup_docker_image', default='openstacktrove/db-backup-mysql:1.0.0',
+        help='The docker image used for backup and restore.'
+    ),
 ]
 
 # Percona
@@ -1366,7 +1368,12 @@ mariadb_opts = [
     cfg.StrOpt(
         'docker_image', default='mariadb',
         help='Database docker image.'
-    )
+    ),
+    cfg.StrOpt(
+        'backup_docker_image',
+        default='openstacktrove/db-backup-mariadb:1.0.0',
+        help='The docker image used for backup and restore.'
+    ),
 ]
 
 # RPC version groups
