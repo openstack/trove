@@ -676,7 +676,7 @@ class BaseMySqlApp(service.BaseDbApp):
             backup_type = 'incremental'
 
         backup_id = backup_info["id"]
-        image = CONF.backup_docker_image
+        image = cfg.get_configuration_property('backup_docker_image')
         name = 'db_backup'
         volumes = {'/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}}
         admin_pass = self.get_auth_password()
@@ -771,7 +771,7 @@ class BaseMySqlApp(service.BaseDbApp):
         user_token = context.auth_token
         auth_url = CONF.service_credentials.auth_url
         user_tenant = context.project_id
-        image = CONF.backup_docker_image
+        image = cfg.get_configuration_property('backup_docker_image')
         name = 'db_restore'
         volumes = {'/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}}
 
