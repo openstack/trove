@@ -108,10 +108,7 @@ class FakeSwiftConnection(object):
                 object_checksum = md5(self.container_objects[object_name])
                 # The manifest file etag for a HEAD or GET is the checksum of
                 # the concatenated checksums.
-                if six.PY3:
-                    checksum.update(object_checksum.hexdigest().encode())
-                else:
-                    checksum.update(object_checksum.hexdigest())
+                checksum.update(object_checksum.hexdigest().encode())
             # this is included to test bad swift segment etags
             if name.startswith("bad_manifest_etag_"):
                 return {'etag': '"this_is_an_intentional_bad_manifest_etag"'}

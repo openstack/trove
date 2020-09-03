@@ -25,7 +25,6 @@ import traceback
 import eventlet
 from oslo_log import log as logging
 import proboscis
-import six
 from six.moves import urllib
 import wsgi_intercept
 from wsgi_intercept.httplib2_intercept import install as wsgi_install
@@ -57,10 +56,7 @@ def add_support_for_localization():
     if os.path.exists(os.path.join(possible_topdir, 'nova', '__init__.py')):
         sys.path.insert(0, possible_topdir)
 
-    if six.PY3:
-        gettext.install('nova')
-    else:
-        gettext.install('nova', unicode=True)
+    gettext.install('nova')
 
 
 def initialize_trove(config_file):

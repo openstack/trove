@@ -25,7 +25,6 @@ from keystoneauth1 import loading
 from keystoneauth1 import session
 from oslo_log import log as logging
 from oslo_utils import encodeutils
-import six
 
 from trove.common import cfg
 from trove.common import exception
@@ -110,8 +109,7 @@ class DesignateInstanceEntryFactory(driver.DnsInstanceEntryFactory):
         name = encodeutils.to_utf8(instance_id)
         name = hashlib.md5(name).digest()
         name = base64.b32encode(name)[:11].lower()
-        if six.PY3:
-            name = name.decode('ascii')
+        name = name.decode('ascii')
         hostname = ("%s.%s" % (name, zone.name))
         # Removing the leading dot if present
         if hostname.endswith('.'):
