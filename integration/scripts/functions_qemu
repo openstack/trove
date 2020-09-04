@@ -19,7 +19,7 @@ function build_guest_image() {
     local trove_elements_path=${PATH_TROVE}/integration/scripts/files/elements
     local GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-3}
     local GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
-    rm -rf ${GUEST_CACHEDIR}
+    sudo rm -rf ${GUEST_CACHEDIR}
 
     export GUEST_USERNAME=${guest_username}
     export HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-$(whoami)}
