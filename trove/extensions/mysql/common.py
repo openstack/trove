@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from six.moves.urllib.parse import unquote
+from urllib.parse import unquote
 
 from trove.common.db.mysql import models as guest_models
 from trove.common import exception

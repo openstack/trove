@@ -15,7 +15,7 @@
 
 import bisect
 import collections
-import six.moves.urllib.parse as urllib_parse
+import urllib.parse as urllib_parse
 
 
 def url_quote(s):

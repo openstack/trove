@@ -23,6 +23,7 @@
 """
 
 import subprocess
+from urllib.parse import unquote
 try:
     EVENT_AVAILABLE = True
 except ImportError:
@@ -37,7 +38,6 @@ from proboscis.asserts import assert_true
 from proboscis.asserts import Check
 from proboscis.asserts import fail
 from proboscis import SkipTest
-from six.moves.urllib.parse import unquote
 from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import text
 import tenacity
