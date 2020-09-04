@@ -59,14 +59,10 @@ import heapq
 import logging
 import os
 import unittest
-import six
 import sys
 import time
 
-if six.PY3:
-    gettext.install('nova')
-else:
-    gettext.install('nova', unicode=True)
+gettext.install('nova')
 
 from nose import config
 from nose import core

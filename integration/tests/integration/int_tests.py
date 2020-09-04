@@ -70,10 +70,7 @@ def add_support_for_localization():
     if os.path.exists(os.path.join(possible_topdir, 'nova', '__init__.py')):
         sys.path.insert(0, possible_topdir)
 
-    if six.PY3:
-        gettext.install('nova')
-    else:
-        gettext.install('nova', unicode=True)
+    gettext.install('nova')
 
 
 MAIN_RUNNER = None

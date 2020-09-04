@@ -16,7 +16,6 @@ import hashlib
 
 from unittest.mock import MagicMock
 from unittest.mock import patch
-import six
 
 from trove.common import exception
 from trove.dns.designate import driver
@@ -89,8 +88,7 @@ class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
         driver.DNS_TTL = 3600
         hashed_id = hashlib.md5(instance_id.encode()).digest()
         hashed_id = base64.b32encode(hashed_id)
-        if six.PY3:
-            hashed_id = hashed_id.decode('ascii')
+        hashed_id = hashed_id.decode('ascii')
         hashed_id_concat = hashed_id[:11].lower()
         exp_hostname = ("%s.%s" % (hashed_id_concat, driver.DNS_DOMAIN_NAME))
         factory = driver.DesignateInstanceEntryFactory()
@@ -109,8 +107,7 @@ class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
         driver.DNS_TTL = 3600
         hashed_id = hashlib.md5(instance_id.encode()).digest()
         hashed_id = base64.b32encode(hashed_id)
-        if six.PY3:
-            hashed_id = hashed_id.decode('ascii')
+        hashed_id = hashed_id.decode('ascii')
         hashed_id_concat = hashed_id[:11].lower()
         exp_hostname = ("%s.%s" %
                         (hashed_id_concat, driver.DNS_DOMAIN_NAME))[:-1]

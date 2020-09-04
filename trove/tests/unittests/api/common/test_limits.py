@@ -600,8 +600,7 @@ class FakeHttplibConnection(object):
 
         resp = str(req.get_response(self.app))
         resp = "HTTP/1.0 %s" % resp
-        if six.PY3:
-            resp = resp.encode("utf-8")
+        resp = resp.encode("utf-8")
         sock = FakeHttplibSocket(resp)
         self.http_response = http_client.HTTPResponse(sock)
         self.http_response.begin()
