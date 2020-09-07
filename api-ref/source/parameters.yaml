@@ -709,6 +709,12 @@ replica_of:
   in: body
   required: true
   type: string
+replica_of_optional:
+  description: |
+    The primary instance ID of this replica.
+  in: body
+  required: false
+  type: string
 restore_point:
   description: |
     The ``restorePoint`` object. Use this paramter

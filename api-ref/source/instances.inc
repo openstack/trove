@@ -246,6 +246,7 @@ Response Parameters
    - replicas.links: instance_replica_links
    - replicas.links.href: instance_replica_link_href
    - replicas.links.rel: instance_replica_link_rel
+   - replica_of: replica_of_optional
    - configuration: configuration1
    - configuration.id: configuration_id
    - configuration.name: configuration_name
