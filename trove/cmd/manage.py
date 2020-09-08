@@ -80,19 +80,19 @@ class Commands(object):
 
     def db_load_datastore_config_parameters(self,
                                             datastore,
-                                            datastore_version,
+                                            datastore_version_name,
                                             config_file_location):
         print("Loading config parameters for datastore (%s) version (%s)"
-              % (datastore, datastore_version))
+              % (datastore, datastore_version_name))
         config_models.load_datastore_configuration_parameters(
-            datastore, datastore_version, config_file_location)
+            datastore, datastore_version_name, config_file_location)
 
     def db_remove_datastore_config_parameters(self, datastore,
-                                              datastore_version):
+                                              datastore_version_name):
         print("Removing config parameters for datastore (%s) version (%s)"
-              % (datastore, datastore_version))
+              % (datastore, datastore_version_name))
         config_models.remove_datastore_configuration_parameters(
-            datastore, datastore_version)
+            datastore, datastore_version_name)
 
     def datastore_version_flavor_add(self, datastore_name,
                                      datastore_version_name, flavor_ids):
@@ -230,7 +230,7 @@ def main():
             'datastore',
             help='Name of the datastore.')
         parser.add_argument(
-            'datastore_version',
+            'datastore_version_name',
             help='Name of the datastore version.')
         parser.add_argument(
             'config_file_location',
@@ -245,7 +245,7 @@ def main():
             'datastore',
             help='Name of the datastore.')
         parser.add_argument(
-            'datastore_version',
+            'datastore_version_name',
             help='Name of the datastore version.')
 
         parser = subparser.add_parser(

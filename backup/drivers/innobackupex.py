@@ -42,7 +42,7 @@ class InnoBackupEx(mysql_base.MySQLBaseRunner):
         cmd = ('innobackupex'
                ' --stream=xbstream'
                ' --parallel=2 ' +
-               self.user_and_pass + ' %s' % self.default_data_dir +
+               self.user_and_pass + ' %s' % self.datadir +
                ' 2>' + self.backup_log
                )
         return cmd + self.zip_cmd + self.encrypt_cmd
@@ -111,7 +111,7 @@ class InnoBackupExIncremental(InnoBackupEx):
                ' --stream=xbstream'
                ' --incremental'
                ' --incremental-lsn=%(lsn)s ' +
-               self.user_and_pass + ' %s' % self.default_data_dir +
+               self.user_and_pass + ' %s' % self.datadir +
                ' 2>' + self.backup_log)
         return cmd + self.zip_cmd + self.encrypt_cmd
 

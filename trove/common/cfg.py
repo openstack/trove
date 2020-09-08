@@ -249,7 +249,10 @@ common_opts = [
                'becomes required in the instance create request.'),
     cfg.StrOpt('datastore_manager', default=None,
                help='Manager class in the Guest Agent, set up by the '
-               'Taskmanager on instance provision.'),
+                    'Taskmanager on instance provision.'),
+    cfg.StrOpt('datastore_version', default=None,
+               help='The guest datastore version that is set by the '
+                    'Taskmanager during instance provision.'),
     cfg.StrOpt('block_device_mapping', default='vdb',
                help='Block device to map onto the created instance.'),
     cfg.IntOpt('server_delete_time_out', default=60,
@@ -1076,13 +1079,16 @@ postgresql_opts = [
                 help='The TCP port the server listens on.'),
     cfg.StrOpt('backup_strategy', default='pg_basebackup',
                help='Default strategy to perform backups.'),
-    cfg.StrOpt('replication_strategy',
-               default='PostgresqlReplicationStreaming',
-               help='Default strategy for replication.'),
-    cfg.StrOpt('replication_namespace',
-               default='trove.guestagent.strategies.replication.experimental.'
-                       'postgresql_impl',
-               help='Namespace to load replication strategies from.'),
+    cfg.StrOpt(
+        'replication_strategy',
+        default='PostgresqlReplicationStreaming',
+        help='Default strategy for replication.'
+    ),
+    cfg.StrOpt(
+        'replication_namespace',
+        default='trove.guestagent.strategies.replication.postgresql',
+        help='Namespace to load replication strategies from.'
+    ),
     cfg.StrOpt('mount_point', default='/var/lib/postgresql',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),

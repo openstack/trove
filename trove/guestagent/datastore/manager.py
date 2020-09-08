@@ -116,6 +116,19 @@ class Manager(periodic_task.PeriodicTasks):
         return None
 
     @property
+    def replication(self):
+        """If the datastore supports replication, return an instance of
+        the strategy.
+        """
+        try:
+            return repl_strategy.get_instance(self.manager)
+        except Exception as ex:
+            LOG.warning("Cannot get replication instance for '%(manager)s': "
+                        "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
+
+        return None
+
+    @property
     def replication_strategy(self):
         """If the datastore supports replication, return the strategy."""
         try:
@@ -825,41 +838,63 @@ class Manager(periodic_task.PeriodicTasks):
     ################
     # Replication related
     ################
+    def backup_required_for_replication(self, context):
+        return self.replication.backup_required_for_replication()
+
     def get_replication_snapshot(self, context, snapshot_info,
                                  replica_source_config=None):
-        LOG.debug("Getting replication snapshot.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_replication_snapshot', datastore=self.manager)
+        LOG.info("Getting replication snapshot, snapshot_info: %s",
+                 snapshot_info)
 
-    def attach_replication_slave(self, context, snapshot, slave_config):
-        LOG.debug("Attaching replication slave.")
+        self.replication.enable_as_master(self.app, replica_source_config)
+        LOG.info('Enabled as replication master')
+
+        snapshot_id, log_position = self.replication.snapshot_for_replication(
+            context, self.app, self.adm, None, snapshot_info)
+
+        volume_stats = self.get_filesystem_stats(context, None)
+
+        replication_snapshot = {
+            'dataset': {
+                'datastore_manager': self.manager,
+                'dataset_size': volume_stats.get('used', 0.0),
+                'volume_size': volume_stats.get('total', 0.0),
+                'snapshot_id': snapshot_id
+            },
+            'replication_strategy': self.replication_strategy,
+            'master': self.replication.get_master_ref(self.app, snapshot_info),
+            'log_position': log_position
+        }
+
+        return replication_snapshot
+
+    def attach_replica(self, context, snapshot, slave_config, restart=False):
         raise exception.DatastoreOperationNotSupported(
             operation='attach_replication_slave', datastore=self.manager)
 
     def detach_replica(self, context, for_failover=False):
-        LOG.debug("Detaching replica.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='detach_replica', datastore=self.manager)
+        """Running on replica, detach from the primary."""
+        LOG.info("Detaching replica.")
+        replica_info = self.replication.detach_slave(self.app, for_failover)
+        return replica_info
 
     def get_replica_context(self, context):
-        LOG.debug("Getting replica context.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_replica_context', datastore=self.manager)
+        """Running on primary."""
+        LOG.info("Getting replica context.")
+        replica_info = self.replication.get_replica_context(self.app, self.adm)
+        return replica_info
 
     def make_read_only(self, context, read_only):
-        LOG.debug("Making datastore read-only.")
         raise exception.DatastoreOperationNotSupported(
             operation='make_read_only', datastore=self.manager)
 
     def enable_as_master(self, context, replica_source_config):
-        LOG.debug("Enabling as master.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_as_master', datastore=self.manager)
+        LOG.info("Enable as master")
+        self.replication.enable_as_master(self.app, replica_source_config)
 
     def demote_replication_master(self, context):
-        LOG.debug("Demoting replication master.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='demote_replication_master', datastore=self.manager)
+        LOG.info("Demoting replication master.")
+        self.replication.demote_master(self.app)
 
     def get_txn_count(self, context):
         LOG.debug("Getting transaction count.")
@@ -867,11 +902,9 @@ class Manager(periodic_task.PeriodicTasks):
             operation='get_txn_count', datastore=self.manager)
 
     def get_latest_txn_id(self, context):
-        LOG.debug("Getting latest transaction id.")
         raise exception.DatastoreOperationNotSupported(
             operation='get_latest_txn_id', datastore=self.manager)
 
     def wait_for_txn(self, context, txn):
-        LOG.debug("Waiting for transaction.")
         raise exception.DatastoreOperationNotSupported(
             operation='wait_for_txn', datastore=self.manager)

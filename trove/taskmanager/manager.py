@@ -136,7 +136,7 @@ class Manager(periodic_task.PeriodicTasks):
                 try:
                     if replica.id != master_candidate.id:
                         replica.detach_replica(old_master, for_failover=True)
-                        replica.attach_replica(master_candidate)
+                        replica.attach_replica(master_candidate, restart=True)
                 except exception.TroveError as ex:
                     log_fmt = ("Unable to migrate replica %(slave)s from "
                                "old replica source %(old_master)s to "
@@ -156,7 +156,7 @@ class Manager(periodic_task.PeriodicTasks):
 
             # dealing with the old master after all the other replicas
             # has been migrated.
-            old_master.attach_replica(master_candidate)
+            old_master.attach_replica(master_candidate, restart=False)
             try:
                 old_master.demote_replication_master()
             except Exception as ex:

@@ -542,13 +542,14 @@ class API(object):
         return self._call("get_replica_context",
                           self.agent_high_timeout, version=version)
 
-    def attach_replica(self, replica_info, slave_config):
+    def attach_replica(self, replica_info, slave_config, restart=False):
         LOG.debug("Attaching replica %s.", replica_info)
         version = self.API_BASE_VERSION
 
         self._call("attach_replica",
                    self.agent_high_timeout, version=version,
-                   replica_info=replica_info, slave_config=slave_config)
+                   replica_info=replica_info, slave_config=slave_config,
+                   restart=restart)
 
     def make_read_only(self, read_only):
         LOG.debug("Executing make_read_only(%s)", read_only)

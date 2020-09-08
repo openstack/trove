@@ -929,7 +929,7 @@ class BaseInstance(SimpleInstance):
             self._server_group_loaded = True
         return self._server_group
 
-    def get_injected_files(self, datastore_manager):
+    def get_injected_files(self, datastore_manager, datastore_version):
         injected_config_location = CONF.get('injected_config_location')
         guest_info = CONF.get('guest_info')
 
@@ -946,8 +946,10 @@ class BaseInstance(SimpleInstance):
                 "[DEFAULT]\n"
                 "guest_id=%s\n"
                 "datastore_manager=%s\n"
+                "datastore_version=%s\n"
                 "tenant_id=%s\n"
-                % (self.id, datastore_manager, self.tenant_id)
+                % (self.id, datastore_manager, datastore_version,
+                   self.tenant_id)
             )
         }
 

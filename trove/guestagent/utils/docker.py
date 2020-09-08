@@ -83,7 +83,7 @@ def _decode_output(output):
 
 
 def run_container(client, image, name, network_mode="host", volumes={},
-                  command=""):
+                  command="", user=""):
     """Run command in a container and return the string output list.
 
     :returns output: The log output.
@@ -103,6 +103,7 @@ def run_container(client, image, name, network_mode="host", volumes={},
             volumes=volumes,
             remove=False,
             command=command,
+            user=user,
         )
     except docker.errors.ContainerError as err:
         output = err.container.logs()

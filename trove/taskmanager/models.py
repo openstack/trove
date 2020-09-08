@@ -565,7 +565,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         networks = self._prepare_networks_for_instance(
             datastore_manager, nics, access=access
         )
-        files = self.get_injected_files(datastore_manager)
+        files = self.get_injected_files(datastore_manager, ds_version)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         volume_info = self._create_server_volume(
             flavor['id'], image_id,
@@ -1165,13 +1165,14 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             if not for_failover:
                 self.reset_task_status()
 
-    def attach_replica(self, master):
+    def attach_replica(self, master, restart=False):
         LOG.info("Attaching replica %s to master %s", self.id, master.id)
         try:
             replica_info = master.guest.get_replica_context()
             flavor = self.nova_client.flavors.get(self.flavor_id)
             slave_config = self._render_replica_config(flavor).config_contents
-            self.guest.attach_replica(replica_info, slave_config)
+            self.guest.attach_replica(replica_info, slave_config,
+                                      restart=restart)
             self.update_db(slave_of_id=master.id)
             self.slave_list = None
         except (GuestError, GuestTimeout):
@@ -2047,7 +2048,9 @@ class RebuildAction(ResizeActionBase):
         self.wait_status = ['ACTIVE']
 
     def _initiate_nova_action(self):
-        files = self.instance.get_injected_files(self.instance.datastore.name)
+        files = self.instance.get_injected_files(
+            self.instance.datastore.name,
+            self.instance.datastore_version.name)
 
         LOG.debug(f"Rebuilding Nova server {self.instance.server.id}")
         # Before Nova version 2.57, userdata is not supported when doing

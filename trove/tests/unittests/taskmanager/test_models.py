@@ -249,7 +249,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         cfg.CONF.set_override('injected_config_location', '/etc/trove/conf.d')
 
         # execute
-        files = self.freshinstancetasks.get_injected_files("test")
+        files = self.freshinstancetasks.get_injected_files("test", 'test')
         # verify
         self.assertTrue(
             '/etc/trove/conf.d/guest_info.conf' in files)
@@ -266,7 +266,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         cfg.CONF.set_override('injected_config_location', '/etc')
 
         # execute
-        files = self.freshinstancetasks.get_injected_files("test")
+        files = self.freshinstancetasks.get_injected_files("test", 'test')
         # verify
         self.assertTrue(
             '/etc/guest_info' in files)
@@ -920,7 +920,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                           return_value=replica_config):
             self.instance_task.attach_replica(master)
         self.instance_task._guest.attach_replica.assert_called_with(
-            replica_context, config_content)
+            replica_context, config_content, restart=False)
         mock_update_db.assert_called_with(slave_of_id=master.id)
 
     @patch('trove.taskmanager.models.LOG')

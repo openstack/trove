@@ -16,6 +16,8 @@ import os
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import exception
+from trove.common import utils
 from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
 from trove.guestagent.common import operating_system
@@ -56,25 +58,29 @@ class PostgresManager(manager.Manager):
         self.app.set_data_dir(self.app.datadir)
         self.app.update_overrides(overrides)
 
+        # Prepare pg_hba.conf
+        self.app.apply_access_rules()
+        self.configuration_manager.apply_system_override(
+            {'hba_file': service.HBA_CONFIG_FILE})
+
         # Restore data from backup and reset root password
         if backup_info:
             self.perform_restore(context, self.app.datadir, backup_info)
+            if not snapshot:
+                signal_file = f"{self.app.datadir}/recovery.signal"
+                operating_system.execute_shell_cmd(
+                    f"touch {signal_file}", [], shell=True, as_root=True)
+                operating_system.chown(signal_file, CONF.database_service_uid,
+                                       CONF.database_service_uid, force=True,
+                                       as_root=True)
 
-            signal_file = f"{self.app.datadir}/recovery.signal"
-            operating_system.execute_shell_cmd(
-                f"touch {signal_file}", [], shell=True, as_root=True)
-            operating_system.chown(signal_file, CONF.database_service_uid,
-                                   CONF.database_service_uid, force=True,
-                                   as_root=True)
+        if snapshot:
+            # This instance is a replica
+            self.attach_replica(context, snapshot, snapshot['config'])
 
         # config_file can only be set on the postgres command line
         command = f"postgres -c config_file={service.CONFIG_FILE}"
         self.app.start_db(ds_version=ds_version, command=command)
-        self.app.secure()
-
-        # if snapshot:
-        #     # This instance is a replication slave
-        #     self.attach_replica(context, snapshot, snapshot['config'])
 
     def apply_overrides(self, context, overrides):
         pass
@@ -134,3 +140,46 @@ class PostgresManager(manager.Manager):
                                    volumes_mapping=volumes_mapping,
                                    need_dbuser=False,
                                    extra_params=extra_params)
+
+    def attach_replica(self, context, replica_info, slave_config,
+                       restart=False):
+        """Set up the standby server."""
+        self.replication.enable_as_slave(self.app, replica_info, None)
+
+        # For the previous primary, don't start db service in order to run
+        # pg_rewind command next.
+        if restart:
+            self.app.restart()
+
+    def make_read_only(self, context, read_only):
+        """There seems to be no way to flag this at the database level in
+        PostgreSQL at the moment -- see discussion here:
+        http://www.postgresql.org/message-id/flat/CA+TgmobWQJ-GCa_tWUc4=80A
+        1RJ2_+Rq3w_MqaVguk_q018dqw@mail.gmail.com#CA+TgmobWQJ-GCa_tWUc4=80A1RJ
+        2_+Rq3w_MqaVguk_q018dqw@mail.gmail.com
+        """
+        pass
+
+    def get_latest_txn_id(self, context):
+        if self.app.is_replica():
+            lsn = self.app.get_last_wal_replay_lsn()
+        else:
+            lsn = self.app.get_current_wal_lsn()
+        LOG.info("Last wal location found: %s", lsn)
+        return lsn
+
+    def wait_for_txn(self, context, txn):
+        if not self.app.is_replica():
+            raise exception.TroveError("Attempting to wait for a txn on a "
+                                       "non-replica server")
+
+        def _wait_for_txn():
+            lsn = self.app.get_last_wal_replay_lsn()
+            LOG.info("Last wal location found: %s", lsn)
+            return lsn >= txn
+
+        try:
+            utils.poll_until(_wait_for_txn, time_out=60)
+        except exception.PollTimeOut:
+            raise exception.TroveError(
+                f"Timeout occurred waiting for wal offset to change to {txn}")

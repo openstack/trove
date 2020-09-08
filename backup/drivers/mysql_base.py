@@ -53,7 +53,8 @@ class MySQLBaseRunner(base.BaseRunner):
 
             last_line = output.splitlines()[-1].strip()
             if not re.search('completed OK!', last_line):
-                LOG.error("Backup did not complete successfully.")
+                LOG.error(f"Backup did not complete successfully, last line:\n"
+                          f"{last_line}")
                 return False
 
         return True

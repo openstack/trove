@@ -440,7 +440,7 @@ class BaseDbApp(object):
         swift_container = (backup_info.get('swift_container') or
                            CONF.backup_swift_container)
         swift_params = (f'--swift-extra-metadata={swift_metadata} '
-                        f'--swift-container {swift_container}')
+                        f'--swift-container={swift_container}')
 
         command = (
             f'/usr/bin/python3 main.py --backup --backup-id={backup_id} '
@@ -449,7 +449,7 @@ class BaseDbApp(object):
             f'{db_userinfo} '
             f'{swift_params} '
             f'{incremental} '
-            f'{extra_params} '
+            f'{extra_params}'
         )
 
         # Update backup status in db
@@ -489,11 +489,13 @@ class BaseDbApp(object):
                     'state': BackupState.COMPLETED,
                 })
             else:
-                LOG.error(f'Cannot parse backup output: {result}')
+                msg = f'Cannot parse backup output: {result}'
+                LOG.error(msg)
                 backup_state.update({
                     'success': False,
                     'state': BackupState.FAILED,
                 })
+                raise Exception(msg)
         except Exception as err:
             LOG.error("Failed to create backup %s", backup_id)
             backup_state.update({

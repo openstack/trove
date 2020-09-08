@@ -27,7 +27,6 @@ from trove.common.notification import EndNotification
 from trove.guestagent import guest_log
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
-from trove.guestagent.strategies import replication as repl_strategy
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
 from trove.instance import service_status
@@ -49,19 +48,6 @@ class MySqlManager(manager.Manager):
     @property
     def configuration_manager(self):
         return self.app.configuration_manager
-
-    @property
-    def replication(self):
-        """If the datastore supports replication, return an instance of
-        the strategy.
-        """
-        try:
-            return repl_strategy.get_instance(self.manager)
-        except Exception as ex:
-            LOG.warning("Cannot get replication instance for '%(manager)s': "
-                        "%(msg)s", {'manager': self.manager, 'msg': str(ex)})
-
-        return None
 
     def get_service_status(self):
         try:
@@ -133,7 +119,8 @@ class MySqlManager(manager.Manager):
         LOG.info(f"Creating backup {backup_info['id']}")
         with EndNotification(context):
             volumes_mapping = {
-                '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}
+                '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'},
+                '/tmp': {'bind': '/tmp', 'mode': 'rw'}
             }
             self.app.create_backup(context, backup_info,
                                    volumes_mapping=volumes_mapping,
@@ -273,7 +260,7 @@ class MySqlManager(manager.Manager):
                     'slave_volume_size': volume_stats.get('total', 0.0)
                 }))
 
-    def attach_replica(self, context, replica_info, slave_config):
+    def attach_replica(self, context, replica_info, slave_config, **kwargs):
         LOG.info("Attaching replica, replica_info: %s", replica_info)
         try:
             if 'replication_strategy' in replica_info:
@@ -285,45 +272,6 @@ class MySqlManager(manager.Manager):
             LOG.error("Error enabling replication, error: %s", str(err))
             self.status.set_status(service_status.ServiceStatuses.FAILED)
             raise
-
-    def detach_replica(self, context, for_failover=False):
-        LOG.info("Detaching replica.")
-        replica_info = self.replication.detach_slave(self.app, for_failover)
-        return replica_info
-
-    def backup_required_for_replication(self, context):
-        return self.replication.backup_required_for_replication()
-
-    def get_replication_snapshot(self, context, snapshot_info,
-                                 replica_source_config=None):
-        LOG.info("Getting replication snapshot, snapshot_info: %s",
-                 snapshot_info)
-
-        self.replication.enable_as_master(self.app, replica_source_config)
-        LOG.info('Enabled as replication master')
-
-        snapshot_id, log_position = self.replication.snapshot_for_replication(
-            context, self.app, self.adm, None, snapshot_info)
-
-        volume_stats = self.get_filesystem_stats(context, None)
-
-        replication_snapshot = {
-            'dataset': {
-                'datastore_manager': self.manager,
-                'dataset_size': volume_stats.get('used', 0.0),
-                'volume_size': volume_stats.get('total', 0.0),
-                'snapshot_id': snapshot_id
-            },
-            'replication_strategy': self.replication_strategy,
-            'master': self.replication.get_master_ref(self.app, snapshot_info),
-            'log_position': log_position
-        }
-
-        return replication_snapshot
-
-    def enable_as_master(self, context, replica_source_config):
-        LOG.info("Enable as master")
-        self.replication.enable_as_master(self.app, replica_source_config)
 
     def make_read_only(self, context, read_only):
         LOG.info("Executing make_read_only(%s)", read_only)
@@ -340,15 +288,6 @@ class MySqlManager(manager.Manager):
     def wait_for_txn(self, context, txn):
         LOG.info("Calling wait_for_txn.")
         self.app.wait_for_txn(txn)
-
-    def get_replica_context(self, context):
-        LOG.info("Getting replica context.")
-        replica_info = self.replication.get_replica_context(self.app, self.adm)
-        return replica_info
-
-    def demote_replication_master(self, context):
-        LOG.info("Demoting replication master.")
-        self.replication.demote_master(self.app)
 
     def upgrade(self, context, upgrade_info):
         """Upgrade the database."""

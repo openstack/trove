@@ -94,12 +94,13 @@ class TestManager(trove_testtools.TestCase):
         self.mock_slave1.detach_replica.assert_called_with(
             self.mock_old_master, for_failover=True)
         self.mock_old_master.attach_replica.assert_called_with(
-            self.mock_slave1)
+            self.mock_slave1, restart=False)
         self.mock_slave1.make_read_only.assert_called_with(False)
 
         self.mock_slave2.detach_replica.assert_called_with(
             self.mock_old_master, for_failover=True)
-        self.mock_slave2.attach_replica.assert_called_with(self.mock_slave1)
+        self.mock_slave2.attach_replica.assert_called_with(self.mock_slave1,
+                                                           restart=True)
 
         self.mock_old_master.demote_replication_master.assert_any_call()
 

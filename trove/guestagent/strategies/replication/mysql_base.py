@@ -79,7 +79,13 @@ class MysqlReplicationBase(base.Replication):
     def snapshot_for_replication(self, context, service, adm, location,
                                  snapshot_info):
         LOG.info("Creating backup for replication")
-        service.create_backup(context, snapshot_info)
+
+        volumes_mapping = {
+            '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'},
+            '/tmp': {'bind': '/tmp', 'mode': 'rw'}
+        }
+        service.create_backup(context, snapshot_info,
+                              volumes_mapping=volumes_mapping)
 
         LOG.info('Creating replication user')
         replication_user = self._create_replication_user(service, adm)

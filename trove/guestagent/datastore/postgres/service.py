@@ -32,7 +32,6 @@ from trove.instance import service_status
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
-ADMIN_USER_NAME = "os_admin"
 SUPER_USER_NAME = "postgres"
 CONFIG_FILE = "/etc/postgresql/postgresql.conf"
 CNF_EXT = 'conf'
@@ -95,6 +94,7 @@ class PgSqlApp(service.BaseDbApp):
         # https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
         mount_point = cfg.get_configuration_property('mount_point')
         self.datadir = f"{mount_point}/data/pgdata"
+        self.adm = PgSqlAdmin(SUPER_USER_NAME)
 
     @classmethod
     def get_data_dir(cls):
@@ -109,25 +109,6 @@ class PgSqlApp(service.BaseDbApp):
         cmd = f"pg_ctl reload -D {self.datadir}"
         docker_util.run_command(self.docker_client, cmd)
 
-    def secure(self):
-        LOG.info("Securing PostgreSQL now.")
-
-        admin_password = utils.generate_random_password()
-        os_admin = models.PostgreSQLUser(ADMIN_USER_NAME, admin_password)
-
-        # Drop os_admin user if exists, this is needed for restore.
-        PgSqlAdmin(SUPER_USER_NAME).delete_user({'_name': ADMIN_USER_NAME})
-        PgSqlAdmin(SUPER_USER_NAME).create_admin_user(os_admin,
-                                                      encrypt_password=True)
-        self.save_password(ADMIN_USER_NAME, admin_password)
-
-        self.apply_access_rules()
-        self.configuration_manager.apply_system_override(
-            {'hba_file': HBA_CONFIG_FILE})
-        self.restart()
-
-        LOG.info("PostgreSQL secure complete.")
-
     def apply_access_rules(self):
         """PostgreSQL Client authentication settings
 
@@ -137,17 +118,15 @@ class PgSqlApp(service.BaseDbApp):
         """
         LOG.debug("Applying client authentication access rules.")
 
-        local_admins = ','.join([SUPER_USER_NAME, ADMIN_USER_NAME])
-        remote_admins = SUPER_USER_NAME
         access_rules = OrderedDict(
-            [('local', [['all', local_admins, None, 'trust'],
-                        ['replication', local_admins, None, 'trust'],
+            [('local', [['all', SUPER_USER_NAME, None, 'trust'],
+                        ['replication', SUPER_USER_NAME, None, 'trust'],
                         ['all', 'all', None, 'md5']]),
-             ('host', [['all', local_admins, '127.0.0.1/32', 'trust'],
-                       ['all', local_admins, '::1/128', 'trust'],
-                       ['all', local_admins, 'localhost', 'trust'],
-                       ['all', remote_admins, '0.0.0.0/0', 'reject'],
-                       ['all', remote_admins, '::/0', 'reject'],
+             ('host', [['all', SUPER_USER_NAME, '127.0.0.1/32', 'trust'],
+                       ['all', SUPER_USER_NAME, '::1/128', 'trust'],
+                       ['all', SUPER_USER_NAME, 'localhost', 'trust'],
+                       ['all', SUPER_USER_NAME, '0.0.0.0/0', 'reject'],
+                       ['all', SUPER_USER_NAME, '::/0', 'reject'],
                        ['all', 'all', '0.0.0.0/0', 'md5'],
                        ['all', 'all', '::/0', 'md5']])
              ])
@@ -306,6 +285,57 @@ class PgSqlApp(service.BaseDbApp):
             operating_system.chown(dir, CONF.database_service_uid,
                                    CONF.database_service_uid, force=True,
                                    as_root=True)
+
+    def is_replica(self):
+        """Wrapper for pg_is_in_recovery() for detecting a server in
+        standby mode
+        """
+        r = self.adm.query("SELECT pg_is_in_recovery()")
+        return r[0][0]
+
+    def get_current_wal_lsn(self):
+        """Wrapper for pg_current_wal_lsn()
+
+        Cannot be used against a running replica
+        """
+        r = self.adm.query("SELECT pg_current_wal_lsn()")
+        return r[0][0]
+
+    def get_last_wal_replay_lsn(self):
+        """Wrapper for pg_last_wal_replay_lsn()
+
+         For use on replica servers
+         """
+        r = self.adm.query("SELECT pg_last_wal_replay_lsn()")
+        return r[0][0]
+
+    def pg_rewind(self, conn_info):
+        docker_image = CONF.get(CONF.datastore_manager).docker_image
+        image = f'{docker_image}:{CONF.datastore_version}'
+        user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
+        volumes = {
+            "/var/run/postgresql": {"bind": "/var/run/postgresql",
+                                    "mode": "rw"},
+            "/var/lib/postgresql": {"bind": "/var/lib/postgresql",
+                                    "mode": "rw"},
+            "/var/lib/postgresql/data": {"bind": "/var/lib/postgresql/data",
+                                         "mode": "rw"},
+        }
+        command = (f"pg_rewind --target-pgdata={self.datadir} "
+                   f"--source-server='{conn_info}'")
+
+        docker_util.remove_container(self.docker_client, name='pg_rewind')
+
+        LOG.info('Running pg_rewind in container')
+        output, ret = docker_util.run_container(
+            self.docker_client, image, 'pg_rewind',
+            volumes=volumes, command=command, user=user)
+        result = output[-1]
+        LOG.debug(f"Finished running pg_rewind, last output: {result}")
+        if not ret:
+            msg = f'Failed to run pg_rewind in container, error: {result}'
+            LOG.error(msg)
+            raise Exception(msg)
 
 
 class PgSqlAdmin(object):
