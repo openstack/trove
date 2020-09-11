@@ -26,23 +26,34 @@ from trove.instance import models as base_models
 LOG = logging.getLogger(__name__)
 
 
-def load_and_verify(context, instance_id):
-    # Load InstanceServiceStatus to verify if its running
+def load_and_verify(context, instance_id,
+                    enabled_datastore=['mysql', 'mariadb']):
+    """Check instance datastore.
+
+    Some API operations are only supported for some specific datastores.
+    """
     instance = base_models.Instance.load(context, instance_id)
+
+    if instance.datastore.name not in enabled_datastore:
+        raise exception.UnprocessableEntity(
+            f"Operation not supported for datastore {instance.datastore.name}."
+        )
+
     if not instance.is_datastore_running:
         raise exception.UnprocessableEntity(
             "Instance %s is not ready, status: %s." %
             (instance.id, instance.datastore_status.status)
         )
-    else:
-        return instance
+
+    return instance
 
 
 class Root(object):
 
     @classmethod
     def load(cls, context, instance_id):
-        load_and_verify(context, instance_id)
+        load_and_verify(context, instance_id,
+                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
         # TODO(pdmars): remove the is_root_enabled call from the guest agent,
         # just check the database for this information.
         # If the root history returns null or raises an exception, the root
@@ -58,7 +69,8 @@ class Root(object):
     @classmethod
     def create(cls, context, instance_id, root_password,
                cluster_instances_list=None):
-        load_and_verify(context, instance_id)
+        load_and_verify(context, instance_id,
+                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
         if root_password:
             root = create_guest_client(context,
                                        instance_id).enable_root_with_password(
@@ -79,7 +91,8 @@ class Root(object):
 
     @classmethod
     def delete(cls, context, instance_id):
-        load_and_verify(context, instance_id)
+        load_and_verify(context, instance_id,
+                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
         create_guest_client(context, instance_id).disable_root()
 
 

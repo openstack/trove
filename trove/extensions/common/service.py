@@ -260,7 +260,15 @@ class RootController(ExtensionController):
         try:
             clazz = CONF.get(manager).get('root_controller')
             LOG.debug("Loading Root Controller class %s.", clazz)
+
+            if not clazz:
+                raise exception.DatastoreOperationNotSupported(
+                    datastore=manager, operation='root')
+
             root_controller = import_class(clazz)
             return root_controller()
         except NoSuchOptError:
-            return None
+            LOG.warning(
+                f"root_controller not configured for datastore {manager}")
+            raise exception.DatastoreOperationNotSupported(
+                datastore=manager, operation='root')

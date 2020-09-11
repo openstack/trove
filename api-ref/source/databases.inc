@@ -4,7 +4,10 @@
 Databases
 =========
 
-
+Currently, the Database and User API is only supported by mysql datastore. For
+others, the recommended way is to get root password
+(``POST /v1.0/{project_id}/instances/{instance_id}/root``) and communicate with
+the database service directly for database and user management.
 
 
 Create database

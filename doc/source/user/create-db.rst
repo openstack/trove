@@ -1,16 +1,16 @@
 .. _create_db:
 
-============================
-Create and access a database
-============================
+=====================================
+Create and access a database instance
+=====================================
 Assume that you have installed the Database service and populated your
 data store with images for the type and versions of databases that you
-want, and that you can create and access a database.
+want, and that you can create and access a database instance.
 
 This example shows you how to create and access a MySQL 5.7 database.
 
-Create and access a database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create and access a database instance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #. **Determine which flavor to use for your database**
 
