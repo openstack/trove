@@ -316,6 +316,9 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info('No post_prepare work has been defined.')
         pass
 
+    def start_db_with_conf_changes(self, context, config_contents, ds_version):
+        self.app.start_db_with_conf_changes(config_contents, ds_version)
+
     def stop_db(self, context):
         self.app.stop_db()
 

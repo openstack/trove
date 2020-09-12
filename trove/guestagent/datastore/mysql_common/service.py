@@ -654,7 +654,7 @@ class BaseMySqlApp(service.BaseDbApp):
 
         if not self.status.wait_for_status(
             service_status.ServiceStatuses.HEALTHY,
-            CONF.state_change_wait_time, update_db=False
+            CONF.state_change_wait_time, update_db=True
         ):
             raise exception.TroveError("Failed to start mysql")
 

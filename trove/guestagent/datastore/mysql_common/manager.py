@@ -106,9 +106,6 @@ class MySqlManager(manager.Manager):
             # This instance is a replication slave
             self.attach_replica(context, snapshot, snapshot['config'])
 
-    def start_db_with_conf_changes(self, context, config_contents, ds_version):
-        self.app.start_db_with_conf_changes(config_contents, ds_version)
-
     def create_backup(self, context, backup_info):
         """Create backup for the database.
 

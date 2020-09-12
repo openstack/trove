@@ -224,7 +224,7 @@
         {
             "name": "checkpoint_timeout",
             "restart_required": false,
-            "type": "string"
+            "type": "integer"
         },
         {
             "name": "checkpoint_completion_target",
@@ -238,14 +238,14 @@
         },
         {
             "name": "wal_keep_segments",
-            "restart_required": false,
+            "restart_required": true,
             "min": 0,
             "type": "integer"
         },
         {
             "name": "wal_sender_timeout",
             "restart_required": false,
-            "type": "string"
+            "type": "integer"
         },
         {
             "name": "synchronous_standby_names",
