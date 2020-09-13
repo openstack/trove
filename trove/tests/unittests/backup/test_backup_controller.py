@@ -13,20 +13,36 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from unittest import mock
+import uuid
+
 import jsonschema
 from testtools.matchers import Equals
+
+from trove.backup import models
+from trove.backup import state
 from trove.backup.service import BackupController
 from trove.common import apischema
+from trove.common import context
+from trove.common import wsgi
 from trove.tests.unittests import trove_testtools
+from trove.tests.unittests.util import util
 
 
 class TestBackupController(trove_testtools.TestCase):
-
     def setUp(self):
         super(TestBackupController, self).setUp()
         self.uuid = "d6338c9c-3cc8-4313-b98f-13cc0684cf15"
         self.invalid_uuid = "ead-edsa-e23-sdf-23"
         self.controller = BackupController()
+        self.context = context.TroveContext(project_id=str(uuid.uuid4()))
+        util.init_db()
+
+    def tearDown(self):
+        super(TestBackupController, self).tearDown()
+        backups = models.DBBackup.find_all(tenant_id=self.context.project_id)
+        for backup in backups:
+            backup.delete()
 
     def test_validate_create_complete(self):
         body = {"backup": {"instance": self.uuid,
@@ -87,3 +103,51 @@ class TestBackupController(trove_testtools.TestCase):
         self.assertThat(errors[0].message,
                         Equals("'%s' does not match '%s'" %
                                (self.invalid_uuid, apischema.uuid['pattern'])))
+
+    def test_list_by_project(self):
+        req = mock.MagicMock(GET={'project_id': self.context.project_id},
+                             environ={wsgi.CONTEXT_KEY: self.context},
+                             url='http://localhost')
+        instance_id = str(uuid.uuid4())
+        backup_name = str(uuid.uuid4())
+        location = 'https://object-storage.com/tenant/database_backups/backup'
+        models.DBBackup.create(tenant_id=self.context.project_id,
+                               name=backup_name,
+                               state=state.BackupState.NEW,
+                               instance_id=instance_id,
+                               deleted=False,
+                               size=2.0,
+                               location=location)
+
+        res = self.controller.index(req, 'fake_tenant_id')
+
+        self.assertEqual(200, res.status)
+        backups = res.data(None)['backups']
+        self.assertGreaterEqual(len(backups), 1)
+        our_backup = None
+        for backup in backups:
+            if backup['name'] == backup_name:
+                our_backup = backup
+                break
+        self.assertIsNotNone(our_backup)
+        expected = {
+            'name': backup_name,
+            'locationRef': location,
+            'instance_id': instance_id,
+            'size': 2.0,
+            'status': 'NEW',
+        }
+        self.assertTrue(
+            set(expected.items()).issubset(set(our_backup.items()))
+        )
+
+        # Get backups of unknown project
+        req = mock.MagicMock(GET={'project_id': str(uuid.uuid4())},
+                             environ={wsgi.CONTEXT_KEY: self.context},
+                             url='http://localhost')
+
+        res = self.controller.index(req, 'fake_tenant_id')
+
+        self.assertEqual(200, res.status)
+        backups = res.data(None)['backups']
+        self.assertEqual(0, len(backups))
