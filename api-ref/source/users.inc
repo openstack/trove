@@ -213,12 +213,12 @@ Enable root user
 
 Enables the root user for a database instance and returns the root password.
 
-This operation generates a root password for the root user and
-enables the root user to log in from any host.
+This operation generates password for the root user if not provided and
+enables the root user to log in from any host. If provided, the user should
+guarantee the password complexity and change regularly.
 
-Enabling root user should only be restricted to admin user， as with root user,
-the cloud user can change the database settings, e.g. remove users which
-bypassing the Trove API.
+Other than managing databases and users, root user can change database settings
+without touching Trove API which is not recommended.
 
 Normal response codes: 200
 
@@ -230,7 +230,13 @@ Request
 
    - project_id: project_id
    - instanceId: instanceId
+   - password: root_password
 
+Request Example
+---------------
+
+.. literalinclude:: samples/user-root-enable-request.json
+   :language: javascript
 
 Response Example
 ----------------
