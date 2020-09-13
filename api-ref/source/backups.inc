@@ -20,6 +20,8 @@ using query string parameters. The following filters are supported:
 - ``all_projects=True/False`` - Return the list of backups for all the
   projects, this is an admin only param by default.
 - ``datastore={datastore}`` - Return a list of backups of the same datastore.
+- ``project_id={project_id}`` - Get backups of a specific project. Admin
+  required.
 
 Normal response codes: 200
 

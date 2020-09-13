@@ -186,13 +186,16 @@ class Backup(object):
         return query.all(), marker
 
     @classmethod
-    def list(cls, context, datastore=None, instance_id=None,
+    def list(cls, context, datastore=None, instance_id=None, project_id=None,
              all_projects=False):
         query = DBBackup.query()
         filters = [DBBackup.deleted == 0]
 
-        if not all_projects:
+        if project_id:
+            filters.append(DBBackup.tenant_id == project_id)
+        elif not all_projects:
             filters.append(DBBackup.tenant_id == context.project_id)
+
         if instance_id:
             filters.append(DBBackup.instance_id == instance_id)
 

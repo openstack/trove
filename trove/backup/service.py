@@ -44,10 +44,11 @@ class BackupController(wsgi.Controller):
         LOG.debug("Listing backups for tenant %s", tenant_id)
         datastore = req.GET.get('datastore')
         instance_id = req.GET.get('instance_id')
+        project_id = req.GET.get('project_id')
         all_projects = strutils.bool_from_string(req.GET.get('all_projects'))
         context = req.environ[wsgi.CONTEXT_KEY]
 
-        if all_projects:
+        if project_id or all_projects:
             policy.authorize_on_tenant(context, 'backup:index:all_projects')
         else:
             policy.authorize_on_tenant(context, 'backup:index')
@@ -56,6 +57,7 @@ class BackupController(wsgi.Controller):
             context,
             datastore=datastore,
             instance_id=instance_id,
+            project_id=project_id,
             all_projects=all_projects
         )
         view = views.BackupViews(backups)
