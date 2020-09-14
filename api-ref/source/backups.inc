@@ -53,6 +53,7 @@ Response Parameters
     - size: backup_size
     - status: backup_status
     - updated: updated
+    - project_id: project_uuid
 
 
 Response Example
@@ -116,6 +117,7 @@ Response Parameters
     - size: backup_size
     - status: backup_status
     - updated: updated
+    - project_id: project_uuid
 
 
 Response Example
@@ -164,6 +166,7 @@ Response Parameters
     - size: backup_size
     - status: backup_status
     - updated: updated
+    - project_id: project_uuid
 
 
 Response Example

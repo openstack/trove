@@ -649,6 +649,12 @@ nics:
   in: body
   required: false
   type: array
+project_uuid:
+  description: |
+    The project ID of the resource.
+  in: body
+  required: true
+  type: string
 quota_in_use:
   description: |
     The used quota for a resource.
