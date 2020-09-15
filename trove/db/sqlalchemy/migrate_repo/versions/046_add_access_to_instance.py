@@ -16,8 +16,8 @@
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
-from trove.db.sqlalchemy.migrate_repo.schema import Json
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.db.sqlalchemy.migrate_repo.schema import Text
 
 
 def upgrade(migrate_engine):
@@ -25,4 +25,4 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
 
     instances = Table('instances', meta, autoload=True)
-    instances.create_column(Column('access', Json(), nullable=True))
+    instances.create_column(Column('access', Text(), nullable=True))

@@ -17,6 +17,7 @@
 """Model classes that form the core of instances functionality."""
 from datetime import datetime
 from datetime import timedelta
+import json
 import os.path
 import re
 
@@ -492,6 +493,8 @@ class SimpleInstance(object):
     @property
     def access(self):
         if hasattr(self.db_info, 'access'):
+            if type(self.db_info.access) == str:
+                return json.loads(self.db_info.access)
             return self.db_info.access
         else:
             return None
@@ -885,6 +888,10 @@ class BaseInstance(SimpleInstance):
 
     def update_db(self, **values):
         self.db_info = DBInstance.find_by(id=self.id, deleted=False)
+
+        if 'access' in values and type(values['access'] != str):
+            values['access'] = json.dumps(values['access'])
+
         for key in values:
             setattr(self.db_info, key, values[key])
         self.db_info.save()
@@ -1883,6 +1890,12 @@ class DBInstance(dbmodels.DatabaseModelBase):
 
         return cu.decrypt_data(cu.decode_data(self.encrypted_key),
                                CONF.inst_rpc_key_encr_key)
+
+    @classmethod
+    def create(cls, **values):
+        if 'access' in values and type(values['access'] != str):
+            values['access'] = json.dumps(values['access'])
+        return super(DBInstance, cls).create(**values)
 
     def _validate(self, errors):
         if InstanceTask.from_code(self.task_id) is None:
