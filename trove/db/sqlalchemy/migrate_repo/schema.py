@@ -18,7 +18,6 @@
 from oslo_log import log as logging
 import sqlalchemy.types
 
-
 logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')
 
 
@@ -61,11 +60,6 @@ class BigInteger(sqlalchemy.types.BigInteger):
 class Float(sqlalchemy.types.Float):
     def __init__(self, *args, **kwargs):
         super(Float, self).__init__(*args, **kwargs)
-
-
-class Json(sqlalchemy.types.JSON):
-    def __init__(self, *args, **kwargs):
-        super(Json, self).__init__(*args, **kwargs)
 
 
 def create_tables(tables):
