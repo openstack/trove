@@ -214,8 +214,12 @@ class SwiftStorage(base.Storage):
             # Delete the old segment file that was copied
             LOG.info('Deleting the old segment file %s.',
                      stream_reader.first_segment)
-            self.client.delete_object(container,
-                                      stream_reader.first_segment)
+            try:
+                self.client.delete_object(container,
+                                          stream_reader.first_segment)
+            except swiftclient.exceptions.ClientException as e:
+                if e.http_status != 404:
+                    raise
 
             final_swift_checksum = segment_result['etag']
 
