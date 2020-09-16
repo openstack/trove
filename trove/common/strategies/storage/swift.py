@@ -19,6 +19,7 @@ import json
 
 from oslo_log import log as logging
 import six
+import swiftclient
 
 from trove.common import cfg
 from trove.common.clients import create_swift_client
@@ -207,8 +208,12 @@ class SwiftStorage(base.Storage):
             # Delete the old segment file that was copied
             LOG.debug('Deleting the old segment file %s.',
                       stream_reader.first_segment)
-            self.connection.delete_object(BACKUP_CONTAINER,
-                                          stream_reader.first_segment)
+            try:
+                self.connection.delete_object(BACKUP_CONTAINER,
+                                              stream_reader.first_segment)
+            except swiftclient.exceptions.ClientException as e:
+                if e.http_status != 404:
+                    raise
             final_swift_checksum = segment_result['etag']
 
         # Validate the object by comparing checksums
