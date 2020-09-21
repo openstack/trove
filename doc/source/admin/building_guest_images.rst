@@ -54,9 +54,26 @@ functional tests are running.
 Docker
 ------
 
-Since Vitoria release, all the datastore services are installed by docker
-container inside the Trove instance, so docker should be installed when
-building the guest image.
+Since Vitoria, the database service is running as docker container inside the
+trove guest instance, so docker should be installed when building the guest
+image. This also means the trove guest instance should be able to pull docker
+images from the image registry(either from user port or trove management port),
+the related options for container images are:
+
+.. code-block:: ini
+
+   [mysql]
+   docker_image
+   backup_docker_image
+
+   [postgresql]
+   docker_image
+   backup_docker_image
+
+   [mariadb]
+   docker_image
+   backup_docker_image
+
 
 -----------------
 Trove Guest Agent
@@ -80,6 +97,12 @@ VM, including:
   the guest, e.g. the guest identifier, the tenant ID, etc.
 * ``/etc/trove/conf.d/trove-guestagent.conf``: The config file for the
   guest agent service.
+
+In addition to these config files, Trove supports to inject user data when
+launching the instance for customization on boot time, e.g. network
+configuration, hosts file settings, etc. The user data files are located inside
+the directory configured by ``cloudinit_location``, for mysql, the file name is
+``mysql.cloudinit``
 
 ------------------------------
 Persistent Storage, Networking
