@@ -5,7 +5,7 @@
 
 function build_vm() {
     exclaim "Actually building the image, this can take up to 15 minutes"
-    rm -rf ~/.cache/image-create
+    sudo rm -rf ~/.cache/image-create
 
     local datastore_type=$1
     local guest_os=$2
