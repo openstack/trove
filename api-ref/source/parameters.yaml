@@ -646,6 +646,12 @@ nics:
     mappings for backward compatibility, but only one item is allowed. The
     allowed keys in the mapping are: network_id, subnet_id, ip_address and
     net-id (for backward compatibility, deprecated).
+
+    Trove will allocate port using the given information. In order to
+    successfully create database instance, either the user should make sure the
+    traffic coming through that port could access the public contaier image
+    registry(i.e. the port subnet is associated with a Neutron router), or the
+    cloud provider should be responsible for that.
   in: body
   required: false
   type: array
