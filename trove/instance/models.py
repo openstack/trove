@@ -1746,7 +1746,7 @@ class Instances(object):
         if context is None:
             raise TypeError(_("Argument context not defined."))
         client = clients.create_nova_client(context)
-        servers = client.servers.list()
+        servers = client.servers.list(limit=-1)
         query_opts = {'tenant_id': context.project_id,
                       'deleted': False}
         if not include_clustered:
