@@ -34,7 +34,8 @@ def load_mgmt_instances(context, deleted=None, client=None,
         client = clients.create_nova_client(
             context, CONF.service_credentials.region_name
         )
-    mgmt_servers = client.servers.list(search_opts={'all_tenants': 1})
+    mgmt_servers = client.servers.list(search_opts={'all_tenants': 1},
+                                       limit=-1)
     LOG.info("Found %d servers in Nova",
              len(mgmt_servers if mgmt_servers else []))
     args = {}
