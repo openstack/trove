@@ -19,6 +19,7 @@ import inspect
 import os
 import shutil
 import uuid
+import urllib.parse as urlparse
 
 from eventlet.timeout import Timeout
 import jinja2
@@ -30,7 +31,6 @@ from oslo_utils import importutils
 from oslo_utils import strutils
 from passlib import pwd
 import six
-import six.moves.urllib.parse as urlparse
 
 from trove.common import cfg
 from trove.common import exception

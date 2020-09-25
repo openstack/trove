@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from six.moves.urllib import parse as urllib_parse
+from urllib import parse as urllib_parse
 
 from proboscis import SkipTest
 

@@ -13,8 +13,7 @@
 #    under the License.
 
 import time
-
-from six.moves.urllib import parse as urllib_parse
+from urllib import parse as urllib_parse
 
 from proboscis import after_class
 from proboscis.asserts import assert_equal
