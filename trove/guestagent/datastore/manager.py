@@ -402,7 +402,6 @@ class Manager(periodic_task.PeriodicTasks):
         self.app.update_overrides(overrides)
 
     def apply_overrides(self, context, overrides):
-        LOG.info(f"Applying overrides {overrides}.")
         raise exception.DatastoreOperationNotSupported(
             operation='apply_overrides', datastore=self.manager)
 

@@ -537,8 +537,6 @@ class BaseMySqlApp(service.BaseDbApp):
                 {MySQLConfParser.SERVER_CONF_SECTION: overrides})
 
     def apply_overrides(self, overrides):
-        LOG.info("Applying overrides to running MySQL, overrides: %s",
-                 overrides)
         with mysql_util.SqlClient(self.get_engine()) as client:
             for k, v in overrides.items():
                 byte_value = guestagent_utils.to_bytes(v)

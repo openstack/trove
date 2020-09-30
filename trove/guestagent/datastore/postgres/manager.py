@@ -83,7 +83,10 @@ class PostgresManager(manager.Manager):
         self.app.start_db(ds_version=ds_version, command=command)
 
     def apply_overrides(self, context, overrides):
-        pass
+        """Reload config."""
+        LOG.info("Reloading database config.")
+        self.app.apply_overrides(overrides)
+        LOG.info("Finished reloading database config.")
 
     def get_datastore_log_defs(self):
         owner = cfg.get_configuration_property('database_service_uid')

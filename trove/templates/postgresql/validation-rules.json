@@ -1,943 +1,955 @@
 {
-    "configuration-parameters": [
-        {
-            "name": "max_connections",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "superuser_reserved_connections",
-            "restart_required": true,
-            "min": 1,
-            "type": "integer"
-        },
-        {
-            "name": "bonjour",
-            "restart_required": true,
-            "type": "boolean"
-        },
-        {
-            "name": "bonjour_name",
-            "restart_required": true,
-            "type": "string"
-        },
-        {
-            "name": "authentication_timeout",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "password_encryption",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "db_user_namespace",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "tcp_keepalives_idle",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "tcp_keepalives_interval",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "tcp_keepalives_count",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "shared_buffers",
-            "restart_required": true,
-            "type": "string"
-        },
-        {
-            "name": "huge_pages",
-            "restart_required": true,
-            "type": "string"
-        },
-        {
-            "name": "temp_buffers",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "max_prepared_transactions",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "work_mem",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "maintenance_work_mem",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "autovacuum_work_mem",
-            "restart_required": false,
-            "min": -1,
-            "type": "integer"
-        },
-        {
-            "name": "max_stack_depth",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "dynamic_shared_memory_type",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "temp_file_limit",
-            "restart_required": false,
-            "min": -1,
-            "type": "integer"
-        },
-        {
-            "name": "max_files_per_process",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_cost_delay",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_cost_page_hit",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_cost_page_miss",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_cost_page_dirty",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_cost_limit",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "bgwriter_delay",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "bgwriter_lru_maxpages",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "bgwriter_lru_multiplier",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "effective_io_concurrency",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "max_worker_processes",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "fsync",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "synchronous_commit",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "wal_sync_method",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "full_page_writes",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "wal_log_hints",
-            "restart_required": true,
-            "type": "boolean"
-        },
-        {
-            "name": "wal_buffers",
-            "restart_required": true,
-            "min": -1,
-            "type": "integer"
-        },
-        {
-            "name": "wal_writer_delay",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "commit_delay",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "commit_siblings",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "checkpoint_timeout",
-            "restart_required": false,
-            "type": "integer"
-        },
-        {
-            "name": "checkpoint_completion_target",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "checkpoint_warning",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "wal_keep_segments",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "wal_sender_timeout",
-            "restart_required": false,
-            "type": "integer"
-        },
-        {
-            "name": "synchronous_standby_names",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "vacuum_defer_cleanup_age",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "hot_standby",
-            "restart_required": true,
-            "type": "boolean"
-        },
-        {
-            "name": "max_standby_archive_delay",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "max_standby_streaming_delay",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "wal_receiver_status_interval",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "hot_standby_feedback",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "wal_receiver_timeout",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "enable_bitmapscan",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_hashagg",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_hashjoin",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_indexscan",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_indexonlyscan",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_material",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_mergejoin",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_nestloop",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_seqscan",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_sort",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "enable_tidscan",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "seq_page_cost",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "random_page_cost",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "cpu_tuple_cost",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "cpu_index_tuple_cost",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "cpu_operator_cost",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "effective_cache_size",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "geqo",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "geqo_threshold",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "geqo_effort",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "geqo_pool_size",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "geqo_generations",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "geqo_selection_bias",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "geqo_seed",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "default_statistics_target",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "constraint_exclusion",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "cursor_tuple_fraction",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "from_collapse_limit",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "join_collapse_limit",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "log_truncate_on_rotation",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_rotation_age",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "log_rotation_size",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "client_min_messages",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "log_min_messages",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "log_min_error_statement",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "debug_print_parse",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "debug_print_rewritten",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "debug_print_plan",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "debug_pretty_print",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_checkpoints",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_connections",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_disconnections",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_duration",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_error_verbosity",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "log_hostname",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_line_prefix",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "log_lock_waits",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_statement",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "log_temp_files",
-            "restart_required": false,
-            "min": -1,
-            "type": "integer"
-        },
-        {
-            "name": "log_timezone",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "track_activities",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "track_counts",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "track_io_timing",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "track_functions",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "track_activity_query_size",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "log_parser_stats",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_planner_stats",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_executor_stats",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_statement_stats",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "autovacuum",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_autovacuum_min_duration",
-            "restart_required": false,
-            "min": -1,
-            "type": "integer"
-        },
-        {
-            "name": "autovacuum_max_workers",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "autovacuum_naptime",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "autovacuum_vacuum_threshold",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "autovacuum_analyze_threshold",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "autovacuum_vacuum_scale_factor",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "autovacuum_analyze_scale_factor",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "autovacuum_freeze_max_age",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "autovacuum_multixact_freeze_max_age",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "autovacuum_vacuum_cost_delay",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "autovacuum_vacuum_cost_limit",
-            "restart_required": false,
-            "min": -1,
-            "type": "integer"
-        },
-        {
-            "name": "search_path",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "default_tablespace",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "temp_tablespaces",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "check_function_bodies",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "default_transaction_isolation",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "default_transaction_read_only",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "default_transaction_deferrable",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "session_replication_role",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "statement_timeout",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "lock_timeout",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_freeze_min_age",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_freeze_table_age",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_multixact_freeze_min_age",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "vacuum_multixact_freeze_table_age",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "bytea_output",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "xmlbinary",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "xmloption",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "datestyle",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "intervalstyle",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "timezone",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "timezone_abbreviations",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "extra_float_digits",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "client_encoding",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "lc_messages",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "lc_monetary",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "lc_numeric",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "lc_time",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "default_text_search_config",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "deadlock_timeout",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "max_locks_per_transaction",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "max_pred_locks_per_transaction",
-            "restart_required": true,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "array_nulls",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "backslash_quote",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "default_with_oids",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "escape_string_warning",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "lo_compat_privileges",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "quote_all_identifiers",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "sql_inheritance",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "standard_conforming_strings",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "synchronize_seqscans",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "transform_null_equals",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "exit_on_error",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "restart_after_crash",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "log_min_duration_statement",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "backend_flush_after",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "bgwriter_flush_after",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "checkpoint_flush_after",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "force_parallel_mode",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "parallel_setup_cost",
-            "restart_required": false,
-            "type": "float"
-        },
-        {
-            "name": "parallel_tuple_cost",
-            "restart_required": false,
-            "type": "float"
-        },
-        {
-            "name": "gin_pending_list_limit",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "idle_in_transaction_session_timeout",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        },
-        {
-            "name": "replacement_sort_tuples",
-            "restart_required": false,
-            "min": 0,
-            "type": "integer"
-        }
-    ]
+  "configuration-parameters": [
+    {
+      "name": "array_nulls",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "authentication_timeout",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "autovacuum",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "autovacuum_analyze_scale_factor",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "autovacuum_analyze_threshold",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "autovacuum_freeze_max_age",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "autovacuum_max_workers",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "autovacuum_multixact_freeze_max_age",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "autovacuum_naptime",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "autovacuum_vacuum_cost_delay",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "autovacuum_vacuum_cost_limit",
+      "restart_required": false,
+      "min": -1,
+      "type": "integer"
+    },
+    {
+      "name": "autovacuum_vacuum_scale_factor",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "autovacuum_vacuum_threshold",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "autovacuum_work_mem",
+      "restart_required": false,
+      "min": -1,
+      "type": "integer"
+    },
+    {
+      "name": "backend_flush_after",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "backslash_quote",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "bgwriter_delay",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "bgwriter_flush_after",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "bgwriter_lru_maxpages",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "bgwriter_lru_multiplier",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "bonjour",
+      "restart_required": true,
+      "type": "boolean"
+    },
+    {
+      "name": "bonjour_name",
+      "restart_required": true,
+      "type": "string"
+    },
+    {
+      "name": "bytea_output",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "check_function_bodies",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "checkpoint_completion_target",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "checkpoint_flush_after",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "checkpoint_timeout",
+      "restart_required": false,
+      "type": "integer"
+    },
+    {
+      "name": "checkpoint_warning",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "client_encoding",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "client_min_messages",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "commit_delay",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "commit_siblings",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "constraint_exclusion",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "cpu_index_tuple_cost",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "cpu_operator_cost",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "cpu_tuple_cost",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "cursor_tuple_fraction",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "datestyle",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "db_user_namespace",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "deadlock_timeout",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "debug_pretty_print",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "debug_print_parse",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "debug_print_plan",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "debug_print_rewritten",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "default_statistics_target",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "default_tablespace",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "default_text_search_config",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "default_transaction_deferrable",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "default_transaction_isolation",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "default_transaction_read_only",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "default_with_oids",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "dynamic_shared_memory_type",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "effective_cache_size",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "effective_io_concurrency",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "enable_bitmapscan",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_hashagg",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_hashjoin",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_indexonlyscan",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_indexscan",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_material",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_mergejoin",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_nestloop",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_seqscan",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_sort",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "enable_tidscan",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "escape_string_warning",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "exit_on_error",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "extra_float_digits",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "force_parallel_mode",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "from_collapse_limit",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "fsync",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "full_page_writes",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "geqo",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "geqo_effort",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "geqo_generations",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "geqo_pool_size",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "geqo_seed",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "geqo_selection_bias",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "geqo_threshold",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "gin_pending_list_limit",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "hot_standby",
+      "restart_required": true,
+      "type": "boolean"
+    },
+    {
+      "name": "hot_standby_feedback",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "huge_pages",
+      "restart_required": true,
+      "type": "string"
+    },
+    {
+      "name": "idle_in_transaction_session_timeout",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "intervalstyle",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "join_collapse_limit",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "lc_messages",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "lc_monetary",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "lc_numeric",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "lc_time",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "lo_compat_privileges",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "lock_timeout",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "log_autovacuum_min_duration",
+      "restart_required": false,
+      "min": -1,
+      "type": "integer"
+    },
+    {
+      "name": "log_checkpoints",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_connections",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_disconnections",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_duration",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_error_verbosity",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_executor_stats",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_hostname",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_line_prefix",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_lock_waits",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_min_duration_statement",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_min_error_statement",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_min_messages",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_parser_stats",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_planner_stats",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_rotation_age",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_rotation_size",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_statement",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_statement_stats",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "log_temp_files",
+      "restart_required": false,
+      "min": -1,
+      "type": "integer"
+    },
+    {
+      "name": "log_timezone",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "log_truncate_on_rotation",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "maintenance_work_mem",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "max_connections",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "max_files_per_process",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "max_locks_per_transaction",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "max_pred_locks_per_transaction",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "max_prepared_transactions",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "max_stack_depth",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "max_standby_archive_delay",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "max_standby_streaming_delay",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "max_wal_size",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "max_worker_processes",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "min_wal_size",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "parallel_setup_cost",
+      "restart_required": false,
+      "type": "float"
+    },
+    {
+      "name": "parallel_tuple_cost",
+      "restart_required": false,
+      "type": "float"
+    },
+    {
+      "name": "password_encryption",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "quote_all_identifiers",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "random_page_cost",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "replacement_sort_tuples",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "restart_after_crash",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "search_path",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "seq_page_cost",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "session_replication_role",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "shared_buffers",
+      "restart_required": true,
+      "type": "string"
+    },
+    {
+      "name": "sql_inheritance",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "standard_conforming_strings",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "statement_timeout",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "superuser_reserved_connections",
+      "restart_required": true,
+      "min": 1,
+      "type": "integer"
+    },
+    {
+      "name": "synchronize_seqscans",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "synchronous_commit",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "synchronous_standby_names",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "tcp_keepalives_count",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "tcp_keepalives_idle",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "tcp_keepalives_interval",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "temp_buffers",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "temp_file_limit",
+      "restart_required": false,
+      "min": -1,
+      "type": "integer"
+    },
+    {
+      "name": "temp_tablespaces",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "timezone",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "timezone_abbreviations",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "track_activities",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "track_activity_query_size",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "track_counts",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "track_functions",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "track_io_timing",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "transform_null_equals",
+      "restart_required": false,
+      "type": "boolean"
+    },
+    {
+      "name": "vacuum_cost_delay",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_cost_limit",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_cost_page_dirty",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_cost_page_hit",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_cost_page_miss",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_defer_cleanup_age",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_freeze_min_age",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_freeze_table_age",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_multixact_freeze_min_age",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "vacuum_multixact_freeze_table_age",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "wal_buffers",
+      "restart_required": true,
+      "min": -1,
+      "type": "integer"
+    },
+    {
+      "name": "wal_keep_segments",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
+      "name": "wal_log_hints",
+      "restart_required": true,
+      "type": "boolean"
+    },
+    {
+      "name": "wal_receiver_status_interval",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "wal_receiver_timeout",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "wal_sender_timeout",
+      "restart_required": false,
+      "type": "integer"
+    },
+    {
+      "name": "wal_sync_method",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "wal_writer_delay",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "work_mem",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "xmlbinary",
+      "restart_required": false,
+      "type": "string"
+    },
+    {
+      "name": "xmloption",
+      "restart_required": false,
+      "type": "string"
+    }
+  ]
 }

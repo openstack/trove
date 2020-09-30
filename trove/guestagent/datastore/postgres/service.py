@@ -150,6 +150,11 @@ class PgSqlApp(service.BaseDbApp):
     def reset_configuration(self, configuration):
         self.configuration_manager.save_configuration(configuration)
 
+    def apply_overrides(self, overrides):
+        """Reload config."""
+        cmd = "pg_ctl reload"
+        docker_util.run_command(self.docker_client, cmd)
+
     def start_db(self, update_db=False, ds_version=None, command=None,
                  extra_volumes=None):
         """Start and wait for database service."""
