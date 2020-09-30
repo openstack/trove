@@ -184,8 +184,9 @@ class MySqlManager(manager.Manager):
         return False
 
     def apply_overrides(self, context, overrides):
-        LOG.info("Applying overrides (%s).", overrides)
+        LOG.info("Applying database config.")
         self.app.apply_overrides(overrides)
+        LOG.info("Finished applying database config.")
 
     def reset_password_for_restore(self, ds_version=None,
                                    data_dir='/var/lib/mysql/data'):
