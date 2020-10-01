@@ -524,6 +524,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                      self.id)
             networks.append({"port-id": port_id})
 
+        if not CONF.management_networks and not networks:
+            return None
+
         # Create port in the user defined network, associate floating IP if
         # needed
         if len(networks) > 1 or not CONF.management_networks:
