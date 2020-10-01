@@ -1836,7 +1836,9 @@ class ResizeActionBase(object):
     def _confirm_nova_action(self):
         LOG.debug("Instance %s calling Compute confirm resize...",
                   self.instance.id)
-        self.instance.server.confirm_resize()
+        self.instance.refresh_compute_server_info()
+        if self.instance.server_status_matches(["VERIFY_RESIZE"]):
+            self.instance.server.confirm_resize()
 
     def _datastore_is_online(self):
         self.instance._refresh_datastore_status()
