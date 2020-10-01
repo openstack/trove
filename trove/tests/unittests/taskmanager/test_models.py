@@ -830,7 +830,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.assertEqual(1, self.instance_task._guest.stop_db.call_count)
         orig_server.resize.assert_any_call(self.new_flavor['id'])
         self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
-        self.assertEqual(1, self.stub_server_mgr.get.call_count)
+        self.assertEqual(2, self.stub_server_mgr.get.call_count)
         self.assertThat(self.db_instance.flavor_id, Is(self.new_flavor['id']))
 
     @patch('trove.taskmanager.models.LOG')
