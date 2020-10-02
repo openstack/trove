@@ -4,7 +4,7 @@ Install and configure for Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section describes how to install and configure the Database
-service for Ubuntu 14.04 (LTS).
+service for Ubuntu 18.04 (LTS).
 
 .. include:: common_prerequisites.txt
 
