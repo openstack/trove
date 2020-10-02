@@ -94,7 +94,7 @@ Bulk-configure a database or databases
 
    .. code-block:: console
 
-      $ openstack database configuration create NAME VALUES --datastore DATASTORE_NAME
+      $ openstack database configuration create NAME VALUES --datastore DATASTORE_NAME --datastore-version DATASTORE_VERSION_NAME
 
    - *NAME*. The name you want to use for this group.
 
@@ -106,13 +106,15 @@ Bulk-configure a database or databases
 
    - *DATASTORE_NAME*. The name of the associated data store.
 
+   - *DATASTORE_VERSION_NAME*. The name of the associated data store version
+
    This example creates a configuration group called ``group1``.
    ``group1`` contains just one key and value pair, and this pair sets
    the ``sync_binlog`` option to ``1``.
 
    .. code-block:: console
 
-      $ openstack database configuration create group1 '{"sync_binlog" : 1}' --datastore mysql
+      $ openstack database configuration create group1 '{"sync_binlog" : 1}' --datastore mysql --datastore_version mysql-5.5
       +----------------------+--------------------------------------+
       |       Property       |                Value                 |
       +----------------------+--------------------------------------+
