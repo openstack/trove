@@ -79,17 +79,19 @@ class fake_Server(object):
         self.flavor_id = None
         self.files = None
         self.userdata = None
+        self.meta = None
         self.block_device_mapping_v2 = None
         self.status = 'HEALTHY'
         self.key_name = None
 
 
 class fake_ServerManager(object):
+
     def create(self, name, image_id, flavor_id, files, userdata,
                block_device_mapping_v2=None,
                availability_zone=None,
                nics=None, config_drive=False,
-               scheduler_hints=None, key_name=None):
+               scheduler_hints=None, key_name=None, meta=None):
         server = fake_Server()
         server.id = "server_id"
         server.name = name
@@ -101,7 +103,7 @@ class fake_ServerManager(object):
         server.availability_zone = availability_zone
         server.nics = nics
         server.key_name = key_name
-
+        server.meta = meta
         return server
 
 
@@ -211,6 +213,8 @@ class BaseFreshInstanceTasksTest(trove_testtools.TestCase):
             f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
             None, Mock(), None, None)
+        self.freshinstancetasks.context = trove.common.context.TroveContext(
+            user='test_user')
 
     def tearDown(self):
         super(BaseFreshInstanceTasksTest, self).tearDown()
@@ -306,6 +310,9 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         mock_servers_create = mock_nova_client.servers.create
         self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
                                                'mysql', None, None, None)
+        meta = {'trove_project_id': self.freshinstancetasks.tenant_id,
+                'trove_user_id': 'test_user',
+                'trove_instance_id': self.freshinstancetasks.id}
         mock_servers_create.assert_called_with(
             'fake-hostname', 'fake-image',
             'fake-flavor', files={},
@@ -315,7 +322,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             nics=None,
             config_drive=True,
             scheduler_hints=None,
-            key_name=None
+            key_name=None,
+            meta=meta,
         )
 
     @patch.object(InstanceServiceStatus, 'find_by',
