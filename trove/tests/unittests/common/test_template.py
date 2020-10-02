@@ -40,14 +40,14 @@ class TemplateTest(trove_testtools.TestCase):
         return found_group
 
     def validate_template(self, contents, teststr, test_flavor, server_id):
-        # expected query_cache_size = {{ 8 * flavor_multiplier }}M
+        # expected innodb_buffer_pool_size = {{ (150 * flavor_multiplier }}M
         flavor_multiplier = test_flavor['ram'] // 512
         found_group = self._find_in_template(contents, teststr)
         if not found_group:
             raise Exception("Could not find text in template")
         # Check that the last group has been rendered
         memsize = found_group.split(" ")[2]
-        self.assertEqual("%sM" % (8 * flavor_multiplier), memsize)
+        self.assertEqual("%sM" % (150 * flavor_multiplier), memsize)
         self.assertIsNotNone(server_id)
         self.assertGreater(len(server_id), 1)
 
@@ -55,7 +55,7 @@ class TemplateTest(trove_testtools.TestCase):
         rendered = self.template.render(flavor=self.flavor_dict,
                                         server_id=self.server_id)
         self.validate_template(rendered,
-                               "query_cache_size",
+                               "innodb_buffer_pool_size",
                                self.flavor_dict,
                                self.server_id)
 
@@ -67,7 +67,7 @@ class TemplateTest(trove_testtools.TestCase):
         config = template.SingleInstanceConfigTemplate(datastore,
                                                        self.flavor_dict,
                                                        self.server_id)
-        self.validate_template(config.render(), "query_cache_size",
+        self.validate_template(config.render(), "innodb_buffer_pool_size",
                                self.flavor_dict, self.server_id)
 
     def test_renderer_discovers_special_config(self):
