@@ -200,7 +200,7 @@ trove-manage datastore_version_update
 
    usage: trove-manage datastore_version_update [-h]
                                                 datastore version_name manager
-                                                image_id packages active
+                                                image_id image_tags packages active
 
 Add or update a datastore version. If the datastore version already exists,
 all values except the datastore name and version will be updated.
@@ -218,6 +218,13 @@ all values except the datastore name and version will be updated.
 
 ``image_id``
   ID of the image used to create an instance of the datastore version.
+
+``image_tags``
+  List of image tags separated by comma. If the image ID is not provided
+  explicitly, the image can be retrieved by the image tags. Multiple image tags
+  are separated by comma, e.g. trove,mysql. Using image tags is more flexible
+  than ID especially when new guest image is uploaded to Glance, Trove can pick
+  up the latest image automatically for creating instances.
 
 ``packages``
   Packages required by the datastore version that are installed on

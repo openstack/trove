@@ -947,6 +947,19 @@ package_list = {
     }
 }
 
+image_tags = {
+    "type": "array",
+    "minItems": 0,
+    "maxItems": 5,
+    "uniqueItems": True,
+    "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20,
+        "pattern": "^.*[0-9a-zA-Z]+.*$"
+    }
+}
+
 mgmt_datastore_version = {
     "create": {
         "name": "mgmt_datastore_version:create",
@@ -955,14 +968,16 @@ mgmt_datastore_version = {
         "properties": {
             "version": {
                 "type": "object",
-                "required": ["name", "datastore_name", "image", "active"],
-                "additionalProperties": True,
+                "required": ["name", "datastore_name", "datastore_manager",
+                             "active"],
+                "additionalProperties": False,
                 "properties": {
                     "name": non_empty_string,
                     "datastore_name": non_empty_string,
                     "datastore_manager": non_empty_string,
                     "packages": package_list,
                     "image": uuid,
+                    "image_tags": image_tags,
                     "active": {"enum": [True, False]},
                     "default": {"enum": [True, False]}
                 }
@@ -973,11 +988,12 @@ mgmt_datastore_version = {
         "name": "mgmt_datastore_version:edit",
         "type": "object",
         "required": [],
-        "additionalProperties": True,
+        "additionalProperties": False,
         "properties": {
             "datastore_manager": non_empty_string,
             "packages": package_list,
             "image": uuid,
+            "image_tags": image_tags,
             "active": {"enum": [True, False]},
             "default": {"enum": [True, False]},
         }

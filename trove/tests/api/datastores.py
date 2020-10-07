@@ -92,18 +92,12 @@ class Datastores(object):
                     if version['name'] == 'inactive_version':
                         return
 
-        # Get a valid image ID from a datastore version
-        datastore = self.rd_client.datastores.get(test_config.dbaas_datastore)
-        ds_version = self.rd_client.datastore_versions.list(datastore.id)[0]
-        ds_version_info = self.rd_admin.datastore_versions.get_by_uuid(
-            ds_version.id)
-
         # Create datastore version for testing
         # 'Test_Datastore_1' is also used in other test cases.
         # Will be deleted in test_delete_datastore_version
         self.rd_admin.mgmt_datastore_versions.create(
             "inactive_version", test_config.dbaas_datastore_name_no_versions,
-            "test_manager", ds_version_info.image,
+            "test_manager", None, image_tags=['trove'],
             active='false', default='false'
         )
 

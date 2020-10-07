@@ -524,8 +524,8 @@ function cmd_set_datastore() {
     local IMAGEID=$1
 
     rd_manage datastore_update "$datastore" ""
-    # trove-manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <packages> <active>
-    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" $IMAGEID "" 1
+    # trove-manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <image_tags> <packages> <active>
+    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" $IMAGEID "" "" 1
     rd_manage datastore_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
     if [[ -f "$PATH_TROVE"/trove/templates/${DATASTORE_TYPE}/validation-rules.json ]]; then

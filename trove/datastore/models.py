@@ -62,9 +62,8 @@ class DBCapabilityOverrides(dbmodels.DatabaseModelBase):
 
 
 class DBDatastoreVersion(dbmodels.DatabaseModelBase):
-
-    _data_fields = ['datastore_id', 'name', 'image_id', 'packages',
-                    'active', 'manager']
+    _data_fields = ['datastore_id', 'name', 'image_id', 'image_tags',
+                    'packages', 'active', 'manager']
     _table_name = 'datastore_versions'
 
 
@@ -448,6 +447,10 @@ class DatastoreVersion(object):
         return self.db_info.image_id
 
     @property
+    def image_tags(self):
+        return self.db_info.image_tags
+
+    @property
     def packages(self):
         return self.db_info.packages
 
@@ -577,8 +580,8 @@ def update_datastore(name, default_version):
     db_api.save(datastore)
 
 
-def update_datastore_version(datastore, name, manager, image_id, packages,
-                             active):
+def update_datastore_version(datastore, name, manager, image_id, image_tags,
+                             packages, active):
     db_api.configure_db(CONF)
     datastore = Datastore.load(datastore)
     try:
@@ -592,6 +595,8 @@ def update_datastore_version(datastore, name, manager, image_id, packages,
         version.datastore_id = datastore.id
     version.manager = manager
     version.image_id = image_id
+    version.image_tags = (",".join(image_tags)
+                          if type(image_tags) is list else image_tags)
     version.packages = packages
     version.active = active
 

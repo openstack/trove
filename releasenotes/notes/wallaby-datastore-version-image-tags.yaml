@@ -1,0 +1,5 @@
+---
+features:
+  - Support image tags for the datastore version. When using image tags, Trove
+    is able to get the image dynamically from Glance for creating instances. If
+    both are specified, image ID takes precedence over image tags.

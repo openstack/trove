@@ -99,6 +99,18 @@ access_is_public:
   in: body
   required: false
   type: boolean
+active:
+  description: |
+    Whether the database version is enabled.
+  in: body
+  required: true
+  type: boolean
+active_optional:
+  description: |
+    Whether the database version is enabled.
+  in: body
+  required: false
+  type: boolean
 availability_zone:
   description: |
     The availability zone of the instance.
@@ -302,6 +314,12 @@ datastore2:
   in: body
   required: true
   type: object
+datastore_name_required:
+   description: |
+     The name of a datastore.
+   in: body
+   required: true
+   type: string
 datastore_type:
    description: |
      The type of a datastore.
@@ -339,6 +357,14 @@ datastore_version_name:
   in: body
   required: true
   type: string
+default:
+  description: |
+    When true this datastore version is created as the default in the
+    datastore. If not specified, for creating, default is false, for updating,
+    it's ignored.
+  in: body
+  required: false
+  type: boolean
 description:
   description: |
     New description of the configuration group.
@@ -392,6 +418,33 @@ flavorRef:
   in: body
   required: true
   type: string
+image_id:
+  description: |
+    The ID of an image.
+
+    Either ``image`` or ``image_tags`` needs to be specified when creating
+    datastore version.
+  in: body
+  required: false
+  type: string
+image_tags:
+  description: |
+    List of image tags.
+
+    Either ``image`` or ``image_tags`` needs to be specified when creating
+    datastore version.
+
+    If the image ID is not provided, the image can be retrieved by the image
+    tags. The tags are used for filtering as a whole rather than separately.
+    Using image tags is more flexible than ID especially when a new guest image
+    is uploaded to Glance, Trove can pick up the latest image automatically for
+    creating instances.
+
+    When updating, only specifying ``image_tags`` could remove ``image``
+    from the datastore version.
+  in: body
+  required: false
+  type: array
 instance:
   description: |
     An ``instance`` object.

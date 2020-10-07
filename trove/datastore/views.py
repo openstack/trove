@@ -90,6 +90,11 @@ class DatastoreVersionView(object):
             datastore_version_dict['packages'] = (self.datastore_version.
                                                   packages)
             datastore_version_dict['image'] = self.datastore_version.image_id
+
+            image_tags = []
+            if self.datastore_version.image_tags:
+                image_tags = self.datastore_version.image_tags.split(',')
+            datastore_version_dict['image_tags'] = image_tags
         return {"version": datastore_version_dict}
 
     def _build_links(self):

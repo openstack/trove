@@ -20,8 +20,8 @@ class TestDatastoreVersions(TestDatastoreBase):
 
     def test_load_datastore_version(self):
         datastore_version = DatastoreVersion.load(self.datastore,
-                                                  self.ds_version)
-        self.assertEqual(self.ds_version, datastore_version.name)
+                                                  self.ds_version_name)
+        self.assertEqual(self.ds_version_name, datastore_version.name)
 
     def test_datastore_version_capabilities(self):
         self.datastore_version.capabilities.add(self.cap1, enabled=False)
@@ -35,7 +35,7 @@ class TestDatastoreVersions(TestDatastoreBase):
 
         # Test a fresh reloading of the datastore
         self.datastore_version = DatastoreVersion.load(self.datastore,
-                                                       self.ds_version)
+                                                       self.ds_version_name)
         test_filtered_capabilities = self.capability_name_filter(
             self.datastore_version.capabilities)
         self.assertEqual(3, len(test_filtered_capabilities),

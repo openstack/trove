@@ -62,12 +62,13 @@ class Commands(object):
             print(e)
 
     def datastore_version_update(self, datastore, version_name, manager,
-                                 image_id, packages, active):
+                                 image_id, image_tags, packages, active):
         try:
             datastore_models.update_datastore_version(datastore,
                                                       version_name,
                                                       manager,
                                                       image_id,
+                                                      image_tags,
                                                       packages, active)
             print("Datastore version '%s' updated." % version_name)
         except exception.DatastoreNotFound as e:
@@ -208,8 +209,13 @@ def main():
             'manager', help='Name of the manager that will administer the '
             'datastore version.')
         parser.add_argument(
-            'image_id', help='ID of the image used to create an instance of '
-            'the datastore version.')
+            'image_id',
+            help='ID of the image used to create an instance of '
+                 'the datastore version.')
+        parser.add_argument(
+            'image_tags',
+            help='List of image tags separated by comma used for getting '
+                 'guest image.')
         parser.add_argument(
             'packages', help='Packages required by the datastore version that '
             'are installed on the guest image.')

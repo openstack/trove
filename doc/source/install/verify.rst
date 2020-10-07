@@ -27,15 +27,13 @@ Verify operation of the Database service.
      Create an image for the type of database you want to use, for example,
      MySQL, MariaDB, etc.
 
-   * Create a datastore. You need to create a separate datastore for
-     each type of database you want to use, for example, MySQL, MongoDB,
-     Cassandra. This example shows you how to create a datastore for a
-     MySQL database:
+   * Create a datastore. You need to create at least one datastore version for
+     each type of database supported. This example creates a datastore version
+     for MySQL 5.7.29:
 
      .. code-block:: console
 
-        $ trove-manage datastore_update mysql ""
-        $ trove-manage datastore_version_update mysql 5.7 mysql $imageid "" 1
+        $ openstack datastore version create 5.7.29 mysql mysql "" trove,mysql --active --default
 
 #. Create a database `instance
    <http://docs.openstack.org/user-guide/create_db.html>`_.

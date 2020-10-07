@@ -14,8 +14,10 @@
 #    under the License.
 
 import abc
+import random
 import testtools
 from unittest import mock
+import uuid
 
 from trove.common import cfg
 from trove.common.context import TroveContext
@@ -96,3 +98,27 @@ class TestCase(testtools.TestCase):
             new_callable=mock.PropertyMock(return_value=value))
         self.addCleanup(conf_patcher.stop)
         return conf_patcher.start()
+
+    @classmethod
+    def random_name(cls, name='', prefix=None):
+        """Generate a random name that inclues a random number.
+
+        :param str name: The name that you want to include
+        :param str prefix: The prefix that you want to include
+
+        :return: a random name. The format is
+                 '<prefix>-<name>-<random number>'.
+                 (e.g. 'prefixfoo-namebar-154876201')
+        :rtype: string
+        """
+        randbits = str(random.randint(1, 0x7fffffff))
+        rand_name = randbits
+        if name:
+            rand_name = name + '-' + rand_name
+        if prefix:
+            rand_name = prefix + '-' + rand_name
+        return rand_name
+
+    @classmethod
+    def random_uuid(cls):
+        return str(uuid.uuid4())

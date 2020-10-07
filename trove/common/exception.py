@@ -699,6 +699,11 @@ class ImageNotFound(NotFound):
     message = _("Image %(uuid)s cannot be found.")
 
 
+class ImageNotFoundByTags(NotFound):
+
+    message = _("Failed to retrieve image with tags: %(tags)s.")
+
+
 class LogAccessForbidden(Forbidden):
 
     message = _("You must be admin to %(action)s log '%(log)s'.")

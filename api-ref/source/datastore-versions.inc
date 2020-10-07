@@ -286,6 +286,13 @@ Request
 .. rest_parameters:: parameters.yaml
 
    - project_id: project_id
+   - name: datastore_version_name
+   - datastore_name: datastore_name_required
+   - datastore_manager: datastore_type1
+   - image: image_id
+   - image_tags: image_tags
+   - active: active
+   - default: default
 
 Request Example
 ---------------
@@ -363,6 +370,11 @@ Request
 
    - project_id: project_id
    - datastore_version_id: datastore_version_id
+   - datastore_manager: datastore_type
+   - image: image_id
+   - image_tags: image_tags
+   - active: active_optional
+   - default: default
 
 Request Example
 ---------------

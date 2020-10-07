@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from glanceclient import exc as glance_exceptions
 from oslo_log import log as logging
 
 from trove.backup import models as backup_model
 from trove.common import apischema
-from trove.common.auth import admin_context
 from trove.common import clients
 from trove.common import exception
+from trove.common import glance as common_glance
 from trove.common import utils
 from trove.common import wsgi
+from trove.common.auth import admin_context
 from trove.configuration import models as config_model
 from trove.datastore import models
 from trove.extensions.mgmt.datastores import views
@@ -43,23 +42,24 @@ class DatastoreVersionController(wsgi.Controller):
         datastore_name = body['version']['datastore_name']
         version_name = body['version']['name']
         manager = body['version']['datastore_manager']
-        image_id = body['version']['image']
-        packages = body['version']['packages']
+        image_id = body['version'].get('image')
+        image_tags = body['version'].get('image_tags')
+        packages = body['version'].get('packages')
         if type(packages) is list:
             packages = ','.join(packages)
         active = body['version']['active']
-        default = body['version']['default']
+        default = body['version'].get('default', False)
 
         LOG.info("Tenant: '%(tenant)s' is adding the datastore "
                  "version: '%(version)s' to datastore: '%(datastore)s'",
                  {'tenant': tenant_id, 'version': version_name,
                   'datastore': datastore_name})
 
+        if not image_id and not image_tags:
+            raise exception.BadRequest("Image must be specified.")
+
         client = clients.create_glance_client(context)
-        try:
-            client.images.get(image_id)
-        except glance_exceptions.HTTPNotFound:
-            raise exception.ImageNotFound(uuid=image_id)
+        common_glance.get_image_id(client, image_id, image_tags)
 
         try:
             datastore = models.Datastore.load(datastore_name)
@@ -76,8 +76,8 @@ class DatastoreVersionController(wsgi.Controller):
             raise exception.DatastoreVersionAlreadyExists(name=version_name)
         except exception.DatastoreVersionNotFound:
             models.update_datastore_version(datastore.name, version_name,
-                                            manager, image_id, packages,
-                                            active)
+                                            manager, image_id, image_tags,
+                                            packages, active)
 
         if default:
             models.update_datastore(datastore.name, version_name)
@@ -114,23 +114,36 @@ class DatastoreVersionController(wsgi.Controller):
                   'datastore': datastore_version.datastore_name})
 
         manager = body.get('datastore_manager', datastore_version.manager)
-        image_id = body.get('image', datastore_version.image_id)
+        image_id = body.get('image')
+        image_tags = body.get('image_tags')
         active = body.get('active', datastore_version.active)
         default = body.get('default', None)
         packages = body.get('packages', datastore_version.packages)
         if type(packages) is list:
             packages = ','.join(packages)
 
-        client = clients.create_glance_client(context)
-        try:
-            client.images.get(image_id)
-        except glance_exceptions.HTTPNotFound:
-            raise exception.ImageNotFound(uuid=image_id)
+        if image_id or image_tags:
+            client = clients.create_glance_client(context)
+            common_glance.get_image_id(client, image_id, image_tags)
+
+        if not image_id and image_tags:
+            # Remove the image ID from the datastore version.
+            image_id = ""
+
+        if image_id is None:
+            image_id = datastore_version.image_id
+        if image_tags is None:
+            image_tags = datastore_version.image_tags
+            if type(image_tags) is str:
+                image_tags = image_tags.split(',')
+
+        if not image_id and not image_tags:
+            raise exception.BadRequest("Image must be specified.")
 
         models.update_datastore_version(datastore_version.datastore_name,
                                         datastore_version.name,
-                                        manager, image_id, packages,
-                                        active)
+                                        manager, image_id, image_tags,
+                                        packages, active)
 
         if default:
             models.update_datastore(datastore_version.datastore_name,

@@ -3,15 +3,9 @@
 .. role:: bash(code)
    :language: bash
 
-=========================================
-Building Guest Images for OpenStack Trove
-=========================================
-
-.. If section numbers are desired, unindent this
-    .. sectnum::
-
-.. If a TOC is desired, unindent this
-    .. contents::
+====================
+Building guest image
+====================
 
 Overview
 ========
@@ -199,14 +193,16 @@ image in Glance and register a new datastore or version in Trove using
       --private \
       --disk-format qcow2 \
       --container-format bare \
+      --tag trove --tag mysql \
       --file ~/images/trove-guest-ubuntu-bionic-dev.qcow2
-    $ trove-manage datastore_version_update mysql 5.7.29 mysql $image_id "" 1
+    $ openstack datastore version create 5.7.29 mysql mysql "" \
+      --image-tags trove,mysql \
+      --active --default
     $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 ${trove_repo_dir}/trove/templates/mysql/validation-rules.json
 
 .. note::
 
     The command ``trove-manage`` needs to run on Trove controller node.
-    Otherwise, you can use ``openstack datastore version create`` CLI.
 
 If you see anything error or need help for the image creation, please ask help
 either in ``#openstack-trove`` IRC channel or sending emails to

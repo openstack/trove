@@ -19,12 +19,6 @@ from trove.tests.unittests.datastore.base import TestDatastoreBase
 
 
 class TestCapabilities(TestDatastoreBase):
-    def setUp(self):
-        super(TestCapabilities, self).setUp()
-
-    def tearDown(self):
-        super(TestCapabilities, self).tearDown()
-
     def test_capability(self):
         cap = Capability.load(self.capability_name)
         self.assertEqual(self.capability_name, cap.name)
@@ -37,9 +31,6 @@ class TestCapabilities(TestDatastoreBase):
         self.assertFalse(self.ds_cap.enabled)
 
         self.ds_cap.delete()
-
-    def test_capability_enabled(self):
-        self.assertTrue(Capability.load(self.capability_name).enabled)
 
     def test_capability_disabled(self):
         capability = Capability.load(self.capability_name)

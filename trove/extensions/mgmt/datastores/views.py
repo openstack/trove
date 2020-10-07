@@ -26,6 +26,8 @@ class DatastoreVersionView(object):
             "datastore_name": self.datastore_version.datastore_name,
             "datastore_manager": self.datastore_version.manager,
             "image": self.datastore_version.image_id,
+            "image_tags": (self.datastore_version.image_tags.split(',')
+                           if self.datastore_version.image_tags else ['']),
             "packages": (self.datastore_version.packages.split(
                 ',') if self.datastore_version.packages else ['']),
             "active": self.datastore_version.active,
