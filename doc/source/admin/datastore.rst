@@ -60,8 +60,8 @@ To create a datastore version:
    .. code-block:: console
 
       openstack datastore version create 5.7.29 mysql mysql "" \
-			  --image-tags trove,mysql \
-				--active --default
+        --image-tags trove,mysql \
+        --active --default
 
 #. Load validation rules for configuration groups
 
@@ -121,4 +121,19 @@ version for testing purpose, to do that:
 
    .. code-block:: console
 
-      $ openstack datastore version <version-id> --disable
+      $ openstack datastore version set <version-id> --disable
+
+Replace image ID with tags
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For datastore versions what are created using image ID, it's easy to switch to
+image tags without affecting the existing instances. New instances will be
+created by the image ID (the most recently uploaded) that getting from Glance
+using image tags. To do that, as the cloud admin user:
+
+   .. code-block:: console
+
+      $ openstack datastore version set <version-id> --image-tags trove,mysql
+
+Ignoring ``--image`` means removing the image ID from the datastore version if
+it's associated.

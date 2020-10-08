@@ -50,11 +50,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        versions = models.DatastoreVersions.load_all(only_active=False)
-        for ver in versions:
-            ver.delete()
-
-        cls.ds.delete()
+        util.cleanup_db()
 
         super(TestDatastoreVersionController, cls).tearDownClass()
 

@@ -24,6 +24,7 @@ import trove.common.apischema as apischema
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
+from trove.common import glance as common_glance
 from trove.common.i18n import _
 from trove.common import neutron
 from trove.common import notification
@@ -414,7 +415,13 @@ class InstanceController(wsgi.Controller):
             datastore, datastore_version = ds_models.get_datastore_version(
                 **datastore_args)
 
-        image_id = datastore_version.image_id
+        # If only image_tags is configured in the datastore version, get
+        # the image ID using the tags.
+        glance_client = clients.create_glance_client(context)
+        image_id = common_glance.get_image_id(
+            glance_client, datastore_version.image_id,
+            datastore_version.image_tags)
+        LOG.info(f'Using image {image_id} for creating instance')
 
         databases = populate_validated_databases(
             body['instance'].get('databases', []))

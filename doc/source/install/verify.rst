@@ -33,7 +33,9 @@ Verify operation of the Database service.
 
      .. code-block:: console
 
-        $ openstack datastore version create 5.7.29 mysql mysql "" trove,mysql --active --default
+        $ openstack datastore version create 5.7.29 mysql mysql "" \
+          --image-tags trove,mysql \
+          --active --default
 
 #. Create a database `instance
    <http://docs.openstack.org/user-guide/create_db.html>`_.

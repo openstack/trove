@@ -26,6 +26,8 @@ def get_image_id(client, image_id, image_tags):
         return image_id
 
     elif image_tags:
+        if isinstance(image_tags, str):
+            image_tags = image_tags.split(',')
         filters = {'tag': image_tags, 'status': 'active'}
         images = list(client.images.list(
             filters=filters, sort='created_at:desc', limit=1))
