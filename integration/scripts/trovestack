@@ -751,7 +751,7 @@ function cmd_build_image() {
 
     echo "Ensuring we have all packages needed to build image."
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
-    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap squashfs-tools python3-pip
+    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap squashfs-tools python3-pip python3-setuptools
     sudo -H $HTTP_PROXY pip3 install diskimage-builder
 
     build_guest_image ${image_guest_os} ${image_guest_release} ${dev_mode} ${guest_username} ${output}
