@@ -16,12 +16,12 @@
 import abc
 import ast
 import csv
+import configparser
 import io
 import re
 import sys
 
 import six
-from six.moves import configparser
 import xmltodict
 import yaml
 

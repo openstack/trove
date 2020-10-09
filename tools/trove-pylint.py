@@ -15,6 +15,7 @@
 import fnmatch
 import json
 from collections import OrderedDict
+import io
 import os
 import re
 import six
@@ -22,7 +23,6 @@ import sys
 
 from pylint import lint
 from pylint.reporters import text
-from six.moves import cStringIO as csio
 
 DEFAULT_CONFIG_FILE = "tools/trove-pylint.config"
 DEFAULT_IGNORED_FILES = ['trove/tests']
@@ -210,7 +210,7 @@ class LintRunner(object):
     def dolint(self, filename):
         exceptions = set()
 
-        buffer = csio()
+        buffer = io.StringIO()
         reporter = ParseableTextReporter(output=buffer)
         options = list(self.config.get('options'))
         options.append(filename)

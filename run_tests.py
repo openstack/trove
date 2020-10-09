@@ -25,7 +25,7 @@ import traceback
 import eventlet
 from oslo_log import log as logging
 import proboscis
-from six.moves import urllib
+import urllib
 import wsgi_intercept
 from wsgi_intercept.httplib2_intercept import install as wsgi_install
 

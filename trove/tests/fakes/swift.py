@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http_client
 from hashlib import md5
 from unittest.mock import MagicMock, patch
 import json
@@ -24,7 +25,6 @@ import uuid
 
 from oslo_log import log as logging
 import six
-from six.moves import http_client
 from swiftclient import client as swift
 
 

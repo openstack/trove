@@ -13,11 +13,10 @@
 #    under the License.
 
 
+import configparser
 import os
 import pkg_resources
 from unittest import mock
-
-from six.moves import configparser as config_parser
 
 import trove
 from trove.common import extensions
@@ -76,7 +75,7 @@ class TestExtensionLoading(trove_testtools.TestCase):
         setup_path = "%s/setup.cfg" % trove_base
         # check if we are running as unit test without module installed
         if os.path.isfile(setup_path):
-            parser = config_parser.ConfigParser()
+            parser = configparser.ConfigParser()
             parser.read(setup_path)
             entry_points = parser.get(
                 'entry_points', extensions.ExtensionManager.EXT_NAMESPACE)

@@ -18,10 +18,10 @@ import re
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 import six
-from six.moves import urllib
 import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy.sql.expression import text
+import urllib
 
 from trove.common import cfg
 from trove.common import exception

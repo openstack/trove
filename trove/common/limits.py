@@ -23,9 +23,9 @@ import math
 import re
 import time
 
+from http import client as http_client
 from oslo_serialization import jsonutils
 from oslo_utils import importutils
-from six.moves import http_client
 import webob.dec
 import webob.exc
 
