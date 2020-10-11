@@ -472,7 +472,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 is_public=is_public,
                 subnet_id=network_info.get('subnet_id'),
                 ip=network_info.get('ip_address'),
-                is_mgmt=is_mgmt
+                is_mgmt=is_mgmt,
+                project_id=self.tenant_id
             )
         except Exception as e:
             self.update_db(
@@ -1371,7 +1372,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                     LOG.debug(f"Updating port {port['id']}, is_public: "
                               f"{new_is_public}")
                     neutron.ensure_port_access(self.neutron_client, port['id'],
-                                               new_is_public)
+                                               new_is_public, self.tenant_id)
 
         if CONF.trove_security_groups_support:
             if allowed_cidrs != new_allowed_cidrs:

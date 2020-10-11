@@ -210,7 +210,9 @@ class BaseFreshInstanceTasksTest(trove_testtools.TestCase):
             self.guestconfig = f.name
             f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
-            None, Mock(), None, None)
+            None, MagicMock(), None, None)
+        self.freshinstancetasks.context = trove.common.context.TroveContext(
+            user='test_user')
 
     def tearDown(self):
         super(BaseFreshInstanceTasksTest, self).tearDown()
@@ -411,7 +413,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                                             *args):
         self.patch_conf_property('management_networks', ['fake-mgmt-uuid'])
 
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_client.create_security_group.return_value = {
             'security_group': {'id': 'fake-sg-id'}
         }
@@ -468,6 +470,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             "floatingip": {
                 'floating_network_id': 'fake-public-net-id',
                 'port_id': 'fake-user-port-id',
+                'project_id': mock.ANY
             }
         }
         mock_client.create_floatingip.assert_called_once_with(

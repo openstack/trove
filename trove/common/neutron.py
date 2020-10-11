@@ -65,7 +65,8 @@ def check_subnet_router(client, subnet_id):
 
 
 def create_port(client, name, description, network_id, security_groups,
-                is_public=False, subnet_id=None, ip=None, is_mgmt=False):
+                is_public=False, subnet_id=None, ip=None, is_mgmt=False,
+                project_id=None):
     enable_access_check = (not is_mgmt and
                            (CONF.network.enable_access_check or is_public))
 
@@ -98,7 +99,7 @@ def create_port(client, name, description, network_id, security_groups,
         check_subnet_router(client, subnet_id)
 
     if is_public:
-        make_port_public(client, port_id)
+        make_port_public(client, port_id, project_id)
 
     return port_id
 
@@ -118,7 +119,8 @@ def delete_port(client, id):
     client.delete_port(id)
 
 
-def make_port_public(client, port_id):
+def make_port_public(client, port_id, project_id):
+    """Associate floating IP with the port."""
     public_network_id = get_public_network(client)
     if not public_network_id:
         raise exception.PublicNetworkNotFound()
@@ -129,11 +131,18 @@ def make_port_public(client, port_id):
             'port_id': port_id,
         }
     }
+    if project_id:
+        fip_body['floatingip']['project_id'] = project_id
 
     try:
-        client.create_floatingip(fip_body)
+        LOG.debug(f"Creating floating IP for the port {port_id}, "
+                  f"request body: {fip_body}")
+        ret = client.create_floatingip(fip_body)
+        LOG.info(f"Successfully created floating IP "
+                 f"{ret['floatingip']['floating_ip_address']} for port "
+                 f"{port_id}")
     except Exception as e:
-        LOG.error(f"Failed to associate public IP with port {port_id}: "
+        LOG.error(f"Failed to create public IP with port {port_id}: "
                   f"{str(e)}")
         raise exception.TroveError('Failed to expose instance port to public.')
 
@@ -156,13 +165,13 @@ def get_public_network(client):
     return ret['networks'][0].get('id')
 
 
-def ensure_port_access(client, port_id, is_public):
+def ensure_port_access(client, port_id, is_public, project_id):
     fips = client.list_floatingips(port_id=port_id)["floatingips"]
 
     if is_public and not fips:
         # Associate floating IP
         LOG.debug(f"Associate public IP with port {port_id}")
-        make_port_public(client, port_id)
+        make_port_public(client, port_id, project_id)
         return
 
     if not is_public and fips:
