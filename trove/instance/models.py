@@ -924,6 +924,13 @@ class BaseInstance(SimpleInstance):
                 self.context, region_name=self.db_info.region_id)
         return self._neutron_client
 
+    @property
+    def user_neutron_client(self):
+        if not self._user_neutron_client:
+            self._user_neutron_client = clients.neutron_client(
+                self.context, region_name=self.db_info.region_id)
+        return self._user_neutron_client
+
     def reset_task_status(self):
         self.update_db(task_status=InstanceTasks.NONE)
 
