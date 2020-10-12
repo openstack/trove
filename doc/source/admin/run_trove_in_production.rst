@@ -71,10 +71,11 @@ services.
 Service Tenant Deployment
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 In production, almost all the cloud resources(except the Swift objects for
-backup data) created for a Trove instance should be only visible to the Trove
-service user. As DBaaS users, they should only see a Trove instance after
-creating, and know nothing about the Nova VM, Cinder volume, Neutron management
-network and security groups under the hood. The only way to operate Trove
+backup data and floating IP addresses for public instances) created for a Trove
+instance should be only visible to the Trove service user. As DBaaS users, they
+should only see a Trove instance after creating, and know nothing about the
+Nova VM, Cinder volume, Neutron management network and security groups under
+the hood. The only way to operate Trove
 instance is to interact with `Trove API
 <https://docs.openstack.org/api-ref/database/>`_.
 
@@ -341,8 +342,8 @@ Command examples:
 Quota Management
 ~~~~~~~~~~~~~~~~
 The amount of resources that could be created by each OpenStack project is
-controlled by quota. The default resource quota for each project is set in
-Trove config file as follows unless changed by the cloud administrator via
+controlled by quota. The default trove resource quota for each project is set
+in Trove config file as follows unless changed by the cloud administrator via
 `Quota API
 <https://docs.openstack.org/api-ref/database/#update-resources-quota-for-a-specific-project>`_.
 
@@ -351,6 +352,19 @@ Trove config file as follows unless changed by the cloud administrator via
     [DEFAULT]
     max_instances_per_tenant = 10
     max_backups_per_tenant = 50
+
+In the meantime, trove service project itself also needs quota to create cloud
+resources corresponding to the trove instances, e.g.
+
+.. code-block:: console
+
+   openstack quota set \
+     --instances 200 \
+     --server-groups 200 \
+     --volumes 200 \
+     --secgroups 200 \
+     --ports 400 \
+     <trove-service-project>
 
 
 Trove Deployment Verfication
