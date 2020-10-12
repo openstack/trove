@@ -431,7 +431,7 @@ class InstanceController(wsgi.Controller):
             users = populate_users(body['instance'].get('users', []),
                                    database_names)
         except ValueError as ve:
-            raise exception.BadRequest(message=ve)
+            raise exception.BadRequest(message=str(ve))
         if slave_of_id and (databases or users):
             raise exception.ReplicaCreateWithUsersDatabasesError()
 
