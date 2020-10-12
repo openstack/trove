@@ -111,7 +111,7 @@ Create and access a database instance
           --size 5 \
           --nic net-id=8799cf10-01ef-40e2-b04e-06da7cfa5668 \
           --databases test --users userA:password \
-          --datastore mysql --datastore_version 5.7 \
+          --datastore mysql --datastore-version 5.7 \
           --is-public \
           --allowed-cidr 10.1.0.1/24 \
           --allowed-cidr 202.37.199.1/24

@@ -52,7 +52,7 @@ Upgrading datastore
         --flavor d2 \
         --size 1 \
         --nic net-id=$netid \
-        --datastore mysql --datastore_version 5.7.29 \
+        --datastore mysql --datastore-version 5.7.29 \
         --databases testdb --users user:password
       $ openstack database instance list
       +--------------------------------------+--------------------+-----------+-------------------+---------+-----------------------------------------------+-----------+------+-----------+---------+
