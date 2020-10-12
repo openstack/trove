@@ -49,7 +49,7 @@ in place and can be triggered by the cloud administrator.
           $flavorid \
           --size 1 \
           --nic net-id=$netid \
-          --datastore mysql --datastore_version 5.7 \
+          --datastore mysql --datastore-version 5.7 \
           --databases testdb --users user:password \
           --is-public
       $ openstack database instance list
