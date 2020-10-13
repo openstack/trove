@@ -7,11 +7,19 @@ Datastore
 Introduction
 ~~~~~~~~~~~~
 
-A datastore is typically created as a type of database. For each datastore,
-there could be multiple datastore versions. For example, for MySQL database,
-Trove could support 5.7.29, 5.7.30 or 5.8.
-
 Admin user needs to create datastore and its versions as required.
+
+A datastore is typically created as a type of database, e.g. the cloud admin
+could create 2 datastores for MySQL and PostgreSQL, separately. For each
+datastore, there could be multiple datastore versions. For example, for MySQL
+database, Trove could support 5.7.29, 5.7.30 or 5.8, etc.
+
+.. note::
+
+   Starting from Victoria, the datastore version name must be the same with the
+   image tag of the specific database. To support MySQL 5.7.29, a new datastore
+   version named 5.7.29 based on `mysql docker image
+   <https://hub.docker.com/_/mysql?tab=tags&name=5.7.29>`_ needs to be created.
 
 A datastore version is always associated with a Glance image, either by image
 ID or image tags. If the image ID is not provided, the image can be retrieved
@@ -119,21 +127,21 @@ Sometimes, it's needed to make a datastore version invisible to the cloud
 users, e.g when a datastore version is deprecated or creating a datastore
 version for testing purpose, to do that:
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ openstack datastore version set <version-id> --disable
+   $ openstack datastore version set <version-id> --disable
 
 Replace image ID with tags
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For datastore versions what are created using image ID, it's easy to switch to
+For datastore versions that are created using image ID, it's easy to switch to
 image tags without affecting the existing instances. New instances will be
 created by the image ID (the most recently uploaded) that getting from Glance
 using image tags. To do that, as the cloud admin user:
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ openstack datastore version set <version-id> --image-tags trove,mysql
+   $ openstack datastore version set <version-id> --image-tags trove,mysql
 
 Ignoring ``--image`` means removing the image ID from the datastore version if
 it's associated.
