@@ -525,7 +525,7 @@ function cmd_set_datastore() {
 
     rd_manage datastore_update "$datastore" ""
     # trove-manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <image_tags> <packages> <active>
-    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" $IMAGEID "" "" 1
+    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" ${IMAGEID} "trove" "" 1
     rd_manage datastore_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
     if [[ -f "$PATH_TROVE"/trove/templates/${DATASTORE_TYPE}/validation-rules.json ]]; then
@@ -766,7 +766,9 @@ function cmd_build_and_upload_image() {
     local output_dir=${5:-"$HOME/images"}
 
     name=trove-guest-${guest_os}-${guest_release}
-    glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image list --name $name -f value -c ID)
+    glance_imageid=$(openstack ${CLOUD_ADMIN_ARG} image list \
+      --tag trove --sort created_at:desc \
+      -f value -c ID | awk 'NR==1 {print}')
     if [[ -z ${glance_imageid} ]]; then
         mkdir -p ${output_dir}
         output=${output_dir}/${name}.qcow2

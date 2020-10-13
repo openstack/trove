@@ -617,7 +617,9 @@ mysql_opts = [
     ),
     cfg.StrOpt(
         'backup_docker_image', default='openstacktrove/db-backup-mysql:1.0.0',
-        help='The docker image used for backup and restore.'
+        help='The docker image used for backup and restore. For mysql, '
+             'the minor version is added to the image name as a suffix before '
+             'creating container, e.g. openstacktrove/db-backup-mysql5.7:1.0.0'
     ),
 ]
 

@@ -20,6 +20,7 @@ Do not hard-code strings into the guest agent; use this module to build
 them for you.
 
 """
+import semantic_version
 
 
 class Query(object):
@@ -160,14 +161,6 @@ class Grant(object):
         return self.user or ""
 
     @property
-    def _identity(self):
-        if self.clear:
-            return "IDENTIFIED BY '%s'" % self.clear
-        if self.hashed:
-            return "IDENTIFIED BY PASSWORD '%s'" % self.hashed
-        return ""
-
-    @property
     def _host(self):
         return self.host or "%"
 
@@ -187,12 +180,7 @@ class Grant(object):
 
     @property
     def _whom(self):
-        # User and host to be granted permission. Optionally, password, too.
-        whom = [("TO %s" % self._user_host),
-                self._identity,
-                ]
-        whom = [w for w in whom if w]
-        return " ".join(whom)
+        return f"TO {self._user_host}"
 
     @property
     def _with(self):
@@ -256,12 +244,7 @@ class Revoke(Grant):
     @property
     def _whom(self):
         # User and host from whom to revoke permission.
-        # Optionally, password, too.
-        whom = [("FROM %s" % self._user_host),
-                self._identity,
-                ]
-        whom = [w for w in whom if w]
-        return " ".join(whom)
+        return f"FROM {self._user_host}"
 
 
 class CreateDatabase(object):
@@ -368,21 +351,32 @@ class RenameUser(object):
 
 
 class SetPassword(object):
-
-    def __init__(self, user, host=None, new_password=None):
+    def __init__(self, user, host=None, new_password=None, ds=None,
+                 ds_version=None):
         self.user = user
         self.host = host or '%'
         self.new_password = new_password or ''
+        self.ds = ds or 'mysql'
+        self.ds_version = ds_version or '5.7'
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        properties = {'user_name': self.user,
-                      'user_host': self.host,
-                      'new_password': self.new_password}
-        return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
-                "PASSWORD('%(new_password)s');" % properties)
+        if self.ds == 'mysql':
+            cur_version = semantic_version.Version.coerce(self.ds_version)
+            mysql_575 = semantic_version.Version('5.7.5')
+            if cur_version <= mysql_575:
+                return (f"SET PASSWORD FOR '{self.user}'@'{self.host}' = "
+                        f"PASSWORD('{self.new_password}');")
+
+            return (f"ALTER USER '{self.user}'@'{self.host}' "
+                    f"IDENTIFIED WITH mysql_native_password "
+                    f"BY '{self.new_password}';")
+        elif self.ds == 'mariadb':
+            return (f"ALTER USER '{self.user}'@'{self.host}' IDENTIFIED VIA "
+                    f"mysql_native_password USING "
+                    f"PASSWORD('{self.new_password}');")
 
 
 class DropUser(object):

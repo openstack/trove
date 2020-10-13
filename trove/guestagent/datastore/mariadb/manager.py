@@ -11,7 +11,6 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
 from trove.guestagent.datastore.mariadb import service
 from trove.guestagent.datastore.mysql_common import manager
 from trove.guestagent.datastore.mysql_common import service as mysql_service
@@ -24,3 +23,12 @@ class Manager(manager.MySqlManager):
         adm = service.MariaDBAdmin(app)
 
         super(Manager, self).__init__(app, status, adm)
+
+    def get_start_db_params(self, data_dir):
+        """Get parameters for starting database.
+
+        Cinder volume initialization(after formatted) may leave a lost+found
+        folder.
+        """
+        return (f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
+                f'--datadir={data_dir}')

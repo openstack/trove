@@ -1,9 +1,8 @@
 FROM ubuntu:18.04
 LABEL maintainer="anlin.kong@gmail.com"
 
-ARG DATASTORE="mysql"
+ARG DATASTORE="mysql5.7"
 ARG APTOPTS="-y -qq --no-install-recommends --allow-unauthenticated"
-ARG PERCONA_XTRABACKUP_VERSION=24
 
 RUN export DEBIAN_FRONTEND="noninteractive" \
     && export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
@@ -16,7 +15,7 @@ RUN apt-get update \
 
 COPY . /opt/trove/backup
 WORKDIR /opt/trove/backup
-RUN ./install.sh $DATASTORE ${PERCONA_XTRABACKUP_VERSION}
+RUN ./install.sh $DATASTORE
 
 RUN apt-get update \
     && apt-get install $APTOPTS build-essential python3-setuptools python3-all python3-all-dev python3-pip libffi-dev libssl-dev libxml2-dev libxslt1-dev libyaml-dev \

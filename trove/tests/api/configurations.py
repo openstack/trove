@@ -269,7 +269,7 @@ class CreateConfigurations(ConfigurationsTestBase):
 
     @test
     def test_valid_configurations_create(self):
-        # create a configuration with valid parameters
+        """create a configuration with valid parameters from config."""
         expected_configs = self.expected_default_datastore_configs()
         values = json.dumps(expected_configs.get('valid_values'))
         expected_values = json.loads(values)
@@ -296,6 +296,7 @@ class CreateConfigurations(ConfigurationsTestBase):
 
     @test(runs_after=[test_valid_configurations_create])
     def test_appending_to_existing_configuration(self):
+        """test_appending_to_existing_configuration"""
         # test being able to update and insert new parameter name and values
         # to an existing configuration
         expected_configs = self.expected_default_datastore_configs()

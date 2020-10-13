@@ -60,6 +60,9 @@ class MySqlManager(manager.Manager):
         except Exception:
             return super(MySqlManager, self).get_service_status()
 
+    def get_start_db_params(self, data_dir):
+        return f'--datadir={data_dir}'
+
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,
                    config_contents, root_password, overrides,
@@ -86,13 +89,7 @@ class MySqlManager(manager.Manager):
                                             data_dir=data_dir)
 
         # Start database service.
-        # Cinder volume initialization(after formatted) may leave a
-        # lost+found folder
-        # The --ignore-db-dir option is deprecated in MySQL 5.7. With the
-        # introduction of the data dictionary in MySQL 8.0, it became
-        # superfluous and was removed in that version.
-        command = (f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
-                   f'--datadir={data_dir}')
+        command = self.get_start_db_params(data_dir)
         self.app.start_db(ds_version=ds_version, command=command)
 
         self.app.secure()
@@ -315,13 +312,7 @@ class MySqlManager(manager.Manager):
             self.app.update_overrides(config_overrides)
 
             # Start database service.
-            # Cinder volume initialization(after formatted) may leave a
-            # lost+found folder
-            # The --ignore-db-dir option is deprecated in MySQL 5.7. With the
-            # introduction of the data dictionary in MySQL 8.0, it became
-            # superfluous and was removed in that version.
-            command = (f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
-                       f'--datadir={data_dir}')
+            command = self.get_start_db_params(data_dir)
             self.app.start_db(ds_version=ds_version, command=command)
         except Exception as e:
             LOG.error(f"Failed to restore database service after rebuild, "

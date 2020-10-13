@@ -476,7 +476,10 @@ function create_guest_image {
     glance_image_id=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} \
       --os-project-name service --os-username trove \
       image create ${image_name} \
-      --disk-format qcow2 --container-format bare --property hw_rng_model='virtio' --file ${image_file} \
+      --disk-format qcow2 --container-format bare \
+      --tag trove \
+      --property hw_rng_model='virtio' \
+      --file ${image_file} \
       -c id -f value)
 
     echo "Register the image in datastore"

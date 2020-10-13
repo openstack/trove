@@ -36,7 +36,7 @@ cli_opts = [
     cfg.StrOpt(
         'driver',
         default='innobackupex',
-        choices=['innobackupex', 'mariabackup', 'pg_basebackup']
+        choices=['innobackupex', 'mariabackup', 'pg_basebackup', 'xtrabackup']
     ),
     cfg.BoolOpt('backup'),
     cfg.StrOpt('backup-encryption-key'),
@@ -68,6 +68,8 @@ driver_mapping = {
     'mariabackup_inc': 'backup.drivers.mariabackup.MariaBackupIncremental',
     'pg_basebackup': 'backup.drivers.postgres.PgBasebackup',
     'pg_basebackup_inc': 'backup.drivers.postgres.PgBasebackupIncremental',
+    'xtrabackup': 'backup.drivers.xtrabackup.XtraBackup',
+    'xtrabackup_inc': 'backup.drivers.xtrabackup.XtraBackupIncremental'
 }
 storage_mapping = {
     'swift': 'backup.storage.swift.SwiftStorage',
