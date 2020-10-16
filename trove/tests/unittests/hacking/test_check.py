@@ -76,14 +76,6 @@ class HackingTestCase(trove_testtools.TestCase):
         self.assertLinePasses(f, "raise KeyError('Error text')",
                               'neutron_lib/tests/unit/mytest.py')
 
-    def test_no_basestring(self):
-        self.assertEqual(
-            1,
-            len(list(tc.check_no_basestring("isinstance(x, basestring)"))))
-        self.assertEqual(
-            0,
-            len(list(tc.check_no_basestring("this basestring is good)"))))
-
     # We are patching pycodestyle so that only the check under test is actually
     # installed.
     @mock.patch('pycodestyle._checks',

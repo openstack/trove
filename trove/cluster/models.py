@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import six
-
 from oslo_log import log as logging
 
 from neutronclient.common import exceptions as neutron_exceptions
@@ -324,7 +322,7 @@ class Cluster(object):
                             node['availability_zone'])
                     if 'type' in node:
                         instance_type = node['type']
-                        if isinstance(instance_type, six.string_types):
+                        if isinstance(instance_type, str):
                             instance_type = instance_type.split(',')
                         instance['instance_type'] = instance_type
                     instances.append(instance)

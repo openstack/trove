@@ -16,7 +16,6 @@
 import abc
 import os
 import shlex
-import six
 from tempfile import NamedTemporaryFile
 import traceback
 
@@ -51,8 +50,7 @@ def log_and_raise(log_fmt, exc_fmt, fmt_content=None):
     raise exception.GuestError(original_message=raise_msg)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class FSBase(object):
+class FSBase(object, metaclass=abc.ABCMeta):
 
     def __init__(self, fstype, format_options):
         self.fstype = fstype

@@ -41,7 +41,6 @@ be used.
 import atexit
 import gettext
 import os
-import six
 import sys
 import proboscis
 

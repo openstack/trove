@@ -14,11 +14,9 @@
 #    under the License.
 
 import abc
-import six
 
 
-@six.add_metaclass(abc.ABCMeta)
-class TestGroup(object):
+class TestGroup(object, metaclass=abc.ABCMeta):
 
     def __init__(self, test_runner):
         self._test_runner = test_runner

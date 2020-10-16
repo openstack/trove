@@ -20,7 +20,6 @@ import hashlib
 import os
 from oslo_utils import encodeutils
 import random
-import six
 import string
 
 from cryptography.hazmat.backends import default_backend
@@ -67,12 +66,12 @@ def decode_data(data):
 # Pad the data string to an multiple of pad_size
 def pad_for_encryption(data, pad_size=IV_BYTE_COUNT):
     pad_count = pad_size - (len(data) % pad_size)
-    return data + six.int2byte(pad_count) * pad_count
+    return data + bytes((pad_count,)) * pad_count
 
 
 # Unpad the data string by stripping off excess characters
 def unpad_after_decryption(data):
-    return data[:len(data) - six.indexbytes(data, -1)]
+    return data[:len(data) - data[-1]]
 
 
 def encrypt_data(data, key, iv_byte_count=IV_BYTE_COUNT):

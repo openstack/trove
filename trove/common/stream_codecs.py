@@ -21,7 +21,6 @@ import io
 import re
 import sys
 
-import six
 import xmltodict
 import yaml
 
@@ -74,7 +73,7 @@ class StringConverter(object):
         # Return known mappings and quoted strings right away.
         if value in self._object_mappings:
             return self._object_mappings[value]
-        elif (isinstance(value, six.string_types) and
+        elif (isinstance(value, str) and
               re.match("^'(.*)'|\"(.*)\"$", value)):
             return value
 
@@ -84,8 +83,7 @@ class StringConverter(object):
             return value
 
 
-@six.add_metaclass(abc.ABCMeta)
-class StreamCodec(object):
+class StreamCodec(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def serialize(self, data):
@@ -202,7 +200,7 @@ class IniCodec(StreamCodec):
 
     def serialize(self, dict_data):
         parser = self._init_config_parser(dict_data)
-        output = six.StringIO()
+        output = io.StringIO()
         parser.write(output)
 
         return output.getvalue()
@@ -217,8 +215,8 @@ class IniCodec(StreamCodec):
                 for s in parser.sections()}
 
     def _pre_parse(self, stream):
-        buf = six.StringIO()
-        for line in six.StringIO(stream):
+        buf = io.StringIO()
+        for line in io.StringIO(stream):
             # Ignore commented lines.
             if not line.startswith(self._comment_markers):
                 # Strip leading and trailing whitespaces from each line.
@@ -297,7 +295,7 @@ class PropertiesCodec(StreamCodec):
         self._unpack_singletons = unpack_singletons
 
     def serialize(self, dict_data):
-        output = six.StringIO()
+        output = io.StringIO()
         writer = csv.writer(output, delimiter=self._delimiter,
                             quoting=self.QUOTING_MODE,
                             strict=self.STRICT_MODE,
@@ -309,7 +307,7 @@ class PropertiesCodec(StreamCodec):
         return output.getvalue()
 
     def deserialize(self, stream):
-        reader = csv.reader(six.StringIO(stream),
+        reader = csv.reader(io.StringIO(stream),
                             delimiter=self._delimiter,
                             quoting=self.QUOTING_MODE,
                             strict=self.STRICT_MODE,

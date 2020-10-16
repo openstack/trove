@@ -17,7 +17,6 @@
 """Model classes that form the core of Module functionality."""
 
 import hashlib
-import six
 from sqlalchemy.sql.expression import or_
 
 from oslo_log import log as logging
@@ -247,7 +246,7 @@ class Module(object):
     @staticmethod
     def process_contents(contents):
         md5 = contents
-        if isinstance(md5, six.text_type):
+        if isinstance(md5, str):
             md5 = md5.encode('utf-8')
         md5 = hashlib.md5(md5).hexdigest()
         encrypted_contents = crypto_utils.encrypt_data(

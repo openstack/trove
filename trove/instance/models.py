@@ -26,7 +26,6 @@ from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 from oslo_utils import netutils
-import six
 from sqlalchemy import func
 
 from trove.backup.models import Backup
@@ -757,7 +756,7 @@ class BaseInstance(SimpleInstance):
             except Exception as e:
                 LOG.warning("Failed to stop the database before attempting "
                             "to delete trove instance %s, error: %s", self.id,
-                            six.text_type(e))
+                            str(e))
 
             # Nova VM
             if old_server:
@@ -766,7 +765,7 @@ class BaseInstance(SimpleInstance):
                     self.server.delete()
                 except Exception as e:
                     LOG.warning("Failed to delete compute server %s",
-                                self.server_id, six.text_type(e))
+                                self.server_id, str(e))
 
         # Neutron ports (floating IP)
         try:
@@ -778,7 +777,7 @@ class BaseInstance(SimpleInstance):
                 neutron.delete_port(self.neutron_client, port["id"])
         except Exception as e:
             LOG.warning("Failed to delete ports for instance %s, "
-                        "error: %s", self.id, six.text_type(e))
+                        "error: %s", self.id, str(e))
 
         # Neutron security groups
         try:
@@ -791,7 +790,7 @@ class BaseInstance(SimpleInstance):
                 self.neutron_client.delete_security_group(sg["id"])
         except Exception as e:
             LOG.warning("Failed to delete security groups for instance %s, "
-                        "error: %s", self.id, six.text_type(e))
+                        "error: %s", self.id, str(e))
 
         # DNS resources, e.g. Designate
         try:
@@ -801,14 +800,14 @@ class BaseInstance(SimpleInstance):
                 dns_api.delete_instance_entry(instance_id=self.id)
         except Exception as e:
             LOG.warning("Failed to delete dns entry of instance %s, error: %s",
-                        self.id, six.text_type(e))
+                        self.id, str(e))
 
         # Nova server group
         try:
             srv_grp.ServerGroup.delete(self.context, self.server_group)
         except Exception as e:
             LOG.warning("Failed to delete server group for %s, error: %s",
-                        self.id, six.text_type(e))
+                        self.id, str(e))
 
         def server_is_finished():
             try:
@@ -844,7 +843,7 @@ class BaseInstance(SimpleInstance):
                     volume.delete()
         except Exception as e:
             LOG.warning("Failed to delete volume for instance %s, error: %s",
-                        self.id, six.text_type(e))
+                        self.id, str(e))
 
         notification.TroveInstanceDelete(
             instance=self,
@@ -1942,7 +1941,7 @@ class instance_encryption_key_cache(object):
                 return val
 
             # We need string anyway
-            if isinstance(val, six.binary_type):
+            if isinstance(val, bytes):
                 val = encodeutils.safe_decode(val)
 
             if len(self._lru) == self._lru_cache_size:

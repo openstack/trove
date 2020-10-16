@@ -17,8 +17,6 @@ import collections
 import os
 import re
 
-import six
-
 from trove.common import cfg
 from trove.common import pagination
 from trove.common import utils
@@ -112,7 +110,7 @@ def build_file_path(base_dir, base_name, *extensions):
 def to_bytes(value):
     """Convert numbers with a byte suffix to bytes.
     """
-    if isinstance(value, six.string_types):
+    if isinstance(value, str):
         pattern = re.compile(r'^(\d+)([K,M,G]{1})$')
         match = pattern.match(value)
         if match:

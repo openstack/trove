@@ -17,7 +17,6 @@
 import os
 from proboscis import SkipTest
 import re
-import six
 import tempfile
 import time
 
@@ -1341,7 +1340,7 @@ class ModuleRunner(TestRunner):
                             contents = fh.read()
 
                         expected = expected['contents']
-                        if isinstance(expected, six.string_types):
+                        if isinstance(expected, str):
                             expected = expected.encode()
 
                         self.assert_equal(expected, contents,

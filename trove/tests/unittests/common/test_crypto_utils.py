@@ -17,7 +17,6 @@
 import os
 from unittest import mock
 
-import six
 
 from trove.common import crypto_utils
 from trove.tests.unittests import trove_testtools
@@ -39,7 +38,7 @@ class TestEncryptUtils(trove_testtools.TestCase):
         for datum in data:
             encoded_data = crypto_utils.encode_data(datum)
             decoded_data = crypto_utils.decode_data(encoded_data)
-            if isinstance(datum, six.text_type):
+            if isinstance(datum, str):
                 decoded_data = decoded_data.decode('utf-8')
             self. assertEqual(datum, decoded_data,
                               "Encode/decode failed")

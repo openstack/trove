@@ -15,11 +15,8 @@
 #
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class NetworkDriver(object):
+class NetworkDriver(object, metaclass=abc.ABCMeta):
     """Base Network Driver class to abstract the network driver used."""
 
     @abc.abstractmethod
