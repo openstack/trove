@@ -14,8 +14,6 @@
 #    under the License.
 #
 
-import six
-
 from oslo_log import log as logging
 
 from trove.common.clients import create_nova_client
@@ -84,7 +82,7 @@ class ServerGroup(object):
         scheduler_hint = None
         if locality:
             # Build the scheduler hint, but only if locality's a string
-            if isinstance(locality, six.string_types):
+            if isinstance(locality, str):
                 server_group = cls.create(
                     context, locality, name_suffix)
                 scheduler_hint = cls.convert_to_hint(

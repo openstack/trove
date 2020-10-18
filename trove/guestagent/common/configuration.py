@@ -18,7 +18,6 @@ import os
 import re
 
 from oslo_log import log as logging
-import six
 
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
@@ -224,8 +223,7 @@ class ConfigurationManager(object):
         self._value_cache = self.parse_configuration()
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ConfigurationOverrideStrategy(object):
+class ConfigurationOverrideStrategy(object, metaclass=abc.ABCMeta):
     """ConfigurationOverrideStrategy handles configuration files.
     The strategy provides functionality to enumerate, apply and remove
     configuration overrides.

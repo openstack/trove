@@ -17,7 +17,6 @@ import re
 
 from oslo_log import log as logging
 from oslo_utils import encodeutils
-import six
 import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy.sql.expression import text
@@ -93,8 +92,7 @@ class BaseMySqlAppStatus(service.BaseDbStatus):
             return service_status.ServiceStatuses.UNKNOWN
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseMySqlAdmin(object):
+class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
     """Handles administrative tasks on the MySQL database."""
 
     def __init__(self, mysql_root_access, mysql_app):

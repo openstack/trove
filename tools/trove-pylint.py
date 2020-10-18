@@ -18,7 +18,6 @@ from collections import OrderedDict
 import io
 import os
 import re
-import six
 import sys
 
 from pylint import lint
@@ -60,8 +59,7 @@ class Config(object):
         sorted_config = OrderedDict()
         for key in sorted(self.config.keys()):
             value = self.get(key)
-            if isinstance(value, list) and not isinstance(value,
-                                                          six.string_types):
+            if isinstance(value, list) and not isinstance(value,str):
                 sorted_config[key] = sorted(value)
             else:
                 sorted_config[key] = value

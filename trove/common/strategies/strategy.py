@@ -17,7 +17,6 @@
 import abc
 
 from oslo_log import log as logging
-import six
 
 from trove.common.i18n import _
 from trove.common import utils
@@ -26,8 +25,7 @@ from trove.common import utils
 LOG = logging.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Strategy(object):
+class Strategy(object, metaclass=abc.ABCMeta):
 
     __strategy_ns__ = None
 

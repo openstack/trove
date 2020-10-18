@@ -19,7 +19,6 @@ import json
 import netaddr
 import os
 import proboscis
-import six
 import sys
 import time as timer
 import types
@@ -284,13 +283,12 @@ class LogOnFail(type):
 
                 # Only report on the first error that occurs
                 mcs.reset_inst_ids()
-                six.reraise(extype, exvalue, extb)
+                raise exvalue.with_traceback(extb)
 
         return wrapper
 
 
-@six.add_metaclass(LogOnFail)
-class TestRunner(object):
+class TestRunner(object, metaclass=LogOnFail):
 
     """
     Base class for all 'Runner' classes.

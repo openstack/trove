@@ -24,7 +24,6 @@ import swiftclient.client as swift_client
 import uuid
 
 from oslo_log import log as logging
-import six
 from swiftclient import client as swift
 
 
@@ -172,7 +171,7 @@ class FakeSwiftConnection(object):
             # container is where the object segments are in and prefix is the
             # common prefix for all segments.
             self.manifest_name = name
-            if isinstance(contents, six.text_type):
+            if isinstance(contents, str):
                 object_checksum.update(contents.encode('utf-8'))
             else:
                 object_checksum.update(contents)

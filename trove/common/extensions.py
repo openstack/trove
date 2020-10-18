@@ -19,7 +19,6 @@ from lxml import etree
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 import routes
-import six
 import stevedore
 import webob.dec
 import webob.exc
@@ -34,8 +33,7 @@ DEFAULT_XMLNS = "http://docs.openstack.org/trove"
 XMLNS_ATOM = "http://www.w3.org/2005/Atom"
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ExtensionDescriptor(object):
+class ExtensionDescriptor(object, metaclass=abc.ABCMeta):
     """Base class that defines the contract for extensions.
 
     Note that you don't have to derive from this class to have a valid

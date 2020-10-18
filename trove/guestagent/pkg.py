@@ -24,7 +24,6 @@ from tempfile import NamedTemporaryFile
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 import pexpect
-import six
 
 from trove.common import exception
 from trove.common.exception import ProcessExecutionError
@@ -52,7 +51,7 @@ def getoutput(*cmd):
                                 stderr=subprocess.STDOUT)
     except OSError:
         # ignore errors like program not found
-        return six.text_type("")
+        return str("")
 
     stdout = proc.communicate()[0]
     return encodeutils.safe_decode(stdout)

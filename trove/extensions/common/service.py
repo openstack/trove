@@ -19,7 +19,6 @@ import abc
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 from oslo_utils import importutils
-import six
 
 from trove.cluster import models as cluster_models
 from trove.cluster.models import DBCluster
@@ -62,8 +61,7 @@ class ExtensionController(wsgi.Controller):
             {'tenant': target.tenant_id})
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseDatastoreRootController(ExtensionController):
+class BaseDatastoreRootController(ExtensionController, metaclass=abc.ABCMeta):
     """Base class that defines the contract for root controllers."""
 
     @abc.abstractmethod

@@ -59,18 +59,6 @@ def check_raised_localized_exceptions(logical_line, filename):
 
 
 @core.flake8ext
-def check_no_basestring(logical_line):
-    """T104 - Don't use basestring, use six.string_types instead
-       basestring is not supported by py3, using six.string_types to ensure
-       py3 and py2 compatibility
-    """
-    if re.search(r"\, basestring\)", logical_line):
-        msg = ("T104: basestring is not Python3-compatible, use "
-               "six.string_types instead.")
-        yield(0, msg)
-
-
-@core.flake8ext
 def no_translate_logs(physical_line, logical_line, filename):
     """T105 - Log messages shouldn't be translated from the
     Pike release.

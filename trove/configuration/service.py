@@ -14,7 +14,6 @@
 #    under the License.
 
 from oslo_log import log as logging
-import six
 
 from trove.cluster import models as cluster_models
 import trove.common.apischema as apischema
@@ -307,7 +306,7 @@ class ConfigurationsController(wsgi.Controller):
                 raise exception.UnprocessableEntity(message=msg)
 
             # integer min/max checking
-            if isinstance(v, six.integer_types) and not isinstance(v, bool):
+            if isinstance(v, int) and not isinstance(v, bool):
                 if rule.min_size is not None:
                     try:
                         min_value = int(rule.min_size)
@@ -345,9 +344,9 @@ class ConfigurationsController(wsgi.Controller):
         if value_type == "boolean":
             return bool
         elif value_type == "string":
-            return six.string_types
+            return str
         elif value_type == "integer":
-            return six.integer_types
+            return int
         elif value_type == "float":
             return float
         else:

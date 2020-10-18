@@ -16,12 +16,10 @@
 
 import abc
 
-import six
 from trove.common.strategies.strategy import Strategy
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Replication(Strategy):
+class Replication(Strategy, metaclass=abc.ABCMeta):
     """Base class for Replication Strategy implementation."""
 
     __strategy_type__ = 'replication'

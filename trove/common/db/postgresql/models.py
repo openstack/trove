@@ -15,15 +15,13 @@
 
 import re
 
-from six import u
-
 from trove.common.db import models
 
 
 class PostgreSQLSchema(models.DatastoreSchema):
     """Represents a PostgreSQL schema and its associated properties."""
 
-    name_regex = re.compile(u(r'^[\u0001-\u007F\u0080-\uFFFF]+[^\s]$'))
+    name_regex = re.compile(str(r'^[\u0001-\u007F\u0080-\uFFFF]+[^\s]$'))
 
     def __init__(self, name=None, collate=None, character_set=None,
                  deserializing=False):

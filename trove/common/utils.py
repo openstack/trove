@@ -30,7 +30,6 @@ from oslo_utils.encodeutils import safe_encode
 from oslo_utils import importutils
 from oslo_utils import strutils
 from passlib import pwd
-import six
 
 from trove.common import cfg
 from trove.common import exception
@@ -333,7 +332,7 @@ def is_collection(item):
     """Return True is a given item is an iterable collection, but not a string.
     """
     return (isinstance(item, collections.Iterable) and
-            not isinstance(item, (bytes, six.text_type)))
+            not isinstance(item, (bytes, str)))
 
 
 def format_output(message, format_len=79, truncate_len=None, replace_index=0):

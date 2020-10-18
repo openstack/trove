@@ -18,10 +18,10 @@ Tests dealing with HTTP rate-limiting.
 """
 
 
+import io
 from http import client as http_client
 from unittest.mock import Mock, MagicMock, patch
 from oslo_serialization import jsonutils
-import six
 import webob
 
 from trove.common import limits
@@ -564,7 +564,7 @@ class FakeHttplibSocket(object):
 
     def __init__(self, response_string):
         """Initialize new `FakeHttplibSocket`."""
-        self._buffer = six.BytesIO(response_string)
+        self._buffer = io.BytesIO(response_string)
 
     def makefile(self, _mode, *args):
         """Returns the socket's internal buffer."""

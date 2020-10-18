@@ -30,7 +30,6 @@ from proboscis import before_class
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 from proboscis import test
-import six
 from troveclient.compat import exceptions
 
 from trove.common.utils import poll_until
@@ -230,12 +229,12 @@ class CreateConfigurations(ConfigurationsTestBase):
             msg="Get Configuration parameter")
         assert_equal(param_name, config_parameter_dict['name'])
         with TypeCheck('ConfigurationParameter', param) as parameter:
-            parameter.has_field('name', six.string_types)
+            parameter.has_field('name', str)
             parameter.has_field('restart_required', bool)
-            parameter.has_field('max', six.integer_types)
-            parameter.has_field('min', six.integer_types)
-            parameter.has_field('type', six.string_types)
-            parameter.has_field('datastore_version_id', six.text_type)
+            parameter.has_field('max', int)
+            parameter.has_field('min', int)
+            parameter.has_field('type', str)
+            parameter.has_field('datastore_version_id', str)
 
     @test
     def test_configurations_create_invalid_values(self):
@@ -283,12 +282,12 @@ class CreateConfigurations(ConfigurationsTestBase):
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 200)
         with TypeCheck('Configuration', result) as configuration:
-            configuration.has_field('name', six.string_types)
-            configuration.has_field('description', six.string_types)
+            configuration.has_field('name', str)
+            configuration.has_field('description', str)
             configuration.has_field('values', dict)
-            configuration.has_field('datastore_name', six.string_types)
-            configuration.has_field('datastore_version_id', six.text_type)
-            configuration.has_field('datastore_version_name', six.string_types)
+            configuration.has_field('datastore_name', str)
+            configuration.has_field('datastore_version_id', str)
+            configuration.has_field('datastore_version_name', str)
         global configuration_info
         configuration_info = result
         assert_equal(configuration_info.name, CONFIG_NAME)
@@ -367,12 +366,12 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
 
         # check the result field types
         with TypeCheck("configuration", result) as check:
-            check.has_field("id", six.string_types)
-            check.has_field("name", six.string_types)
-            check.has_field("description", six.string_types)
+            check.has_field("id", str)
+            check.has_field("name", str)
+            check.has_field("description", str)
             check.has_field("values", dict)
-            check.has_field("created", six.string_types)
-            check.has_field("updated", six.string_types)
+            check.has_field("created", str)
+            check.has_field("updated", str)
             check.has_field("instance_count", int)
 
         print(result.values)
@@ -402,7 +401,7 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
                 if param.type == 'integer':
                     check.has_element(item_key, int)
                 if param.type == 'string':
-                    check.has_element(item_key, six.string_types)
+                    check.has_element(item_key, str)
                 if param.type == 'boolean':
                     check.has_element(item_key, bool)
 
@@ -433,12 +432,12 @@ class ListConfigurations(ConfigurationsTestBase):
         result = instance_info.dbaas.configurations.list()
         for conf in result:
             with TypeCheck("Configuration", conf) as check:
-                check.has_field('id', six.string_types)
-                check.has_field('name', six.string_types)
-                check.has_field('description', six.string_types)
-                check.has_field('datastore_version_id', six.string_types)
-                check.has_field('datastore_version_name', six.string_types)
-                check.has_field('datastore_name', six.string_types)
+                check.has_field('id', str)
+                check.has_field('name', str)
+                check.has_field('description', str)
+                check.has_field('datastore_version_id', str)
+                check.has_field('datastore_version_name', str)
+                check.has_field('datastore_name', str)
 
         exists = [config for config in result if
                   config.id == configuration_info.id]

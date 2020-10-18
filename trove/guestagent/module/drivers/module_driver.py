@@ -17,7 +17,6 @@
 import abc
 import functools
 import re
-import six
 
 from oslo_log import log as logging
 
@@ -27,8 +26,7 @@ from trove.common import exception
 LOG = logging.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ModuleDriver(object):
+class ModuleDriver(object, metaclass=abc.ABCMeta):
     """Base class that defines the contract for module drivers.
 
     Note that you don't have to derive from this class to have a valid

@@ -17,7 +17,6 @@ import json
 import os
 
 from proboscis import SkipTest
-import six
 import time as timer
 
 from trove.common import exception
@@ -517,17 +516,17 @@ class ClusterRunner(TestRunner):
     def _assert_cluster_values(self, cluster, expected_task_name,
                                check_locality=True):
         with TypeCheck('Cluster', cluster) as check:
-            check.has_field("id", six.string_types)
-            check.has_field("name", six.string_types)
+            check.has_field("id", str)
+            check.has_field("name", str)
             check.has_field("datastore", dict)
             check.has_field("instances", list)
             check.has_field("links", list)
-            check.has_field("created", six.text_type)
-            check.has_field("updated", six.text_type)
+            check.has_field("created", str)
+            check.has_field("updated", str)
             if check_locality:
-                check.has_field("locality", six.text_type)
+                check.has_field("locality", str)
             if self.active_config_group_id:
-                check.has_field("configuration", six.text_type)
+                check.has_field("configuration", str)
             for instance in cluster.instances:
                 isinstance(instance, dict)
                 self.assert_is_not_none(instance['id'])
