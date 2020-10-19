@@ -40,7 +40,7 @@ Set up replication
 
       $ openstack database instance create test-mysql-replica-1 \
           --nic net-id=$netid \
-          --replica_of cebbf187-e223-46dd-8802-6dc04e895d0a
+          --replica-of cebbf187-e223-46dd-8802-6dc04e895d0a
 
 #. Wait for the replica instance successfully created, verify status of the
    replication servers.
@@ -113,7 +113,7 @@ couple minutes.
 
       $ openstack database instance create test-mysql-replica-2 \
           --nic net-id=$netid \
-          --replica_of cebbf187-e223-46dd-8802-6dc04e895d0a
+          --replica-of cebbf187-e223-46dd-8802-6dc04e895d0a
 
    Now we have 3 instances running in a replication group:
 
