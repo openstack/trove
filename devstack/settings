@@ -4,7 +4,7 @@
 # Set up default directories
 TROVE_DIR=${TROVE_DIR:-${DEST}/trove}
 TROVE_REPO=${TROVE_REPO:-${GIT_BASE}/openstack/trove.git}
-TROVE_BRANCH=${TROVE_BRANCH:-master}
+TROVE_BRANCH=${TROVE_BRANCH:-stable/victoria}
 
 TROVE_CLIENT_DIR=${TROVE_CLIENT_DIR:-${TROVECLIENT_DIR:-${DEST}/python-troveclient}}
 TROVE_CLIENT_REPO=${TROVE_CLIENT_REPO:-${TROVECLIENT_REPO:-${GIT_BASE}/openstack/python-troveclient.git}}

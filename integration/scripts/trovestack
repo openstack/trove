@@ -723,7 +723,7 @@ function cmd_test_init() {
 
     exclaim "Re-installing python-troveclient from git"
     pip3 uninstall -y python-troveclient
-    pip3 install -U git+https://opendev.org/openstack/python-troveclient@master#egg=python-troveclient
+    pip3 install -U git+https://opendev.org/openstack/python-troveclient@stable/victoria#egg=python-troveclient
 }
 
 # Build trove guest image

@@ -33,10 +33,10 @@
       jobs:
         - publish-trove-guest-image-ubuntu-bionic:
             branches:
-              - master
+              - stable/victoria
         - publish-trove-guest-image-ubuntu-bionic-dev:
             branches:
-              - master
+              - stable/victoria
 
 - job:
     name: trove-devstack-base
@@ -354,7 +354,7 @@
       guest_os: ubuntu
       guest_os_release: bionic
       guest_username: ubuntu
-      branch: master
+      branch: victoria
       dev_mode: false
       image_suffix: ""
 
@@ -368,6 +368,6 @@
       guest_os: ubuntu
       guest_os_release: bionic
       guest_username: ubuntu
-      branch: master
+      branch: victoria
       dev_mode: true
       image_suffix: "-dev"
