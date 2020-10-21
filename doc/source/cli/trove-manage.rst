@@ -293,6 +293,10 @@ into the database.
 
 trove-manage db_recreate
 ~~~~~~~~~~~~~~~~~~~~~~~~
+.. caution::
+
+   Running this command will drop the database and recreate it. It means all
+   data in the database will be lost. Becareful when running this command.
 
 .. code-block:: console
 
