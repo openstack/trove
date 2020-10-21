@@ -55,7 +55,6 @@ logilab-common==1.4.1
 lxml==3.4.1
 Mako==1.0.7
 MarkupSafe==1.0
-mccabe==0.4.0
 monotonic==1.4
 mox3==0.25.0
 msgpack==0.5.6
