@@ -18,7 +18,6 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import timeutils
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as instance_models
@@ -29,20 +28,24 @@ CONF = cfg.CONF
 
 
 def load_mgmt_instances(context, deleted=None, client=None,
-                        include_clustered=None):
+                        include_clustered=None, project_id=None):
     if not client:
         client = clients.create_nova_client(
             context, CONF.service_credentials.region_name
         )
-    mgmt_servers = client.servers.list(search_opts={'all_tenants': 1},
-                                       limit=-1)
+
+    search_opts = {'all_tenants': False}
+    mgmt_servers = client.servers.list(search_opts=search_opts, limit=-1)
     LOG.info("Found %d servers in Nova",
              len(mgmt_servers if mgmt_servers else []))
+
     args = {}
     if deleted is not None:
         args['deleted'] = deleted
     if not include_clustered:
         args['cluster_id'] = None
+    if project_id:
+        args['tenant_id'] = project_id
 
     db_infos = instance_models.DBInstance.find_all(**args)
 
@@ -153,11 +156,11 @@ class MgmtInstances(instance_models.Instances):
         def load_instance(context, db, status, server=None):
             return SimpleMgmtInstance(context, db, server, status)
 
-        if context is None:
-            raise TypeError(_("Argument context not defined."))
         find_server = instance_models.create_server_list_matcher(servers)
+
         instances = instance_models.Instances._load_servers_status(
             load_instance, context, db_infos, find_server)
+
         _load_servers(instances, find_server)
         return instances
 
@@ -170,7 +173,7 @@ def _load_servers(instances, find_server):
             server = find_server(db.id, db.compute_instance_id)
             instance.server = server
         except Exception as ex:
-            LOG.exception(ex)
+            LOG.warning(ex)
     return instances
 
 

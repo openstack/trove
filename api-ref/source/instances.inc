@@ -38,9 +38,14 @@ List database instances(admin)
 
 .. rest_method::  GET /v1.0/{project_id}/mgmt/instances
 
-Admin only API. Get all the instances, supported filters: deleted,
-include_clustered. Could show more information such as Cinder volume ID, Nova
-server information, etc.
+Admin only API. Get all the instances, Could show more information such as
+Cinder volume ID, Nova server information, etc.
+
+Supported filters:
+
+* ``deleted``.
+* ``include_clustered``.
+* ``project_id``: Get instances of a speficied project.
 
 Normal response codes: 200
 
