@@ -1,5 +1,6 @@
 {
     "quotas": {
-        "instances": 20
+        "instances": 10,
+        "backups": 30
     }
 }

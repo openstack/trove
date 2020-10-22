@@ -76,7 +76,12 @@ Update resources quota for a specific project
 
 .. rest_method::  PUT /v1.0/{project_id}/mgmt/quotas/{user_project}
 
-Admin only action by default.
+Admin only action by default. Supported resources:
+
+* instances
+* backups
+
+If not set, use the default resource quota in Trove configuration.
 
 Normal response codes: 200
 
