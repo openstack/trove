@@ -149,7 +149,7 @@ def load_simple_instance_addresses(context, db_info):
     client = clients.create_neutron_client(context, db_info.region_id)
     ports = client.list_ports(device_id=db_info.compute_instance_id)['ports']
     for port in ports:
-        if 'Management port' not in port['description']:
+        if port['network_id'] not in CONF.management_networks:
             LOG.debug('Found user port %s for instance %s', port['id'],
                       db_info.id)
 
