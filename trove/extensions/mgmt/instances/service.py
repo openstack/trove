@@ -50,8 +50,7 @@ class MgmtInstanceController(InstanceController):
     def index(self, req, tenant_id, detailed=False):
         """Return all instances."""
         LOG.info("Indexing a database instance for tenant '%(tenant_id)s'\n"
-                 "req : '%(req)s'\n\n", {
-                     "tenant_id": tenant_id, "req": req})
+                 "req : '%(req)s'\n\n", {"tenant_id": tenant_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         deleted = None
         deleted_q = req.GET.get('deleted', '').lower()
@@ -61,9 +60,12 @@ class MgmtInstanceController(InstanceController):
             deleted = False
         clustered_q = req.GET.get('include_clustered', '').lower()
         include_clustered = clustered_q == 'true'
+        project_id = req.GET.get('project_id')
+
         try:
             instances = models.load_mgmt_instances(
-                context, deleted=deleted, include_clustered=include_clustered)
+                context, deleted=deleted, include_clustered=include_clustered,
+                project_id=project_id)
         except nova_exceptions.ClientException as e:
             LOG.exception(e)
             return wsgi.Result(str(e), 403)
