@@ -1,0 +1,4 @@
+---
+features:
+  - Added MySQL 8 support, docker image openstacktrove/db-backup-mysql8.0 is
+    created to support backup and restore.
