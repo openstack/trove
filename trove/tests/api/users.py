@@ -199,8 +199,7 @@ class TestUsers(object):
 
     @test(depends_on=[test_create_users_list, test_delete_users])
     def test_hostnames_make_users_unique(self):
-        # These tests rely on test_delete_users as they create users only
-        # they use.
+        """test_hostnames_make_users_unique."""
         username = "testuser_unique"
         hostnames = ["192.168.0.1", "192.168.0.2"]
         users = [{"name": username, "password": "password", "databases": [],
@@ -210,6 +209,7 @@ class TestUsers(object):
         # Nothing wrong with creating two users with the same name, so long
         # as their hosts are different.
         self.dbaas.users.create(instance_info.id, users)
+
         for hostname in hostnames:
             self.dbaas.users.delete(instance_info.id, username,
                                     hostname=hostname)

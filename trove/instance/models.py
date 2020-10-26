@@ -332,23 +332,29 @@ class SimpleInstance(object):
 
     @property
     def status(self):
+        LOG.info(f"Getting instance status for {self.id}, "
+                 f"task status: {self.db_info.task_status}, "
+                 f"datastore status: {self.datastore_status.status}, "
+                 f"server status: {self.db_info.server_status}")
+
+        task_status = self.db_info.task_status
+        server_status = self.db_info.server_status
+        ds_status = self.datastore_status.status
+
         # Check for taskmanager errors.
-        if self.db_info.task_status.is_error:
+        if task_status.is_error:
             return InstanceStatus.ERROR
 
-        action = self.db_info.task_status.action
+        action = task_status.action
 
         # Check if we are resetting status or force deleting
-        if (srvstatus.ServiceStatuses.UNKNOWN == self.datastore_status.status
-                and action == InstanceTasks.DELETING.action):
+        if (srvstatus.ServiceStatuses.UNKNOWN == ds_status
+            and action == InstanceTasks.DELETING.action):
             return InstanceStatus.SHUTDOWN
-        elif (srvstatus.ServiceStatuses.UNKNOWN ==
-                self.datastore_status.status):
-            return InstanceStatus.ERROR
 
         # Check for taskmanager status.
         if InstanceTasks.BUILDING.action == action:
-            if 'ERROR' == self.db_info.server_status:
+            if 'ERROR' == server_status:
                 return InstanceStatus.ERROR
             return InstanceStatus.BUILD
         if InstanceTasks.REBOOTING.action == action:
@@ -369,13 +375,12 @@ class SimpleInstance(object):
             return InstanceStatus.DETACH
 
         # Check for server status.
-        if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
-                                          "RESIZE"]:
-            return self.db_info.server_status
+        if server_status in ["BUILD", "ERROR", "REBOOT", "RESIZE"]:
+            return server_status
 
         # As far as Trove is concerned, Nova instances in VERIFY_RESIZE should
         # still appear as though they are in RESIZE.
-        if self.db_info.server_status in ["VERIFY_RESIZE"]:
+        if server_status in ["VERIFY_RESIZE"]:
             return InstanceStatus.RESIZE
 
         # Check if there is a backup running for this instance
@@ -384,23 +389,22 @@ class SimpleInstance(object):
 
         # Report as Shutdown while deleting, unless there's an error.
         if 'DELETING' == action:
-            if self.db_info.server_status in ["ACTIVE", "SHUTDOWN", "DELETED",
-                                              "HEALTHY"]:
+            if server_status in ["ACTIVE", "SHUTDOWN", "DELETED", "HEALTHY"]:
                 return InstanceStatus.SHUTDOWN
             else:
                 LOG.error("While shutting down instance (%(instance)s): "
                           "server had status (%(status)s).",
-                          {'instance': self.id,
-                           'status': self.db_info.server_status})
+                          {'instance': self.id, 'status': server_status})
                 return InstanceStatus.ERROR
 
         # Check against the service status.
         # The service is only paused during a reboot.
-        if srvstatus.ServiceStatuses.PAUSED == self.datastore_status.status:
+        if ds_status == srvstatus.ServiceStatuses.PAUSED:
             return InstanceStatus.REBOOT
-        # If the service status is NEW, then we are building.
-        if srvstatus.ServiceStatuses.NEW == self.datastore_status.status:
+        elif ds_status == srvstatus.ServiceStatuses.NEW:
             return InstanceStatus.BUILD
+        elif ds_status == srvstatus.ServiceStatuses.UNKNOWN:
+            return InstanceStatus.ERROR
 
         # For everything else we can look at the service status mapping.
         return self.datastore_status.status.api_status

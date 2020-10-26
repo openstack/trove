@@ -126,9 +126,10 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
                              '_host': item['host'],
                              '_password': item['password']}
                 user = models.MySQLUser.deserialize(user_dict)
-                LOG.debug("\tDeserialized: %s.", user.__dict__)
                 uu = sql_query.SetPassword(user.name, host=user.host,
-                                           new_password=user.password)
+                                           new_password=user.password,
+                                           ds=CONF.datastore_manager,
+                                           ds_version=CONF.datastore_version)
                 t = text(str(uu))
                 client.execute(t)
 
@@ -142,13 +143,13 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         new_password = user_attrs.get('password')
 
         if new_name or new_host or new_password:
-
             with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
-
                 if new_password is not None:
-                    uu = sql_query.SetPassword(user.name, host=user.host,
-                                               new_password=new_password)
-
+                    uu = sql_query.SetPassword(
+                        user.name, host=user.host,
+                        new_password=new_password,
+                        ds=CONF.datastore_manager,
+                        ds_version=CONF.datastore_version)
                     t = text(str(uu))
                     client.execute(t)
 
@@ -481,8 +482,10 @@ class BaseMySqlApp(service.BaseDbApp):
             # Ignore, user is already created, just reset the password
             # (user will already exist in a restore from backup)
             LOG.debug(err)
-            uu = sql_query.SetPassword(ADMIN_USER_NAME, host=host,
-                                       new_password=password)
+            uu = sql_query.SetPassword(
+                ADMIN_USER_NAME, host=host, new_password=password,
+                ds=CONF.datastore_manager, ds_version=CONF.datastore_version
+            )
             t = text(str(uu))
             client.execute(t)
 
@@ -659,11 +662,11 @@ class BaseMySqlApp(service.BaseDbApp):
     def restore_backup(self, context, backup_info, restore_location):
         backup_id = backup_info['id']
         storage_driver = CONF.storage_strategy
-        backup_driver = cfg.get_configuration_property('backup_strategy')
+        backup_driver = self.get_backup_strategy()
         user_token = context.auth_token
         auth_url = CONF.service_credentials.auth_url
         user_tenant = context.project_id
-        image = cfg.get_configuration_property('backup_docker_image')
+        image = self.get_backup_image()
         name = 'db_restore'
         volumes = {'/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}}
 
@@ -834,8 +837,10 @@ class BaseMySqlRootAccess(object):
                 # TODO(rnirmal): More fine grained error checking later on
                 LOG.debug(err)
         with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
-            uu = sql_query.SetPassword(user.name, host=user.host,
-                                       new_password=user.password)
+            uu = sql_query.SetPassword(
+                user.name, host=user.host, new_password=user.password,
+                ds=CONF.datastore_manager, ds_version=CONF.datastore_version
+            )
             t = text(str(uu))
             client.execute(t)
 

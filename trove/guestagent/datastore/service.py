@@ -406,10 +406,16 @@ class BaseDbApp(object):
         self.reset_configuration(config_contents)
         self.start_db(update_db=True, ds_version=ds_version)
 
+    def get_backup_image(self):
+        return cfg.get_configuration_property('backup_docker_image')
+
+    def get_backup_strategy(self):
+        return cfg.get_configuration_property('backup_strategy')
+
     def create_backup(self, context, backup_info, volumes_mapping={},
                       need_dbuser=True, extra_params=''):
         storage_driver = CONF.storage_strategy
-        backup_driver = cfg.get_configuration_property('backup_strategy')
+        backup_driver = self.get_backup_strategy()
         incremental = ''
         backup_type = 'full'
         if backup_info.get('parent'):
@@ -419,10 +425,9 @@ class BaseDbApp(object):
                 f'--parent-checksum={backup_info["parent"]["checksum"]}')
             backup_type = 'incremental'
 
-        backup_id = backup_info["id"]
-        image = cfg.get_configuration_property('backup_docker_image')
         name = 'db_backup'
-
+        backup_id = backup_info["id"]
+        image = self.get_backup_image()
         os_cred = (f"--os-token={context.auth_token} "
                    f"--os-auth-url={CONF.service_credentials.auth_url} "
                    f"--os-tenant-id={context.project_id}")

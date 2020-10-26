@@ -5,12 +5,20 @@ export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 APTOPTS="-y -qq --no-install-recommends --allow-unauthenticated"
 
 case "$1" in
-"mysql")
+"mysql5.7")
     curl -sSL https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb -o percona-release.deb
     dpkg -i percona-release.deb
     percona-release enable-only tools release
     apt-get update
-    apt-get install $APTOPTS percona-xtrabackup-$2
+    apt-get install $APTOPTS percona-xtrabackup-24
+    rm -f percona-release.deb
+    ;;
+"mysql8.0")
+    curl -sSL https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb -o percona-release.deb
+    dpkg -i percona-release.deb
+    percona-release enable-only tools release
+    apt-get update
+    apt-get install $APTOPTS percona-xtrabackup-80
     rm -f percona-release.deb
     ;;
 "mariadb")
