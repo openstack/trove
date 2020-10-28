@@ -187,8 +187,11 @@ class InstancesView(object):
 
     def data(self):
         data = []
+
+        # Return instances in the order of 'created'
         # These are model instances
-        for instance in self.instances:
+        for instance in sorted(self.instances, key=lambda ins: ins.created,
+                               reverse=True):
             data.append(self.data_for_instance(instance))
         return {'instances': data}
 
