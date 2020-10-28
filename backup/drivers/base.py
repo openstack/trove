@@ -47,7 +47,16 @@ class BaseRunner(object):
         self.restore_content_length = 0
 
         self.command = self.cmd % kwargs
-        self.restore_command = (self.decrypt_cmd +
+
+        if self.location.endswith('.enc') and not self.encrypt_key:
+            raise Exception("Encryption key not provided with an encrypted "
+                            "backup.")
+
+        self.restore_command = ''
+        # Only decrypt if the object name ends with .enc
+        if self.location.endswith('.enc'):
+            self.restore_command = self.decrypt_cmd
+        self.restore_command = (self.restore_command +
                                 self.unzip_cmd +
                                 (self.restore_cmd % kwargs))
         self.prepare_command = self.prepare_cmd % kwargs
@@ -78,12 +87,21 @@ class BaseRunner(object):
 
     @property
     def encrypt_cmd(self):
-        return (' | openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 10000 '
-                '-salt -pass pass:%s' %
-                self.encrypt_key) if self.encrypt_key else ''
+        """Encryption command.
+
+        Since Victoria, trove no longer encrypts the backup data for the end
+        user. This could be improved by giving users the capability to specify
+        password when creating the backups.
+        """
+        return ""
 
     @property
     def decrypt_cmd(self):
+        """Decryption command.
+
+        Since Victoria, trove no longer encrypts the backup data for the end
+        user. This command is only for backward compatibility.
+        """
         if self.encrypt_key:
             return ('openssl enc -d -aes-256-cbc -md sha512 -pbkdf2 -iter '
                     '10000 -salt -pass pass:%s | '

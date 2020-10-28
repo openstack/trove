@@ -267,6 +267,9 @@ class PgSqlApp(service.BaseDbApp):
             f'--restore-checksum={backup_info["checksum"]} '
             f'--pg-wal-archive-dir {WAL_ARCHIVE_DIR}'
         )
+        if CONF.backup_aes_cbc_key:
+            command = (f"{command} "
+                       f"--backup-encryption-key={CONF.backup_aes_cbc_key}")
 
         LOG.debug('Stop the database and clean up the data before restore '
                   'from %s', backup_id)

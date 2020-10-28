@@ -678,6 +678,9 @@ class BaseMySqlApp(service.BaseDbApp):
             f'--restore-from={backup_info["location"]} '
             f'--restore-checksum={backup_info["checksum"]}'
         )
+        if CONF.backup_aes_cbc_key:
+            command = (f"{command} "
+                       f"--backup-encryption-key={CONF.backup_aes_cbc_key}")
 
         LOG.debug('Stop the database and clean up the data before restore '
                   'from %s', backup_id)

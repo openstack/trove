@@ -470,8 +470,7 @@ class ListConfigurations(ConfigurationsTestBase):
 
     @test
     def test_changing_configuration_with_nondynamic_parameter(self):
-        # test that changing a non-dynamic parameter is applied to instance
-        # and show that the instance requires a restart
+        """test_changing_configuration_with_nondynamic_parameter"""
         expected_configs = self.expected_default_datastore_configs()
         values = json.dumps(expected_configs.get('nondynamic_parameter'))
         instance_info.dbaas.configurations.update(configuration_info.id,
@@ -486,6 +485,7 @@ class ListConfigurations(ConfigurationsTestBase):
     @test(depends_on=[test_changing_configuration_with_nondynamic_parameter])
     @time_out(20)
     def test_waiting_for_instance_in_restart_required(self):
+        """test_waiting_for_instance_in_restart_required"""
         def result_is_not_active():
             instance = instance_info.dbaas.instances.get(
                 instance_info.id)
@@ -732,26 +732,6 @@ class DeleteConfigurations(ConfigurationsTestBase):
         print(instance_info.id)
 
     @test(depends_on=[test_unassign_configuration_from_instances])
-    @time_out(120)
-    def test_restart_service_after_unassign_return_active(self):
-        """test_restart_service_after_unassign_return_active"""
-        def result_is_not_active():
-            instance = instance_info.dbaas.instances.get(
-                instance_info.id)
-            if instance.status in CONFIG.running_status:
-                return False
-            else:
-                return True
-        poll_until(result_is_not_active)
-
-        config = instance_info.dbaas.configurations.list()
-        print(config)
-        instance = instance_info.dbaas.instances.get(instance_info.id)
-        resp, body = instance_info.dbaas.client.last_response
-        assert_equal(resp.status, 200)
-        assert_equal('RESTART_REQUIRED', instance.status)
-
-    @test(depends_on=[test_restart_service_after_unassign_return_active])
     @time_out(120)
     def test_restart_service_should_return_active(self):
         """test that after restarting the instance it becomes active"""

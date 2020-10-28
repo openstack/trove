@@ -25,6 +25,7 @@ from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 from oslo_middleware import cors
 from osprofiler import opts as profiler
+from oslo_log import versionutils
 
 from trove.common.i18n import _
 from trove.version import version_info as version
@@ -325,13 +326,36 @@ common_opts = [
     cfg.StrOpt('backup_swift_container', default='database_backups',
                help='Swift container to put backups in.'),
     cfg.BoolOpt('backup_use_gzip_compression', default=True,
-                help='Compress backups using gzip.'),
-    cfg.BoolOpt('backup_use_openssl_encryption', default=True,
-                help='Encrypt backups using OpenSSL.'),
-    cfg.StrOpt('backup_aes_cbc_key', default='default_aes_cbc_key',
-               help='Default OpenSSL aes_cbc key.'),
-    cfg.BoolOpt('backup_use_snet', default=False,
-                help='Send backup files over snet.'),
+                help='Compress backups using gzip.',
+                deprecated_for_removal=True,
+                deprecated_since=versionutils.deprecated.VICTORIA,
+                deprecated_reason='Backup data compression is enabled by '
+                                  'default. This option is ignored.'),
+    cfg.BoolOpt(
+        'backup_use_openssl_encryption', default=True,
+        help='Encrypt backups using OpenSSL.',
+        deprecated_for_removal=True,
+        deprecated_since=versionutils.deprecated.VICTORIA,
+        deprecated_reason='Trove should not encrypt backup data on '
+                          'behalf of the user. This option is ignored.'
+    ),
+    cfg.StrOpt(
+        'backup_aes_cbc_key', default='',
+        help='Default OpenSSL aes_cbc key for decrypting backup data created '
+             'prior to Victoria.',
+        deprecated_for_removal=True,
+        deprecated_since=versionutils.deprecated.VICTORIA,
+        deprecated_reason='This option is only for backward compatibility. '
+                          'Backups created after Victoria are not encrypted '
+                          'any more.'
+    ),
+    cfg.BoolOpt(
+        'backup_use_snet', default=False,
+        help='Send backup files over snet.',
+        deprecated_for_removal=True,
+        deprecated_since=versionutils.deprecated.VICTORIA,
+        deprecated_reason='This option is not supported any more.'
+    ),
     cfg.IntOpt('backup_chunk_size', default=2 ** 16,
                help='Chunk size (in bytes) to stream to the Swift container. '
                'This should be in multiples of 128 bytes, since this is the '
@@ -616,7 +640,7 @@ mysql_opts = [
         help='Database docker image.'
     ),
     cfg.StrOpt(
-        'backup_docker_image', default='openstacktrove/db-backup-mysql:1.0.0',
+        'backup_docker_image', default='openstacktrove/db-backup-mysql:1.1.0',
         help='The docker image used for backup and restore. For mysql, '
              'the minor version is added to the image name as a suffix before '
              'creating container, e.g. openstacktrove/db-backup-mysql5.7:1.0.0'
@@ -1063,7 +1087,7 @@ postgresql_opts = [
     ),
     cfg.StrOpt(
         'backup_docker_image',
-        default='openstacktrove/db-backup-postgresql:1.0.0',
+        default='openstacktrove/db-backup-postgresql:1.1.0',
         help='The docker image used for backup and restore.'
     ),
     cfg.BoolOpt('icmp', default=False,
@@ -1384,7 +1408,7 @@ mariadb_opts = [
     ),
     cfg.StrOpt(
         'backup_docker_image',
-        default='openstacktrove/db-backup-mariadb:1.0.0',
+        default='openstacktrove/db-backup-mariadb:1.1.0',
         help='The docker image used for backup and restore.'
     ),
 ]

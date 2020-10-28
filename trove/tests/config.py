@@ -98,7 +98,6 @@ class TestConfig(object):
                     "valid_values": {
                         "connect_timeout": 120,
                         "local_infile": 0,
-                        "innodb_log_checksums": False
                     },
                     "appending_values": {
                         "join_buffer_size": 1048576,
