@@ -760,6 +760,12 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info("Starting to restore database from backup %s, "
                  "backup_info: %s", backup_info['id'], backup_info)
 
+        if (backup_info["location"].endswith('.enc') and
+                not CONF.backup_aes_cbc_key):
+            self.status.set_status(service_status.ServiceStatuses.FAILED)
+            raise exception.TroveError('Decryption key not configured for '
+                                       'encrypted backup.')
+
         try:
             self.app.restore_backup(context, backup_info, restore_location)
         except Exception:

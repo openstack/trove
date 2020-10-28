@@ -39,7 +39,12 @@ cli_opts = [
         choices=['innobackupex', 'mariabackup', 'pg_basebackup']
     ),
     cfg.BoolOpt('backup'),
-    cfg.StrOpt('backup-encryption-key'),
+    cfg.StrOpt(
+        'backup-encryption-key',
+        help='This is only for backward compatibility. The backups '
+             'created prior to Victoria may be encrypted. Trove guest '
+             'agent is responsible for passing the key.'
+    ),
     cfg.StrOpt('db-user'),
     cfg.StrOpt('db-password'),
     cfg.StrOpt('db-host'),
