@@ -39,6 +39,7 @@ DEFAULT_RATE = CONF.http_get_rate
 DEFAULT_MAX_VOLUMES = CONF.max_volumes_per_tenant
 DEFAULT_MAX_INSTANCES = CONF.max_instances_per_tenant
 DEFAULT_MAX_BACKUPS = CONF.max_backups_per_tenant
+DEFAULT_MAX_RAM = CONF.max_ram_per_tenant
 
 
 def ensure_limits_are_not_faked(func):
@@ -109,6 +110,7 @@ class Limits(object):
         assert_equal(int(abs_limits.max_instances), DEFAULT_MAX_INSTANCES)
         assert_equal(int(abs_limits.max_backups), DEFAULT_MAX_BACKUPS)
         assert_equal(int(abs_limits.max_volumes), DEFAULT_MAX_VOLUMES)
+        assert_equal(int(abs_limits.max_ram), DEFAULT_MAX_RAM)
 
         for k in d:
             assert_equal(d[k].verb, k)
@@ -132,6 +134,7 @@ class Limits(object):
         assert_equal(int(abs_limits.max_instances), DEFAULT_MAX_INSTANCES)
         assert_equal(int(abs_limits.max_backups), DEFAULT_MAX_BACKUPS)
         assert_equal(int(abs_limits.max_volumes), DEFAULT_MAX_VOLUMES)
+        assert_equal(int(abs_limits.max_ram), DEFAULT_MAX_RAM)
         assert_equal(get.verb, "GET")
         assert_equal(get.unit, "MINUTE")
         assert_true(int(get.remaining) <= DEFAULT_RATE - 5)
@@ -163,6 +166,8 @@ class Limits(object):
                              DEFAULT_MAX_BACKUPS)
                 assert_equal(int(abs_limits.max_volumes),
                              DEFAULT_MAX_VOLUMES)
+                assert_equal(int(abs_limits.max_ram,),
+                             DEFAULT_MAX_RAM)
 
             except exceptions.OverLimit:
                 encountered = True

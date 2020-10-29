@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Added the ability to quota on total amount of RAM in MB used per project.
+    Set ``quota.max_ram_per_tenant`` to enable. Default is -1 (unlimited)
+    to be backwards compatible. Existing installations will need to manually
+    backfill quote usage for this to work as expected.
