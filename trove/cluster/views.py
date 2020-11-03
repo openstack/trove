@@ -102,7 +102,10 @@ class ClusterView(object):
         return None
 
     def _build_flavor_info(self, flavor_id):
-        return {"id": flavor_id}
+        return {
+            "id": flavor_id,
+            "links": create_links("flavors", self.req, flavor_id)
+        }
 
 
 class ClusterInstanceDetailView(InstanceDetailView):

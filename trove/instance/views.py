@@ -86,7 +86,12 @@ class InstanceView(object):
     def _build_flavor_info(self):
         return {
             "id": self.instance.flavor_id,
+            "links": self._build_flavor_links()
         }
+
+    def _build_flavor_links(self):
+        return create_links("flavors", self.req,
+                            self.instance.flavor_id)
 
     def _build_master_info(self):
         return {
