@@ -21,6 +21,7 @@ from trove.common import wsgi
 from trove.configuration.service import ConfigurationsController
 from trove.configuration.service import ParametersController
 from trove.datastore.service import DatastoreController
+from trove.flavor.service import FlavorController
 from trove.instance.service import InstanceController
 from trove.limits.service import LimitsController
 from trove.module.service import ModuleController
@@ -35,6 +36,7 @@ class API(wsgi.Router):
         self._instance_router(mapper)
         self._cluster_router(mapper)
         self._datastore_router(mapper)
+        self._flavor_router(mapper)
         self._versions_router(mapper)
         self._limits_router(mapper)
         self._backups_router(mapper)
@@ -167,6 +169,17 @@ class API(wsgi.Router):
                        controller=cluster_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
+
+    def _flavor_router(self, mapper):
+        flavor_resource = FlavorController().create_resource()
+        mapper.connect("/{tenant_id}/flavors",
+                       controller=flavor_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/flavors/{id}",
+                       controller=flavor_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
 
     def _limits_router(self, mapper):
         limits_resource = LimitsController().create_resource()
