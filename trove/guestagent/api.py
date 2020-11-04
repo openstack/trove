@@ -36,13 +36,17 @@ class API(object):
 
     API version history:
         * 1.0 - Initial version.
+        * 1.1 - Added argement ds_version to prepare and
+                start_db_with_conf_changes
+              - Remove do_not_start_on_reboot from stop_db
+              - Added online argument to resize_fs
 
     When updating this API, also update API_LATEST_VERSION
     """
 
     # API_LATEST_VERSION should bump the minor number each time
     # a method signature is added or changed
-    API_LATEST_VERSION = '1.0'
+    API_LATEST_VERSION = '1.1'
 
     # API_BASE_VERSION should only change on major version upgrade
     API_BASE_VERSION = '1.0'
@@ -54,6 +58,8 @@ class API(object):
         'liberty': '1.0',
         'mitaka': '1.0',
         'newton': '1.0',
+        'ussuri': '1.0',
+        'victoria': '1.1',
 
         'latest': API_LATEST_VERSION
     }
@@ -320,7 +326,7 @@ class API(object):
         """
         LOG.debug("Sending the call to prepare the Guest.")
 
-        version = self.API_BASE_VERSION
+        version = '1.1'
 
         # Taskmanager is a publisher, guestagent is a consumer. Usually
         # consumer creates a queue, but in this case we have to make sure
@@ -329,14 +335,19 @@ class API(object):
         self._create_guest_queue()
 
         packages = packages.split()
-        self._cast(
-            "prepare", version=version, packages=packages,
-            databases=databases, memory_mb=memory_mb, users=users,
-            device_path=device_path, mount_point=mount_point,
+
+        prepare_args = dict(
+            packages=packages, databases=databases, memory_mb=memory_mb,
+            users=users, device_path=device_path, mount_point=mount_point,
             backup_info=backup_info, config_contents=config_contents,
             root_password=root_password, overrides=overrides,
             cluster_config=cluster_config, snapshot=snapshot, modules=modules,
             ds_version=ds_version)
+
+        if not self.client.can_send_version(version):
+            prepare_args.pop('ds_version')
+            version = '1.0'
+        self._cast("prepare", version=version, **prepare_args)
 
     def _create_guest_queue(self):
         """Call to construct, start and immediately stop rpc server in order
@@ -401,11 +412,16 @@ class API(object):
         LOG.debug("Sending the call to start the database process on "
                   "the Guest with a timeout of %s.",
                   self.agent_high_timeout)
-        version = self.API_BASE_VERSION
+        start_args = dict(config_contents=config_contents,
+                          ds_version=ds_version)
+
+        version = '1.1'
+        if not self.client.can_send_version(version):
+            start_args.pop('ds_version')
+            version = '1.0'
 
         self._call("start_db_with_conf_changes", self.agent_high_timeout,
-                   version=version, config_contents=config_contents,
-                   ds_version=ds_version)
+                   version=version, **start_args)
 
     def reset_configuration(self, configuration):
         """Ignore running state of the database server; just change
@@ -419,14 +435,19 @@ class API(object):
         self._call("reset_configuration", self.agent_high_timeout,
                    version=version, configuration=configuration)
 
-    def stop_db(self):
+    def stop_db(self, do_not_start_on_reboot=False):
         """Stop the database server."""
         LOG.debug("Sending the call to stop the database process "
                   "on the Guest.")
-        version = self.API_BASE_VERSION
+
+        version = '1.1'
+        stop_args = {}
+        if not self.client.can_send_version(version):
+            stop_args['do_not_start_on_reboot'] = do_not_start_on_reboot
+            version = '1.0'
 
         self._call("stop_db", self.agent_low_timeout,
-                   version=version)
+                   version=version, **stop_args)
 
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container."""
@@ -478,12 +499,18 @@ class API(object):
         """Resize the filesystem."""
         LOG.debug("Resize device %(device)s on instance %(id)s.", {
             'device': device_path, 'id': self.id})
-        version = self.API_BASE_VERSION
+
+        resize_args = dict(device_path=device_path,
+                           mount_point=mount_point,
+                           online=online)
+
+        version = '1.1'
+        if not self.client.can_send_version(version):
+            resize_args.pop('online')
+            version = '1.0'
 
         self._call("resize_fs",
-                   self.agent_high_timeout, version=version,
-                   device_path=device_path, mount_point=mount_point,
-                   online=online)
+                   self.agent_high_timeout, version=version, **resize_args)
 
     def update_overrides(self, overrides, remove=False):
         """Update the overrides."""
