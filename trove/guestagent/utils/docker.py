@@ -151,3 +151,11 @@ def get_container_logs(client, name='database', tail=50):
     container = client.containers.get(name)
     output = container.logs(tail=tail)
     return _decode_output(output)
+
+
+def prune_images(client):
+    """Remove unused images."""
+    try:
+        client.images.prune(filters={'dangling': False})
+    except Exception as e:
+        LOG.warning(f"Prune image failed, error: {str(e)}")

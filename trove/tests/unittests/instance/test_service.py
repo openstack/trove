@@ -15,7 +15,9 @@ from unittest import mock
 
 from trove.common import clients
 from trove.datastore import models as ds_models
+from trove.instance import models as ins_models
 from trove.instance import service
+from trove.instance import service_status as srvstatus
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
@@ -51,6 +53,10 @@ class TestInstanceController(trove_testtools.TestCase):
 
         super(TestInstanceController, cls).tearDownClass()
 
+    def setUp(self):
+        trove_testtools.patch_notifier(self)
+        super(TestInstanceController, self).setUp()
+
     @mock.patch.object(clients, 'create_glance_client')
     @mock.patch('trove.instance.models.Instance.create')
     def test_create_by_ds_version_image_tags(self, mock_model_create,
@@ -78,3 +84,45 @@ class TestInstanceController(trove_testtools.TestCase):
             filters={'tag': ['trove', 'mysql'], 'status': 'active'},
             sort='created_at:desc', limit=1
         )
+
+    @mock.patch.object(clients, 'create_nova_client',
+                       return_value=mock.MagicMock())
+    @mock.patch('trove.rpc.get_client')
+    def test_update_datastore_version(self, mock_get_rpc_client,
+                                      mock_create_nova_client):
+        # Create an instance in db.
+        instance = ins_models.DBInstance.create(
+            name=self.random_name('instance'),
+            flavor_id=self.random_uuid(),
+            tenant_id=self.random_uuid(),
+            volume_size=1,
+            datastore_version_id=self.ds_version_imageid.id,
+            task_status=ins_models.InstanceTasks.BUILDING,
+            compute_instance_id=self.random_uuid()
+        )
+        ins_models.InstanceServiceStatus.create(
+            instance_id=instance.id,
+            status=srvstatus.ServiceStatuses.NEW
+        )
+
+        # Create a new datastore version in db.
+        new_version_name = self.random_name('version')
+        ds_models.update_datastore_version(
+            self.ds_name, new_version_name,
+            'mysql', self.random_uuid(), [], '', 1
+        )
+        new_ds_version = ds_models.DatastoreVersion.load(
+            self.ds, new_version_name)
+
+        body = {
+            'instance': {
+                'datastore_version': new_ds_version.id
+            }
+        }
+        self.controller.update(mock.MagicMock(), instance.id, body, mock.ANY)
+
+        rpc_ctx = mock_get_rpc_client.return_value.prepare.return_value
+        rpc_ctx.cast.assert_called_once_with(
+            mock.ANY, "upgrade",
+            instance_id=instance.id,
+            datastore_version_id=new_ds_version.id)
