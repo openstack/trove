@@ -521,6 +521,12 @@ class InstanceController(wsgi.Controller):
         elif 'datastore_version' in kwargs:
             datastore_version = ds_models.DatastoreVersion.load(
                 instance.datastore, kwargs['datastore_version'])
+
+            if datastore_version.name == instance.ds_version.name:
+                LOG.warning(f"Same datastore version {datastore_version.name} "
+                            f"for upgrading")
+                return
+
             context.notification = (
                 notification.DBaaSInstanceUpgrade(context, request=req))
             with StartNotification(context, instance_id=instance.id,
@@ -567,6 +573,9 @@ class InstanceController(wsgi.Controller):
 
         if 'access' in body['instance']:
             args['access'] = body['instance']['access']
+
+        if 'datastore_version' in body['instance']:
+            args['datastore_version'] = body['instance']['datastore_version']
 
         self._modify_instance(context, req, instance, **args)
         return wsgi.Result(None, 202)
