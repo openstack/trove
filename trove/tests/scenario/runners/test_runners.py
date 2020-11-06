@@ -985,7 +985,7 @@ class CheckInstance(AttrCheck):
         if 'flavor' not in self.instance:
             self.fail("'flavor' not found in instance.")
         else:
-            allowed_attrs = ['id']
+            allowed_attrs = ['id', 'links']
             self.contains_allowed_attrs(
                 self.instance['flavor'], allowed_attrs,
                 msg="Flavor")
