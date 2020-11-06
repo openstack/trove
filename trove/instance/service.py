@@ -583,7 +583,7 @@ class InstanceController(wsgi.Controller):
 
         Deprecated. Use update method instead.
         """
-        self.update(req, id, body, tenant_id)
+        return self.update(req, id, body, tenant_id)
 
     def configuration(self, req, tenant_id, id):
         """
