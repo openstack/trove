@@ -1877,7 +1877,7 @@ class ResizeActionBase(object):
         """Initiates the action."""
         try:
             LOG.debug("Instance %s calling stop_db...", self.instance.id)
-            self.instance.guest.stop_db()
+            self.instance.guest.stop_db(do_not_start_on_reboot=True)
         except Exception as e:
             if self.ignore_stop_error:
                 LOG.warning(f"Failed to stop db {self.instance.id}, error: "
