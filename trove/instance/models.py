@@ -837,17 +837,17 @@ class BaseInstance(SimpleInstance):
                             "Timeout deleting compute server %(vm_id)s",
                             {'instance_id': self.id, 'vm_id': self.server_id})
 
-        # If volume has been resized it must be manually removed
-        try:
-            if self.volume_id:
-                volume = self.volume_client.volumes.get(self.volume_id)
-                if volume.status in ["available", "error"]:
-                    LOG.info("Deleting volume %s for instance %s",
-                             self.volume_id, self.id)
-                    volume.delete()
-        except Exception as e:
-            LOG.warning("Failed to delete volume for instance %s, error: %s",
-                        self.id, str(e))
+        # Cinder volume.
+        vols = self.volume_client.volumes.list(
+            search_opts={'name': f'trove-{self.id}'})
+        for vol in vols:
+            LOG.info(f"Deleting volume {vol.id} for instance {self.id}")
+
+            try:
+                vol.delete()
+            except Exception as e:
+                LOG.warning(f"Failed to delete volume {vol.id}({vol.status}) "
+                            f"for instance {self.id}, error: {str(e)}")
 
         notification.TroveInstanceDelete(
             instance=self,
