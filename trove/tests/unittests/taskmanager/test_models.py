@@ -380,7 +380,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             is_public=False
         )
         mock_build_volume_info.assert_called_with(
-            'mysql', volume_size=2,
+            'mysql', availability_zone=None, volume_size=2,
             volume_type='volume_type'
         )
         mock_guest_prepare.assert_called_with(
@@ -451,7 +451,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         )
 
         mock_build_volume_info.assert_called_with(
-            'mysql', volume_size=2,
+            'mysql', availability_zone=None, volume_size=2,
             volume_type='volume_type'
         )
         mock_guest_prepare.assert_called_with(
