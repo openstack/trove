@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Added the ability to create the cinder volume in the same AZ as the nova
+    instance. Set ``enable_volume_az`` to True (defaults to False)
