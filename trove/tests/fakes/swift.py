@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http_client
+import http
 from hashlib import md5
 from unittest.mock import MagicMock, patch
 import json
@@ -78,10 +78,12 @@ class FakeSwiftConnection(object):
         LOG.debug("fake head_container(%s)", container)
         if container == 'missing_container':
             raise swift.ClientException('fake exception',
-                                        http_status=http_client.NOT_FOUND)
+                                        http_status=http.HTTPStatus.NOT_FOUND)
         elif container == 'unauthorized_container':
-            raise swift.ClientException('fake exception',
-                                        http_status=http_client.UNAUTHORIZED)
+            raise swift.ClientException(
+                'fake exception',
+                http_status=http.HTTPStatus.UNAUTHORIZED
+            )
         elif container == 'socket_error_on_head':
             raise socket.error(111, 'ECONNREFUSED')
         pass
