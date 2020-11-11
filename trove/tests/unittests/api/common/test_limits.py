@@ -48,6 +48,7 @@ class BaseLimitTestSuite(trove_testtools.TestCase):
         self.context = trove_testtools.TroveTestContext(self)
         self.absolute_limits = {"max_instances": 55,
                                 "max_volumes": 100,
+                                "max_ram": 200,
                                 "max_backups": 40}
 
 
@@ -114,6 +115,10 @@ class LimitsControllerTest(BaseLimitTestSuite):
                                          resource="instances",
                                          hard_limit=100),
 
+                      "ram": Quota(tenant_id=tenant_id,
+                                   resource="ram",
+                                   hard_limit=200),
+
                       "backups": Quota(tenant_id=tenant_id,
                                        resource="backups",
                                        hard_limit=40),
@@ -135,6 +140,7 @@ class LimitsControllerTest(BaseLimitTestSuite):
                     {
                         'max_instances': 100,
                         'max_backups': 40,
+                        'max_ram': 200,
                         'verb': 'ABSOLUTE',
                         'max_volumes': 55
                     },
@@ -798,7 +804,7 @@ class LimitsViewsTest(trove_testtools.TestCase):
                 "resetTime": 1311272226
             }
         ]
-        abs_view = {"instances": 55, "volumes": 100, "backups": 40}
+        abs_view = {"instances": 55, "volumes": 100, "backups": 40, 'ram': 200}
 
         view_data = views.LimitViews(abs_view, rate_limits)
         self.assertIsNotNone(view_data)
@@ -806,6 +812,7 @@ class LimitsViewsTest(trove_testtools.TestCase):
         data = view_data.data()
         expected = {'limits': [{'max_instances': 55,
                                 'max_backups': 40,
+                                'max_ram': 200,
                                 'verb': 'ABSOLUTE',
                                 'max_volumes': 100},
                                {'regex': '.*',

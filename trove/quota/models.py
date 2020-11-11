@@ -75,6 +75,7 @@ class Resource(object):
     """Describe a single resource for quota checking."""
 
     INSTANCES = 'instances'
+    RAM = 'ram'
     VOLUMES = 'volumes'
     BACKUPS = 'backups'
 

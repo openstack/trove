@@ -716,8 +716,8 @@ class BaseInstance(SimpleInstance):
             self.update_db(task_status=InstanceTasks.DELETING,
                            configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)
-
-        deltas = {'instances': -1}
+        flavor = self.get_flavor()
+        deltas = {'instances': -1, 'ram': -flavor.ram}
         if self.volume_support:
             deltas['volumes'] = -self.volume_size
         return run_with_quotas(self.tenant_id,
@@ -912,6 +912,9 @@ class BaseInstance(SimpleInstance):
             del_fault.save()
         except exception.ModelNotFoundError:
             pass
+
+    def get_flavor(self):
+        return self.nova_client.flavors.get(self.flavor_id)
 
     @property
     def volume_client(self):
@@ -1153,7 +1156,7 @@ class Instance(BuiltInstance):
             cls._validate_remote_datastore(context, region_name, flavor,
                                            datastore, datastore_version)
 
-        deltas = {'instances': 1}
+        deltas = {'instances': 1, 'ram': flavor.ram}
         if volume_support:
             if replica_source:
                 try:
@@ -1351,9 +1354,6 @@ class Instance(BuiltInstance):
             module_models.InstanceModule.create(
                 context, instance_id, module.id, module.md5)
 
-    def get_flavor(self):
-        return self.nova_client.flavors.get(self.flavor_id)
-
     def get_default_configuration_template(self):
         flavor = self.get_flavor()
         LOG.debug("Getting default config template for datastore version "
@@ -1371,13 +1371,13 @@ class Instance(BuiltInstance):
         if self.db_info.cluster_id is not None:
             raise exception.ClusterInstanceOperationNotSupported()
 
-        # Validate that the old and new flavor IDs are not the same, new flavor
-        # can be found and has ephemeral/volume support if required by the
-        # current flavor.
+        # Validate that the old and new flavor IDs are not the same, new
+        # flavor can be found and has ephemeral/volume support if required
+        # by the current flavor.
         if self.flavor_id == new_flavor_id:
-            raise exception.BadRequest(_("The new flavor id must be different "
-                                         "than the current flavor id of '%s'.")
-                                       % self.flavor_id)
+            raise exception.BadRequest(
+                _("The new flavor id must be different "
+                  "than the current flavor id of '%s'.") % self.flavor_id)
         try:
             new_flavor = self.nova_client.flavors.get(new_flavor_id)
         except nova_exceptions.NotFound:
@@ -1390,13 +1390,20 @@ class Instance(BuiltInstance):
         elif self.device_path is not None:
             # ephemeral support enabled
             if new_flavor.ephemeral == 0:
-                raise exception.LocalStorageNotSpecified(flavor=new_flavor_id)
+                raise exception.LocalStorageNotSpecified(
+                    flavor=new_flavor_id)
 
-        # Set the task to RESIZING and begin the async call before returning.
-        self.update_db(task_status=InstanceTasks.RESIZING)
-        LOG.debug("Instance %s set to RESIZING.", self.id)
-        task_api.API(self.context).resize_flavor(self.id, old_flavor,
-                                                 new_flavor)
+        def _resize_flavor():
+            # Set the task to RESIZING and begin the async call before
+            # returning.
+            self.update_db(task_status=InstanceTasks.RESIZING)
+            LOG.debug("Instance %s set to RESIZING.", self.id)
+            task_api.API(self.context).resize_flavor(self.id, old_flavor,
+                                                     new_flavor)
+
+        return run_with_quotas(self.tenant_id,
+                               {'ram': new_flavor.ram - old_flavor.ram},
+                               _resize_flavor)
 
     def resize_volume(self, new_size):
         """Resize instance volume.
