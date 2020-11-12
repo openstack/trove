@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fixed an issue that orphan volumes left after removing instances,
+    especially for the case that instance creation failed because of timeout
+    when waiting for the volume available.
