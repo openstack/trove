@@ -816,12 +816,8 @@ class BaseInstance(SimpleInstance):
         def server_is_finished():
             try:
                 server = self.nova_client.servers.get(self.server_id)
-                if not self.server_status_matches(['SHUTDOWN', 'ACTIVE'],
-                                                  server=server):
-                    LOG.warning("Server %(vm_id)s entered ERROR status "
-                                "when deleting instance %(instance_id)s!",
-                                {'vm_id': self.server_id,
-                                 'instance_id': self.id})
+                LOG.debug(f"Compute server {self.server_id} status "
+                          f"{server.status}")
                 return False
             except nova_exceptions.NotFound:
                 return True
