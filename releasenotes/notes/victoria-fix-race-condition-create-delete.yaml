@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixed a race condition that instance becomes ERROR when Trove is handling
+    creating and deleting at the same time.
