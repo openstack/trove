@@ -440,6 +440,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 self.reset_task_status()
             TroveInstanceCreate(instance=self,
                                 instance_size=flavor['ram']).notify()
+        except exception.ComputeInstanceNotFound:
+            # Check if the instance has been deleted by another request.
+            instance = DBInstance.find_by(id=self.id)
+            if (instance.deleted or
+                    instance.task_status == InstanceTasks.DELETING):
+                LOG.warning(f"Instance {self.id} has been deleted during "
+                            f"waiting for creation")
+                return
         except (TroveError, PollTimeOut) as ex:
             LOG.error("Failed to create instance %s, error: %s.",
                       self.id, str(ex))
@@ -786,11 +794,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         try:
             server = self.nova_client.servers.get(c_id)
         except Exception as e:
-            raise TroveError(
-                _("Failed to get server %(server)s for instance %(instance)s, "
-                  "error: %(error)s"),
-                server=c_id, instance=self.id, error=str(e)
-            )
+            if getattr(e, 'message', '') == 'Not found':
+                raise exception.ComputeInstanceNotFound(instance_id=self.id,
+                                                        server_id=c_id)
+            else:
+                raise TroveError(
+                    _("Failed to get server %(server)s for instance "
+                      "%(instance)s, error: %(error)s"),
+                    server=c_id, instance=self.id, error=str(e)
+                )
 
         server_status = server.status
         if server_status in [InstanceStatus.ERROR,
