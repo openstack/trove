@@ -14,6 +14,7 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${DIB_RELEASE} stable"
 apt-get update
 apt-get install -y -qq docker-ce >/dev/null
+apt-get clean
 
 echo "Adding ${GUEST_USERNAME} user to docker group"
 usermod -aG docker ${GUEST_USERNAME}

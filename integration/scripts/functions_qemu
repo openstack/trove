@@ -15,8 +15,14 @@ function build_guest_image() {
     local working_dir=$(dirname ${image_output})
     local root_password=${TROVE_ROOT_PASSWORD}
 
-    local elementes="base vm"
     local trove_elements_path=${PATH_TROVE}/integration/scripts/files/elements
+    # For system-wide installs, DIB will automatically find the elements, so we only check local path
+    if [[ "${DIB_LOCAL_ELEMENTS_PATH}" ]]; then
+        export ELEMENTS_PATH=${trove_elements_path}:${DIB_LOCAL_ELEMENTS_PATH}
+    else
+        export ELEMENTS_PATH=${trove_elements_path}
+    fi
+
     local GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-3}
     local GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
     sudo rm -rf ${GUEST_CACHEDIR}
@@ -33,29 +39,29 @@ function build_guest_image() {
         manage_ssh_keys
     fi
 
-    # For system-wide installs, DIB will automatically find the elements, so we only check local path
-    if [[ "${DIB_LOCAL_ELEMENTS_PATH}" ]]; then
-        export ELEMENTS_PATH=${trove_elements_path}:${DIB_LOCAL_ELEMENTS_PATH}
-    else
-        export ELEMENTS_PATH=${trove_elements_path}
-    fi
-
-    export DIB_RELEASE=${guest_release}
-    export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
-    export DIB_CLOUD_INIT_ETC_HOSTS="localhost"
-
-    # https://cloud-images.ubuntu.com/releases is more stable than the daily
-    # builds (https://cloud-images.ubuntu.com/xenial/current/),
-    # e.g. sometimes SHA256SUMS file is missing in the daily builds website.
-    # Ref: diskimage_builder/elements/ubuntu/root.d/10-cache-ubuntu-tarball
-    declare -A image_file_mapping=( ["xenial"]="ubuntu-16.04-server-cloudimg-amd64-root.tar.gz" ["bionic"]="ubuntu-18.04-server-cloudimg-amd64.squashfs" )
-    export DIB_CLOUD_IMAGES="https://cloud-images.ubuntu.com/releases/${DIB_RELEASE}/release/"
-    export BASE_IMAGE_FILE=${image_file_mapping[${DIB_RELEASE}]}
-
     TEMP=$(mktemp -d ${working_dir}/diskimage-create.XXXXXXX)
     pushd $TEMP > /dev/null
 
-    elementes="$elementes ${guest_os}"
+    # Prepare elements for diskimage-builder
+    export DIB_CLOUD_INIT_ETC_HOSTS="localhost"
+    local elementes="base vm"
+
+    # Only support ubuntu at the moment.
+    if [[ "${guest_os}" == "ubuntu" ]]; then
+        export DIB_RELEASE=${guest_release}
+        # https://cloud-images.ubuntu.com/releases is more stable than the daily
+        # builds (https://cloud-images.ubuntu.com/xenial/current/),
+        # e.g. sometimes SHA256SUMS file is missing in the daily builds website.
+        # Ref: diskimage_builder/elements/ubuntu/root.d/10-cache-ubuntu-tarball
+        declare -A image_file_mapping=( ["xenial"]="ubuntu-16.04-server-cloudimg-amd64-root.tar.gz" ["bionic"]="ubuntu-18.04-server-cloudimg-amd64.squashfs" )
+        export DIB_CLOUD_IMAGES="https://cloud-images.ubuntu.com/releases/${DIB_RELEASE}/release/"
+        export BASE_IMAGE_FILE=${image_file_mapping[${DIB_RELEASE}]}
+        elementes="$elementes ubuntu-minimal"
+    fi
+
+    export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive"}
+    elementes="$elementes cloud-init-datasources"
+
     elementes="$elementes pip-and-virtualenv"
     elementes="$elementes pip-cache"
     elementes="$elementes guest-agent"
