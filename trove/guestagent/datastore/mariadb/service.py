@@ -63,7 +63,7 @@ class MariaDBApp(mysql_service.BaseMySqlApp):
         gtid_executed = self._get_gtid_executed()
         for gtid_set in gtid_executed.split(','):
             uuid_set = gtid_set.split('-')
-            if uuid_set[1] == master_UUID:
+            if str(uuid_set[1]) == str(master_UUID):
                 last_txn_id = uuid_set[-1]
                 break
         return master_UUID, int(last_txn_id)
