@@ -481,10 +481,11 @@ function create_guest_image {
       --property hw_rng_model='virtio' \
       --file ${image_file} \
       -c id -f value)
+     echo "Glance image ${glance_image_id} uploaded"
 
     echo "Register the image in datastore"
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE ""
-    $TROVE_MANAGE datastore_version_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION $TROVE_DATASTORE_TYPE $glance_image_id "trove" "" 1
+    $TROVE_MANAGE datastore_version_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION $TROVE_DATASTORE_TYPE "" "trove" "" 1
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION
 
     echo "Add parameter validation rules if available"

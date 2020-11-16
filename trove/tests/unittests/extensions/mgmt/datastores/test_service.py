@@ -32,6 +32,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
     def setUpClass(cls):
         util.init_db()
         cls.ds_name = cls.random_name('datastore')
+        cls.ds_version_number = '5.7.30'
         models.update_datastore(name=cls.ds_name, default_version=None)
 
         models.update_datastore_version(
@@ -39,11 +40,12 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
             1)
         models.update_datastore_version(
             cls.ds_name, 'test_vr2', 'mysql', cls.random_uuid(), '', 'pkg-1',
-            1)
+            1, version=cls.ds_version_number)
 
         cls.ds = models.Datastore.load(cls.ds_name)
         cls.ds_version1 = models.DatastoreVersion.load(cls.ds, 'test_vr1')
-        cls.ds_version2 = models.DatastoreVersion.load(cls.ds, 'test_vr2')
+        cls.ds_version2 = models.DatastoreVersion.load(
+            cls.ds, 'test_vr2', version=cls.ds_version_number)
         cls.version_controller = DatastoreVersionController()
 
         super(TestDatastoreVersionController, cls).setUpClass()
@@ -136,6 +138,34 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
 
         new_ver = models.DatastoreVersion.load(self.ds, ver_name)
         self.assertEqual(image_id, new_ver.image_id)
+        self.assertEqual(ver_name, new_ver.version)
+
+    @patch.object(clients, 'create_glance_client')
+    def test_create_same_version_number(self, mock_glance_client):
+        image_id = self.random_uuid()
+        ver_name = self.random_name('dsversion')
+        body = {
+            "version": {
+                "datastore_name": self.ds_name,
+                "name": ver_name,
+                "datastore_manager": "mysql",
+                "image": image_id,
+                "image_tags": [],
+                "packages": "",
+                "active": True,
+                "default": False,
+                "version": self.ds_version_number
+            }
+        }
+        output = self.version_controller.create(MagicMock(), body, mock.ANY)
+        self.assertEqual(202, output.status)
+
+        new_ver = models.DatastoreVersion.load(self.ds, ver_name,
+                                               version=self.ds_version_number)
+        self.assertEqual(image_id, new_ver.image_id)
+        self.assertEqual(ver_name, new_ver.name)
+        self.assertEqual(self.ds_version_number, new_ver.version)
+        self.assertNotEqual(self.ds_version2.id, new_ver.id)
 
     @patch.object(clients, 'create_glance_client')
     def test_create_by_image_tags(self, mock_create_client):
@@ -304,6 +334,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                          output._data['version']['packages'])
         self.assertEqual(self.ds_version2.active,
                          output._data['version']['active'])
+        self.assertEqual(self.ds_version2.version,
+                         output._data['version']['version'])
 
     def test_show_image_tags(self):
         ver_name = self.random_name('dsversion')

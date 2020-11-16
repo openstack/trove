@@ -180,7 +180,8 @@ class DatastoreVersionInactive(TroveError):
 
 class DatastoreVersionAlreadyExists(BadRequest):
 
-    message = _("A datastore version with the name '%(name)s' already exists.")
+    message = _("The datastore version '%(name)s(%(version)s)' already "
+                "exists.")
 
 
 class DatastoreVersionsExist(BadRequest):
