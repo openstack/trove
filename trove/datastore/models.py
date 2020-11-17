@@ -588,7 +588,7 @@ def update_datastore(name, default_version):
 
 
 def update_datastore_version(datastore, name, manager, image_id, image_tags,
-                             packages, active, version=None):
+                             packages, active, version=None, new_name=None):
     """Create or update datastore version."""
     version = version or name
     db_api.configure_db(CONF)
@@ -601,9 +601,9 @@ def update_datastore_version(datastore, name, manager, image_id, image_tags,
         # Create a new one
         ds_version = DBDatastoreVersion()
         ds_version.id = utils.generate_uuid()
-        ds_version.name = name
         ds_version.version = version
         ds_version.datastore_id = datastore.id
+    ds_version.name = new_name or name
     ds_version.manager = manager
     ds_version.image_id = image_id
     ds_version.image_tags = (",".join(image_tags)
