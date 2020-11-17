@@ -161,13 +161,9 @@ class DatastoreVersions(object):
 
     @test
     def test_datastore_version_not_found(self):
-        try:
-            assert_raises(exceptions.NotFound,
-                          self.rd_client.datastore_versions.get,
-                          self.datastore_active.name, NAME)
-        except exceptions.BadRequest as e:
-            assert_equal(e.message,
-                         "Datastore version '%s' cannot be found." % NAME)
+        assert_raises(exceptions.BadRequest,
+                      self.rd_client.datastore_versions.get,
+                      self.datastore_active.name, NAME)
 
     @test
     def test_datastore_version_list_by_uuid(self):

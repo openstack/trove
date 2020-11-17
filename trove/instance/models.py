@@ -1133,9 +1133,8 @@ class Instance(BuiltInstance):
             valid_flavors = tuple(f.value for f in bound_flavors)
             if flavor_id not in valid_flavors:
                 raise exception.DatastoreFlavorAssociationNotFound(
-                    datastore=datastore.name,
-                    datastore_version=datastore_version.name,
-                    flavor_id=flavor_id)
+                    datastore_version_id=datastore_version.id,
+                    id=flavor_id)
         try:
             flavor = nova_client.flavors.get(flavor_id)
         except nova_exceptions.NotFound:
@@ -1166,7 +1165,7 @@ class Instance(BuiltInstance):
                 volume_size = volume.size
 
             dvm.validate_volume_type(context, volume_type,
-                                     datastore.name, datastore_version.name)
+                                     datastore_version.id)
             validate_volume_size(volume_size)
             call_args['volume_type'] = volume_type
             call_args['volume_size'] = volume_size
@@ -1335,7 +1334,7 @@ class Instance(BuiltInstance):
                 nics, overrides, slave_of_id, cluster_config,
                 volume_type=volume_type, modules=module_list,
                 locality=locality, access=access,
-                ds_version=datastore_version.name)
+                ds_version=datastore_version.version)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password, locality=locality)

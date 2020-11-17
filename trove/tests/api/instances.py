@@ -204,7 +204,7 @@ class CheckInstance(AttrCheck):
         if 'datastore' not in self.instance:
             self.fail("'datastore' not found in instance.")
         else:
-            allowed_attrs = ['type', 'version']
+            allowed_attrs = ['type', 'version', 'version_number']
             self.contains_allowed_attrs(
                 self.instance['datastore'], allowed_attrs,
                 msg="datastore")
@@ -714,18 +714,13 @@ class CreateInstanceFail(object):
         users = []
         datastore = CONFIG.dbaas_datastore
         datastore_version = "nonexistent"
-        try:
-            assert_raises(exceptions.NotFound,
-                          dbaas.instances.create, instance_name,
-                          instance_info.dbaas_flavor_href,
-                          volume, databases, users,
-                          datastore=datastore,
-                          datastore_version=datastore_version,
-                          nics=instance_info.nics)
-        except exceptions.BadRequest as e:
-            assert_equal(e.message,
-                         "Datastore version '%s' cannot be found." %
-                         datastore_version)
+        assert_raises(exceptions.BadRequest,
+                      dbaas.instances.create, instance_name,
+                      instance_info.dbaas_flavor_href,
+                      volume, databases, users,
+                      datastore=datastore,
+                      datastore_version=datastore_version,
+                      nics=instance_info.nics)
 
 
 @test(

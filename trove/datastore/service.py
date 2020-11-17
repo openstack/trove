@@ -93,7 +93,7 @@ class DatastoreController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         flavors = (models.DatastoreVersionMetadata.
                    list_datastore_version_flavor_associations(
-                       context, datastore, version_id))
+                       context, version_id))
         return wsgi.Result(flavor_views.FlavorsView(flavors, req).data(), 200)
 
     def list_associated_volume_types(self, req, tenant_id, datastore,
@@ -106,7 +106,7 @@ class DatastoreController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         volume_types = (models.DatastoreVersionMetadata.
                         allowed_datastore_version_volume_types(
-                            context, datastore, version_id))
+                            context, version_id))
         return wsgi.Result(volume_type_view.VolumeTypesView(
             volume_types, req).data(), 200)
 

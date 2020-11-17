@@ -41,14 +41,14 @@ class TestDatastoreBase(trove_testtools.TestCase):
 
         datastore_models.update_datastore_version(
             cls.ds_name, cls.ds_version_name, "mysql", "", "", "", True)
-        DatastoreVersionMetadata.add_datastore_version_flavor_association(
-            cls.ds_name, cls.ds_version_name, [cls.flavor_id])
-        DatastoreVersionMetadata.add_datastore_version_volume_type_association(
-            cls.ds_name, cls.ds_version_name, [cls.volume_type])
-
         cls.datastore_version = DatastoreVersion.load(cls.datastore,
                                                       cls.ds_version_name)
         cls.test_id = cls.datastore_version.id
+
+        DatastoreVersionMetadata.add_datastore_version_flavor_association(
+            cls.datastore_version.id, [cls.flavor_id])
+        DatastoreVersionMetadata.add_datastore_version_volume_type_association(
+            cls.datastore_version.id, [cls.volume_type])
 
         cls.cap1 = Capability.create(cls.capability_name,
                                      cls.capability_desc, True)

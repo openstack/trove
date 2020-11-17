@@ -134,38 +134,38 @@ class DatastoresNotFound(NotFound):
 class DatastoreFlavorAssociationNotFound(NotFound):
 
     message = _("Flavor %(id)s is not supported for datastore "
-                "%(datastore)s version %(datastore_version)s")
+                "version %(datastore_version_id)s")
 
 
 class DatastoreFlavorAssociationAlreadyExists(TroveError):
 
     message = _("Flavor %(id)s is already associated with "
-                "datastore %(datastore)s version %(datastore_version)s")
+                "datastore version %(datastore_version_id)s")
 
 
 class DatastoreVolumeTypeAssociationNotFound(NotFound):
 
     message = _("The volume type %(id)s is not valid for datastore "
-                "%(datastore)s and version %(version_id)s.")
+                "version %(datastore_version_id)s.")
 
 
 class DatastoreVolumeTypeAssociationAlreadyExists(TroveError):
 
-    message = _("Datastore '%(datastore)s' version %(datastore_version)s "
+    message = _("Datastore version %(datastore_version_id)s "
                 "and volume-type %(id)s mapping already exists.")
 
 
 class DataStoreVersionVolumeTypeRequired(TroveError):
 
     message = _("Only specific volume types are allowed for a "
-                "datastore %(datastore)s version %(datastore_version)s. "
+                "datastore version %(datastore_version_id)s. "
                 "You must specify a valid volume type.")
 
 
 class DatastoreVersionNoVolumeTypes(TroveError):
 
     message = _("No valid volume types could be found for datastore "
-                "%(datastore)s and version %(datastore_version)s.")
+                "version %(datastore_version_id)s.")
 
 
 class DatastoreNoVersion(TroveError):
@@ -194,6 +194,13 @@ class DatastoreVersionsInUse(BadRequest):
     message = _("Datastore version is in use by %(resource)s.")
 
 
+class DatastoreVersionsNoUniqueMatch(TroveError):
+
+    message = _("Multiple datastore versions found for '%(name)s', "
+                "use an UUID or specify both the name and version number to "
+                "be more specific.")
+
+
 class DatastoreDefaultDatastoreNotFound(TroveError):
 
     message = _("Please specify datastore. Default datastore "
@@ -220,12 +227,6 @@ class DatastoreOperationNotSupported(TroveError):
 
     message = _("The '%(operation)s' operation is not supported for "
                 "the '%(datastore)s' datastore.")
-
-
-class NoUniqueMatch(TroveError):
-
-    message = _("Multiple matches found for '%(name)s', "
-                "use an UUID to be more specific.")
 
 
 class OverLimit(TroveError):
