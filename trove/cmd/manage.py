@@ -85,18 +85,21 @@ class Commands(object):
     def db_load_datastore_config_parameters(self,
                                             datastore,
                                             datastore_version_name,
-                                            config_file_location):
+                                            config_file_location,
+                                            version=None):
         print("Loading config parameters for datastore (%s) version (%s)"
               % (datastore, datastore_version_name))
         config_models.load_datastore_configuration_parameters(
-            datastore, datastore_version_name, config_file_location)
+            datastore, datastore_version_name, config_file_location,
+            version_number=version)
 
     def db_remove_datastore_config_parameters(self, datastore,
-                                              datastore_version_name):
+                                              datastore_version_name,
+                                              version=None):
         print("Removing config parameters for datastore (%s) version (%s)"
               % (datastore, datastore_version_name))
         config_models.remove_datastore_configuration_parameters(
-            datastore, datastore_version_name)
+            datastore, datastore_version_name, version_number=version)
 
     def datastore_version_flavor_add(self, datastore_name,
                                      datastore_version_name, flavor_ids,
@@ -282,6 +285,11 @@ def main():
             'config_file_location',
             help='Fully qualified file path to the configuration group '
             'parameter validation rules.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
 
         parser = subparser.add_parser(
             'db_remove_datastore_config_parameters',
@@ -293,6 +301,11 @@ def main():
         parser.add_argument(
             'datastore_version_name',
             help='Name of the datastore version.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
 
         parser = subparser.add_parser(
             'datastore_version_flavor_add',
