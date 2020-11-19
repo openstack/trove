@@ -2112,7 +2112,7 @@ class RebuildAction(ResizeActionBase):
 
         LOG.info(f"Sending rebuild request to the instance {self.instance.id}")
         self.instance.guest.rebuild(
-            self.instance.datastore_version.name,
+            self.instance.datastore_version.version,
             config_contents=config_contents, config_overrides=overrides)
 
         LOG.info(f"Waiting for instance {self.instance.id} healthy")

@@ -354,17 +354,16 @@ def create_or_update_datastore_configuration_parameter(name,
             data_type=data_type,
             max_size=max_size,
             min_size=min_size,
-            deleted=False,
         )
         get_db_api().save(config)
 
 
-def load_datastore_configuration_parameters(datastore,
-                                            datastore_version,
-                                            config_file):
+def load_datastore_configuration_parameters(datastore, datastore_version,
+                                            config_file, version_number=None):
     get_db_api().configure_db(CONF)
     (ds, ds_v) = dstore_models.get_datastore_version(
-        type=datastore, version=datastore_version, return_inactive=True)
+        type=datastore, version=datastore_version, return_inactive=True,
+        version_number=version_number)
     with open(config_file) as f:
         config = json.load(f)
         for param in config['configuration-parameters']:
@@ -378,10 +377,12 @@ def load_datastore_configuration_parameters(datastore,
             )
 
 
-def remove_datastore_configuration_parameters(datastore, datastore_version):
+def remove_datastore_configuration_parameters(datastore, datastore_version,
+                                              version_number=None):
     get_db_api().configure_db(CONF)
     (ds, ds_version) = dstore_models.get_datastore_version(
-        type=datastore, version=datastore_version, return_inactive=True)
+        type=datastore, version=datastore_version, return_inactive=True,
+        version_number=version_number)
     db_params = DatastoreConfigurationParameters.load_parameters(ds_version.id)
     for db_param in db_params:
         db_param.delete()

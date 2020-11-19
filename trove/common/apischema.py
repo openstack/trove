@@ -821,7 +821,8 @@ configuration = {
                         "additionalProperties": True,
                         "properties": {
                             "type": non_empty_string,
-                            "version": non_empty_string
+                            "version": non_empty_string,
+                            "version_number": non_empty_string
                         }
                     }
                 }

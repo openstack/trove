@@ -188,6 +188,13 @@ class DatastoreVersionController(wsgi.Controller):
                  {'tenant': tenant_id, 'version': datastore_version.name,
                   'datastore': datastore.name})
 
+        # Remove the config parameters associated with the datastore version
+        LOG.debug(f"Deleting config parameters for datastore version {id}")
+        db_params = config_model.DatastoreConfigurationParameters. \
+            load_parameters(id)
+        for db_param in db_params:
+            db_param.delete()
+
         if datastore.default_version_id == datastore_version.id:
             models.update_datastore(datastore.name, None)
         datastore_version.delete()

@@ -21,6 +21,7 @@ import jsonschema
 
 from trove.common import clients
 from trove.common import exception
+from trove.configuration import models as config_models
 from trove.datastore import models
 from trove.extensions.mgmt.datastores.service import DatastoreVersionController
 from trove.tests.unittests import trove_testtools
@@ -318,6 +319,12 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
             self.ds_name, name, 'mysql', self.random_uuid(), '', '', 1)
         ver = models.DatastoreVersion.load(self.ds, name)
 
+        # Add config param for the datastore version. Should be automatically
+        # removed.
+        param_name = self.random_name('param')
+        config_models.create_or_update_datastore_configuration_parameter(
+            param_name, ver.id, False, 'string', None, None)
+
         output = self.version_controller.delete(MagicMock(),
                                                 mock.ANY,
                                                 ver.id)
@@ -326,6 +333,12 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         self.assertRaises(
             exception.DatastoreVersionNotFound,
             models.DatastoreVersion.load_by_uuid, ver.id)
+
+        config_params_cls = config_models.DatastoreConfigurationParameters
+        self.assertRaises(
+            exception.NotFound,
+            config_params_cls.load_parameter_by_name,
+            ver.id, param_name)
 
     def test_index(self):
         output = self.version_controller.index(MagicMock(), mock.ANY)
