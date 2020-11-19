@@ -979,7 +979,8 @@ mgmt_datastore_version = {
                     "image": uuid,
                     "image_tags": image_tags,
                     "active": {"enum": [True, False]},
-                    "default": {"enum": [True, False]}
+                    "default": {"enum": [True, False]},
+                    "version": non_empty_string
                 }
             }
         }

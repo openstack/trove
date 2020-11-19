@@ -521,11 +521,8 @@ function set_bin_path() {
 }
 
 function cmd_set_datastore() {
-    local IMAGEID=$1
-
     rd_manage datastore_update "$datastore" ""
-    # trove-manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <image_tags> <packages> <active>
-    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" ${IMAGEID} "trove" "" 1
+    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" "" "trove" "" 1
     rd_manage datastore_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
     if [[ -f "$PATH_TROVE"/trove/templates/${DATASTORE_TYPE}/validation-rules.json ]]; then
@@ -781,7 +778,7 @@ function cmd_build_and_upload_image() {
     exclaim "Using Glance image ID: $glance_imageid"
 
     exclaim "Updating Datastores"
-    cmd_set_datastore "${glance_imageid}"
+    cmd_set_datastore
 }
 
 

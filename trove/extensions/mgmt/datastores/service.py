@@ -49,6 +49,9 @@ class DatastoreVersionController(wsgi.Controller):
             packages = ','.join(packages)
         active = body['version']['active']
         default = body['version'].get('default', False)
+        # For backward compatibility, use name as default value for version if
+        # not specified
+        version_str = body['version'].get('version', version_name)
 
         LOG.info("Tenant: '%(tenant)s' is adding the datastore "
                  "version: '%(version)s' to datastore: '%(datastore)s'",
@@ -72,12 +75,15 @@ class DatastoreVersionController(wsgi.Controller):
             datastore.save()
 
         try:
-            models.DatastoreVersion.load(datastore, version_name)
-            raise exception.DatastoreVersionAlreadyExists(name=version_name)
+            models.DatastoreVersion.load(datastore, version_name,
+                                         version=version_str)
+            raise exception.DatastoreVersionAlreadyExists(
+                name=version_name, version=version_str)
         except exception.DatastoreVersionNotFound:
             models.update_datastore_version(datastore.name, version_name,
                                             manager, image_id, image_tags,
-                                            packages, active)
+                                            packages, active,
+                                            version=version_str)
 
         if default:
             models.update_datastore(datastore.name, version_name)

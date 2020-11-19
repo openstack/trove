@@ -62,15 +62,18 @@ class Commands(object):
             print(e)
 
     def datastore_version_update(self, datastore, version_name, manager,
-                                 image_id, image_tags, packages, active):
+                                 image_id, image_tags, packages, active,
+                                 version=None):
         try:
             datastore_models.update_datastore_version(datastore,
                                                       version_name,
                                                       manager,
                                                       image_id,
                                                       image_tags,
-                                                      packages, active)
-            print("Datastore version '%s' updated." % version_name)
+                                                      packages, active,
+                                                      version=version)
+            print("Datastore version '%s(%s)' updated." %
+                  (version_name, version))
         except exception.DatastoreNotFound as e:
             print(e)
 
@@ -223,6 +226,10 @@ def main():
             'active', type=int,
             help='Whether the datastore version is active or not. '
             'Accepted values are 0 and 1.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <version_name> as default value.')
 
         parser = subparser.add_parser(
             'db_recreate', description='Drop the database and recreate it.')

@@ -80,6 +80,7 @@ class DatastoreVersionView(object):
         datastore_version_dict = {
             "id": self.datastore_version.id,
             "name": self.datastore_version.name,
+            "version": self.datastore_version.version,
             "links": self._build_links(),
         }
         if include_datastore_id:

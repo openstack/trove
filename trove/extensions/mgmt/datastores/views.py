@@ -22,6 +22,7 @@ class DatastoreVersionView(object):
         datastore_version_dict = {
             "id": self.datastore_version.id,
             "name": self.datastore_version.name,
+            "version": self.datastore_version.version,
             "datastore_id": self.datastore_version.datastore_id,
             "datastore_name": self.datastore_version.datastore_name,
             "datastore_manager": self.datastore_version.manager,
