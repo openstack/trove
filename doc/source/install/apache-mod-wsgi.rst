@@ -20,7 +20,7 @@ Installing API behind mod_wsgi
       sudo dnf install httpd mod_wsgi
 
     Debian/Ubuntu:
-      sudo apt-get install apache2 libapache2-mod-wsgi-py3
+      sudo apt install apache2 libapache2-mod-wsgi-py3
 
 #. Copy ``etc/apache2/trove`` under the apache sites::
 

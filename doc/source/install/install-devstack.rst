@@ -19,9 +19,6 @@ This page describes how to set up a working development
 environment that can be used in deploying Trove on latest releases
 of Ubuntu.
 
-Following these instructions will allow you to have a fully functional Trove
-environment using the DevStack on Ubuntu 16.04 or 18.04.
-
 Config DevStack with Trove
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -30,7 +27,13 @@ offers.
 
 .. note::
 
-   The following steps have been fully verified both on Ubuntu 16.04 and 18.04.
+   The following steps have been fully verified both on Ubuntu 22.04/24.04
+   and Rocky Linux 9.
+
+.. note::
+
+   Make sure that you have at least 16 GB of RAM available before deploying
+   DevStack with Trove, as it requires significant memory to run properly.
 
 Start by cloning the devstack repository using a non-root user(the default user
 is ``ubuntu``) and change to devstack directory:

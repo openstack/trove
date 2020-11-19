@@ -14,8 +14,8 @@ This document will not cover OpenStack setup for other services.
 Requirements
 ~~~~~~~~~~~~
 
-A running OpenStack environment installed on Ubuntu 16.04 or 18.04 LTS is
-required, including the following components:
+A running OpenStack environment installed on Ubuntu 22.04 or 24.04
+LTS is required, including the following components:
 
 - Compute (Nova)
 - Image Service (Glance)
@@ -57,9 +57,9 @@ List of packages to be installed:
 
 .. code-block:: bash
 
-    $ sudo apt-get install -y build-essential python-dev libpython-dev \
+    $ sudo apt install -y build-essential python3-dev libpython-dev \
     python-setuptools libffi-dev libxslt1-dev libxml2-dev libyaml-dev \
-    libssl-dev zlib1g-dev mysql-client python-pymysql libmysqlclient-dev git
+    libssl-dev zlib1g-dev mysql-client python3-pymysql libmysqlclient-dev git
 
 Python settings
 ---------------
