@@ -129,6 +129,8 @@ class InstanceDetailView(InstanceView):
         if self.instance.datastore_version:
             result['instance']['datastore']['version'] = \
                 self.instance.datastore_version.name
+            result['instance']['datastore']['version_number'] = \
+                self.instance.datastore_version.version
 
         if self.instance.fault:
             result['instance']['fault'] = self._build_fault_info()

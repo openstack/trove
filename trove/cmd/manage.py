@@ -73,7 +73,7 @@ class Commands(object):
                                                       packages, active,
                                                       version=version)
             print("Datastore version '%s(%s)' updated." %
-                  (version_name, version))
+                  (version_name, version or version_name))
         except exception.DatastoreNotFound as e:
             print(e)
 
@@ -99,63 +99,96 @@ class Commands(object):
             datastore, datastore_version_name)
 
     def datastore_version_flavor_add(self, datastore_name,
-                                     datastore_version_name, flavor_ids):
+                                     datastore_version_name, flavor_ids,
+                                     version=None):
         """Adds flavors for a given datastore version id."""
+        dsmetadata = datastore_models.DatastoreVersionMetadata
         try:
-            dsmetadata = datastore_models.DatastoreVersionMetadata
+            datastore_version_id = dsmetadata.datastore_version_find(
+                datastore_name,
+                datastore_version_name,
+                version_number=version)
+
             dsmetadata.add_datastore_version_flavor_association(
-                datastore_name, datastore_version_name, flavor_ids.split(","))
+                datastore_version_id, flavor_ids.split(","))
             print("Added flavors '%s' to the '%s' '%s'."
                   % (flavor_ids, datastore_name, datastore_version_name))
-        except exception.DatastoreVersionNotFound as e:
+        except Exception as e:
             print(e)
 
     def datastore_version_flavor_delete(self, datastore_name,
-                                        datastore_version_name, flavor_id):
+                                        datastore_version_name, flavor_id,
+                                        version=None):
         """Deletes a flavor's association with a given datastore."""
         try:
             dsmetadata = datastore_models.DatastoreVersionMetadata
+
+            datastore_version_id = dsmetadata.datastore_version_find(
+                datastore_name,
+                datastore_version_name,
+                version_number=version)
+
             dsmetadata.delete_datastore_version_flavor_association(
-                datastore_name, datastore_version_name, flavor_id)
+                datastore_version_id, flavor_id)
             print("Deleted flavor '%s' from '%s' '%s'."
                   % (flavor_id, datastore_name, datastore_version_name))
-        except exception.DatastoreVersionNotFound as e:
+        except Exception as e:
             print(e)
 
     def datastore_version_volume_type_add(self, datastore_name,
                                           datastore_version_name,
-                                          volume_type_ids):
+                                          volume_type_ids, version=None):
         """Adds volume type assiciation for a given datastore version id."""
         try:
             dsmetadata = datastore_models.DatastoreVersionMetadata
+
+            datastore_version_id = dsmetadata.datastore_version_find(
+                datastore_name,
+                datastore_version_name,
+                version_number=version)
+
             dsmetadata.add_datastore_version_volume_type_association(
-                datastore_name, datastore_version_name,
+                datastore_version_id,
                 volume_type_ids.split(","))
             print("Added volume type '%s' to the '%s' '%s'."
                   % (volume_type_ids, datastore_name, datastore_version_name))
-        except exception.DatastoreVersionNotFound as e:
+        except Exception as e:
             print(e)
 
     def datastore_version_volume_type_delete(self, datastore_name,
                                              datastore_version_name,
-                                             volume_type_id):
+                                             volume_type_id, version=None):
         """Deletes a volume type association with a given datastore."""
         try:
             dsmetadata = datastore_models.DatastoreVersionMetadata
+
+            datastore_version_id = dsmetadata.datastore_version_find(
+                datastore_name,
+                datastore_version_name,
+                version_number=version)
+
             dsmetadata.delete_datastore_version_volume_type_association(
-                datastore_name, datastore_version_name, volume_type_id)
+                datastore_version_id, volume_type_id)
             print("Deleted volume type '%s' from '%s' '%s'."
                   % (volume_type_id, datastore_name, datastore_version_name))
-        except exception.DatastoreVersionNotFound as e:
+        except Exception as e:
             print(e)
 
     def datastore_version_volume_type_list(self, datastore_name,
-                                           datastore_version_name):
+                                           datastore_version_name,
+                                           version=None):
         """Lists volume type association with a given datastore."""
         try:
             dsmetadata = datastore_models.DatastoreVersionMetadata
-            vtlist = dsmetadata.list_datastore_volume_type_associations(
-                datastore_name, datastore_version_name)
+
+            datastore_version_id = dsmetadata.datastore_version_find(
+                datastore_name,
+                datastore_version_name,
+                version_number=version)
+
+            vtlist = dsmetadata. \
+                list_datastore_version_volume_type_associations(
+                    datastore_version_id)
             if vtlist.count() > 0:
                 for volume_type in vtlist:
                     print("Datastore: %s, Version: %s, Volume Type: %s" %
@@ -165,7 +198,7 @@ class Commands(object):
                 print("No Volume Type Associations found for Datastore: %s, "
                       "Version: %s." %
                       (datastore_name, datastore_version_name))
-        except exception.DatastoreVersionNotFound as e:
+        except Exception as e:
             print(e)
 
     def params_of(self, command_name):
@@ -262,49 +295,79 @@ def main():
             help='Name of the datastore version.')
 
         parser = subparser.add_parser(
-            'datastore_version_flavor_add', help='Adds flavor association to '
-            'a given datastore and datastore version.')
+            'datastore_version_flavor_add',
+            help='Adds flavor association to a given datastore and datastore '
+                 'version.')
         parser.add_argument('datastore_name', help='Name of the datastore.')
         parser.add_argument('datastore_version_name', help='Name of the '
                             'datastore version.')
         parser.add_argument('flavor_ids', help='Comma separated list of '
                             'flavor ids.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
 
         parser = subparser.add_parser(
-            'datastore_version_flavor_delete', help='Deletes a flavor '
-            'associated with a given datastore and datastore version.')
+            'datastore_version_flavor_delete',
+            help='Deletes a flavor associated with a given datastore and '
+                 'datastore version.')
         parser.add_argument('datastore_name', help='Name of the datastore.')
         parser.add_argument('datastore_version_name', help='Name of the '
                             'datastore version.')
         parser.add_argument('flavor_id', help='The flavor to be deleted for '
                             'a given datastore and datastore version.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
+
         parser = subparser.add_parser(
-            'datastore_version_volume_type_add', help='Adds volume_type '
-            'association to a given datastore and datastore version.')
+            'datastore_version_volume_type_add',
+            help='Adds volume_type association to a given datastore and '
+                 'datastore version.')
         parser.add_argument('datastore_name', help='Name of the datastore.')
         parser.add_argument('datastore_version_name', help='Name of the '
                             'datastore version.')
         parser.add_argument('volume_type_ids', help='Comma separated list of '
                             'volume_type ids.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
 
         parser = subparser.add_parser(
             'datastore_version_volume_type_delete',
             help='Deletes a volume_type '
-            'associated with a given datastore and datastore version.')
+                 'associated with a given datastore and datastore version.')
         parser.add_argument('datastore_name', help='Name of the datastore.')
         parser.add_argument('datastore_version_name', help='Name of the '
                             'datastore version.')
         parser.add_argument('volume_type_id', help='The volume_type to be '
                             'deleted for a given datastore and datastore '
                             'version.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
 
         parser = subparser.add_parser(
             'datastore_version_volume_type_list',
             help='Lists the volume_types '
-            'associated with a given datastore and datastore version.')
+                 'associated with a given datastore and datastore version.')
         parser.add_argument('datastore_name', help='Name of the datastore.')
         parser.add_argument('datastore_version_name', help='Name of the '
                             'datastore version.')
+        parser.add_argument(
+            '--version',
+            help='The version number of the datastore version, e.g. 5.7.30. '
+                 'If not specified, use <datastore_version_name> as default '
+                 'value.')
+
     cfg.custom_parser('action', actions)
     cfg.parse_args(sys.argv)
 
