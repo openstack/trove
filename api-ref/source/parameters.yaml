@@ -74,7 +74,8 @@ user_project:
   type: string
 version:
   description: |
-    Name or ID of the datastore version.
+    Name or ID of the datastore version. If there are multiple datastore
+    versions with the same name but different version numbers, ID is needed.
   in: path
   required: false
   type: string
@@ -353,9 +354,17 @@ datastore_version_id1:
   type: string
 datastore_version_name:
   description: |
-    The name of the datastore version.
+    The name of the datastore version. Different datastore versions can have
+    the same name.
   in: body
   required: true
+  type: string
+datastore_version_name_optional:
+  description: |
+    The name of the datastore version. Different datastore versions can have
+    the same name.
+  in: body
+  required: false
   type: string
 default:
   description: |
@@ -909,6 +918,14 @@ values:
     names and associated values.
   in: body
   required: true
+  type: string
+version_number:
+  description: |
+    The version number for the database. In container based trove instance
+    deployment, the version number is the same as the container image tag,
+    e.g. for MySQL, a valid version number is 5.7.30
+  in: body
+  required: false
   type: string
 volume:
   description: |

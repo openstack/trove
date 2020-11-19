@@ -11,7 +11,8 @@
             "name": "10.4-dev-train",
             "packages": [
                 ""
-            ]
+            ],
+            "version": "10.4.12"
         },
         {
             "active": true,
@@ -24,7 +25,8 @@
             "name": "12",
             "packages": [
                 ""
-            ]
+            ],
+            "version": "12.4"
         }
     ]
 }

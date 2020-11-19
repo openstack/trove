@@ -10,6 +10,7 @@
         "name": "10.4-dev-train",
         "packages": [
             ""
-        ]
+        ],
+        "version": "10.4.12"
     }
 }

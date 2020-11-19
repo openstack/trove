@@ -13,7 +13,8 @@
                     "rel": "bookmark"
                 }
             ],
-            "name": "12"
+            "name": "12",
+            "version": "5.7.29"
         }
     ]
 }

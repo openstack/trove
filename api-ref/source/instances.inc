@@ -92,11 +92,15 @@ Create database instance
 
 Creates a database instance.
 
-Asynchronously provisions a database instance. You must specify a flavor ID, a
-volume size and the tenant network ID. The service provisions the instance with
-a volume of the requested size, which serves as storage for the database
-instance. The database service can only be access within the tenant network,
-unless the ``access`` parameter is defined.
+Normally, you must specify a flavor ID, a volume size and the network the
+instance is attached to. The service provisions the instance with a volume of
+the requested size, which serves as storage for the database instance.
+
+If creating replica (a secondary instance of the replication cluster), flavor
+and volume size are not needed.
+
+The database service can only be access within the tenant network, unless the
+``access`` parameter is defined.
 
 Normal response codes: 200
 
@@ -115,6 +119,7 @@ Request
     - datastore: datastore1
     - datastore.type: datastore_type
     - datastore.version: datastore_version
+    - datastore.version_number: version_number
     - name: instanceName1
     - flavorRef: flavorRef
     - volume: volume
@@ -166,6 +171,7 @@ Response Parameters
    - datastore: datastore2
    - datastore.type: datastore_type
    - datastore.version: datastore_version1
+   - datastore.version_number: version_number
    - volume: volume
    - volume.size: volume_size
    - volume.used: volume_used

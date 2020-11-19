@@ -275,8 +275,11 @@ Create datastore version
 
 .. rest_method::  POST /v1.0/{project_id}/mgmt/datastore-versions
 
-Admin only API. Register a datastore version, create the datastore if doesn't
-exist.
+Admin only API. Register a datastore version, the datastore is created
+automatically if doesn't exist.
+
+It's allowed to create datastore versions with the same name but different
+version numbers, or vice versa.
 
 Normal response codes: 202
 
@@ -293,6 +296,7 @@ Request
    - image_tags: image_tags
    - active: active
    - default: default
+   - version: version_number
 
 Request Example
 ---------------
@@ -361,6 +365,8 @@ Update datastore version details
 
 Admin only API. Update a specific datastore version.
 
+The version number is not allowed to update.
+
 Normal response codes: 202
 
 Request
@@ -370,6 +376,7 @@ Request
 
    - project_id: project_id
    - datastore_version_id: datastore_version_id
+   - name: datastore_version_name_optional
    - datastore_manager: datastore_type
    - image: image_id
    - image_tags: image_tags
