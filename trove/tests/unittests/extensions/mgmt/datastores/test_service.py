@@ -254,6 +254,26 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
             exception.ImageNotFound,
             self.version_controller.create, MagicMock(), body, mock.ANY)
 
+    def test_update_name(self):
+        new_name = self.random_name('ds-version-name')
+        body = {
+            "name": new_name
+        }
+
+        orig_ver = models.DatastoreVersion.load(self.ds, self.ds_version1.id)
+
+        output = self.version_controller.edit(MagicMock(), body, mock.ANY,
+                                              self.ds_version1.id)
+        self.assertEqual(202, output.status)
+
+        updated_ver = models.DatastoreVersion.load(self.ds,
+                                                   self.ds_version1.id)
+
+        self.assertEqual(new_name, updated_ver.name)
+        self.assertEqual(orig_ver.image_id, updated_ver.image_id)
+        self.assertEqual(orig_ver.image_tags, updated_ver.image_tags)
+        self.assertEqual(orig_ver.version, updated_ver.version)
+
     @patch.object(clients, 'create_glance_client')
     def test_update_image(self, mock_create_client):
         new_image = self.random_uuid()

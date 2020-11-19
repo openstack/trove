@@ -115,10 +115,11 @@ class DatastoreVersionController(wsgi.Controller):
         datastore_version = models.DatastoreVersion.load_by_uuid(id)
 
         LOG.info("Tenant: '%(tenant)s' is updating the datastore "
-                 "version: '%(version)s' for datastore: '%(datastore)s'",
-                 {'tenant': tenant_id, 'version': datastore_version.name,
+                 "version: '%(id)s' for datastore: '%(datastore)s'",
+                 {'tenant': tenant_id, 'id': id,
                   'datastore': datastore_version.datastore_name})
 
+        name = body.get('name', datastore_version.name)
         manager = body.get('datastore_manager', datastore_version.manager)
         image_id = body.get('image')
         image_tags = body.get('image_tags')
@@ -149,7 +150,9 @@ class DatastoreVersionController(wsgi.Controller):
         models.update_datastore_version(datastore_version.datastore_name,
                                         datastore_version.name,
                                         manager, image_id, image_tags,
-                                        packages, active)
+                                        packages, active,
+                                        version=datastore_version.version,
+                                        new_name=name)
 
         if default:
             models.update_datastore(datastore_version.datastore_name,
