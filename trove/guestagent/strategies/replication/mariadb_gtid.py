@@ -42,15 +42,11 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
         logging_config = master_info['log_position']
         last_gtid = ''
 
-        if 'gtid_pos' in logging_config:
-            # This will happen during master failover.
-            last_gtid = logging_config['gtid_pos']
-        elif 'dataset' in master_info:
+        if 'dataset' in master_info:
             # This will happen when initial replication is set up.
             last_gtid = self.read_last_master_gtid(service)
-
-        set_gtid_cmd = "SET GLOBAL gtid_slave_pos='%s';" % last_gtid
-        service.execute_sql(set_gtid_cmd)
+            set_gtid_cmd = "SET GLOBAL gtid_slave_pos='%s';" % last_gtid
+            service.execute_sql(set_gtid_cmd)
 
         change_master_cmd = (
             "CHANGE MASTER TO "
