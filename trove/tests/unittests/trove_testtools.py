@@ -122,3 +122,11 @@ class TestCase(testtools.TestCase):
     @classmethod
     def random_uuid(cls):
         return str(uuid.uuid4())
+
+    def assertDictContains(self, parent, child):
+        """Checks whether child dict is a subset of parent.
+
+        assertDictContainsSubset() in standard Python 2.7 has been deprecated
+        since Python 3.2
+        """
+        self.assertEqual(parent, dict(parent, **child))

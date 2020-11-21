@@ -99,12 +99,14 @@ class DetailedConfigurationView(object):
             "created": self.configuration.created,
             "updated": self.configuration.updated,
             "instance_count":
-            getattr(self.configuration, "instance_count", 0),
+                getattr(self.configuration, "instance_count", 0),
             "datastore_name": self.configuration.datastore.name,
             "datastore_version_id":
-            self.configuration.datastore_version_id,
+                self.configuration.datastore_version_id,
             "datastore_version_name":
-            self.configuration.datastore_version.name
+                self.configuration.datastore_version.name,
+            "datastore_version_number":
+                self.configuration.datastore_version.version
         }
 
         return {"configuration": configuration_dict}
