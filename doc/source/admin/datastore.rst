@@ -16,9 +16,9 @@ database, Trove could support 5.7.29, 5.7.30 or 5.8, etc.
 
 .. note::
 
-   Starting from Victoria, the datastore version name must be the same with the
-   image tag of the specific database. To support MySQL 5.7.29, a new datastore
-   version named 5.7.29 based on `mysql docker image
+   Starting from Victoria, the datastore version number must be the same with
+   the image tag of the specific database. To support MySQL 5.7.29, a new
+   datastore version with version number 5.7.29 based on `mysql docker image
    <https://hub.docker.com/_/mysql?tab=tags&name=5.7.29>`_ needs to be created.
 
 A datastore version is always associated with a Glance image, either by image
@@ -32,7 +32,8 @@ Create datastore version
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 When creating a datastore version, Trove will create the datastore first if it
-doesn't exist.
+doesn't exist. Different datastore versions can have the same name but
+different version numbers, or same version number but different names.
 
 When using image tags, make sure the image with the tags exists before creating
 the datastore version.
@@ -52,6 +53,8 @@ To create a datastore version:
 #. Register image with Image service
 
    You need to register your guest image with the Image service as cloud admin.
+   In this example, the image is assigned tags that will be used when creating
+   datastore version.
 
    .. code-block:: console
 
@@ -69,7 +72,8 @@ To create a datastore version:
 
       openstack datastore version create 5.7.29 mysql mysql "" \
         --image-tags trove,mysql \
-        --active --default
+        --active --default \
+        --version-number 5.7.29
 
 #. Load validation rules for configuration groups
 

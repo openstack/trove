@@ -334,7 +334,8 @@ Command examples:
     $ # Creating datastore 'mysql' and datastore version 5.7.29.
     $ openstack datastore version create 5.7.29 mysql mysql "" \
       --image-tags trove,mysql \
-      --active --default
+      --active --default \
+      --version-number 5.7.29
     $ # Register configuration parameters for the datastore version
     $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 ${trove_repo_dir}}/trove/templates/mysql/validation-rules.json
 
