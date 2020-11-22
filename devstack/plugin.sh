@@ -478,6 +478,7 @@ function create_guest_image {
       --tag trove \
       --property hw_rng_model='virtio' \
       --file ${image_file} \
+      --debug \
       -c id -f value)
      echo "Glance image ${glance_image_id} uploaded"
 
