@@ -51,6 +51,6 @@ References
 * `Manual installation docs`_
 * `Build guest image`_
 
-.. _Installation docs: https://docs.openstack.org/trove/latest/install/install.html
-.. _Manual installation docs: https://docs.openstack.org/trove/latest/install/manual_install.html
-.. _Build guest image: https://docs.openstack.org/trove/latest/admin/building_guest_images.html
+.. _Installation docs: https://docs.openstack.org/trove/victoria/install/
+.. _Manual installation docs: https://docs.openstack.org/trove/victoria/install/install-manual.html
+.. _Build guest image: https://docs.openstack.org/trove/victoria/admin/building_guest_images.html
