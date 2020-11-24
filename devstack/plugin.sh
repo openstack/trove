@@ -180,8 +180,6 @@ function config_trove_apache_wsgi {
         s|%APIWORKERS%|${API_WORKERS}|g;
     " -i ${trove_apache_conf}
     enable_apache_site trove-api
-    tail_log trove-access /var/log/${APACHE_NAME}/trove-api-access.log
-    tail_log trove-api /var/log/${APACHE_NAME}/trove-api.log
 }
 
 # configure_trove() - Set config files, create data dirs, etc
