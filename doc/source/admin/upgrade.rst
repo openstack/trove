@@ -157,7 +157,7 @@ Upgrade Trove services
           --property hw_rng_model='virtio' \
           --tag trove \
           -c id -f value)
-      $ trove-manage datastore_version_update mysql 5.7.29 mysql $imageid "" "" 1
+      $ trove-manage datastore_version_update mysql 5.7.29 mysql $imageid "" 1
       $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 $stackdir/trove/trove/templates/mysql/validation-rules.json
 
 Upgrade Trove guest agent

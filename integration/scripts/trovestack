@@ -522,7 +522,8 @@ function set_bin_path() {
 
 function cmd_set_datastore() {
     rd_manage datastore_update "$datastore" ""
-    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" "" "trove" "" 1
+    # Use image tags for datastore version.
+    rd_manage datastore_version_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}" "${DATASTORE_TYPE}" "" "" 1 --image-tags trove
     rd_manage datastore_update "${DATASTORE_TYPE}" "${DATASTORE_VERSION}"
 
     if [[ -f "$PATH_TROVE"/trove/templates/${DATASTORE_TYPE}/validation-rules.json ]]; then

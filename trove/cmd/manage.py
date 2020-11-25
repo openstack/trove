@@ -62,7 +62,7 @@ class Commands(object):
             print(e)
 
     def datastore_version_update(self, datastore, version_name, manager,
-                                 image_id, image_tags, packages, active,
+                                 image_id, packages, active, image_tags=None,
                                  version=None):
         try:
             datastore_models.update_datastore_version(datastore,
@@ -252,16 +252,16 @@ def main():
             help='ID of the image used to create an instance of '
                  'the datastore version.')
         parser.add_argument(
-            'image_tags',
-            help='List of image tags separated by comma used for getting '
-                 'guest image.')
-        parser.add_argument(
             'packages', help='Packages required by the datastore version that '
             'are installed on the guest image.')
         parser.add_argument(
             'active', type=int,
             help='Whether the datastore version is active or not. '
             'Accepted values are 0 and 1.')
+        parser.add_argument(
+            '--image-tags',
+            help='List of image tags separated by comma used for getting '
+                 'guest image.')
         parser.add_argument(
             '--version',
             help='The version number of the datastore version, e.g. 5.7.30. '

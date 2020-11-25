@@ -485,7 +485,7 @@ function create_guest_image {
 
     echo "Register the image in datastore"
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE ""
-    $TROVE_MANAGE datastore_version_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION $TROVE_DATASTORE_TYPE "" "trove" "" 1
+    $TROVE_MANAGE datastore_version_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION $TROVE_DATASTORE_TYPE "" "" 1 --image-tags trove
     $TROVE_MANAGE datastore_update $TROVE_DATASTORE_TYPE $TROVE_DATASTORE_VERSION
 
     echo "Add parameter validation rules if available"
