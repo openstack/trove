@@ -168,9 +168,8 @@ The trove guest image could be created by running the following command:
   rebuilt which is convenient for debugging. Trove guest agent will ssh into
   the controller node and download trove code during the service initialization.
 
-* if ``dev_mode=false``, the trove code for guest agent is injected into the
-  image at the building time. Now ``dev_mode=false`` is still in experimental
-  and not considered production ready yet.
+* If ``dev_mode=false``, the trove code for guest agent is injected into the
+  image at the building time.
 
 * Some other global variables:
 

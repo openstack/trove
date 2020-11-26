@@ -133,8 +133,7 @@ PATH_DEVSTACK_OUTPUT=/opt/stack \
 - If the script is running as a part of DevStack, the viriable 
   `PATH_DEVSTACK_OUTPUT` is set automatically.
 - if `dev_mode=false`, the trove code for guest agent is injected into the 
-  image at the building time. Now `dev_mode=false` is still in experimental
-  and not considered production ready yet.
+  image at the building time.
 - If `dev_mode=true`, no Trove code is injected into the guest image. The guest
   agent will download Trove code during the service initialization.
 
