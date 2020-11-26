@@ -1486,7 +1486,6 @@ class Instance(BuiltInstance):
         task_api.API(self.context).promote_to_replica_source(self.id)
 
     def eject_replica_source(self):
-        self.validate_can_perform_action()
         LOG.info("Ejecting replica source %s from its replication set.",
                  self.id)
 
