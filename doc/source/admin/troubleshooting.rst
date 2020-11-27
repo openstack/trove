@@ -46,7 +46,7 @@ After log into the instance, you can check the trove-guestagent log by:
 
 .. code-block:: console
 
-    sudo journalctl -u trove-guest.service | less # or
+    sudo journalctl -u guest-agent.service | less # or
     sudo vi /var/log/trove/trove-guestagent.log
 
 Please contact Trove team in #openstack-trove IRC channel or send email to
