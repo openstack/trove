@@ -1,15 +1,42 @@
 guest-agent:
   installtype: package
+acl:
+acpid:
+  arch: i386, amd64, arm64, s390x
+apparmor:
+apt-transport-https:
 build-essential:
-python3-all:
-python3-all-dev:
-python3-pip:
-python3-sqlalchemy:
+cloud-guest-utils:
+cloud-init:
+cron:
+dbus:
+dkms:
+dmeventd:
+ethtool:
+gpg-agent:
+ifenslave:
+ifupdown:
+iptables:
+isc-dhcp-client:
 libxml2-dev:
 libxslt1-dev:
 libffi-dev:
 libssl-dev:
 libyaml-dev:
+less:
+logrotate:
+netbase:
+open-vm-tools:
+  arch: i386, amd64
 openssh-client:
 openssh-server:
+pollinate:
+psmisc:
+python3-sqlalchemy:
 rsync:
+rsyslog:
+ubuntu-cloudimage-keyring:
+ureadahead:
+uuid-runtime:
+vim-tiny:
+vlan:

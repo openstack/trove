@@ -6,4 +6,4 @@
 set -e
 set -o xtrace
 
-apt-get clean
+apt-get --assume-yes purge --auto-remove
