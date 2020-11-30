@@ -57,10 +57,14 @@ class MariaDBApp(mysql_service.BaseMySqlApp):
         with mysql_util.SqlClient(self.get_engine()) as client:
             return client.execute('SELECT @@global.gtid_binlog_pos').first()[0]
 
+    def _get_gtid_slave_executed(self):
+        with mysql_util.SqlClient(self.get_engine()) as client:
+            return client.execute('SELECT @@global.gtid_slave_pos').first()[0]
+
     def get_last_txn(self):
         master_UUID = self._get_master_UUID()
         last_txn_id = '0'
-        gtid_executed = self._get_gtid_executed()
+        gtid_executed = self._get_gtid_slave_executed()
         for gtid_set in gtid_executed.split(','):
             uuid_set = gtid_set.split('-')
             if str(uuid_set[1]) == str(master_UUID):
