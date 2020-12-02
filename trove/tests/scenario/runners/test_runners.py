@@ -325,7 +325,7 @@ class TestRunner(object, metaclass=LogOnFail):
     instance_info = InstanceTestInfo()
     report = CONFIG.get_report()
 
-    def __init__(self, sleep_time=10, timeout=1800):
+    def __init__(self, sleep_time=10, timeout=900):
         self.def_sleep_time = sleep_time
         self.def_timeout = timeout
 
@@ -604,6 +604,19 @@ class TestRunner(object, metaclass=LogOnFail):
             self.assert_equal(expected_http_code, client.last_http_code,
                               "Unexpected client status code")
 
+    def assert_instance_operating_status(self, instance_id, expected_status):
+        self.report.log(f"Waiting for expected_status ({expected_status}) "
+                        f"for instances: {instance_id}")
+
+        def wait_for_operating_status():
+            instance = self.get_instance(instance_id, self.admin_client)
+            if instance.operating_status == expected_status:
+                return True
+            return False
+
+        poll_until(wait_for_operating_status, sleep_time=self.def_sleep_time,
+                   time_out=self.def_timeout)
+
     def assert_all_instance_states(self, instance_ids, expected_states,
                                    fast_fail_status=None,
                                    require_all_states=False):
@@ -647,6 +660,15 @@ class TestRunner(object, metaclass=LogOnFail):
         self.report.log("Waiting for states (%s) for instance: %s" %
                         (expected_states, instance_id))
 
+        # Replace HEALTHY with ACTIVE. This is needed after operating_status
+        # is introduced in Trove.
+        wait_operating_status = False
+        if 'HEALTHY' in expected_states:
+            wait_operating_status = True
+            expected_states.remove('HEALTHY')
+            if 'ACTIVE' not in expected_states:
+                expected_states.append('ACTIVE')
+
         if fast_fail_status is None:
             fast_fail_status = ['ERROR', 'FAILED']
         found = False
@@ -676,6 +698,9 @@ class TestRunner(object, metaclass=LogOnFail):
                 self.report.log(
                     "Instance state was not '%s', moving to the next expected "
                     "state." % status)
+
+        if found and wait_operating_status:
+            self.assert_instance_operating_status(instance_id, 'HEALTHY')
 
         return found
 
@@ -992,7 +1017,7 @@ class CheckInstance(AttrCheck):
         if 'datastore' not in self.instance:
             self.fail("'datastore' not found in instance.")
         else:
-            allowed_attrs = ['type', 'version']
+            allowed_attrs = ['type', 'version', 'version_number']
             self.contains_allowed_attrs(
                 self.instance['datastore'], allowed_attrs,
                 msg="datastore")

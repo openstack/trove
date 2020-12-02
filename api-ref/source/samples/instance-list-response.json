@@ -24,6 +24,7 @@
                 }
             ],
             "name": "test",
+            "operating_status": "HEALTHY",
             "region": "RegionOne",
             "status": "ACTIVE",
             "volume": {

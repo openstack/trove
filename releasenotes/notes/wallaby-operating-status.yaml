@@ -1,0 +1,9 @@
+---
+features:
+  - Added a new field ``operating_status`` for the instance to show the actual
+    operational status of user's database. See
+    https://docs.openstack.org/trove/latest/user/instance-status.html for more
+    information.
+upgrade:
+  - Any 3rd party clients that are talking with Trove API to wait for
+    ``status`` should be notified to use ``operating_status`` instead.

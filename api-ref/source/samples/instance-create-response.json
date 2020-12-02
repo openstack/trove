@@ -1,14 +1,27 @@
 {
     "instance": {
-        "created": "2019-12-23T20:53:38",
+        "id": "b76a6a76-748b-4064-adec-4c9e6c9abd68",
+        "name": "test",
+        "status": "BUILD",
+        "operating_status": "",
         "datastore": {
             "type": "mysql",
-            "version": "5.7"
+            "version": "5.7.29",
+            "version_number": "5.7.29"
         },
         "flavor": {
-            "id": "6"
+          "id": "3ca76fe7-8dc1-4059-b728-de725835abcb",
+          "links": [
+            {
+              "href": "https://192.168.206.8:87 79/v1.0/c37341d7d1934ebc949c9d6b5c9f818c/flavors/3ca76fe7-8dc1-4059-b728-de725835abcb",
+              "rel": "self"
+            },
+            {
+              "href": "https://192.168.206.8:8779/flavors/3ca76fe7-8dc1-4059-b728-de725835abcb",
+              "rel": "bookmark"
+            }
+          ]
         },
-        "id": "b76a6a76-748b-4064-adec-4c9e6c9abd68",
         "links": [
             {
                 "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/instances/b76a6a76-748b-4064-adec-4c9e6c9abd68",
@@ -19,13 +32,15 @@
                 "rel": "bookmark"
             }
         ],
-        "name": "test",
         "region": "RegionOne",
-        "service_status_updated": "2019-12-23T20:53:38",
-        "status": "BUILD",
-        "updated": "2019-12-23T20:53:38",
+        "access": {
+          "is_public": false
+        },
         "volume": {
             "size": 1
-        }
+        },
+        "created": "2019-12-23T20:53:38",
+        "updated": "2019-12-23T20:53:38",
+        "service_status_updated": "2019-12-23T20:53:38"
     }
 }

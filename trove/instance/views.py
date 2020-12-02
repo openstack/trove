@@ -35,6 +35,7 @@ class InstanceView(object):
             "id": self.instance.id,
             "name": self.instance.name,
             "status": self.instance.status,
+            "operating_status": self.instance.operating_status,
             "links": self._build_links(),
             "flavor": self._build_flavor_info(),
             "datastore": {"type": None, "version": None},

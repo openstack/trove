@@ -717,6 +717,12 @@ nics:
   in: body
   required: false
   type: array
+operating_status:
+  description: |
+    The operating status of the database service inside the Trove instance.
+  in: body
+  required: true
+  type: string
 project_uuid:
   description: |
     The project ID of the resource.

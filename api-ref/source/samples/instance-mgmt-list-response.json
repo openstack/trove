@@ -37,6 +37,7 @@
                 }
             ],
             "name": "test",
+            "operating_status": "HEALTHY",
             "region": "RegionOne",
             "server": {
                 "host": "bdfe3275004d2a98d38d494fd7adfcd0c6d5d5198e86fa0d6ec5d588",
@@ -48,7 +49,7 @@
             "server_id": "710a84e5-6adf-4a4c-9167-8bade67a5a1c",
             "service_status": "HEALTHY",
             "service_status_updated": "2019-12-24T00:02:55",
-            "status": "HEALTHY",
+            "status": "ACTIVE",
             "task_description": "No tasks for the instance.",
             "tenant_id": "9f8dd5eacb074c9f87d2d822c9092aa5",
             "updated": "2019-12-23T23:53:46",
@@ -86,6 +87,7 @@
                 }
             ],
             "name": "test",
+            "operating_status": "",
             "region": "RegionOne",
             "server": null,
             "server_id": null,
