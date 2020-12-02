@@ -106,7 +106,7 @@ pyinotify==0.9.6
 pylint==1.9.2 # GPLv2
 pymongo==3.0.2
 PyMySQL==0.7.6
-pyOpenSSL==17.5.0
+pyOpenSSL==19.1.0
 pyparsing==2.2.0
 pyperclip==1.6.0
 python-cinderclient==3.3.0
