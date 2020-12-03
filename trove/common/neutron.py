@@ -13,6 +13,7 @@
 #    limitations under the License.
 import netaddr
 from oslo_log import log as logging
+from neutronclient.common import exceptions as neutron_exceptions
 
 from trove.common import cfg
 from trove.common import clients
@@ -22,6 +23,28 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 MGMT_NETWORKS = None
 MGMT_CIDRS = None
+NEUTRON_EXTENSION_CACHE = {}
+PROJECT_ID_EXT_ALIAS = 'project-id'
+
+
+def check_extension_enabled(client, extension_alias):
+    """Check if an extension is enabled in Neutron."""
+    global NEUTRON_EXTENSION_CACHE
+
+    if extension_alias in NEUTRON_EXTENSION_CACHE:
+        status = NEUTRON_EXTENSION_CACHE[extension_alias]
+        LOG.debug(f"Neutron extension {extension_alias} cached as "
+                  f"{'enabled' if status else 'disabled'}")
+    else:
+        try:
+            client.show_extension(extension_alias)
+            LOG.debug(f'Neutron extension {extension_alias} found enabled')
+            NEUTRON_EXTENSION_CACHE[extension_alias] = True
+        except neutron_exceptions.NotFound:
+            LOG.debug(f'Neutron extension {extension_alias} is not enabled')
+            NEUTRON_EXTENSION_CACHE[extension_alias] = False
+
+    return NEUTRON_EXTENSION_CACHE[extension_alias]
 
 
 def get_management_networks(context):
@@ -132,7 +155,11 @@ def make_port_public(client, port_id, project_id):
         }
     }
     if project_id:
-        fip_body['floatingip']['project_id'] = project_id
+        if check_extension_enabled(client, PROJECT_ID_EXT_ALIAS):
+            project_id_key = 'project_id'
+        else:
+            project_id_key = 'tenant_id'
+        fip_body['floatingip'][project_id_key] = project_id
 
     try:
         LOG.debug(f"Creating floating IP for the port {port_id}, "
