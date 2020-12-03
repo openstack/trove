@@ -4,7 +4,7 @@
       - name: controller
         label: nested-virt-ubuntu-bionic
     groups:
-      - name: controller
+      - name: tempest
         nodes:
           - controller
 
