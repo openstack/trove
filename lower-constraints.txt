@@ -22,7 +22,7 @@ debtcollector==1.19.0
 decorator==4.2.1
 deprecation==2.0
 diskimage-builder==1.1.2
-doc8==0.6.0
+doc8==0.8.1
 docutils==0.14
 docker==4.2.0
 dogpile.cache==0.6.5
