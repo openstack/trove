@@ -1388,7 +1388,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
         if is_public != new_is_public:
             for port in ports:
-                if 'User port' in port['description']:
+                if port['network_id'] not in CONF.management_networks:
                     LOG.debug(f"Updating port {port['id']}, is_public: "
                               f"{new_is_public}")
                     neutron.ensure_port_access(self.neutron_client, port['id'],
