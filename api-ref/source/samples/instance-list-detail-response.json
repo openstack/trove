@@ -35,9 +35,10 @@
                 }
             ],
             "name": "test",
+            "operating_status": "HEALTHY",
             "region": "RegionOne",
             "service_status_updated": "2019-12-23T21:01:11",
-            "status": "HEALTHY",
+            "status": "ACTIVE",
             "updated": "2019-12-23T20:58:45",
             "volume": {
                 "size": 1
@@ -69,6 +70,7 @@
                 }
             ],
             "name": "test",
+            "operating_status": "",
             "region": "RegionOne",
             "service_status_updated": "2019-12-23T20:53:38",
             "status": "ERROR",

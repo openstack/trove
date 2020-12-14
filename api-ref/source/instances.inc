@@ -160,6 +160,7 @@ Response Parameters
    - id: instanceId1
    - name: instanceName1
    - status: instance_status
+   - operating_status: operating_status
    - links: instance_links
    - links.href: instance_link_href
    - links.rel: instance_link_rel
@@ -226,6 +227,7 @@ Response Parameters
    - id: instanceId1
    - name: instanceName1
    - status: instance_status
+   - operating_status: operating_status
    - links: instance_links
    - links.href: instance_link_href
    - links.rel: instance_link_rel

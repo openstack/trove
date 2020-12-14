@@ -331,7 +331,26 @@ class SimpleInstance(object):
         self.__datastore_status = datastore_status
 
     @property
+    def operating_status(self):
+        """operating_status is the database service status."""
+        task_status = self.db_info.task_status
+        server_status = self.db_info.server_status
+        ds_status = self.datastore_status.status
+
+        if (task_status != InstanceTasks.NONE or server_status != 'ACTIVE'):
+            return ""
+
+        return repr(ds_status)
+
+    @property
     def status(self):
+        """The server status of the database instance.
+
+        - The task action is considered first.
+        - If it's performing backup or not.
+        - Then server status
+        - Otherwise, unknown
+        """
         LOG.info(f"Getting instance status for {self.id}, "
                  f"task status: {self.db_info.task_status}, "
                  f"datastore status: {self.datastore_status.status}, "
@@ -339,19 +358,12 @@ class SimpleInstance(object):
 
         task_status = self.db_info.task_status
         server_status = self.db_info.server_status
-        ds_status = self.datastore_status.status
 
         # Check for taskmanager errors.
         if task_status.is_error:
             return InstanceStatus.ERROR
 
         action = task_status.action
-
-        # Check if we are resetting status or force deleting
-        if (srvstatus.ServiceStatuses.UNKNOWN == ds_status
-            and action == InstanceTasks.DELETING.action):
-            return InstanceStatus.SHUTDOWN
-
         # Check for taskmanager status.
         if InstanceTasks.BUILDING.action == action:
             if 'ERROR' == server_status:
@@ -373,23 +385,9 @@ class SimpleInstance(object):
             return InstanceStatus.LOGGING
         if InstanceTasks.DETACHING.action == action:
             return InstanceStatus.DETACH
-
-        # Check for server status.
-        if server_status in ["BUILD", "ERROR", "REBOOT", "RESIZE"]:
-            return server_status
-
-        # As far as Trove is concerned, Nova instances in VERIFY_RESIZE should
-        # still appear as though they are in RESIZE.
-        if server_status in ["VERIFY_RESIZE"]:
-            return InstanceStatus.RESIZE
-
-        # Check if there is a backup running for this instance
-        if Backup.running(self.id):
-            return InstanceStatus.BACKUP
-
         # Report as Shutdown while deleting, unless there's an error.
-        if 'DELETING' == action:
-            if server_status in ["ACTIVE", "SHUTDOWN", "DELETED", "HEALTHY"]:
+        if InstanceTasks.DELETING.action == action:
+            if server_status in ["ACTIVE", "SHUTDOWN", "DELETED"]:
                 return InstanceStatus.SHUTDOWN
             else:
                 LOG.error("While shutting down instance (%(instance)s): "
@@ -397,17 +395,21 @@ class SimpleInstance(object):
                           {'instance': self.id, 'status': server_status})
                 return InstanceStatus.ERROR
 
-        # Check against the service status.
-        # The service is only paused during a reboot.
-        if ds_status == srvstatus.ServiceStatuses.PAUSED:
-            return InstanceStatus.REBOOT
-        elif ds_status == srvstatus.ServiceStatuses.NEW:
-            return InstanceStatus.BUILD
-        elif ds_status == srvstatus.ServiceStatuses.UNKNOWN:
-            return InstanceStatus.ERROR
+        # Check if there is a backup running for this instance
+        if Backup.running(self.id):
+            return InstanceStatus.BACKUP
 
-        # For everything else we can look at the service status mapping.
-        return self.datastore_status.status.api_status
+        # Check for server status.
+        if server_status in ["BUILD", "ERROR", "REBOOT", "RESIZE", "ACTIVE",
+                             "SHUTDOWN"]:
+            return server_status
+
+        # As far as Trove is concerned, Nova instances in VERIFY_RESIZE should
+        # still appear as though they are in RESIZE.
+        if server_status in ["VERIFY_RESIZE"]:
+            return InstanceStatus.RESIZE
+
+        return "UNKNOWN"
 
     @property
     def updated(self):
@@ -607,7 +609,6 @@ def load_instance(cls, context, id, needs_server=False,
 
 def load_instance_with_info(cls, context, id, cluster_id=None):
     db_info = get_db_info(context, id, cluster_id)
-    LOG.debug('Task status for instance %s: %s', id, db_info.task_status)
 
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     if (db_info.task_status == InstanceTasks.NONE and

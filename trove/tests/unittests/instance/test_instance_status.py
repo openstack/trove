@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from unittest import mock
 import uuid
 
 from trove.datastore import models
@@ -38,113 +39,114 @@ class FakeDBInstance(object):
         self.id = str(uuid.uuid4())
         self.deleted = False
         self.datastore_version_id = str(uuid.uuid4())
-        self.server_status = "HEALTHY"
+        self.server_status = "ACTIVE"
         self.task_status = FakeInstanceTask()
 
 
 class BaseInstanceStatusTestCase(trove_testtools.TestCase):
-
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         util.init_db()
-        self.db_info = FakeDBInstance()
-        self.status = InstanceServiceStatus(
-            ServiceStatuses.RUNNING)
-        self.datastore = models.DBDatastore.create(
+        cls.db_info = FakeDBInstance()
+        cls.datastore = models.DBDatastore.create(
             id=str(uuid.uuid4()),
             name='mysql' + str(uuid.uuid4()),
-            default_version_id=self.db_info.datastore_version_id
+            default_version_id=cls.db_info.datastore_version_id
         )
-        self.version = models.DBDatastoreVersion.create(
-            id=self.db_info.datastore_version_id,
-            datastore_id=self.datastore.id,
+        cls.version = models.DBDatastoreVersion.create(
+            id=cls.db_info.datastore_version_id,
+            datastore_id=cls.datastore.id,
             name='5.7' + str(uuid.uuid4()),
             manager='mysql',
             image_id=str(uuid.uuid4()),
             active=1,
             packages="mysql-server-5.7"
         )
-        super(BaseInstanceStatusTestCase, self).setUp()
+        super(BaseInstanceStatusTestCase, cls).setUpClass()
 
-    def tearDown(self):
-        self.datastore.delete()
-        self.version.delete()
-        super(BaseInstanceStatusTestCase, self).tearDown()
+    @classmethod
+    def tearDownClass(cls):
+        util.cleanup_db()
+        super(BaseInstanceStatusTestCase, cls).tearDownClass()
 
 
 class InstanceStatusTest(BaseInstanceStatusTestCase):
+    def setUp(self):
+        self.db_info.task_status = FakeInstanceTask()
+        self.db_info.server_status = "ACTIVE"
+        self.ds_status = InstanceServiceStatus(ServiceStatuses.HEALTHY)
+        super(InstanceStatusTest, self).setUp()
 
     def test_task_status_error_reports_error(self):
         self.db_info.task_status.is_error = True
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.ERROR, instance.status)
 
     def test_task_status_action_building_reports_build(self):
         self.db_info.task_status.action = "BUILDING"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.BUILD, instance.status)
 
     def test_task_status_action_rebooting_reports_reboot(self):
         self.db_info.task_status.action = "REBOOTING"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.REBOOT, instance.status)
 
     def test_task_status_action_resizing_reports_resize(self):
         self.db_info.task_status.action = "RESIZING"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.RESIZE, instance.status)
 
-    def test_task_status_action_deleting_reports_shutdown(self):
+    def test_task_deleting_server_active(self):
         self.db_info.task_status.action = "DELETING"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.SHUTDOWN, instance.status)
 
     def test_nova_server_build_reports_build(self):
         self.db_info.server_status = "BUILD"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.BUILD, instance.status)
 
     def test_nova_server_error_reports_error(self):
         self.db_info.server_status = "ERROR"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.ERROR, instance.status)
 
     def test_nova_server_reboot_reports_reboot(self):
         self.db_info.server_status = "REBOOT"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.REBOOT, instance.status)
 
     def test_nova_server_resize_reports_resize(self):
         self.db_info.server_status = "RESIZE"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.RESIZE, instance.status)
 
     def test_nova_server_verify_resize_reports_resize(self):
         self.db_info.server_status = "VERIFY_RESIZE"
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        instance = SimpleInstance('dummy context', self.db_info,
+                                  self.ds_status)
         self.assertEqual(InstanceStatus.RESIZE, instance.status)
 
-    def test_service_status_paused_reports_reboot(self):
-        self.status.set_status(ServiceStatuses.PAUSED)
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
-        self.assertEqual(InstanceStatus.REBOOT, instance.status)
+    def test_operating_status_healthy(self):
+        self.db_info.task_status = InstanceTasks.NONE
+        instance = SimpleInstance(mock.MagicMock(), self.db_info,
+                                  self.ds_status)
+        self.assertEqual(repr(ServiceStatuses.HEALTHY),
+                         instance.operating_status)
 
-    def test_service_status_new_reports_build(self):
-        self.status.set_status(ServiceStatuses.NEW)
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
-        self.assertEqual(InstanceStatus.BUILD, instance.status)
-
-    def test_service_status_running_reports_active(self):
-        self.status.set_status(ServiceStatuses.RUNNING)
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
-        self.assertEqual(InstanceStatus.ACTIVE, instance.status)
-
-    def test_service_status_reset_status(self):
-        self.status.set_status(ServiceStatuses.UNKNOWN)
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
-        self.assertEqual(InstanceStatus.ERROR, instance.status)
-
-    def test_service_status_force_deleteing(self):
-        self.status.set_status(ServiceStatuses.UNKNOWN)
-        self.db_info.task_status = InstanceTasks.DELETING
-        instance = SimpleInstance('dummy context', self.db_info, self.status)
-        self.assertEqual(InstanceStatus.SHUTDOWN, instance.status)
+    def test_operating_status_task_not_none(self):
+        self.db_info.task_status = InstanceTasks.RESIZING
+        instance = SimpleInstance(mock.MagicMock(), self.db_info,
+                                  self.ds_status)
+        self.assertEqual("",
+                         instance.operating_status)

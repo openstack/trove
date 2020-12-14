@@ -622,7 +622,7 @@ class CreateInstanceFail(object):
                              'server_state_description', 'status', 'updated',
                              'users', 'volume', 'root_enabled_at',
                              'root_enabled_by', 'fault',
-                             'service_status_updated']
+                             'service_status_updated', 'operating_status']
             with CheckInstance(result._info) as check:
                 check.contains_allowed_attrs(
                     result._info, allowed_attrs,
@@ -785,7 +785,8 @@ class CreateInstance(object):
         # Check these attrs only are returned in create response
         allowed_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
                          'name', 'status', 'updated', 'datastore', 'fault',
-                         'region', 'service_status_updated', 'access']
+                         'region', 'service_status_updated', 'access',
+                         'operating_status']
         if ROOT_ON_CREATE:
             allowed_attrs.append('password')
         if VOLUME_SUPPORT:
@@ -928,7 +929,7 @@ class TestGetInstances(object):
     def test_index_list(self):
         allowed_attrs = ['id', 'links', 'name', 'status', 'flavor',
                          'datastore', 'ip', 'hostname', 'replica_of',
-                         'region', 'addresses', 'access']
+                         'region', 'addresses', 'access', 'operating_status']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         instances = dbaas.instances.list()
@@ -950,7 +951,8 @@ class TestGetInstances(object):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
                          'datastore', 'fault', 'region',
-                         'service_status_updated', 'addresses', 'access']
+                         'service_status_updated', 'addresses', 'access',
+                         'operating_status']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         instances = dbaas.instances.list(detailed=True)
@@ -970,7 +972,8 @@ class TestGetInstances(object):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
                          'datastore', 'fault', 'region',
-                         'service_status_updated', 'addresses', 'access']
+                         'service_status_updated', 'addresses', 'access',
+                         'operating_status']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         else:
@@ -1050,7 +1053,7 @@ class TestGetInstances(object):
                          'name', 'root_enabled_at', 'root_enabled_by',
                          'server_state_description', 'status', 'datastore',
                          'updated', 'users', 'volume', 'fault', 'region',
-                         'access']
+                         'access', 'operating_status']
         with CheckInstance(result._info) as check:
             check.contains_allowed_attrs(
                 result._info, allowed_attrs,
