@@ -257,10 +257,18 @@ database group
     ``mysql+pymysql://root:password@127.0.0.1/trove?charset=utf8``
 
 The cloud administrator also needs to provide a policy file
-``/etc/trove/policy.json`` if the default API access policies don't satisfy the
+``/etc/trove/policy.yaml`` if the default API access policies don't satisfy the
 requirement. To generate a sample policy file with all the default policies,
 run ``tox -egenpolicy`` in the repo folder and the new file will be located in
 ``etc/trove/policy.yaml.sample``.
+
+.. warning::
+
+   JSON formatted policy file is deprecated since Trove 15.0.0 (Wallaby).
+   This `oslopolicy-convert-json-to-yaml`__ tool will migrate your existing
+   JSON-formatted policy file to YAML in a backward-compatible way.
+
+.. __: https://docs.openstack.org/oslo.policy/latest/cli/oslopolicy-convert-json-to-yaml.html
 
 
 Initialize Trove Database
