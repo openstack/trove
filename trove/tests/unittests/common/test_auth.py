@@ -26,7 +26,7 @@ class TestAuth(trove_testtools.TestCase):
         req = webob.Request.blank(url)
 
         # test string with chinese characters
-        test_str = u'\u6d4b\u8bd5'
+        test_str = '\u6d4b\u8bd5'
         req.headers = {
             'X-Tenant-ID': tenant_id,
             'X-Auth-Project-Id': test_str

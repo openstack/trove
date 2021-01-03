@@ -177,12 +177,12 @@ class TestUtils(trove_testtools.TestCase):
 
     def test_req_to_text(self):
         req = webob.Request.blank('/')
-        expected = u'GET / HTTP/1.0\r\nHost: localhost:80'
+        expected = 'GET / HTTP/1.0\r\nHost: localhost:80'
         self.assertEqual(expected, utils.req_to_text(req))
 
         # add a header containing unicode characters
         req.headers.update({
-            'X-Auth-Project-Id': u'\u6d4b\u8bd5'})
-        expected = (u'GET / HTTP/1.0\r\nHost: localhost:80\r\n'
-                    u'X-Auth-Project-Id: \u6d4b\u8bd5')
+            'X-Auth-Project-Id': '\u6d4b\u8bd5'})
+        expected = ('GET / HTTP/1.0\r\nHost: localhost:80\r\n'
+                    'X-Auth-Project-Id: \u6d4b\u8bd5')
         self.assertEqual(expected, utils.req_to_text(req))

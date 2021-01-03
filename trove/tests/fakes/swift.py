@@ -55,14 +55,14 @@ class FakeSwiftConnection(object):
 
     def get_auth(self):
         return (
-            u"http://127.0.0.1:8080/v1/AUTH_c7b038976df24d96bf1980f5da17bd89",
-            u'MIINrwYJKoZIhvcNAQcCoIINoDCCDZwCAQExCTAHBgUrDgMCGjCCDIgGCSqGSIb3'
-            u'DQEHAaCCDHkEggx1eyJhY2Nlc3MiOiB7InRva2VuIjogeyJpc3N1ZWRfYXQiOiAi'
-            u'MjAxMy0wMy0xOFQxODoxMzoyMC41OTMyNzYiLCAiZXhwaXJlcyI6ICIyMDEzLTAz'
-            u'LTE5VDE4OjEzOjIwWiIsICJpZCI6ICJwbGFjZWhvbGRlciIsICJ0ZW5hbnQiOiB7'
-            u'ImVuYWJsZWQiOiB0cnVlLCAiZGVzY3JpcHRpb24iOiBudWxsLCAibmFtZSI6ICJy'
-            u'ZWRkd2FyZiIsICJpZCI6ICJjN2IwMzg5NzZkZjI0ZDk2YmYxOTgwZjVkYTE3YmQ4'
-            u'OSJ9fSwgInNlcnZpY2VDYXRhbG9nIjogW3siZW5kcG9pbnRzIjogW3siYWRtaW5')
+            "http://127.0.0.1:8080/v1/AUTH_c7b038976df24d96bf1980f5da17bd89",
+            'MIINrwYJKoZIhvcNAQcCoIINoDCCDZwCAQExCTAHBgUrDgMCGjCCDIgGCSqGSIb3'
+            'DQEHAaCCDHkEggx1eyJhY2Nlc3MiOiB7InRva2VuIjogeyJpc3N1ZWRfYXQiOiAi'
+            'MjAxMy0wMy0xOFQxODoxMzoyMC41OTMyNzYiLCAiZXhwaXJlcyI6ICIyMDEzLTAz'
+            'LTE5VDE4OjEzOjIwWiIsICJpZCI6ICJwbGFjZWhvbGRlciIsICJ0ZW5hbnQiOiB7'
+            'ImVuYWJsZWQiOiB0cnVlLCAiZGVzY3JpcHRpb24iOiBudWxsLCAibmFtZSI6ICJy'
+            'ZWRkd2FyZiIsICJpZCI6ICJjN2IwMzg5NzZkZjI0ZDk2YmYxOTgwZjVkYTE3YmQ4'
+            'OSJ9fSwgInNlcnZpY2VDYXRhbG9nIjogW3siZW5kcG9pbnRzIjogW3siYWRtaW5')
 
     def get_account(self):
         return ({'content-length': '2', 'accept-ranges': 'bytes',
@@ -337,14 +337,14 @@ class SwiftClientStub(Patcher):
                      'x-account-object-count': '0'}, self._containers_list)
 
         get_auth_return_value = (
-            u"http://127.0.0.1:8080/v1/AUTH_c7b038976df24d96bf1980f5da17bd89",
-            u'MIINrwYJKoZIhvcNAQcCoIINoDCCDZwCAQExCTAHBgUrDgMCGjCCDIgGCSqGSIb3'
-            u'DQEHAaCCDHkEggx1eyJhY2Nlc3MiOiB7InRva2VuIjogeyJpc3N1ZWRfYXQiOiAi'
-            u'MjAxMy0wMy0xOFQxODoxMzoyMC41OTMyNzYiLCAiZXhwaXJlcyI6ICIyMDEzLTAz'
-            u'LTE5VDE4OjEzOjIwWiIsICJpZCI6ICJwbGFjZWhvbGRlciIsICJ0ZW5hbnQiOiB7'
-            u'ImVuYWJsZWQiOiB0cnVlLCAiZGVzY3JpcHRpb24iOiBudWxsLCAibmFtZSI6ICJy'
-            u'ZWRkd2FyZiIsICJpZCI6ICJjN2IwMzg5NzZkZjI0ZDk2YmYxOTgwZjVkYTE3YmQ4'
-            u'OSJ9fSwgInNlcnZpY2VDYXRhbG9nIjogW3siZW5kcG9pbnRzIjogW3siYWRtaW5')
+            "http://127.0.0.1:8080/v1/AUTH_c7b038976df24d96bf1980f5da17bd89",
+            'MIINrwYJKoZIhvcNAQcCoIINoDCCDZwCAQExCTAHBgUrDgMCGjCCDIgGCSqGSIb3'
+            'DQEHAaCCDHkEggx1eyJhY2Nlc3MiOiB7InRva2VuIjogeyJpc3N1ZWRfYXQiOiAi'
+            'MjAxMy0wMy0xOFQxODoxMzoyMC41OTMyNzYiLCAiZXhwaXJlcyI6ICIyMDEzLTAz'
+            'LTE5VDE4OjEzOjIwWiIsICJpZCI6ICJwbGFjZWhvbGRlciIsICJ0ZW5hbnQiOiB7'
+            'ImVuYWJsZWQiOiB0cnVlLCAiZGVzY3JpcHRpb24iOiBudWxsLCAibmFtZSI6ICJy'
+            'ZWRkd2FyZiIsICJpZCI6ICJjN2IwMzg5NzZkZjI0ZDk2YmYxOTgwZjVkYTE3YmQ4'
+            'OSJ9fSwgInNlcnZpY2VDYXRhbG9nIjogW3siZW5kcG9pbnRzIjogW3siYWRtaW5')
 
         get_auth_patcher = patch.object(
             swift_client.Connection, 'get_auth',

@@ -547,7 +547,7 @@ class OrderingTests(trove_testtools.TestCase):
         backups, marker = models.Backup.list(self.context)
         self.assertIsNone(marker)
         actual = [b.name for b in backups]
-        expected = [u'one', u'two', u'three', u'four']
+        expected = ['one', 'two', 'three', 'four']
         self.assertEqual(expected, actual)
 
     def test_list_for_instance(self):
@@ -555,7 +555,7 @@ class OrderingTests(trove_testtools.TestCase):
                                                           self.instance_id)
         self.assertIsNone(marker)
         actual = [b.name for b in backups]
-        expected = [u'one', u'two', u'three', u'four']
+        expected = ['one', 'two', 'three', 'four']
         self.assertEqual(expected, actual)
 
 
