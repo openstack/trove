@@ -52,7 +52,7 @@ keystonemiddleware==4.17.0
 kombu==4.1.0
 linecache2==1.0.0
 logilab-common==1.4.1
-lxml==3.4.1
+lxml==4.6.2
 Mako==1.0.7
 MarkupSafe==1.0
 monotonic==1.4
