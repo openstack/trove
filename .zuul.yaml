@@ -377,7 +377,7 @@
     name: publish-trove-guest-image-ubuntu-bionic-dev
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu Xenial based Trove guest image to
+      Build and publish Ubuntu Bionic based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
