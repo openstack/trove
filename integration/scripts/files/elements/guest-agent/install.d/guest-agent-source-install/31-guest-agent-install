@@ -19,7 +19,7 @@ done
 install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
 
 # Create a virtual environment (with dependencies installed) for guest agent service
-${DIB_PYTHON} -m virtualenv ${GUEST_VENV}
+/usr/bin/python3 -m venv ${GUEST_VENV}
 ${GUEST_VENV}/bin/pip install pip --upgrade
 ${GUEST_VENV}/bin/pip install -U -c /opt/upper-constraints.txt /opt/guest-agent
 chown -R ${GUEST_USERNAME}:root ${GUEST_VENV}

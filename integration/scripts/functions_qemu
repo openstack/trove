@@ -56,7 +56,6 @@ function build_guest_image() {
     pushd $TEMP > /dev/null
 
     elementes="$elementes ${guest_os}"
-    elementes="$elementes pip-and-virtualenv"
     elementes="$elementes pip-cache"
     elementes="$elementes guest-agent"
     elementes="$elementes ${guest_os}-docker"

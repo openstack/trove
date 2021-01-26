@@ -3,5 +3,4 @@ package-installs
 pkg-map
 source-repositories
 svc-map
-pip-and-virtualenv
 ubuntu-docker
