@@ -32,7 +32,11 @@ openssh-client:
 openssh-server:
 pollinate:
 psmisc:
+python3-dev:
+python3-pip:
+python3-setuptools:
 python3-sqlalchemy:
+python3-venv:
 rsync:
 rsyslog:
 ubuntu-cloudimage-keyring:

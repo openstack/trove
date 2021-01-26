@@ -62,7 +62,6 @@ function build_guest_image() {
     export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive"}
     elementes="$elementes cloud-init-datasources"
 
-    elementes="$elementes pip-and-virtualenv"
     elementes="$elementes pip-cache"
     elementes="$elementes guest-agent"
     elementes="$elementes ${guest_os}-docker"
