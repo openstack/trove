@@ -88,6 +88,17 @@ class Manager(periodic_task.PeriodicTasks):
         self.app = None
         self.status = None
 
+        if CONF.guest_agent.container_registry:
+            try:
+                self.docker_client.login(
+                    CONF.guest_agent.container_registry_username,
+                    CONF.guest_agent.container_registry_password,
+                    email="",
+                    registry=CONF.guest_agent.container_registry)
+            except Exception as exc:
+                raise exception.GuestError(f"Failed to login the container "
+                                           f"registry, error: {str(exc)}")
+
     @property
     def manager_name(self):
         """This returns the passed-in name of the manager."""

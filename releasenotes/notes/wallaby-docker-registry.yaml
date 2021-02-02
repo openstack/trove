@@ -1,0 +1,4 @@
+---
+features:
+  - Added custom container registry configuration for trove guest agent, it's
+    now possible to use images in private registry rather than docker hub.

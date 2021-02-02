@@ -1500,6 +1500,24 @@ service_credentials_opts = [
                help="Keystone region name of the Trove service project."),
 ]
 
+guest_agent_group = cfg.OptGroup(
+    'guest_agent', title='Guest Agent options',
+    help="Config options used by guest agent.")
+guest_agent_opts = [
+    cfg.StrOpt(
+        'container_registry',
+        help='URL to the registry. E.g. https://index.docker.io/v1/'
+    ),
+    cfg.StrOpt(
+        'container_registry_username',
+        help='The registry username.'
+    ),
+    cfg.StrOpt(
+        'container_registry_password',
+        help='The plaintext registry password.'
+    ),
+]
+
 CONF = cfg.CONF
 
 CONF.register_opts(path_opts)
@@ -1522,6 +1540,7 @@ CONF.register_group(db2_group)
 CONF.register_group(mariadb_group)
 CONF.register_group(network_group)
 CONF.register_group(service_credentials_group)
+CONF.register_group(guest_agent_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
@@ -1537,6 +1556,7 @@ CONF.register_opts(db2_opts, db2_group)
 CONF.register_opts(mariadb_opts, mariadb_group)
 CONF.register_opts(network_opts, network_group)
 CONF.register_opts(service_credentials_opts, service_credentials_group)
+CONF.register_opts(guest_agent_opts, guest_agent_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
 
@@ -1557,6 +1577,7 @@ def list_opts():
         (mariadb_group, mariadb_opts),
         (network_group, network_opts),
         (service_credentials_group, service_credentials_opts),
+        (guest_agent_group, guest_agent_opts),
     ]
 
     return keystone_middleware_opts + keystone_loading_opts + trove_opts
