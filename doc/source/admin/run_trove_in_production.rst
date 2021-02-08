@@ -270,6 +270,34 @@ run ``tox -egenpolicy`` in the repo folder and the new file will be located in
 
 .. __: https://docs.openstack.org/oslo.policy/latest/cli/oslopolicy-convert-json-to-yaml.html
 
+Configure Trove Guest Agent
+"""""""""""""""""""""""""""
+The config file of trove guest agent is copied from trove controller node
+(default file path ``/etc/trove/trove-guestagent.conf``) when creating
+instance.
+
+Some config options specifically for trove guest agent:
+
+* Custom container image registry.
+
+  Trove guest agent pulls container images from docker hub by default, this can
+  be changed by setting:
+
+  .. code-block:: ini
+
+      [guest_agent]
+      container_registry =
+      container_registry_username =
+      container_registry_password =
+
+  Then in the specific database config section, the customized container
+  registry can be used, e.g.
+
+  .. code-block:: ini
+
+      [mysql]
+      docker_image = your-registry/your-repo/mysql
+      backup_docker_image = your-registry/your-repo/db-backup-mysql:1.1.0
 
 Initialize Trove Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -291,6 +319,9 @@ Trove controller are all started and kept running.
 
 Preparing the Guest Images
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+Currently supported databases are: MySQL 5.7.X, MariaDB 10.4.X. PostgreSQL 12.4
+is partially supported.
+
 Now that the Trove system is installed, the next step is to build the images
 that we will use for the DBaaS to function properly. This is possibly the most
 important step as this will be the gold standard that Trove will use for a
