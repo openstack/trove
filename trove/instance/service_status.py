@@ -36,6 +36,7 @@ class ServiceStatus(object):
             ServiceStatuses.CRASHED._code,
             ServiceStatuses.BLOCKED._code,
             ServiceStatuses.HEALTHY._code,
+            ServiceStatuses.RESTART_REQUIRED._code,
         ]
         return self._code in allowed_statuses
 

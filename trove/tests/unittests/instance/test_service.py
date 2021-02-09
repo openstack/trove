@@ -11,11 +11,13 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+from datetime import timedelta
 from unittest import mock
 
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
+from trove.common import timeutils
 from trove.datastore import models as ds_models
 from trove.instance import models as ins_models
 from trove.instance import service
@@ -174,3 +176,80 @@ class TestInstanceController(trove_testtools.TestCase):
             mock.ANY, "upgrade",
             instance_id=instance.id,
             datastore_version_id=new_ds_version.id)
+
+    @mock.patch('trove.instance.models.load_server_group_info')
+    @mock.patch('trove.instance.models.load_guest_info')
+    @mock.patch('trove.instance.models.load_simple_instance_addresses')
+    @mock.patch('trove.instance.models.load_simple_instance_server_status')
+    def test_show_with_restart_required(self, load_server_mock,
+                                        load_addr_mock, load_guest_mock,
+                                        load_server_grp_mock):
+        # Create an instance in db.
+        instance = ins_models.DBInstance.create(
+            name=self.random_name('instance'),
+            flavor_id=self.random_uuid(),
+            tenant_id=self.random_uuid(),
+            volume_size=1,
+            datastore_version_id=self.ds_version_imageid.id,
+            task_status=ins_models.InstanceTasks.NONE,
+            compute_instance_id=self.random_uuid(),
+            server_status='ACTIVE'
+        )
+        ins_models.InstanceServiceStatus.create(
+            instance_id=instance.id,
+            status=srvstatus.ServiceStatuses.RESTART_REQUIRED,
+        )
+
+        # workaround to reset updated_at field.
+        service_status = ins_models.InstanceServiceStatus.find_by(
+            instance_id=instance.id)
+        service_status.updated_at = timeutils.utcnow() - timedelta(
+            seconds=(CONF.agent_heartbeat_expiry + 60))
+        ins_models.get_db_api().save(service_status)
+
+        ret = self.controller.show(mock.MagicMock(), mock.ANY, instance.id)
+        self.assertEqual(200, ret.status)
+
+        ret_instance = ret.data(None)['instance']
+
+        self.assertEqual('ACTIVE', ret_instance.get('status'))
+        self.assertEqual('RESTART_REQUIRED',
+                         ret_instance.get('operating_status'))
+
+    @mock.patch('trove.instance.models.load_server_group_info')
+    @mock.patch('trove.instance.models.load_guest_info')
+    @mock.patch('trove.instance.models.load_simple_instance_addresses')
+    @mock.patch('trove.instance.models.load_simple_instance_server_status')
+    def test_show_without_restart_required(self, load_server_mock,
+                                           load_addr_mock, load_guest_mock,
+                                           load_server_grp_mock):
+        # Create an instance in db.
+        instance = ins_models.DBInstance.create(
+            name=self.random_name('instance'),
+            flavor_id=self.random_uuid(),
+            tenant_id=self.random_uuid(),
+            volume_size=1,
+            datastore_version_id=self.ds_version_imageid.id,
+            task_status=ins_models.InstanceTasks.NONE,
+            compute_instance_id=self.random_uuid(),
+            server_status='ACTIVE'
+        )
+        ins_models.InstanceServiceStatus.create(
+            instance_id=instance.id,
+            status=srvstatus.ServiceStatuses.HEALTHY,
+        )
+
+        # workaround to reset updated_at field.
+        service_status = ins_models.InstanceServiceStatus.find_by(
+            instance_id=instance.id)
+        service_status.updated_at = timeutils.utcnow() - timedelta(
+            seconds=(CONF.agent_heartbeat_expiry + 60))
+        ins_models.get_db_api().save(service_status)
+
+        ret = self.controller.show(mock.MagicMock(), mock.ANY, instance.id)
+        self.assertEqual(200, ret.status)
+
+        ret_instance = ret.data(None)['instance']
+
+        self.assertEqual('ACTIVE', ret_instance.get('status'))
+        self.assertEqual('ERROR', ret_instance.get('operating_status'))
