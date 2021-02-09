@@ -602,16 +602,22 @@ def load_instance(cls, context, id, needs_server=False,
     return cls(context, db_info, server, service_status)
 
 
-def load_instance_with_info(cls, context, id, cluster_id=None):
-    db_info = get_db_info(context, id, cluster_id)
-    LOG.debug('Task status for instance %s: %s', id, db_info.task_status)
-
-    service_status = InstanceServiceStatus.find_by(instance_id=id)
-    if (db_info.task_status == InstanceTasks.NONE and
-            not service_status.is_uptodate()):
-        LOG.warning('Guest agent heartbeat for instance %s has expried', id)
+def update_service_status(task_status, service_status, ins_id):
+    """Update service status as needed."""
+    if (task_status == InstanceTasks.NONE and
+        service_status.status != srvstatus.ServiceStatuses.RESTART_REQUIRED and
+        not service_status.is_uptodate()):
+        LOG.warning('Guest agent heartbeat for instance %s has expried',
+                    ins_id)
         service_status.status = \
             srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+
+
+def load_instance_with_info(cls, context, ins_id, cluster_id=None):
+    db_info = get_db_info(context, ins_id, cluster_id)
+    service_status = InstanceServiceStatus.find_by(instance_id=ins_id)
+
+    update_service_status(db_info.task_status, service_status, ins_id)
 
     load_simple_instance_server_status(context, db_info)
 
@@ -619,7 +625,7 @@ def load_instance_with_info(cls, context, id, cluster_id=None):
 
     instance = cls(context, db_info, service_status)
 
-    load_guest_info(instance, context, id)
+    load_guest_info(instance, context, ins_id)
 
     load_server_group_info(instance, context)
 
@@ -895,6 +901,11 @@ class BaseInstance(SimpleInstance):
     def set_servicestatus_deleted(self):
         del_instance = InstanceServiceStatus.find_by(instance_id=self.id)
         del_instance.set_status(srvstatus.ServiceStatuses.DELETED)
+        del_instance.save()
+
+    def set_servicestatus_restart(self):
+        del_instance = InstanceServiceStatus.find_by(instance_id=self.id)
+        del_instance.set_status(srvstatus.ServiceStatuses.RESTARTING)
         del_instance.save()
 
     def set_instance_fault_deleted(self):
@@ -1432,7 +1443,10 @@ class Instance(BuiltInstance):
         LOG.info("Rebooting instance %s.", self.id)
         if self.db_info.cluster_id is not None and not self.context.is_admin:
             raise exception.ClusterInstanceOperationNotSupported()
+
         self.update_db(task_status=InstanceTasks.REBOOTING)
+        self.set_servicestatus_restart()
+
         task_api.API(self.context).reboot(self.id)
 
     def restart(self):
@@ -1440,13 +1454,10 @@ class Instance(BuiltInstance):
         LOG.info("Restarting datastore on instance %s.", self.id)
         if self.db_info.cluster_id is not None and not self.context.is_admin:
             raise exception.ClusterInstanceOperationNotSupported()
-        # Set our local status since Nova might not change it quick enough.
-        # TODO(tim.simpson): Possible bad stuff can happen if this service
-        #                   shuts down before it can set status to NONE.
-        #                   We need a last updated time to mitigate this;
-        #                   after some period of tolerance, we'll assume the
-        #                   status is no longer in effect.
+
         self.update_db(task_status=InstanceTasks.REBOOTING)
+        self.set_servicestatus_restart()
+
         task_api.API(self.context).restart(self.id)
 
     def detach_replica(self):
@@ -1819,9 +1830,9 @@ class Instances(object):
                         db.server_status = "SHUTDOWN"  # Fake it...
                         db.addresses = []
 
-                datastore_status = InstanceServiceStatus.find_by(
+                service_status = InstanceServiceStatus.find_by(
                     instance_id=db.id)
-                if not datastore_status.status:  # This should never happen.
+                if not service_status.status:  # This should never happen.
                     LOG.error("Server status could not be read for "
                               "instance id(%s).", db.id)
                     continue
@@ -1829,24 +1840,15 @@ class Instances(object):
                 # Get the real-time service status.
                 LOG.debug('Task status for instance %s: %s', db.id,
                           db.task_status)
-                if db.task_status == InstanceTasks.NONE:
-                    last_heartbeat_delta = (
-                        timeutils.utcnow() - datastore_status.updated_at)
-                    agent_expiry_interval = timedelta(
-                        seconds=CONF.agent_heartbeat_expiry)
-                    if last_heartbeat_delta > agent_expiry_interval:
-                        LOG.warning(
-                            'Guest agent heartbeat for instance %s has '
-                            'expried', id)
-                        datastore_status.status = \
-                            srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+                update_service_status(db.task_status, service_status, db.id)
             except exception.ModelNotFoundError:
                 LOG.error("Server status could not be read for "
                           "instance id(%s).", db.id)
                 continue
 
-            ret.append(load_instance(context, db, datastore_status,
-                                     server=server))
+            ret.append(
+                load_instance(context, db, service_status, server=server)
+            )
         return ret
 
 

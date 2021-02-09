@@ -24,7 +24,7 @@ from trove.common.serializable_notification import SerializableNotification
 from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as inst_models
-from trove.instance.service_status import ServiceStatus
+from trove.instance import service_status as svc_status
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -86,11 +86,20 @@ class Manager(periodic_task.PeriodicTasks):
                    "payload": str(payload)})
         status = inst_models.InstanceServiceStatus.find_by(
             instance_id=instance_id)
+
         if self._message_too_old(instance_id, 'heartbeat', sent):
             return
+
+        if status.get_status() == svc_status.ServiceStatuses.RESTART_REQUIRED:
+            LOG.debug("Instance %s service status is RESTART_REQUIRED, "
+                      "skip heartbeat", instance_id)
+            return
+
         if payload.get('service_status') is not None:
             status.set_status(
-                ServiceStatus.from_description(payload['service_status']))
+                svc_status.ServiceStatus.from_description(
+                    payload['service_status'])
+            )
         status.save()
 
     def update_backup(self, context, instance_id, backup_id,

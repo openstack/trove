@@ -15,6 +15,7 @@
 import enum
 import hashlib
 import os
+from pathlib import Path
 from requests.exceptions import ConnectionError
 
 from oslo_log import log as logging
@@ -245,34 +246,36 @@ class GuestLog(object):
                    'published': self._published_size})
 
     def _update_details(self):
-        # Make sure we can read the file
-        if not self._file_readable or not os.access(self._file, os.R_OK):
-            if not os.access(self._file, os.R_OK):
-                if operating_system.exists(self._file, as_root=True):
-                    operating_system.chmod(
-                        self._file, FileMode.ADD_ALL_R, as_root=True)
-            self._file_readable = True
+        if operating_system.exists(self._file, as_root=True):
+            file_path = Path(self._file)
 
-        if os.path.isfile(self._file):
-            logstat = os.stat(self._file)
-            self._size = logstat.st_size
+            # Make sure guest agent can read the log file.
+            if not os.access(self._file, os.R_OK):
+                operating_system.chmod(self._file, FileMode.ADD_ALL_R,
+                                       as_root=True)
+                operating_system.chmod(str(file_path.parent),
+                                       FileMode.ADD_GRP_RX_OTH_RX,
+                                       as_root=True)
+
+            self._size = file_path.stat().st_size
             self._update_log_header_digest(self._file)
 
             if self.status != LogStatus.Disabled:
                 if self._log_rotated():
                     self.status = LogStatus.Rotated
                 # See if we have stuff to publish
-                elif logstat.st_size > self._published_size:
+                elif self._size > self._published_size:
                     self._set_status(self._published_size,
                                      LogStatus.Partial, LogStatus.Ready)
                 # We've published everything so far
-                elif logstat.st_size == self._published_size:
+                elif self._size == self._published_size:
                     self._set_status(self._published_size,
                                      LogStatus.Published, LogStatus.Enabled)
                 # We've already handled this case (log rotated) so what gives?
                 else:
                     raise Exception(_("Bug in _log_rotated ?"))
         else:
+            LOG.warning(f"File {self._file} does not exist")
             self._published_size = 0
             self._size = 0
 

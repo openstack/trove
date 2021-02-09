@@ -31,3 +31,11 @@ def init_db():
             db_api.db_sync(CONF)
             session.configure_db(CONF)
             DB_SETUP = True
+
+
+def cleanup_db():
+    with LOCK:
+        global DB_SETUP
+        if DB_SETUP:
+            session.clean_db()
+            DB_SETUP = False
