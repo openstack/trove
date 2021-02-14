@@ -379,7 +379,6 @@ class Manager(periodic_task.PeriodicTasks):
 
             for replica in replicas:
                 replica.wait_for_instance(CONF.restore_usage_timeout, flavor)
-                LOG.info('Replica %s created successfully', replica.id)
         except Exception as err:
             LOG.error('Failed to create replica from %s, error: %s',
                       slave_of_id, str(err))
