@@ -351,10 +351,10 @@ class SimpleInstance(object):
         - Then server status
         - Otherwise, unknown
         """
-        LOG.info(f"Getting instance status for {self.id}, "
-                 f"task status: {self.db_info.task_status}, "
-                 f"datastore status: {self.datastore_status.status}, "
-                 f"server status: {self.db_info.server_status}")
+        LOG.debug(f"Getting instance status for {self.id}, "
+                  f"task status: {self.db_info.task_status}, "
+                  f"datastore status: {self.datastore_status.status}, "
+                  f"server status: {self.db_info.server_status}")
 
         task_status = self.db_info.task_status
         server_status = self.db_info.server_status

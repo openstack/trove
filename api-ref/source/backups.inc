@@ -76,6 +76,19 @@ In the Trove deployment with service tenant enabled, The backup data is
 stored as objects in OpenStack Swift service in the user's container. If not
 specified, the container name is defined by the cloud admin.
 
+The user can create a backup strategy within the project scope or specific to
+a particular instance.
+
+In multi-region deployment with geo-replicated Swift, the user can also restore
+a backup in a region by manually specifying the backup data location created in
+another region, then create instances from the backup. Instance ID is not
+required in this case.
+
+.. warning::
+
+   The restored backup is dependent on the original backup data, if the
+   original backup is deleted, the restored backup is invalid.
+
 Normal response codes: 202
 
 Request
@@ -90,6 +103,7 @@ Request
    - incremental: backup_incremental
    - description: backup_description
    - swift_container: swift_container
+   - restore_from: backup_restore_from
 
 Request Example
 ---------------

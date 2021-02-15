@@ -1470,8 +1470,7 @@ class BackupTasks(object):
         def _delete(backup):
             backup.deleted = True
             backup.deleted_at = timeutils.utcnow()
-            # Set datastore_version_id to None so that datastore_version could
-            # be deleted.
+            # Set datastore_version_id to None to remove dependency.
             backup.datastore_version_id = None
             backup.save()
 
@@ -1479,7 +1478,9 @@ class BackupTasks(object):
         backup = bkup_models.Backup.get_by_id(context, backup_id)
         try:
             filename = backup.filename
-            if filename:
+            # Do not remove the object if the backup was restored from remote
+            # location.
+            if filename and backup.state != bkup_models.BackupState.RESTORED:
                 BackupTasks.delete_files_from_swift(context,
                                                     backup.container_name,
                                                     filename)

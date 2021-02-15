@@ -652,14 +652,27 @@ backup = {
         "properties": {
             "backup": {
                 "type": "object",
-                "required": ["instance", "name"],
+                "required": ["name"],
                 "properties": {
                     "description": non_empty_string,
                     "instance": uuid,
                     "name": non_empty_string,
                     "parent_id": uuid,
                     "incremental": boolean_string,
-                    "swift_container": non_empty_string
+                    "swift_container": non_empty_string,
+                    "restore_from": {
+                        "type": "object",
+                        "required": [
+                            "remote_location",
+                            "local_datastore_version_id",
+                            "size"
+                        ],
+                        "properties": {
+                            "remote_location": non_empty_string,
+                            "local_datastore_version_id": uuid,
+                            "size": {"type": "number"}
+                        }
+                    }
                 }
             }
         }

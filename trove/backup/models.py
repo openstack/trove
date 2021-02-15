@@ -22,7 +22,9 @@ from swiftclient.client import ClientException
 from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import clients
+from trove.common import constants
 from trove.common import exception
+from trove.common import swift
 from trove.common import utils
 from trove.common.i18n import _
 from trove.datastore import models as datastore_models
@@ -49,7 +51,8 @@ class Backup(object):
 
     @classmethod
     def create(cls, context, instance, name, description=None,
-               parent_id=None, incremental=False, swift_container=None):
+               parent_id=None, incremental=False, swift_container=None,
+               restore_from=None):
         """
         create db record for Backup
         :param cls:
@@ -59,31 +62,61 @@ class Backup(object):
         :param description:
         :param parent_id:
         :param incremental: flag to indicate incremental backup
-        based on previous backup
+                            based on previous backup
         :param swift_container: Swift container name.
+        :param restore_from: A dict that contains backup information of another
+                             region.
         :return:
         """
+        backup_state = BackupState.NEW
+        checksum = None
+        instance_id = None
+        parent = None
+        last_backup_id = None
+        location = None
+        backup_type = constants.BACKUP_TYPE_FULL
+        size = None
 
-        def _create_resources():
-            # parse the ID from the Ref
+        if restore_from:
+            # Check location and datastore version.
+            LOG.info(f"Restoring backup, restore_from: {restore_from}")
+            backup_state = BackupState.RESTORED
+
+            ds_version_id = restore_from.get('local_datastore_version_id')
+            ds_version = datastore_models.DatastoreVersion.load_by_uuid(
+                ds_version_id)
+
+            location = restore_from.get('remote_location')
+            swift_client = clients.create_swift_client(context)
+            try:
+                obj_meta = swift.get_metadata(swift_client, location,
+                                              extra_attrs=['etag'])
+            except Exception:
+                msg = f'Failed to restore backup from {location}'
+                LOG.exception(msg)
+                raise exception.BackupCreationError(msg)
+
+            checksum = obj_meta['etag']
+            if 'parent_location' in obj_meta:
+                backup_type = constants.BACKUP_TYPE_INC
+
+            size = restore_from['size']
+        else:
             instance_id = utils.get_id_from_href(instance)
-
-            # verify that the instance exists and can perform actions
-            from trove.instance.models import Instance
-            instance_model = Instance.load(context, instance_id)
+            # Import here to avoid circular imports.
+            from trove.instance import models as inst_model
+            instance_model = inst_model.Instance.load(context, instance_id)
             instance_model.validate_can_perform_action()
-            cls.validate_can_perform_action(
-                instance_model, 'backup_create')
-
-            cls.verify_swift_auth_token(context)
-
             if instance_model.cluster_id is not None:
                 raise exception.ClusterInstanceOperationNotSupported()
 
+            cls.validate_can_perform_action(instance_model, 'backup_create')
+
+            cls.verify_swift_auth_token(context)
+
             ds = instance_model.datastore
             ds_version = instance_model.datastore_version
-            parent = None
-            last_backup_id = None
+
             if parent_id:
                 # Look up the parent info or fail early if not found or if
                 # the user does not have access to the parent.
@@ -100,36 +133,53 @@ class Backup(object):
                         'checksum': _parent.checksum
                     }
                     last_backup_id = _parent.id
+
+            if parent:
+                backup_type = constants.BACKUP_TYPE_INC
+
+        def _create_resources():
             try:
-                db_info = DBBackup.create(name=name,
-                                          description=description,
-                                          tenant_id=context.project_id,
-                                          state=BackupState.NEW,
-                                          instance_id=instance_id,
-                                          parent_id=parent_id or
-                                          last_backup_id,
-                                          datastore_version_id=ds_version.id,
-                                          deleted=False)
+                db_info = DBBackup.create(
+                    name=name,
+                    description=description,
+                    tenant_id=context.project_id,
+                    state=backup_state,
+                    instance_id=instance_id,
+                    parent_id=parent_id or last_backup_id,
+                    datastore_version_id=ds_version.id,
+                    deleted=False,
+                    location=location,
+                    checksum=checksum,
+                    backup_type=backup_type,
+                    size=size
+                )
             except exception.InvalidModelError as ex:
                 LOG.exception("Unable to create backup record for "
                               "instance: %s", instance_id)
                 raise exception.BackupCreationError(str(ex))
 
-            backup_info = {'id': db_info.id,
-                           'name': name,
-                           'description': description,
-                           'instance_id': instance_id,
-                           'backup_type': db_info.backup_type,
-                           'checksum': db_info.checksum,
-                           'parent': parent,
-                           'datastore': ds.name,
-                           'datastore_version': ds_version.name,
-                           'swift_container': swift_container
-                           }
-            api.API(context).create_backup(backup_info, instance_id)
+            if not restore_from:
+                backup_info = {
+                    'id': db_info.id,
+                    'name': name,
+                    'description': description,
+                    'instance_id': instance_id,
+                    'backup_type': db_info.backup_type,
+                    'checksum': db_info.checksum,
+                    'parent': parent,
+                    'datastore': ds.name,
+                    'datastore_version': ds_version.name,
+                    'swift_container': swift_container
+                }
+                api.API(context).create_backup(backup_info, instance_id)
+            else:
+                context.notification.payload.update(
+                    {'backup_id': db_info.id}
+                )
+
             return db_info
-        return run_with_quotas(context.project_id,
-                               {'backups': 1},
+
+        return run_with_quotas(context.project_id, {'backups': 1},
                                _create_resources)
 
     @classmethod
@@ -372,7 +422,7 @@ class DBBackup(DatabaseModelBase):
 
     @property
     def is_done_successfuly(self):
-        return self.state == BackupState.COMPLETED
+        return self.state in [BackupState.COMPLETED, BackupState.RESTORED]
 
     @property
     def filename(self):
