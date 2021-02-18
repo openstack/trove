@@ -80,27 +80,32 @@ class BackupController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         policy.authorize_on_tenant(context, 'backup:create')
         data = body['backup']
-        instance = data['instance']
+        instance = data.get('instance')
         name = data['name']
         desc = data.get('description')
         parent = data.get('parent_id')
         incremental = data.get('incremental')
         swift_container = data.get('swift_container')
+        restore_from = data.get('restore_from')
 
-        context.notification = notification.DBaaSBackupCreate(context,
-                                                              request=req)
+        context.notification = notification.DBaaSBackupCreate(
+            context, request=req)
 
-        if not swift_container:
-            instance_id = utils.get_id_from_href(instance)
-            backup_strategy = BackupStrategy.get(context, instance_id)
-            if backup_strategy:
-                swift_container = backup_strategy.swift_container
+        if not restore_from:
+            if not instance:
+                raise exception.BackupCreationError('instance is missing.')
+            if not swift_container:
+                instance_id = utils.get_id_from_href(instance)
+                backup_strategy = BackupStrategy.get(context, instance_id)
+                if backup_strategy:
+                    swift_container = backup_strategy.swift_container
 
         with StartNotification(context, name=name, instance_id=instance,
                                description=desc, parent_id=parent):
             backup = Backup.create(context, instance, name, desc,
                                    parent_id=parent, incremental=incremental,
-                                   swift_container=swift_container)
+                                   swift_container=swift_container,
+                                   restore_from=restore_from)
 
         return wsgi.Result(views.BackupView(backup).data(), 202)
 

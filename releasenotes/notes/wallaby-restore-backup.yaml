@@ -1,0 +1,5 @@
+---
+features:
+  - In multi-region deployment with geo-replicated Swift, the user can restore
+    a backup in one region by manually specifying the original backup data
+    location created in another region.

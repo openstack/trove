@@ -148,7 +148,7 @@ backup_instanceId:
   description: |
     The ID of the instance to create backup for.
   in: body
-  required: true
+  required: false
   type: string
 backup_list:
   description: |
@@ -180,6 +180,17 @@ backup_parentId1:
   in: body
   required: true
   type: string
+backup_restore_from:
+  description: |
+    The information needed to restore a backup, including:
+
+    - ``remote_location``: The original backup data location.
+    - ``local_datastore_version_id``: The local datastore version corresponding
+      to the original backup.
+    - ``size``: The original backup size.
+  in: body
+  required: false
+  type: object
 backup_size:
   description: |
     Size of the backup, the unit is GB.

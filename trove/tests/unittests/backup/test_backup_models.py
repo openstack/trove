@@ -176,7 +176,7 @@ class BackupCreateTest(trove_testtools.TestCase):
                               BACKUP_NAME, BACKUP_DESC)
 
     def test_create_backup_swift_token_invalid(self):
-        instance = MagicMock()
+        instance = MagicMock(cluster_id=None)
         with patch.object(instance_models.BuiltInstance, 'load',
                           return_value=instance):
             instance.validate_can_perform_action = MagicMock(
@@ -191,7 +191,7 @@ class BackupCreateTest(trove_testtools.TestCase):
                                       BACKUP_NAME, BACKUP_DESC)
 
     def test_create_backup_datastore_operation_not_supported(self):
-        instance = MagicMock()
+        instance = MagicMock(cluster_id=None)
         with patch.object(instance_models.BuiltInstance, 'load',
                           return_value=instance):
             with patch.object(

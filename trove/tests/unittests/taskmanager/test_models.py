@@ -1037,10 +1037,8 @@ class BackupTasksTest(trove_testtools.TestCase):
 
         self.assertTrue(self.backup.deleted)
 
-    @patch('trove.taskmanager.models.LOG')
     @patch('trove.common.clients.create_swift_client')
-    def test_delete_backup_fail_delete_manifest(self, mock_swift_client,
-                                                mock_logging):
+    def test_delete_backup_fail_delete_manifest(self, mock_swift_client):
         client_mock = MagicMock()
         client_mock.head_object.return_value = {}
         client_mock.delete_object.side_effect = ClientException("foo")
@@ -1069,6 +1067,12 @@ class BackupTasksTest(trove_testtools.TestCase):
                                                         '12e48.xbstream.gz')
         client_mock.delete_object.assert_called_once_with('container',
                                                           '12e48.xbstream.gz')
+
+    def test_delete_backup_restored(self):
+        self.backup.state = state.BackupState.RESTORED
+        taskmanager_models.BackupTasks.delete_backup(mock.ANY, self.backup.id)
+
+        self.assertTrue(self.backup.deleted)
 
     def test_parse_manifest(self):
         manifest = 'container/prefix'

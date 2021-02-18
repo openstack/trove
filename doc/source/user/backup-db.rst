@@ -276,3 +276,21 @@ Create an incremental backup based on a parent backup:
     |    status   |                 NEW                  |
     |   updated   |         2014-03-19T14:09:13          |
     +-------------+--------------------------------------+
+
+Restore backup from other regions
+---------------------------------
+
+Restoring backup from other regions were introduced in Wallaby,
+
+In multi-region deployment with geo-replicated Swift, the user is able to
+create a backup in one region using the backup data created in the others,
+which is useful in Disaster Recovery scenario. Instance ID is not required in
+this case when restoring backup, but the original backup data location (a swift
+object URL), the local datastore version and the backup data size are required.
+
+.. warning::
+
+   The restored backup is dependent on the original backup data, if the
+   original backup is deleted, the restored backup is invalid.
+
+TODO: Add CLI example once supported in python-troveclient.
