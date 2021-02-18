@@ -201,7 +201,7 @@ common_opts = [
     cfg.IntOpt('agent_heartbeat_time', default=10,
                help='Maximum time (in seconds) for the Guest Agent to reply '
                     'to a heartbeat request.'),
-    cfg.IntOpt('agent_heartbeat_expiry', default=60,
+    cfg.IntOpt('agent_heartbeat_expiry', default=90,
                help='Time (in seconds) after which a guest is considered '
                     'unreachable'),
     cfg.IntOpt('num_tries', default=3,
