@@ -280,7 +280,7 @@ Create an incremental backup based on a parent backup:
 Restore backup from other regions
 ---------------------------------
 
-Restoring backup from other regions were introduced in Wallaby,
+The feature of restoring backup from other regions was introduced in Wallaby.
 
 In multi-region deployment with geo-replicated Swift, the user is able to
 create a backup in one region using the backup data created in the others,
@@ -293,4 +293,43 @@ object URL), the local datastore version and the backup data size are required.
    The restored backup is dependent on the original backup data, if the
    original backup is deleted, the restored backup is invalid.
 
-TODO: Add CLI example once supported in python-troveclient.
+#. In region 1, get the backup information.
+
+   .. code-block:: console
+
+      $ openstack database backup show b3957063-18ac-48f4-a710-82602f2ddb78 -c locationRef -c size -c datastore -c datastore_version
+      +-------------------+---------------------------------------------------------------------------------------------------------------------------------------+
+      | Field             | Value                                                                                                                                 |
+      +-------------------+---------------------------------------------------------------------------------------------------------------------------------------+
+      | datastore         | mysql                                                                                                                                 |
+      | datastore_version | 5.7.29                                                                                                                                |
+      | locationRef       | http://192.168.206.8:8080/v1/AUTH_055b2fb9a2264ae5a5f6b3cc066c4a1d/trove-backup-data/b3957063-18ac-48f4-a710-82602f2ddb78.xbstream.gz |
+      | size              | 0.2                                                                                                                                   |
+      +-------------------+---------------------------------------------------------------------------------------------------------------------------------------+
+
+#. In region 2, create a new backup.
+
+   .. code-block:: console
+
+      $ openstack database backup create \
+        --restore-from http://192.168.206.8:8080/v1/AUTH_055b2fb9a2264ae5a5f6b3cc066c4a1d/trove-backup-data/b3957063-18ac-48f4-a710-82602f2ddb78.xbstream.gz \
+        --restore-datastore-version 40430eea-9ee3-4c2c-a06f-9ec72277af7a \
+        --restore-size 0.3 test-restore
+      +----------------------+---------------------------------------------------------------------------------------------------------------------------------------+
+      | Field                | Value                                                                                                                                 |
+      +----------------------+---------------------------------------------------------------------------------------------------------------------------------------+
+      | created              | 2021-02-22T01:44:06                                                                                                                   |
+      | datastore            | mysql                                                                                                                                 |
+      | datastore_version    | 5.7.29                                                                                                                                |
+      | datastore_version_id | 40430eea-9ee3-4c2c-a06f-9ec72277af7a                                                                                                  |
+      | description          | None                                                                                                                                  |
+      | id                   | ad98bbb0-b1d8-4569-b404-7e6af6700235                                                                                                  |
+      | instance_id          | None                                                                                                                                  |
+      | locationRef          | http://192.168.206.8:8080/v1/AUTH_055b2fb9a2264ae5a5f6b3cc066c4a1d/trove-backup-data/b3957063-18ac-48f4-a710-82602f2ddb78.xbstream.gz |
+      | name                 | test-restore                                                                                                                          |
+      | parent_id            | None                                                                                                                                  |
+      | project_id           | 055b2fb9a2264ae5a5f6b3cc066c4a1d                                                                                                      |
+      | size                 | 0.3                                                                                                                                   |
+      | status               | RESTORED                                                                                                                              |
+      | updated              | 2021-02-22T01:44:06                                                                                                                   |
+      +----------------------+---------------------------------------------------------------------------------------------------------------------------------------+
