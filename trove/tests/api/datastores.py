@@ -85,7 +85,7 @@ class Datastores(object):
 
     @test
     def test_create_inactive_datastore_by_admin(self):
-        datastores = self.rd_client.datastores.list()
+        datastores = self.rd_admin.datastores.list()
         for ds in datastores:
             if ds.name == test_config.dbaas_datastore_name_no_versions:
                 for version in ds.versions:
