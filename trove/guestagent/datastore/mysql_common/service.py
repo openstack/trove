@@ -15,12 +15,13 @@
 import abc
 import re
 
+import sqlalchemy
+import urllib
+
 from oslo_log import log as logging
 from oslo_utils import encodeutils
-import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy.sql.expression import text
-import urllib
 
 from trove.common import cfg
 from trove.common import exception
@@ -59,6 +60,7 @@ BACKUP_LOG = re.compile(r'.*Backup successfully, checksum: (?P<checksum>.*), '
 
 
 class BaseMySqlAppStatus(service.BaseDbStatus):
+
     def __init__(self, docker_client):
         super(BaseMySqlAppStatus, self).__init__(docker_client)
 
@@ -435,13 +437,13 @@ class BaseMySqlApp(service.BaseDbApp):
         if ENGINE:
             return ENGINE
 
-        user = ADMIN_USER_NAME
-        password = ""
         try:
+            user = ADMIN_USER_NAME
             password = self.get_auth_password()
         except exception.UnprocessableEntity:
             # os_admin user not created yet
             user = 'root'
+            password = self.get_auth_password(file="root.cnf")
 
         ENGINE = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (user,
@@ -819,6 +821,7 @@ class BaseMySqlApp(service.BaseDbApp):
 
 
 class BaseMySqlRootAccess(object):
+
     def __init__(self, mysql_app):
         self.mysql_app = mysql_app
 
