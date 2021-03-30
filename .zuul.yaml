@@ -24,6 +24,7 @@
         - trove-tox-bandit-baseline:
             voting: false
         - trove-tempest
+        - trove-tempest-postgres
         - trove-tempest-ipv6-only:
             voting: false
         - trove-functional-mysql:
@@ -323,6 +324,67 @@
           $TROVE_CONF:
             DEFAULT:
               usage_timeout: 1800
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove.git
+      devstack_services:
+        etcd3: false
+        tls-proxy: false
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        cinder: true
+        c-sch: true
+        c-api: true
+        c-vol: true
+        c-bak: false
+        swift: true
+        s-account: true
+        s-container: true
+        s-object: true
+        s-proxy: true
+        tempest: true
+      tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
+
+- job:
+    name: trove-tempest-postgres
+    parent: devstack-tempest
+    nodeset: trove-ubuntu-bionic
+    timeout: 10800
+    required-projects:
+      - openstack/trove
+      - openstack/trove-tempest-plugin
+      - openstack/tempest
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^trove/guestagent/(mysql.*|mariadb)/.*$
+      - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*)\.py$
+    vars:
+      tox_envlist: all
+      tempest_concurrency: 1
+      devstack_localrc:
+        TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
+        USE_PYTHON3: true
+        TROVE_DATASTORE_TYPE: postgresql
+        TROVE_DATASTORE_VERSION: 12.4
+      devstack_local_conf:
+        post-config:
+          $TROVE_CONF:
+            DEFAULT:
+              usage_timeout: 1800
+        test-config:
+          $TEMPEST_CONFIG:
+            database:
+              enabled_datastores: "postgresql"
+              default_datastore_versions: "postgesql:12.4"
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
