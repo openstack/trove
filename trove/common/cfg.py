@@ -1574,6 +1574,7 @@ def list_opts():
         (None, path_opts + versions_opts + common_opts),
         ('database', database_opts),
         (mysql_group, mysql_opts),
+        (postgresql_group, postgresql_opts),
         (mariadb_group, mariadb_opts),
         (network_group, network_opts),
         (service_credentials_group, service_credentials_opts),

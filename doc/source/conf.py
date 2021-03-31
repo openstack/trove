@@ -14,9 +14,16 @@
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.todo',
-              'sphinx.ext.viewcode',
-              'openstackdocstheme',
-              'stevedore.sphinxext']
+    'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
+    'sphinx.ext.viewcode',
+    'openstackdocstheme',
+    'stevedore.sphinxext',
+    'oslo_config.sphinxconfiggen',
+    'oslo_config.sphinxext',
+    'oslo_policy.sphinxpolicygen',
+    'oslo_policy.sphinxext',
+]
 
 # openstackdocstheme options
 openstackdocs_repo_name = 'openstack/trove'
@@ -24,6 +31,15 @@ openstackdocs_bug_project = 'trove'
 openstack_auto_name = False
 openstackdocs_bug_tag = ''
 html_theme = 'openstackdocs'
+
+# sphinxcontrib.apidoc options
+config_generator_config_file = (
+    '../../tools/trove-config-generator.conf')
+sample_config_basename = '_static/trove'
+
+policy_generator_config_file = (
+    '../../tools/trove-policy-generator.conf')
+sample_policy_basename = '_static/trove'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
