@@ -12,13 +12,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from oslo_config import cfg as openstack_cfg
 from oslo_service import service as openstack_service
 
 from trove.cmd.common import with_initialize
-
-
-extra_opts = [openstack_cfg.StrOpt('taskmanager_manager')]
 
 
 def startup(conf, topic):
@@ -43,11 +39,11 @@ def startup(conf, topic):
     launcher.wait()
 
 
-@with_initialize(extra_opts=extra_opts)
+@with_initialize
 def main(conf):
     startup(conf, conf.taskmanager_queue)
 
 
-@with_initialize(extra_opts=extra_opts)
+@with_initialize
 def mgmt_main(conf):
     startup(conf, "mgmt-taskmanager")
