@@ -81,6 +81,12 @@ def check_subnet_router(client, subnet_id):
     """Check if the subnet is associated with a router."""
     router_ports = client.list_ports(
         device_owner="network:router_interface",
+        fixed_ips=f"subnet_id={subnet_id}"
+    )["ports"] + client.list_ports(
+        device_owner="network:router_interface_distributed",
+        fixed_ips=f"subnet_id={subnet_id}"
+    )["ports"] + client.list_ports(
+        device_owner="network:ha_router_replicated_interface",
         fixed_ips=f"subnet_id={subnet_id}")["ports"]
     if not router_ports:
         raise exception.TroveError(f"Subnet {subnet_id} is not "
