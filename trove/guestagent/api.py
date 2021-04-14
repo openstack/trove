@@ -60,7 +60,7 @@ class API(object):
         'newton': '1.0',
         'ussuri': '1.0',
         'victoria': '1.1',
-
+        'wallaby': '1.1',
         'latest': API_LATEST_VERSION
     }
 
