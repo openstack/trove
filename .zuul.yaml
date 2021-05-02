@@ -384,7 +384,7 @@
           $TEMPEST_CONFIG:
             database:
               enabled_datastores: "postgresql"
-              default_datastore_versions: "postgesql:12.4"
+              default_datastore_versions: "postgresql:12.4"
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
