@@ -42,12 +42,8 @@
         - trove-scenario-mariadb-multi
     periodic:
       jobs:
-        - publish-trove-guest-image-ubuntu-bionic:
-            branches:
-              - master
-        - publish-trove-guest-image-ubuntu-bionic-dev:
-            branches:
-              - master
+        - publish-trove-guest-image-ubuntu-bionic
+        - publish-trove-guest-image-ubuntu-bionic-dev
 
 - job:
     name: trove-devstack-base
