@@ -174,7 +174,7 @@ class MethodInspector(object):
 
     @cached_property
     def argspec(self):
-        return inspect.getargspec(self._func)
+        return inspect.getfullargspec(self._func)
 
     def __str__(self):
         optionals = ["[{0}=<{0}>]".format(k) for k, v in self.optional_args]

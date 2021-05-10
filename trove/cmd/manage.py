@@ -46,7 +46,7 @@ class Commands(object):
 
     def execute(self):
         exec_method = getattr(self, CONF.action.name)
-        args = inspect.getargspec(exec_method)
+        args = inspect.getfullargspec(exec_method)
         args.args.remove('self')
         kwargs = {}
         for arg in args.args:
