@@ -255,18 +255,18 @@ class SimpleInstance(object):
 
     def get_visible_ip_addresses(self):
         """Returns IPs that will be visible to the user."""
-        if self.addresses is None:
+        if not self.addresses:
             return None
 
         IPs = []
+        for address_list in self.addresses.values():
+            for addr_info in address_list:
+                if CONF.ip_regex and CONF.black_list_regex:
+                    if not ip_visible(addr_info['addr'], CONF.ip_regex,
+                                      CONF.black_list_regex):
+                        continue
 
-        for addr_info in self.addresses:
-            if CONF.ip_regex and CONF.black_list_regex:
-                if not ip_visible(addr_info['address'], CONF.ip_regex,
-                                  CONF.black_list_regex):
-                    continue
-
-            IPs.append(addr_info)
+                IPs.append(addr_info['addr'])
 
         return IPs
 
