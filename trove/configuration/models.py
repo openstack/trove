@@ -166,6 +166,8 @@ class Configuration(object):
                 item.configuration_value = bool(int(item.configuration_value))
             elif rule.data_type == 'integer':
                 item.configuration_value = int(item.configuration_value)
+            elif rule.data_type == 'float':
+                item.configuration_value = float(item.configuration_value)
             else:
                 item.configuration_value = str(item.configuration_value)
         return config_items
