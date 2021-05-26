@@ -1,8 +1,8 @@
 - nodeset:
-    name: trove-ubuntu-bionic
+    name: trove-ubuntu-focal
     nodes:
       - name: controller
-        label: nested-virt-ubuntu-bionic
+        label: nested-virt-ubuntu-focal
     groups:
       - name: tempest
         nodes:
@@ -61,6 +61,22 @@
       devstack_services:
         tempest: true
         tls-proxy: false
+        etcd3: false
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        q-svc: true
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-ovn-metadata-agent: false
+        ovn-controller: false
+        ovn-northd: false
       devstack_plugins:
         trove: https://opendev.org/openstack/trove
       # NOTE(zhaochao): we have to override the default settings from the
@@ -75,6 +91,10 @@
         HOST_IP: ''
         VNCSERVER_PROXYCLIENT_ADDRESS: 127.0.0.1
         USE_PYTHON3: True
+        Q_AGENT: openvswitch
+        Q_PLUGIN: ml2
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
     run: playbooks/trove-devstack-base.yaml
     irrelevant-files:
       - ^.*\.rst$
@@ -106,7 +126,7 @@
 - job:
     name: trove-functional-mysql
     parent: trove-devstack-base
-    nodeset: trove-ubuntu-bionic
+    nodeset: trove-ubuntu-focal
     timeout: 10800
     vars:
       devstack_localrc:
@@ -297,7 +317,7 @@
 - job:
     name: trove-tempest
     parent: devstack-tempest
-    nodeset: trove-ubuntu-bionic
+    nodeset: trove-ubuntu-focal
     timeout: 10800
     required-projects: &base_required_projects
       - openstack/trove
@@ -315,6 +335,10 @@
       devstack_localrc:
         TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
         USE_PYTHON3: true
+        Q_AGENT: openvswitch
+        Q_PLUGIN: ml2
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -343,13 +367,21 @@
         s-object: true
         s-proxy: true
         tempest: true
+        q-svc: true
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-ovn-metadata-agent: false
+        ovn-controller: false
+        ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
 
 - job:
     name: trove-tempest-postgres
     parent: devstack-tempest
-    nodeset: trove-ubuntu-bionic
+    nodeset: trove-ubuntu-focal
     timeout: 10800
     required-projects:
       - openstack/trove
@@ -369,6 +401,10 @@
       devstack_localrc:
         TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
         USE_PYTHON3: true
+        Q_AGENT: openvswitch
+        Q_PLUGIN: ml2
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         TROVE_DATASTORE_TYPE: postgresql
         TROVE_DATASTORE_VERSION: 12.4
       devstack_local_conf:
@@ -404,6 +440,14 @@
         s-object: true
         s-proxy: true
         tempest: true
+        q-svc: true
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-ovn-metadata-agent: false
+        ovn-controller: false
+        ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
 
