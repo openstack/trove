@@ -28,7 +28,7 @@ documentation to testing to deployment scripts. The best way to get
 involved with the community is to talk with others online or at a
 meetup and offer contributions through our processes, the `OpenStack
 wiki <https://wiki.openstack.org>`_, blogs, or on IRC at
-``#openstack-trove`` on ``irc.freenode.net``.
+``#openstack-trove`` on OFTC.
 
 
 House Rules
@@ -327,9 +327,6 @@ used for local setup.
 Is there something missing?
 ---------------------------
 
-Do not hesitate to chat and clear your doubts about Trove on
-IRC: #openstack-trove <http://webchat.freenode.net/?channels=openstack-trove>`_
-on freenode.net. Also, we meet every week at #openstack-meeting-alt
-<http://webchat.freenode.net/?channels=openstack-trove>`_ to discuss
-ongoing issues.
+Do not hesitate to chat and clear your doubts about Trove in
+IRC: #openstack-trove on OFTC.
 
