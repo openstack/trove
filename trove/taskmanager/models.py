@@ -1730,9 +1730,14 @@ class ResizeVolumeAction(object):
             def volume_is_new_size():
                 volume = self.instance.volume_client.volumes.get(
                     self.instance.volume_id)
-                return volume.size == self.new_size
+                LOG.debug(f'Waiting for volume available, '
+                          f'id: {volume.id}, status: {volume.status}, '
+                          f'size: {volume.size}')
+                return (volume.size == self.new_size and
+                        volume.status in ['available', 'in-use'])
 
             utils.poll_until(volume_is_new_size,
+                             initial_delay=5,
                              sleep_time=5,
                              time_out=CONF.volume_time_out)
 
