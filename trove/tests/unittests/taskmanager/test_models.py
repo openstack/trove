@@ -304,7 +304,12 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     @patch.object(taskmanager_models.FreshInstanceTasks, 'hostname',
                   new_callable=PropertyMock,
                   return_value='fake-hostname')
-    def test_servers_create_block_device_mapping_v2(self, mock_hostname):
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'name',
+                  new_callable=PropertyMock,
+                  return_value='fake-name')
+    def test_servers_create_block_device_mapping_v2(self,
+                                                    mock_hostname,
+                                                    mock_name):
         self.freshinstancetasks.prepare_userdata = Mock(return_value=None)
         mock_nova_client = self.freshinstancetasks.nova_client = Mock()
         mock_servers_create = mock_nova_client.servers.create
@@ -314,7 +319,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                 'trove_user_id': 'test_user',
                 'trove_instance_id': self.freshinstancetasks.id}
         mock_servers_create.assert_called_with(
-            'fake-hostname', 'fake-image',
+            'fake-name', 'fake-image',
             'fake-flavor', files={},
             userdata=None,
             block_device_mapping_v2=None,

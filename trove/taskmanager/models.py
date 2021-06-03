@@ -982,13 +982,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         metadata = {'trove_project_id': self.tenant_id,
                     'trove_user_id': self.context.user,
                     'trove_instance_id': self.id}
-        name = self.hostname or self.name
         bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive
         key_name = CONF.nova_keypair
 
         server = self.nova_client.servers.create(
-            name, image_id, flavor_id, key_name=key_name, nics=nics,
+            self.name, image_id, flavor_id, key_name=key_name, nics=nics,
             block_device_mapping_v2=bdmap_v2,
             files=files, userdata=userdata,
             availability_zone=availability_zone,
