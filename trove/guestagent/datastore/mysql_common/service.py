@@ -20,6 +20,7 @@ import urllib
 
 from oslo_log import log as logging
 from oslo_utils import encodeutils
+from sqlalchemy import event
 from sqlalchemy import exc
 from sqlalchemy.sql.expression import text
 
@@ -448,8 +449,9 @@ class BaseMySqlApp(service.BaseDbApp):
         ENGINE = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (user,
                                      urllib.parse.quote(password.strip())),
-            pool_recycle=120, echo=CONF.sql_query_logging,
-            listeners=[mysql_util.BaseKeepAliveConnection()])
+            pool_recycle=120, echo=CONF.sql_query_logging
+        )
+        event.listen(ENGINE, 'checkout', mysql_util.connection_checkout)
 
         return ENGINE
 

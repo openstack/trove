@@ -14,7 +14,6 @@
 from oslo_log import log as logging
 from pymysql import err as pymysql_err
 from sqlalchemy import exc
-from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
 from trove.guestagent.common import sql_query
@@ -55,31 +54,28 @@ class SqlClient(object):
             raise
 
 
-class BaseKeepAliveConnection(interfaces.PoolListener):
+def connection_checkout(dbapi_con, con_record, con_proxy):
     """
     A connection pool listener that ensures live connections are returned
     from the connection pool at checkout. This alleviates the problem of
     MySQL connections timing out.
     """
-
-    def checkout(self, dbapi_con, con_record, con_proxy):
-        """Event triggered when a connection is checked out from the pool."""
+    try:
         try:
-            try:
-                dbapi_con.ping(False)
-            except TypeError:
-                dbapi_con.ping()
-        except dbapi_con.OperationalError as ex:
-            if ex.args[0] in (2006, 2013, 2014, 2045, 2055):
-                raise exc.DisconnectionError()
-            else:
-                raise
-        # MariaDB seems to timeout the client in a different
-        # way than MySQL and PXC
-        except pymysql_err.InternalError as ex:
-            if "Packet sequence number wrong" in str(ex):
-                raise exc.DisconnectionError()
-            elif 'Connection was killed' in str(ex):
-                raise exc.DisconnectionError()
-            else:
-                raise
+            dbapi_con.ping(False)
+        except TypeError:
+            dbapi_con.ping()
+    except dbapi_con.OperationalError as ex:
+        if ex.args[0] in (2006, 2013, 2014, 2045, 2055):
+            raise exc.DisconnectionError()
+        else:
+            raise
+    # MariaDB seems to timeout the client in a different
+    # way than MySQL and PXC
+    except pymysql_err.InternalError as ex:
+        if "Packet sequence number wrong" in str(ex):
+            raise exc.DisconnectionError()
+        elif 'Connection was killed' in str(ex):
+            raise exc.DisconnectionError()
+        else:
+            raise
