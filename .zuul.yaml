@@ -60,7 +60,6 @@
     vars:
       devstack_services:
         tempest: true
-        tls-proxy: false
         etcd3: false
         ceilometer-acentral: false
         ceilometer-acompute: false
@@ -348,7 +347,6 @@
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
         etcd3: false
-        tls-proxy: false
         ceilometer-acentral: false
         ceilometer-acompute: false
         ceilometer-alarm-evaluator: false
@@ -421,7 +419,6 @@
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
         etcd3: false
-        tls-proxy: false
         ceilometer-acentral: false
         ceilometer-acompute: false
         ceilometer-alarm-evaluator: false
