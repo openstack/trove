@@ -15,7 +15,17 @@ import psycopg2
 
 
 class PostgresConnection(object):
-    def __init__(self, user, password='', host='localhost', port=5432):
+    def __init__(self, user, password='', host='/var/run/postgresql',
+                 port=5432):
+        """Utility class to communicate with PostgreSQL.
+
+        Connect with socket rather than IP or localhost address to avoid
+        manipulation of pg_hba.conf when the database is running inside
+        container with bridge network.
+
+        This class is consistent with PostgresConnection in
+        trove/guestagent/datastore/postgres/service.py
+        """
         self.user = user
         self.password = password
         self.host = host

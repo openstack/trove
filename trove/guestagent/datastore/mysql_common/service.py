@@ -582,13 +582,20 @@ class BaseMySqlApp(service.BaseDbApp):
         if extra_volumes:
             volumes.update(extra_volumes)
 
+        # Expose ports
+        ports = {}
+        tcp_ports = cfg.get_configuration_property('tcp_ports')
+        for port_range in tcp_ports:
+            for port in port_range:
+                ports[f'{port}/tcp'] = port
+
         try:
-            LOG.info("Starting docker container, image: %s", image)
             docker_util.start_container(
                 self.docker_client,
                 image,
                 volumes=volumes,
-                network_mode="host",
+                network_mode="bridge",
+                ports=ports,
                 user=user,
                 environment={
                     "MYSQL_ROOT_PASSWORD": root_pass,

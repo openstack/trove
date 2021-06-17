@@ -18,7 +18,7 @@ WORKDIR /opt/trove/backup
 RUN ./install.sh $DATASTORE
 
 RUN apt-get update \
-    && apt-get install $APTOPTS build-essential python3-setuptools python3-all python3-all-dev python3-pip libffi-dev libssl-dev libxml2-dev libxslt1-dev libyaml-dev \
+    && apt-get install $APTOPTS build-essential python3-setuptools python3-all python3-all-dev python3-pip libffi-dev libssl-dev libxml2-dev libxslt1-dev libyaml-dev libpq-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && pip3 --no-cache-dir install -U -r requirements.txt \

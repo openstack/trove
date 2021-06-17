@@ -56,9 +56,14 @@ def start_container(client, image, name="database",
     """
     try:
         container = client.containers.get(name)
+        LOG.info(f'Starting existing container {name}')
         container.start()
     except docker.errors.NotFound:
-        LOG.warning("Failed to get container %s", name)
+        LOG.info(
+            f"Creating docker container, image: {image}, "
+            f"volumes: {volumes}, ports: {ports}, user: {user}, "
+            f"network_mode: {network_mode}, environment: {environment}, "
+            f"command: {command}")
         container = client.containers.run(
             image,
             name=name,

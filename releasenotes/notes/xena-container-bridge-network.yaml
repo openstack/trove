@@ -1,0 +1,14 @@
+---
+security:
+  - |
+    Changed the network mode of database container to "bridge" and exposed the
+    service ports. Cloud operator could adjust the iptables to restrict network
+    access from the database container to the outside. An example::
+
+      iptables -t filter -I DOCKER-USER 1 -d [restricted-network-range] -i docker0 ! -o docker0 -j REJECT
+
+upgrade:
+  - The default value of the trove guest agent config option
+    ``[postgresql] backup_docker_image`` is changed to
+    ``openstacktrove/db-backup-postgresql:1.1.1``. There is nothing to do if
+    the option is not configured explicitly.
