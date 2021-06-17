@@ -395,6 +395,9 @@ class BaseDbApp(object):
         ):
             raise exception.TroveError("Failed to stop database")
 
+    def start_db(self, *args, **kwargs):
+        pass
+
     def start_db_with_conf_changes(self, config_contents, ds_version):
         LOG.info(f"Starting database service with new configuration and "
                  f"datastore version {ds_version}.")
@@ -435,7 +438,8 @@ class BaseDbApp(object):
         db_userinfo = ''
         if need_dbuser:
             admin_pass = self.get_auth_password()
-            db_userinfo = (f"--db-host=127.0.0.1 --db-user=os_admin "
+            # Use localhost to avoid host access verification.
+            db_userinfo = (f"--db-host=localhost --db-user=os_admin "
                            f"--db-password={admin_pass}")
 
         swift_metadata = (

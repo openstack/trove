@@ -112,8 +112,10 @@ class MySqlManager(manager.Manager):
         """
         LOG.info(f"Creating backup {backup_info['id']}")
         with EndNotification(context):
+            # Set /var/run/mysqld to allow localhost access.
             volumes_mapping = {
                 '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'},
+                "/var/run/mysqld": {"bind": "/var/run/mysqld", "mode": "ro"},
                 '/tmp': {'bind': '/tmp', 'mode': 'rw'}
             }
             self.app.create_backup(context, backup_info,

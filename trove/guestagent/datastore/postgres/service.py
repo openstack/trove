@@ -190,13 +190,20 @@ class PgSqlApp(service.BaseDbApp):
         if extra_volumes:
             volumes.update(extra_volumes)
 
+        # Expose ports
+        ports = {}
+        tcp_ports = cfg.get_configuration_property('tcp_ports')
+        for port_range in tcp_ports:
+            for port in port_range:
+                ports[f'{port}/tcp'] = port
+
         try:
-            LOG.info("Starting docker container, image: %s", image)
             docker_util.start_container(
                 self.docker_client,
                 image,
                 volumes=volumes,
-                network_mode="host",
+                network_mode="bridge",
+                ports=ports,
                 user=user,
                 environment={
                     "POSTGRES_PASSWORD": postgres_pass,
@@ -727,7 +734,17 @@ class PgSqlAdmin(object):
 
 
 class PostgresConnection(object):
-    def __init__(self, user, password=None, host='localhost', port=5432):
+    def __init__(self, user, password=None, host='/var/run/postgresql',
+                 port=5432):
+        """Utility class to communicate with PostgreSQL.
+
+        Connect with socket rather than IP or localhost address to avoid
+        manipulation of pg_hba.conf when the database is running inside
+        container with bridge network.
+
+        This class is consistent with PostgresConnection in
+        backup/utils/postgresql.py
+        """
         self.user = user
         self.password = password
         self.host = host

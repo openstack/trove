@@ -1097,7 +1097,7 @@ postgresql_opts = [
     ),
     cfg.StrOpt(
         'backup_docker_image',
-        default='openstacktrove/db-backup-postgresql:1.1.0',
+        default='openstacktrove/db-backup-postgresql:1.1.1',
         help='The docker image used for backup and restore.'
     ),
     cfg.BoolOpt('icmp', default=False,
