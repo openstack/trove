@@ -269,6 +269,11 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF service_credentials region_name $REGION_NAME
     iniset $TROVE_GUESTAGENT_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
 
+    iniset $TROVE_GUESTAGENT_CONF mysql docker_image ${TROVE_DATABASE_IMAGE_MYSQL}
+    iniset $TROVE_GUESTAGENT_CONF mysql backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_MYSQL}
+    iniset $TROVE_GUESTAGENT_CONF postgresql docker_image ${TROVE_DATABASE_IMAGE_POSTGRES}
+    iniset $TROVE_GUESTAGENT_CONF postgresql backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_POSTGRES}
+
     # 1. To avoid 'Connection timed out' error of sudo command inside the guest agent
     # 2. Config the controller IP address used by guest-agent to download Trove code during initialization (only valid for dev_mode=true).
     common_cloudinit=/etc/trove/cloudinit/common.cloudinit

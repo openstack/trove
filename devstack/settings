@@ -85,3 +85,9 @@ CELLSV2_SETUP=singleconductor
 # Enable or disable the Trove guest image build during devstack installation.
 TROVE_ENABLE_IMAGE_BUILD=${TROVE_ENABLE_IMAGE_BUILD:-"true"}
 TROVE_NON_DEV_IMAGE_URL=${TROVE_NON_DEV_IMAGE_URL:-""}
+
+# Customized database container images
+TROVE_DATABASE_IMAGE_MYSQL=${TROVE_DATABASE_IMAGE_MYSQL:-"catalystcloud/mysql"}
+TROVE_DATABASE_IMAGE_POSTGRES=${TROVE_DATABASE_IMAGE_POSTGRES:-"catalystcloud/postgres"}
+TROVE_DATABASE_BACKUP_IMAGE_MYSQL=${TROVE_DATABASE_BACKUP_IMAGE_MYSQL:-"catalystcloud/db-backup-mysql:1.1.0"}
+TROVE_DATABASE_BACKUP_IMAGE_POSTGRES=${TROVE_DATABASE_BACKUP_IMAGE_POSTGRES:-"catalystcloud/db-backup-postgresql:1.1.0"}
