@@ -91,11 +91,16 @@ def run_container(client, image, name, network_mode="host", volumes={},
     """
     try:
         container = client.containers.get(name)
+        LOG.debug(f'Removing existing container {name}')
         container.remove(force=True)
     except docker.errors.NotFound:
         pass
 
     try:
+        LOG.info(
+            f'Running container {name}, image: {image}, '
+            f'network_mode: {network_mode}, volumes: {volumes}, '
+            f'command: {command}')
         output = client.containers.run(
             image,
             name=name,
