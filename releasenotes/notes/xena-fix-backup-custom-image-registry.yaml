@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixed backup creation failed issue when using custom container image
+    registry.

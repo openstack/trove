@@ -67,7 +67,7 @@ class MySqlApp(service.BaseMySqlApp):
         to openstacktrove/db-backup-mysql5.7:1.0.0
         """
         image = cfg.get_configuration_property('backup_docker_image')
-        name, tag = image.split(':', 1)
+        name, tag = image.rsplit(':', 1)
 
         # Get minor version
         cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
