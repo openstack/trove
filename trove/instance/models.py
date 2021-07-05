@@ -1467,7 +1467,8 @@ class Instance(BuiltInstance):
                            for net_id in CONF.management_networks]
         if nics:
             call_args['nics'] = nics
-
+        if configuration_id:
+            Configuration.find(context, configuration_id, datastore_version.id)
         if not modules:
             modules = []
         module_ids = [mod['id'] for mod in modules]

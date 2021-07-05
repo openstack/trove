@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Validate that the configuration datastore version matches the datastore
+    version of the instance when creating an instance with a configuration.
+    This prevents instances from being created with a configuration intended
+    for a different datastore version.
