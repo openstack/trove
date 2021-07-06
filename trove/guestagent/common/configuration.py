@@ -104,11 +104,14 @@ class ConfigurationManager(object):
         self._override_strategy.configure(
             base_config_path, owner, group, codec, requires_root)
 
-    def get_value(self, key, default=None):
+    def get_value(self, key, section=None, default=None):
         """Return the current value at a given key or 'default'.
         """
         if self._value_cache is None:
             self.refresh_cache()
+
+        if section:
+            return self._value_cache.get(section, {}).get(key, default)
 
         return self._value_cache.get(key, default)
 
@@ -417,6 +420,7 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
                                                  as_root=self._requires_root)
             guestagent_utils.update_dict(options, parsed_options)
 
+        LOG.debug(f"Parsed overrides options: {parsed_options}")
         return parsed_options
 
     @property

@@ -459,7 +459,7 @@ class BaseMySqlApp(service.BaseDbApp):
     @classmethod
     def get_data_dir(cls):
         return cls.configuration_manager.get_value(
-            MySQLConfParser.SERVER_CONF_SECTION).get('datadir')
+            'datadir', section=MySQLConfParser.SERVER_CONF_SECTION)
 
     @classmethod
     def set_data_dir(cls, value):
