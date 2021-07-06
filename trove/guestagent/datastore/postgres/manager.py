@@ -54,7 +54,7 @@ class PostgresManager(manager.Manager):
                                           as_root=True)
 
         LOG.info('Preparing database config files')
-        self.app.configuration_manager.save_configuration(config_contents)
+        self.app.configuration_manager.reset_configuration(config_contents)
         self.app.set_data_dir(self.app.datadir)
         self.app.update_overrides(overrides)
 
