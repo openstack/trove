@@ -133,20 +133,23 @@ class ConfigurationManager(object):
 
         return base_options
 
-    def save_configuration(self, options):
+    def reset_configuration(self, options, remove_overrides=False):
         """Write given contents to the base configuration file.
-        Remove all existing overrides (both system and user).
 
-        :param options        Contents of the configuration file.
-        :type options         string or dict
+        Remove all existing overrides (both system and user) as required.
+
+        :param options: Contents of the configuration file (string or dict).
+        :param remove_overrides: Remove the overrides or not.
         """
         if isinstance(options, dict):
             # Serialize a dict of options for writing.
-            self.save_configuration(self._codec.serialize(options))
+            self.reset_configuration(self._codec.serialize(options),
+                                     remove_overrides=remove_overrides)
         else:
-            self._override_strategy.remove(self.USER_GROUP)
-            self._override_strategy.remove(self.SYSTEM_PRE_USER_GROUP)
-            self._override_strategy.remove(self.SYSTEM_POST_USER_GROUP)
+            if remove_overrides:
+                self._override_strategy.remove(self.USER_GROUP)
+                self._override_strategy.remove(self.SYSTEM_PRE_USER_GROUP)
+                self._override_strategy.remove(self.SYSTEM_POST_USER_GROUP)
 
             operating_system.write_file(
                 self._base_config_path, options, as_root=self._requires_root)

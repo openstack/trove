@@ -408,7 +408,10 @@ class API(object):
         self._call("restart", self.agent_high_timeout, version=version)
 
     def start_db_with_conf_changes(self, config_contents, ds_version):
-        """Start the database server."""
+        """Start the database with given configuration.
+
+        This method is called after resize.
+        """
         LOG.debug("Sending the call to start the database process on "
                   "the Guest with a timeout of %s.",
                   self.agent_high_timeout)
@@ -424,8 +427,10 @@ class API(object):
                    version=version, **start_args)
 
     def reset_configuration(self, configuration):
-        """Ignore running state of the database server; just change
-           the config file to a new flavor.
+        """Reset the database base configuration.
+
+        Ignore running state of the database server, just change the config
+        file to a new flavor.
         """
         LOG.debug("Sending the call to change the database conf file on the "
                   "Guest with a timeout of %s.",

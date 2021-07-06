@@ -378,7 +378,8 @@ class BaseDbApp(object):
         self.configuration_manager.remove_user_override()
 
     def reset_configuration(self, configuration):
-        pass
+        LOG.info("Resetting configuration.")
+        self.configuration_manager.reset_configuration(configuration)
 
     def stop_db(self, update_db=False):
         LOG.info("Stopping database.")
@@ -396,6 +397,10 @@ class BaseDbApp(object):
             raise exception.TroveError("Failed to stop database")
 
     def start_db_with_conf_changes(self, config_contents, ds_version):
+        """Start the database with given configuration.
+
+        This method is called after resize.
+        """
         LOG.info(f"Starting database service with new configuration and "
                  f"datastore version {ds_version}.")
 

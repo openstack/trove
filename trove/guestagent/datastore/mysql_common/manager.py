@@ -76,7 +76,7 @@ class MySqlManager(manager.Manager):
 
         # Prepare mysql configuration
         LOG.info('Preparing database configuration')
-        self.app.configuration_manager.save_configuration(config_contents)
+        self.app.configuration_manager.reset_configuration(config_contents)
         self.app.update_overrides(overrides)
 
         # Restore data from backup and reset root password
@@ -311,7 +311,7 @@ class MySqlManager(manager.Manager):
         try:
             # Prepare mysql configuration
             LOG.debug('Preparing database configuration')
-            self.app.configuration_manager.save_configuration(config_contents)
+            self.app.configuration_manager.reset_configuration(config_contents)
             self.app.update_overrides(config_overrides)
 
             # Start database service.

@@ -1190,7 +1190,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 self.reset_task_status()
 
     def attach_replica(self, master, restart=False):
-        LOG.info("Attaching replica %s to master %s", self.id, master.id)
+        LOG.info("Attaching replica %s to primary %s", self.id, master.id)
         try:
             replica_info = master.guest.get_replica_context()
             flavor = self.nova_client.flavors.get(self.flavor_id)
@@ -1847,15 +1847,17 @@ class ResizeActionBase(object):
         pass
 
     def _assert_datastore_is_ok(self):
+        LOG.info(f"Re-config database for instance {self.instance.id} after "
+                 f"resize")
         self._start_datastore()
 
     def _assert_processes_are_ok(self):
         """Checks the procs; if anything is wrong, reverts the operation."""
         # Tell the guest to turn back on, and make sure it can start.
+        LOG.info(f"Waiting for database status changed after resizing "
+                 f"{self.instance.id}")
         self._assert_guest_is_ok()
-        LOG.debug("Nova guest is ok.")
         self._assert_datastore_is_ok()
-        LOG.debug("Datastore is ok.")
 
     def _confirm_nova_action(self):
         LOG.debug("Instance %s calling Compute confirm resize...",
@@ -1884,7 +1886,7 @@ class ResizeActionBase(object):
     def execute(self):
         """Initiates the action."""
         try:
-            LOG.debug("Instance %s calling stop_db...", self.instance.id)
+            LOG.info(f"Stopping database service for {self.instance.id}")
             self.instance.guest.stop_db(do_not_start_on_reboot=True)
         except Exception as e:
             if self.ignore_stop_error:
@@ -1918,25 +1920,17 @@ class ResizeActionBase(object):
 
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""
-        LOG.debug("Begin resize method _perform_nova_action instance: %s",
-                  self.instance.id)
         need_to_revert = False
         try:
-            LOG.debug("Initiating nova action")
             self._initiate_nova_action()
-            LOG.debug("Waiting for nova action completed")
             self._wait_for_nova_action()
-            LOG.debug("Asserting nova status is ok")
             self._assert_nova_status_is_ok()
             need_to_revert = True
-            LOG.debug("Asserting nova action success")
             self._assert_nova_action_was_successful()
-            LOG.debug("Asserting processes are OK")
             self._assert_processes_are_ok()
-            LOG.debug("Confirming nova action")
             self._confirm_nova_action()
         except Exception:
-            LOG.exception("Exception during nova action.")
+            LOG.exception(f"Failed to resize instance {self.instance.id}")
             if need_to_revert:
                 LOG.error("Reverting action for instance %s",
                           self.instance.id)
@@ -1944,13 +1938,12 @@ class ResizeActionBase(object):
                 self._wait_for_revert_nova_action()
 
             if self.instance.server_status_matches(['ACTIVE']):
-                LOG.error("Restarting datastore.")
+                LOG.error(f"Restarting instance {self.instance.id}")
                 self.instance.guest.restart()
             else:
-                LOG.error("Cannot restart datastore because "
-                          "Nova server status is not ACTIVE")
+                LOG.error(f"Cannot restart instance {self.instance.id} "
+                          f"because Nova server status is not ACTIVE")
 
-            LOG.error("Error resizing instance %s.", self.instance.id)
             raise
 
         self._record_action_success()
@@ -1958,8 +1951,8 @@ class ResizeActionBase(object):
                   self.instance.id)
 
     def _wait_for_nova_action(self):
-        LOG.info(f"Waiting for Nova server status changed to "
-                 f"{self.wait_status}")
+        LOG.debug(f"Waiting for Nova server status changed to "
+                  f"{self.wait_status} for {self.instance.id}")
 
         def update_server_info():
             self.instance.refresh_compute_server_info()
@@ -2005,6 +1998,7 @@ class ResizeAction(ResizeActionBase):
             raise TroveError(msg)
 
     def _initiate_nova_action(self):
+        LOG.info(f"Resizing Nova server for instance {self.instance.id}")
         self.instance.server.resize(self.new_flavor_id)
 
     def _revert_nova_action(self):
@@ -2078,7 +2072,7 @@ class RebuildAction(ResizeActionBase):
             self.instance.datastore.name,
             self.instance.datastore_version.name)
 
-        LOG.debug(f"Rebuilding Nova server {self.instance.server.id}")
+        LOG.info(f"Rebuilding Nova server for instance {self.instance.id}")
         # Before Nova version 2.57, userdata is not supported when doing
         # rebuild, have to use injected files instead.
         self.instance.server.rebuild(
@@ -2111,7 +2105,8 @@ class RebuildAction(ResizeActionBase):
             self.instance.datastore_version.name,
             config_contents=config_contents, config_overrides=overrides)
 
-        LOG.info(f"Waiting for instance {self.instance.id} healthy")
+        LOG.info(f"Waiting for instance {self.instance.id} healthy after "
+                 f"rebuild")
         self._assert_guest_is_ok()
         self.wait_for_healthy()
         LOG.info(f"Finished to rebuild {self.instance.id}")

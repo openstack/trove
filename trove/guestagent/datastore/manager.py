@@ -317,6 +317,10 @@ class Manager(periodic_task.PeriodicTasks):
         pass
 
     def start_db_with_conf_changes(self, context, config_contents, ds_version):
+        """Start the database with given configuration.
+
+        This method is called after resize.
+        """
         self.app.start_db_with_conf_changes(config_contents, ds_version)
 
     def stop_db(self, context):
@@ -381,15 +385,17 @@ class Manager(periodic_task.PeriodicTasks):
     # Configuration
     ###############
     def reset_configuration(self, context, configuration):
-        """The default implementation should be sufficient if a
+        """Reset database base configuration.
+
+        The default implementation should be sufficient if a
         configuration_manager is provided. Even if one is not, this
         method needs to be implemented to allow the rollback of
         flavor-resize on the guestagent side.
         """
-        LOG.info("Resetting configuration.")
         if self.configuration_manager:
+            LOG.info("Resetting configuration.")
             config_contents = configuration['config_contents']
-            self.configuration_manager.save_configuration(config_contents)
+            self.configuration_manager.reset_configuration(config_contents)
 
     def apply_overrides_on_prepare(self, context, overrides):
         self.update_overrides(context, overrides)
