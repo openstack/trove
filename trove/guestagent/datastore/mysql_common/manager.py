@@ -174,11 +174,14 @@ class MySqlManager(manager.Manager):
 
     def is_log_enabled(self, logname):
         if logname == self.GUEST_LOG_DEFS_GENERAL_LABEL:
-            value = self.configuration_manager.get_value('general_log', 'off')
+            value = self.configuration_manager.get_value(
+                'general_log', section='mysqld', default='off')
+            LOG.debug(f"The config value of general_log is {value}")
             return value == 'on'
         elif logname == self.GUEST_LOG_DEFS_SLOW_QUERY_LABEL:
-            value = self.configuration_manager.get_value('slow_query_log',
-                                                         'off')
+            value = self.configuration_manager.get_value(
+                'slow_query_log', section='mysqld', default='off')
+            LOG.debug(f"The config value of slow_query_log is {value}")
             return value == 'on'
 
         return False
