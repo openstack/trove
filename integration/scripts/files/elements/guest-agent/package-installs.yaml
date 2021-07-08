@@ -17,6 +17,7 @@ gpg-agent:
 ifenslave:
 ifupdown:
 iptables:
+iptables-persistent:
 isc-dhcp-client:
 libxml2-dev:
 libxslt1-dev:
