@@ -1,6 +1,8 @@
 guest-agent:
   installtype: package
 build-essential:
+iptables:
+iptables-persistent:
 libxml2-dev:
 libxslt1-dev:
 libffi-dev:
