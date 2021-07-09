@@ -1,0 +1,5 @@
+---
+features:
+  - Added iptables-persistent package in the guest image element for
+    diskimage-builder. The Trove service administrator is able to perform
+    iptables command (leveraging cloud-init config) and persist the change.
