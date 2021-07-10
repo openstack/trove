@@ -106,8 +106,9 @@ class MgmtInstancesView(object):
 
     def data(self):
         data = []
-        # These are model instances
-        for instance in self.instances:
+        # Return instances in the order of 'created'
+        for instance in sorted(self.instances, key=lambda ins: ins.created,
+                               reverse=True):
             data.append(self.data_for_instance(instance))
         return {'instances': data}
 
