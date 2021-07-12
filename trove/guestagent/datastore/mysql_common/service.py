@@ -641,11 +641,6 @@ class BaseMySqlApp(service.BaseDbApp):
                 LOG.exception("Could not delete logfile.")
                 raise
 
-    def reset_configuration(self, configuration):
-        LOG.info("Resetting configuration.")
-        self.configuration_manager.save_configuration(configuration)
-        self.wipe_ib_logfiles()
-
     def restart(self):
         LOG.info("Restarting mysql")
 

@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixed an issue that the replication configuration is lost after resizing
+    instance.

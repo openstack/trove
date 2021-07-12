@@ -147,9 +147,6 @@ class PgSqlApp(service.BaseDbApp):
         if overrides:
             self.configuration_manager.apply_user_override(overrides)
 
-    def reset_configuration(self, configuration):
-        self.configuration_manager.save_configuration(configuration)
-
     def apply_overrides(self, overrides):
         """Reload config."""
         cmd = "pg_ctl reload"
