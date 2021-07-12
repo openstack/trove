@@ -55,6 +55,7 @@ from trove.common.notification import TroveInstanceCreate
 from trove.common.notification import TroveInstanceModifyFlavor
 from trove.common.strategies.cluster import strategy
 from trove.common.utils import try_recover
+from trove.configuration import models as config_models
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as inst_models
 from trove.instance import service_status as srvstatus
@@ -2070,6 +2071,11 @@ class MigrateAction(ResizeActionBase):
 
 class RebuildAction(ResizeActionBase):
     def __init__(self, instance, image_id):
+        """The action to perform rebuild.
+
+        :param instance: A BuiltInstanceTasks instance.
+        :param image_id: Image ID.
+        """
         super(RebuildAction, self).__init__(instance)
         self.image_id = image_id
         self.ignore_stop_error = True
@@ -2099,14 +2105,16 @@ class RebuildAction(ResizeActionBase):
 
     def _assert_processes_are_ok(self):
         """Send rebuild async request to the guest and wait."""
+        context = self.instance.context
         flavor = self.instance.nova_client.flavors.get(self.instance.flavor_id)
         config = self.instance._render_config(flavor)
         config_contents = config.config_contents
 
         overrides = {}
         if self.instance.configuration:
-            overrides = self.instance.configuration. \
-                get_configuration_overrides()
+            user_config = config_models.Configuration(
+                context, self.instance.configuration.id)
+            overrides = user_config.get_configuration_overrides()
 
         LOG.info(f"Sending rebuild request to the instance {self.instance.id}")
         self.instance.guest.rebuild(
@@ -2117,6 +2125,27 @@ class RebuildAction(ResizeActionBase):
                  f"rebuild")
         self._assert_guest_is_ok()
         self.wait_for_healthy()
+
+        # Restore replication config for primary
+        if self.instance.slaves:
+            LOG.info(f"Enabling {self.instance.id} as primay after rebuild")
+            self.instance.enable_as_master()
+
+            # Restart all the replicas to reconnect with the primary
+            for replica in self.instance.slaves:
+                LOG.info(f"Restarting replica {replica.id} after rebuild "
+                         f"primary {self.instance.id}")
+                replica_tasks = BuiltInstanceTasks.load(context, replica.id)
+                replica_tasks.restart()
+
+        # Restore replication config for replica
+        elif self.instance.slave_of_id:
+            LOG.info(f"Re-attaching replica {self.instance.id} after rebuild")
+            primary = BuiltInstanceTasks.load(
+                context, self.instance.slave_of_id)
+            self.instance.detach_replica(primary, for_failover=True)
+            self.instance.attach_replica(primary, restart=True)
+
         LOG.info(f"Finished to rebuild {self.instance.id}")
 
     def _revert_nova_action(self):
