@@ -18,6 +18,7 @@ from trove.common import wsgi
 from trove.configuration import models as config_models
 from trove.configuration import service
 from trove.datastore import models as ds_models
+from trove.instance import models as ins_models
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
@@ -62,9 +63,13 @@ class TestConfigurationsController(trove_testtools.TestCase):
     def test_show(self):
         req_mock = mock.MagicMock(
             environ={
-                wsgi.CONTEXT_KEY: mock.MagicMock(project_id=self.tenant_id)
+                wsgi.CONTEXT_KEY: mock.MagicMock(
+                    project_id=self.tenant_id,
+                    is_admin=False
+                )
             }
         )
+
         result = self.controller.show(req_mock, self.tenant_id,
                                       self.config_id)
         data = result.data(None).get('configuration')
@@ -81,3 +86,48 @@ class TestConfigurationsController(trove_testtools.TestCase):
         }
 
         self.assertDictContains(data, expected)
+
+    def test_instances_admin(self):
+        """Admin user can get instances of specified config.
+
+        Even the instance belongs to other user.
+        """
+        admin_project_id = self.random_uuid()
+        req_mock = mock.MagicMock(
+            environ={
+                wsgi.CONTEXT_KEY: mock.MagicMock(
+                    project_id=admin_project_id,
+                    is_admin=True,
+                    limit=None,
+                    marker=None
+                )
+            }
+        )
+
+        # Create a config
+        config = config_models.Configuration.create(
+            self.random_name('configuration'),
+            '', self.tenant_id, None,
+            self.ds_version.id)
+
+        # Create an instance
+        ins_name = self.random_name('instance')
+        instance = ins_models.DBInstance.create(
+            name=ins_name,
+            flavor_id=self.random_uuid(),
+            tenant_id=self.tenant_id,
+            volume_size=1,
+            datastore_version_id=self.ds_version.id,
+            task_status=ins_models.InstanceTasks.NONE,
+            compute_instance_id=self.random_uuid(),
+            server_status='ACTIVE',
+            configuration_id=config.id
+        )
+
+        result = self.controller.instances(req_mock, admin_project_id,
+                                           config.id)
+
+        self.assertEqual(200, result.status)
+        instances = result.data(None)['instances']
+        self.assertEqual(1, len(instances))
+        self.assertEqual({'id': instance.id, 'name': ins_name}, instances[0])

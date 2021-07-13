@@ -64,10 +64,15 @@ class ConfigurationsController(wsgi.Controller):
         self.authorize_config_action(context, 'show', configuration)
         configuration_items = models.Configuration.load_items(context, id)
 
+        find_instance = {
+            'configuration_id': configuration.id,
+            'deleted': False
+        }
+        if not context.is_admin:
+            find_instance['tenant_id'] = context.project_id
+
         configuration.instance_count = instances_models.DBInstance.find_all(
-            tenant_id=context.project_id,
-            configuration_id=configuration.id,
-            deleted=False).count()
+            **find_instance).count()
 
         return wsgi.Result(views.DetailedConfigurationView(
                            configuration,
@@ -77,10 +82,15 @@ class ConfigurationsController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         configuration = models.Configuration.load(context, id)
         self.authorize_config_action(context, 'instances', configuration)
-        instances = instances_models.DBInstance.find_all(
-            tenant_id=context.tenant,
-            configuration_id=configuration.id,
-            deleted=False)
+
+        kwargs = {
+            'configuration_id': configuration.id,
+            'deleted': False
+        }
+        if not context.is_admin:
+            kwargs['tenant_id'] = context.tenant
+        instances = instances_models.DBInstance.find_all(**kwargs)
+
         limit = int(context.limit or CONF.instances_page_size)
         if limit > CONF.instances_page_size:
             limit = CONF.instances_page_size
