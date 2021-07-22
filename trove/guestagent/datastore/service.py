@@ -500,7 +500,16 @@ class BaseDbApp(object):
                     'success': False,
                     'state': BackupState.FAILED,
                 })
-                raise Exception(msg)
+
+                # The exception message is visible to the user
+                user_msg = msg
+                ex_regex = re.compile(r'.+Exception: (.+)')
+                for line in output[-5:-1]:
+                    m = ex_regex.search(line)
+                    if m:
+                        user_msg = m.group(1)
+                        break
+                raise Exception(user_msg)
         except Exception as err:
             LOG.error("Failed to create backup %s", backup_id)
             backup_state.update({

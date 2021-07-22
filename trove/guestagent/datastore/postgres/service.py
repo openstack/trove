@@ -74,18 +74,26 @@ class PgSqlAppStatus(service.BaseDbStatus):
 
 
 class PgSqlApp(service.BaseDbApp):
-    configuration_manager = configuration.ConfigurationManager(
-        CONFIG_FILE,
-        CONF.database_service_uid,
-        CONF.database_service_uid,
-        stream_codecs.KeyValueCodec(
-            value_quoting=True,
-            bool_case=stream_codecs.KeyValueCodec.BOOL_LOWER,
-            big_ints=True),
-        requires_root=True,
-        override_strategy=configuration.ImportOverrideStrategy(
-            CNF_INCLUDE_DIR, CNF_EXT)
-    )
+    _configuration_manager = None
+
+    @property
+    def configuration_manager(self):
+        if self._configuration_manager:
+            return self._configuration_manager
+
+        self._configuration_manager = configuration.ConfigurationManager(
+            CONFIG_FILE,
+            CONF.database_service_uid,
+            CONF.database_service_uid,
+            stream_codecs.KeyValueCodec(
+                value_quoting=True,
+                bool_case=stream_codecs.KeyValueCodec.BOOL_LOWER,
+                big_ints=True),
+            requires_root=True,
+            override_strategy=configuration.ImportOverrideStrategy(
+                CNF_INCLUDE_DIR, CNF_EXT)
+        )
+        return self._configuration_manager
 
     def __init__(self, status, docker_client):
         super(PgSqlApp, self).__init__(status, docker_client)
@@ -96,13 +104,11 @@ class PgSqlApp(service.BaseDbApp):
         self.datadir = f"{mount_point}/data/pgdata"
         self.adm = PgSqlAdmin(SUPER_USER_NAME)
 
-    @classmethod
-    def get_data_dir(cls):
-        return cls.configuration_manager.get_value('data_directory')
+    def get_data_dir(self):
+        return self.configuration_manager.get_value('data_directory')
 
-    @classmethod
-    def set_data_dir(cls, value):
-        cls.configuration_manager.apply_system_override(
+    def set_data_dir(self, value):
+        self.configuration_manager.apply_system_override(
             {'data_directory': value})
 
     def reload(self):
