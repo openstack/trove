@@ -64,7 +64,15 @@ class Manager(periodic_task.PeriodicTasks):
 
     MODULE_APPLY_TO_ALL = module_manager.ModuleManager.MODULE_APPLY_TO_ALL
 
-    docker_client = docker.from_env()
+    _docker_client = None
+
+    @property
+    def docker_client(self):
+        if self._docker_client:
+            return self._docker_client
+
+        self._docker_client = docker.from_env()
+        return self._docker_client
 
     def __init__(self, manager_name):
         super(Manager, self).__init__(CONF)

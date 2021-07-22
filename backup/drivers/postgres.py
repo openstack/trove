@@ -70,12 +70,13 @@ class PgBasebackup(base.BaseRunner):
                      if wal_re.search(wal_file) and wal_file >= last_wal]
         return wal_files
 
-    def get_backup_file(self, backup_pos=0):
+    def get_backup_file(self, backup_pos=0, regex=None):
         """Look for the most recent .backup file that basebackup creates
 
         :return: a string like 000000010000000000000006.00000168.backup
         """
-        backup_re = re.compile("[0-9A-F]{24}.*.backup")
+        regex = regex or r"[0-9A-F]{24}\..*\.backup"
+        backup_re = re.compile(regex)
         wal_files = [wal_file for wal_file in os.listdir(self.wal_archive_dir)
                      if backup_re.search(wal_file)]
         wal_files = sorted(wal_files, reverse=True)
@@ -177,12 +178,20 @@ class PgBasebackupIncremental(PgBasebackup):
     def __init__(self, *args, **kwargs):
         self.parent_location = kwargs.pop('parent_location', '')
         self.parent_checksum = kwargs.pop('parent_checksum', '')
+        self.parent_stop_wal = kwargs.pop('stop_wal_file', '')
 
         super(PgBasebackupIncremental, self).__init__(*args, **kwargs)
 
         self.incr_restore_cmd = f'tar -xzf - -C {self.wal_archive_dir}'
 
     def pre_backup(self):
+        # Check if the parent stop wal file still exists. It may be removed
+        # by trove-guestagent.
+        parent_wal_name = self.get_backup_file(
+            backup_pos=0, regex=fr'{self.parent_stop_wal}\..+\.backup')
+        if not parent_wal_name:
+            raise Exception("Cannot find parent backup WAL file.")
+
         with psql_util.PostgresConnection('postgres') as conn:
             self.start_segment = conn.query(
                 f"SELECT pg_start_backup('{self.filename}', false, false)"

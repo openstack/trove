@@ -12,8 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import os
+import re
 
 from oslo_log import log as logging
+from oslo_service import periodic_task
 
 from trove.common import cfg
 from trove.common import exception
@@ -39,6 +41,82 @@ class PostgresManager(manager.Manager):
     @property
     def configuration_manager(self):
         return self.app.configuration_manager
+
+    def _check_wal_archive_size(self, archive_path, data_path):
+        """Check wal archive folder size.
+
+        Return True if the size is greater than half of the data volume size.
+        """
+        archive_size = operating_system.get_dir_size(archive_path)
+        data_volume_size = operating_system.get_filesystem_size(data_path)
+
+        if archive_size > (data_volume_size / 2):
+            LOG.info(f"The size({archive_size}) of wal archive folder is "
+                     f"greater than half of the data volume "
+                     f"size({data_volume_size})")
+            return True
+
+        return False
+
+    def _remove_older_files(self, archive_path, files, cur_file):
+        """Remove files older than cur_file.
+
+        :param archive_path: The archive folder
+        :param files: List of the ordered file names.
+        :param cur_file: The compared file name.
+        """
+        cur_seq = os.path.basename(cur_file).split('.')[0]
+        wal_re = re.compile(r"^([0-9A-F]{24}).*")
+
+        for wal_file in files:
+            m = wal_re.search(wal_file)
+            if m and m.group(1) < cur_seq:
+                file_path = os.path.join(archive_path, wal_file)
+                LOG.info(f"Removing wal file {file_path}")
+                operating_system.remove(
+                    path=file_path, force=True, recursive=False, as_root=True)
+
+    def _remove_wals(self, archive_path, force=False):
+        """Remove wal files.
+
+        If force=True, do not consider backup.
+        """
+        files = os.listdir(archive_path)
+        files = sorted(files, reverse=True)
+        wal_files = []
+
+        if not force:
+            # Get latest backup file
+            backup_re = re.compile("[0-9A-F]{24}.*.backup")
+            wal_files = [wal_file for wal_file in files
+                         if backup_re.search(wal_file)]
+
+        # If there is no backup file or force=True, remove all except the
+        # latest one, otherwise, remove all the files older than the backup
+        # file
+        wal_files = wal_files or files
+        self._remove_older_files(archive_path, files, wal_files[0])
+
+    def _clean_wals(self, archive_path, data_path, force=False):
+        if self._check_wal_archive_size(archive_path, data_path):
+            self._remove_wals(archive_path, force)
+
+            # check again with force=True
+            self._clean_wals(archive_path, data_path, force=True)
+
+    @periodic_task.periodic_task(
+        enabled=CONF.postgresql.enable_clean_wal_archives,
+        spacing=180)
+    def clean_wal_archives(self, context):
+        """Clean up the wal archives to free up disk space."""
+        archive_path = service.WAL_ARCHIVE_DIR
+        data_path = cfg.get_configuration_property('mount_point')
+
+        if not operating_system.exists(archive_path, is_directory=True,
+                                       as_root=True):
+            return
+
+        self._clean_wals(archive_path, data_path)
 
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,

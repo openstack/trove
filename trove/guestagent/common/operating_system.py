@@ -17,6 +17,7 @@ from functools import reduce
 import inspect
 import operator
 import os
+from pathlib import Path
 import pwd
 import re
 import stat
@@ -904,3 +905,19 @@ def remove_dir_contents(folder):
     """
     path = os.path.join(folder, '*')
     execute_shell_cmd(f'rm -rf {path}', [], shell=True, as_root=True)
+
+
+def get_dir_size(path):
+    """Get the directory size in bytes."""
+    root_directory = Path(path)
+    return sum(f.stat().st_size for f in root_directory.glob('**/*')
+               if f.is_file())
+
+
+def get_filesystem_size(path):
+    """Get size(bytes) of a mounted filesystem the given path locates.
+
+    path is the pathname of any file within the mounted filesystem.
+    """
+    ret = os.statvfs(path)
+    return ret.f_blocks * ret.f_frsize

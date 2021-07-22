@@ -333,3 +333,25 @@ object URL), the local datastore version and the backup data size are required.
       | status               | RESTORED                                                                                                                              |
       | updated              | 2021-02-22T01:44:06                                                                                                                   |
       +----------------------+---------------------------------------------------------------------------------------------------------------------------------------+
+
+Troubleshooting
+---------------
+
+Failed to create incremental backup for PostgreSQL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One possible reason could be it has been a long time since the parent backup was created, and the parent backup WAL file is removed internally because of disk pressure, it could be confirmed by checking the instance detail, e.g.
+
+.. code-block:: console
+
+   $ openstack database instance show e7231e46-ca3b-4dce-bf67-739b3af0ef85 -c fault
+   +-------+----------------------------------------------------------------------+
+   | Field | Value                                                                |
+   +-------+----------------------------------------------------------------------+
+   | fault | Failed to create backup c76de467-6587-4e27-bb8d-7c3d3b136663, error: |
+   |       |     Cannot find parent backup WAL file.                              |
+   +-------+----------------------------------------------------------------------+
+
+In this case, you have to create full backup instead.
+
+To avoid this issue in the future, you can set up a cron job to create (incremental) backups regularly.

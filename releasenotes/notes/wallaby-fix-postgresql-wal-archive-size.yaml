@@ -1,0 +1,6 @@
+---
+fixes:
+  - Added a periodic task for postgresql datastore to clean up the archived WAL
+    files. Added a check when creating incremental backups for postgresql. A
+    new container image ``openstacktrove/db-backup-postgresql:1.1.2`` is
+    uploaded to docker hub.
