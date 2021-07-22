@@ -1091,13 +1091,18 @@ postgresql_group = cfg.OptGroup(
     'postgresql', title='PostgreSQL options',
     help="Oslo option group for the PostgreSQL datastore.")
 postgresql_opts = [
+    cfg.BoolOpt(
+        'enable_clean_wal_archives',
+        default=True,
+        help='Enable the periodic job to clean up WAL archive folder.'
+    ),
     cfg.StrOpt(
         'docker_image', default='postgres',
         help='Database docker image.'
     ),
     cfg.StrOpt(
         'backup_docker_image',
-        default='openstacktrove/db-backup-postgresql:1.1.1',
+        default='openstacktrove/db-backup-postgresql:1.1.2',
         help='The docker image used for backup and restore.'
     ),
     cfg.BoolOpt('icmp', default=False,
@@ -1131,7 +1136,11 @@ postgresql_opts = [
     cfg.StrOpt('wal_archive_location', default='/mnt/wal_archive',
                help="Filesystem path storing WAL archive files when "
                     "WAL-shipping based backups or replication "
-                    "is enabled."),
+                    "is enabled.",
+               deprecated_for_removal=True,
+               deprecated_reason='Option is not used any more, will be '
+                                 'removed in future release.'
+               ),
     cfg.BoolOpt('root_on_create', default=False,
                 help='Enable the automatic creation of the root user for the '
                 'service during instance-create. The generated password for '
@@ -1154,7 +1163,7 @@ postgresql_opts = [
                     "statement logging.",
                deprecated_for_removal=True,
                deprecated_reason='Will be replaced by configuration group '
-               'option: log_min_duration_statement'),
+                                 'option: log_min_duration_statement'),
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.',
                deprecated_name='default_password_length',

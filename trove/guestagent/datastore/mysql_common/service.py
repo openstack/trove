@@ -423,11 +423,19 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
 
 
 class BaseMySqlApp(service.BaseDbApp):
-    configuration_manager = ConfigurationManager(
-        MYSQL_CONFIG, CONF.database_service_uid, CONF.database_service_uid,
-        service.BaseDbApp.CFG_CODEC, requires_root=True,
-        override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT)
-    )
+    _configuration_manager = None
+
+    @property
+    def configuration_manager(self):
+        if self._configuration_manager:
+            return self._configuration_manager
+
+        self._configuration_manager = ConfigurationManager(
+            MYSQL_CONFIG, CONF.database_service_uid, CONF.database_service_uid,
+            service.BaseDbApp.CFG_CODEC, requires_root=True,
+            override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT)
+        )
+        return self._configuration_manager
 
     def get_engine(self):
         """Create the default engine with the updated admin user.
@@ -460,14 +468,12 @@ class BaseMySqlApp(service.BaseDbApp):
         with mysql_util.SqlClient(self.get_engine()) as client:
             return client.execute(sql_statement)
 
-    @classmethod
-    def get_data_dir(cls):
-        return cls.configuration_manager.get_value(
+    def get_data_dir(self):
+        return self.configuration_manager.get_value(
             'datadir', section=MySQLConfParser.SERVER_CONF_SECTION)
 
-    @classmethod
-    def set_data_dir(cls, value):
-        cls.configuration_manager.apply_system_override(
+    def set_data_dir(self, value):
+        self.configuration_manager.apply_system_override(
             {MySQLConfParser.SERVER_CONF_SECTION: {'datadir': value}})
 
     def _create_admin_user(self, client, password):
