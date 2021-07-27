@@ -19,7 +19,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.strategies.cluster import strategy
 
-from cinderclient.v2 import client as CinderClient
+from cinderclient.v3 import client as CinderClient
 import glanceclient
 from keystoneauth1.identity import v3
 from keystoneauth1 import session as ka_session

@@ -21,8 +21,8 @@ from unittest.mock import patch
 from unittest.mock import PropertyMock
 
 from cinderclient import exceptions as cinder_exceptions
-from cinderclient.v2 import volumes as cinderclient_volumes
-import cinderclient.v2.client as cinderclient
+from cinderclient.v3 import volumes as cinderclient_volumes
+import cinderclient.v3.client as cinderclient
 import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
