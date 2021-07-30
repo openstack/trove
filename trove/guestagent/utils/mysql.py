@@ -25,14 +25,14 @@ FLUSH = text(sql_query.FLUSH)
 class SqlClient(object):
     """A sqlalchemy wrapper to manage transactions."""
 
-    def __init__(self, engine, use_flush=True):
+    def __init__(self, engine, use_flush=False):
         self.engine = engine
         self.use_flush = use_flush
 
     def __enter__(self):
         self.conn = self.engine.connect()
         self.trans = self.conn.begin()
-        return self.conn
+        return self
 
     def __exit__(self, type, value, traceback):
         if self.trans:
@@ -48,10 +48,11 @@ class SqlClient(object):
         LOG.debug('Execute SQL: %s', t)
         try:
             return self.conn.execute(t, kwargs)
-        except Exception:
+        except Exception as err:
+            LOG.error(f'Failed to execute SQL {t}, error: {err}')
             self.trans.rollback()
             self.trans = None
-            raise
+            raise err
 
 
 def connection_checkout(dbapi_con, con_record, con_proxy):
