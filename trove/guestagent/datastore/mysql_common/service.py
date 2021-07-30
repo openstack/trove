@@ -103,7 +103,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         """Internal. Given a MySQLUser, populate its databases attribute."""
         LOG.debug("Associating dbs to user %(name)s at %(host)s.",
                   {'name': user.name, 'host': user.host})
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             q = sql_query.Query()
             q.columns = ["grantee", "table_schema"]
             q.tables = ["information_schema.SCHEMA_PRIVILEGES"]
@@ -119,7 +120,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
     def change_passwords(self, users):
         """Change the passwords of one or more existing users."""
         LOG.debug("Changing the password of some users.")
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             for item in users:
                 LOG.debug("Changing password for user %s.", item)
                 user_dict = {'_name': item['name'],
@@ -143,7 +145,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         new_password = user_attrs.get('password')
 
         if new_name or new_host or new_password:
-            with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+            with mysql_util.SqlClient(
+                self.mysql_app.get_engine(), use_flush=True) as client:
                 if new_password is not None:
                     uu = sql_query.SetPassword(
                         user.name, host=user.host,
@@ -162,7 +165,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
 
     def create_databases(self, databases):
         """Create the list of specified databases."""
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             for item in databases:
                 mydb = models.MySQLSchema.deserialize(item)
                 mydb.check_create()
@@ -177,7 +181,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         """Create users and grant them privileges for the
            specified databases.
         """
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             for item in users:
                 user = models.MySQLUser.deserialize(item)
                 user.check_create()
@@ -197,7 +202,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
 
     def delete_database(self, database):
         """Delete the specified database."""
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             mydb = models.MySQLSchema.deserialize(database)
             mydb.check_delete()
             dd = sql_query.DropDatabase(mydb.name)
@@ -211,7 +217,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         self.delete_user_by_name(mysql_user.name, mysql_user.host)
 
     def delete_user_by_name(self, name, host='%'):
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             du = sql_query.DropUser(name, host=host)
             t = text(str(du))
             LOG.debug("delete_user_by_name: %s", t)
@@ -237,7 +244,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
                                          ": %(reason)s") %
                                        {'user': username, 'reason': err_msg}
                                        )
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             q = sql_query.Query()
             q.columns = ['User', 'Host']
             q.tables = ['mysql.user']
@@ -259,7 +267,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         """Grant a user permission to use a given database."""
         user = self._get_user(username, hostname)
         mydb = None  # cache the model as we just want name validation
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             for database in databases:
                 try:
                     if mydb:
@@ -362,7 +371,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         LOG.debug("The following user names are on ignore list and will "
                   "be omitted from the listing: %s", ignored_user_names)
         users = []
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             iq = sql_query.Query()  # Inner query.
             iq.columns = ['User', 'Host', "CONCAT(User, '@', Host) as Marker"]
             iq.tables = ['mysql.user']
@@ -404,7 +414,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
     def revoke_access(self, username, hostname, database):
         """Revoke a user's permission to use a given database."""
         user = self._get_user(username, hostname)
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             r = sql_query.Revoke(database=database,
                                  user=user.name,
                                  host=user.host)
@@ -459,9 +470,10 @@ class BaseMySqlApp(service.BaseDbApp):
 
         return ENGINE
 
-    def execute_sql(self, sql_statement):
+    def execute_sql(self, sql_statement, use_flush=False):
         LOG.debug("Executing SQL: %s", sql_statement)
-        with mysql_util.SqlClient(self.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.get_engine(), use_flush=use_flush) as client:
             return client.execute(sql_statement)
 
     def get_data_dir(self):
@@ -509,21 +521,21 @@ class BaseMySqlApp(service.BaseDbApp):
 
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % ('root', root_pass), echo=True)
-        with mysql_util.SqlClient(engine, use_flush=False) as client:
+        with mysql_util.SqlClient(engine) as client:
             self._create_admin_user(client, admin_password)
 
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
                                      urllib.parse.quote(admin_password)),
             echo=True)
-        with mysql_util.SqlClient(engine) as client:
+        with mysql_util.SqlClient(engine, use_flush=True) as client:
             self._remove_anonymous_user(client)
 
         self.save_password(ADMIN_USER_NAME, admin_password)
         LOG.info("MySQL secure complete.")
 
     def secure_root(self):
-        with mysql_util.SqlClient(self.get_engine()) as client:
+        with mysql_util.SqlClient(self.get_engine(), use_flush=True) as client:
             self._remove_remote_root_access(client)
 
     def _remove_anonymous_user(self, client):
@@ -738,7 +750,7 @@ class BaseMySqlApp(service.BaseDbApp):
         LOG.info("Granting replication slave privilege for %s",
                  replication_user['name'])
 
-        with mysql_util.SqlClient(self.get_engine()) as client:
+        with mysql_util.SqlClient(self.get_engine(), use_flush=True) as client:
             g = sql_query.Grant(permissions=['REPLICATION SLAVE'],
                                 user=replication_user['name'],
                                 clear=replication_user['password'])
@@ -843,7 +855,8 @@ class BaseMySqlRootAccess(object):
            reset the root password.
         """
         user = models.MySQLUser.root(password=root_password)
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             try:
                 cu = sql_query.CreateUser(user.name, host=user.host)
                 t = text(str(cu))
@@ -852,7 +865,9 @@ class BaseMySqlRootAccess(object):
                 # Ignore, user is already created, just reset the password
                 # TODO(rnirmal): More fine grained error checking later on
                 LOG.debug(err)
-        with mysql_util.SqlClient(self.mysql_app.get_engine()) as client:
+
+        with mysql_util.SqlClient(
+            self.mysql_app.get_engine(), use_flush=True) as client:
             uu = sql_query.SetPassword(
                 user.name, host=user.host, new_password=user.password,
                 ds=CONF.datastore_manager, ds_version=CONF.datastore_version
