@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
+from collections import abc
 import os
 import re
 
@@ -46,7 +46,7 @@ def update_dict(updates, target):
 
     if updates is not None:
         for k, v in updates.items():
-            if isinstance(v, collections.Mapping):
+            if isinstance(v, abc.Mapping):
                 target[k] = update_dict(v, target.get(k, {}))
             else:
                 target[k] = updates[k]
@@ -84,7 +84,7 @@ def flatten_dict(target, namespace_sep='.'):
     """
     def flatten(target, keys, namespace_sep):
         flattened = {}
-        if isinstance(target, collections.Mapping):
+        if isinstance(target, abc.Mapping):
             for k, v in target.items():
                 flattened.update(
                     flatten(v, keys + [k], namespace_sep))

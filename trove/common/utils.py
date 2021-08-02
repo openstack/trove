@@ -14,7 +14,7 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
-import collections
+from collections import abc
 import inspect
 import os
 import shutil
@@ -331,7 +331,7 @@ def unpack_singleton(container):
 def is_collection(item):
     """Return True is a given item is an iterable collection, but not a string.
     """
-    return (isinstance(item, collections.Iterable) and
+    return (isinstance(item, abc.Iterable) and
             not isinstance(item, (bytes, str)))
 
 
