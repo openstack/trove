@@ -31,6 +31,10 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
             last_gtid = self.read_last_master_gtid(service)
             LOG.info("last_gtid value is %s", last_gtid)
             if '-' in last_gtid:
+                # See
+                # https://avdeo.com/tag/error-1840-hy000-global-gtid_purged-can-only-be-set-when/
+                # Also, FLUSH PRIVILEGES will restore gtid_executed.
+                service.execute_sql('RESET MASTER')
                 set_gtid_cmd = "SET GLOBAL gtid_purged='%s'" % last_gtid
                 service.execute_sql(set_gtid_cmd)
 
