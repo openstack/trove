@@ -236,6 +236,9 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
     iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
 
+    iniset $TROVE_CONF cache enabled true
+    iniset $TROVE_CONF cache backend dogpile.cache.memory
+
     iniset $TROVE_CONF cassandra tcp_ports 7000,7001,7199,9042,9160
     iniset $TROVE_CONF couchbase tcp_ports 8091,8092,4369,11209-11211,21100-21199
     iniset $TROVE_CONF couchdb tcp_ports 5984

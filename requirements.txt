@@ -49,3 +49,4 @@ diskimage-builder!=1.6.0,!=1.7.0,!=1.7.1,>=1.1.2 # Apache-2.0
 docker>=4.2.0 # Apache-2.0
 psycopg2-binary>=2.6.2 # LGPL/ZPL
 semantic-version>=2.7.0 # BSD
+oslo.cache>=1.26.0 # Apache-2.0

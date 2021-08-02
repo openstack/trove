@@ -91,28 +91,28 @@ Create and access a database instance
    .. code-block:: console
 
       $ openstack database instance show ad40cf6c-6532-4a22-a3f3-7364f0f04a0f
-      +--------------------------+----------------------------------------------------------------------------------------------+
-      | Field                    | Value                                                                                        |
-      +--------------------------+----------------------------------------------------------------------------------------------+
-      | addresses                | [{'address': '10.0.0.59', 'type': 'private'}, {'address': '172.24.4.242', 'type': 'public'}] |
-      | allowed_cidrs            | []                                                                                           |
-      | created                  | 2020-12-08T21:00:20                                                                          |
-      | datastore                | mysql                                                                                        |
-      | datastore_version        | 5.7.29                                                                                       |
-      | datastore_version_number | 5.7.29                                                                                       |
-      | flavor                   | 1fb05bb0-4605-48b6-81e6-3d4622e4a330                                                         |
-      | id                       | ad40cf6c-6532-4a22-a3f3-7364f0f04a0f                                                         |
-      | ip                       | 10.0.0.59, 172.24.4.242                                                                      |
-      | name                     | mysql_instance_1                                                                             |
-      | operating_status         | HEALTHY                                                                                      |
-      | public                   | True                                                                                         |
-      | region                   | RegionOne                                                                                    |
-      | service_status_updated   | 2020-12-08T21:05:51                                                                          |
-      | status                   | ACTIVE                                                                                       |
-      | updated                  | 2020-12-08T21:04:39                                                                          |
-      | volume                   | 5                                                                                            |
-      | volume_used              | 0.2                                                                                          |
-      +--------------------------+----------------------------------------------------------------------------------------------+
+      +--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+      | Field                    | Value                                                                                                                                           |
+      +--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
+      | addresses                | [{'address': '10.0.0.59', 'type': 'private', 'network': '09f6aadc-f92d-41d4-8cad-2eb1876054dd'}, {'address': '172.24.4.242', 'type': 'public'}] |
+      | allowed_cidrs            | []                                                                                                                                              |
+      | created                  | 2020-12-08T21:00:20                                                                                                                             |
+      | datastore                | mysql                                                                                                                                           |
+      | datastore_version        | 5.7.29                                                                                                                                          |
+      | datastore_version_number | 5.7.29                                                                                                                                          |
+      | flavor                   | 1fb05bb0-4605-48b6-81e6-3d4622e4a330                                                                                                            |
+      | id                       | ad40cf6c-6532-4a22-a3f3-7364f0f04a0f                                                                                                            |
+      | ip                       | 10.0.0.59, 172.24.4.242                                                                                                                         |
+      | name                     | mysql_instance_1                                                                                                                                |
+      | operating_status         | HEALTHY                                                                                                                                         |
+      | public                   | True                                                                                                                                            |
+      | region                   | RegionOne                                                                                                                                       |
+      | service_status_updated   | 2020-12-08T21:05:51                                                                                                                             |
+      | status                   | ACTIVE                                                                                                                                          |
+      | updated                  | 2020-12-08T21:04:39                                                                                                                             |
+      | volume                   | 5                                                                                                                                               |
+      | volume_used              | 0.2                                                                                                                                             |
+      +--------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------+
 
 #. **Access the new database**
 

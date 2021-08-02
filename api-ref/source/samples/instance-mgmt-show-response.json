@@ -3,7 +3,8 @@
         "addresses": [
             {
                 "address": "10.1.0.62",
-                "type": "private"
+                "type": "private",
+                "network": "3dc8f3c2-f335-11eb-878c-00224d6b7bc1"
             },
             {
                 "address": "172.24.5.114",

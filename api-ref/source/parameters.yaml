@@ -516,7 +516,9 @@ instance_ip_address:
   type: string
 instance_ip_addresses:
   description: |
-    The IP addresses of an instance, including the address type and IP.
+    The IP addresses of an instance, including the address type("private" or
+    "public") and IP. "network" field is added since Xena when the address type
+    is "private".
   in: body
   require: false
   type: array

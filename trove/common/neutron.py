@@ -12,9 +12,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import netaddr
+from oslo_cache import core
 from oslo_log import log as logging
 from neutronclient.common import exceptions as neutron_exceptions
 
+from trove.common import cache
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
@@ -25,6 +27,11 @@ MGMT_NETWORKS = None
 MGMT_CIDRS = None
 NEUTRON_EXTENSION_CACHE = {}
 PROJECT_ID_EXT_ALIAS = 'project-id'
+
+MEMOIZE_PORTS = core.get_memoization_decorator(
+    conf=CONF,
+    region=cache.get_cache_region(),
+    group="instance_ports_cache")
 
 
 def check_extension_enabled(client, extension_alias):
@@ -91,6 +98,20 @@ def check_subnet_router(client, subnet_id):
     if not router_ports:
         raise exception.TroveError(f"Subnet {subnet_id} is not "
                                    f"associated with router.")
+
+
+@MEMOIZE_PORTS
+def get_instance_ports(client, instance_id):
+    """Get ports attached to the trove instance.
+
+    After the trove instance is created, the attached ports are not changed.
+    """
+    LOG.info(f'Getting ports for instance {instance_id}')
+    return client.list_ports(device_id=instance_id)['ports']
+
+
+def get_port_fips(client, port_id):
+    return client.list_floatingips(port_id=port_id)['floatingips']
 
 
 def create_port(client, name, description, network_id, security_groups,

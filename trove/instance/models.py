@@ -146,7 +146,7 @@ def load_simple_instance_addresses(context, db_info):
     addresses = []
     user_ports = []
     client = clients.create_neutron_client(context, db_info.region_id)
-    ports = client.list_ports(device_id=db_info.compute_instance_id)['ports']
+    ports = neutron.get_instance_ports(client, db_info.compute_instance_id)
     for port in ports:
         if port['network_id'] not in CONF.management_networks:
             LOG.debug('Found user port %s for instance %s', port['id'],
@@ -157,12 +157,17 @@ def load_simple_instance_addresses(context, db_info):
                 # TODO(lxkong): IPv6 is not supported
                 if netutils.is_valid_ipv4(ip.get('ip_address')):
                     addresses.append(
-                        {'address': ip['ip_address'], 'type': 'private'})
+                        {
+                            'address': ip['ip_address'],
+                            'type': 'private',
+                            'network': port['network_id']
+                        }
+                    )
 
-            fips = client.list_floatingips(port_id=port['id'])
-            if len(fips['floatingips']) == 0:
+            fips = neutron.get_port_fips(client, port['id'])
+            if len(fips) == 0:
                 continue
-            fip = fips['floatingips'][0]
+            fip = fips[0]
             addresses.append(
                 {'address': fip['floating_ip_address'], 'type': 'public'})
 

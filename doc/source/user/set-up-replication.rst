@@ -47,13 +47,13 @@ Set up replication
 
    .. code-block:: console
 
-      $ openstack database instance list
-      +--------------------------------------+----------------------+-----------+-------------------+---------+------------------+------------------------------------------------+-----------+------+-----------+---------+
-      | ID                                   | Name                 | Datastore | Datastore Version | Status  | Operating Status | Addresses                                      | Flavor ID | Size | Region    | Role    |
-      +--------------------------------------+----------------------+-----------+-------------------+---------+------------------+------------------------------------------------+-----------+------+-----------+---------+
-      | 71f30a72-4e47-4505-9e7f-ffd8933a331c | test-mysql-replica-1 | mysql     | 5.7.29            | ACTIVE  | HEALTHY          | [{'address': '10.1.0.155', 'type': 'private'}] | d2        |    2 | RegionOne | replica |
-      | cebbf187-e223-46dd-8802-6dc04e895d0a | test-mysql           | mysql     | 5.7.29            | ACTIVE  | HEALTHY          | [{'address': '10.1.0.43', 'type': 'private'}]  | d2        |    2 | RegionOne | primary |
-      +--------------------------------------+----------------------+-----------+-------------------+---------+------------------+-----------------------------+-----------+------+-----------+---------+
+      $ openstack database instance list -c ID -c Name -c Status -c "Operating Status" -c Role
+      +--------------------------------------+----------------------+---------+------------------+---------+
+      | ID                                   | Name                 | Status  | Operating Status | Role    |
+      +--------------------------------------+----------------------+---------+------------------+---------+
+      | 71f30a72-4e47-4505-9e7f-ffd8933a331c | test-mysql-replica-1 | ACTIVE  | HEALTHY          | replica |
+      | cebbf187-e223-46dd-8802-6dc04e895d0a | test-mysql           | ACTIVE  | HEALTHY          | primary |
+      +--------------------------------------+----------------------+---------+------------------+---------+
 
 #. Verify replication status.
 
@@ -119,14 +119,14 @@ couple minutes.
 
    .. code-block:: console
 
-      $ openstack database instance list
-      +--------------------------------------+----------------------+-----------+-------------------+--------+------------------+------------------------------------------------+-----------+------+-----------+---------+
-      | ID                                   | Name                 | Datastore | Datastore Version | Status | Operating Status | Addresses                                      | Flavor ID | Size | Region    | Role    |
-      +--------------------------------------+----------------------+-----------+-------------------+--------+------------------+------------------------------------------------+-----------+------+-----------+---------+
-      | 71f30a72-4e47-4505-9e7f-ffd8933a331c | test-mysql-replica-1 | mysql     | 5.7.29            | ACTIVE | HEALTHY          | [{'address': '10.1.0.155', 'type': 'private'}] | d2        |    2 | RegionOne | replica |
-      | a85ece86-9f62-4aa8-bb15-eba604cd2a01 | test-mysql-replica-2 | mysql     | 5.7.29            | ACTIVE | HEALTHY          | [{'address': '10.1.0.243', 'type': 'private'}] | d2        |    2 | RegionOne | replica |
-      | cebbf187-e223-46dd-8802-6dc04e895d0a | test-mysql           | mysql     | 5.7.29            | ACTIVE | HEALTHY          | [{'address': '10.1.0.43', 'type': 'private'}]  | d2        |    2 | RegionOne | primary |
-      +--------------------------------------+----------------------+-----------+-------------------+--------+------------------+-----------------------------+-----------+------+-----------+---------+
+      $ openstack database instance list -c ID -c Name -c Status -c "Operating Status" -c Role
+      +--------------------------------------+----------------------+--------+------------------+---------+
+      | ID                                   | Name                 | Status | Operating Status | Role    |
+      +--------------------------------------+----------------------+--------+------------------+---------+
+      | 71f30a72-4e47-4505-9e7f-ffd8933a331c | test-mysql-replica-1 | ACTIVE | HEALTHY          | replica |
+      | a85ece86-9f62-4aa8-bb15-eba604cd2a01 | test-mysql-replica-2 | ACTIVE | HEALTHY          | replica |
+      | cebbf187-e223-46dd-8802-6dc04e895d0a | test-mysql           | ACTIVE | HEALTHY          | primary |
+      +--------------------------------------+----------------------+--------+------------------+---------+
 
 #. Failover(promote) "test-mysql-replica-1" to primary.
 
@@ -138,14 +138,14 @@ couple minutes.
 
    .. code-block:: console
 
-      $ openstack database instance list
-      +--------------------------------------+----------------------+-----------+-------------------+--------+------------------+------------------------------------------------+-----------+------+-----------+---------+
-      | ID                                   | Name                 | Datastore | Datastore Version | Status | Operating Status | Addresses                                      | Flavor ID | Size | Region    | Role    |
-      +--------------------------------------+----------------------+-----------+-------------------+--------+------------------+------------------------------------------------+-----------+------+-----------+---------+
-      | 71f30a72-4e47-4505-9e7f-ffd8933a331c | test-mysql-replica-1 | mysql     | 5.7.29            | ACTIVE | HEALTHY          | [{'address': '10.1.0.155', 'type': 'private'}] | d2        |    2 | RegionOne | primary |
-      | a85ece86-9f62-4aa8-bb15-eba604cd2a01 | test-mysql-replica-2 | mysql     | 5.7.29            | ACTIVE | HEALTHY          | [{'address': '10.1.0.243', 'type': 'private'}] | d2        |    2 | RegionOne | replica |
-      | cebbf187-e223-46dd-8802-6dc04e895d0a | test-mysql           | mysql     | 5.7.29            | ACTIVE | HEALTHY          | [{'address': '10.1.0.43', 'type': 'private'}]  | d2        |    2 | RegionOne | replica |
-      +--------------------------------------+----------------------+-----------+-------------------+--------+------------------+------------------------------------------------+-----------+------+-----------+---------+
+      $ openstack database instance list -c ID -c Name -c Status -c "Operating Status" -c Role
+      +--------------------------------------+----------------------+--------+------------------+---------+
+      | ID                                   | Name                 | Status | Operating Status | Role    |
+      +--------------------------------------+----------------------+--------+------------------+---------+
+      | 71f30a72-4e47-4505-9e7f-ffd8933a331c | test-mysql-replica-1 | ACTIVE | HEALTHY          | primary |
+      | a85ece86-9f62-4aa8-bb15-eba604cd2a01 | test-mysql-replica-2 | ACTIVE | HEALTHY          | replica |
+      | cebbf187-e223-46dd-8802-6dc04e895d0a | test-mysql           | ACTIVE | HEALTHY          | replica |
+      +--------------------------------------+----------------------+--------+------------------+---------+
 
 #. Point your application to the (former) replica.
 
