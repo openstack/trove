@@ -33,81 +33,77 @@ instances first and re-create new instances using backups after upgrade. From
 Victoria onwards, the instance (trove-guestagent service) upgrade could happen
 in place and can be triggered by the cloud administrator.
 
-* If you are using Trove Ussuri.
+Skip this section if you are using Trove Victoria or newer version. The steps below only applied to the cloud with Trove Ussuri.
 
-  .. note::
+.. note::
 
-     The latest version of python-troveclient to communicate with Trove Ussuri
-     is 3.3.1. Some CLI parameters are changed since Victoria release.
+    The latest version of python-troveclient to communicate with Trove Ussuri
+    is 3.3.1. Some CLI parameters are changed since Victoria release.
 
-  In this example, we create a new db instance and use the instance for upgrade
-  testing.
+In this example, we create a new db instance and use this instance for upgrade
+testing.
 
-  .. code-block:: console
+.. code-block:: console
 
-      $ openstack database instance create test \
-          $flavorid \
-          --size 1 \
-          --nic net-id=$netid \
-          --datastore mysql --datastore-version 5.7 \
-          --databases testdb --users user:password \
-          --is-public
-      $ openstack database instance list
-      +--------------------------------------+------+-----------+-------------------+---------+---------------------------+--------------------------------------+------+-----------+
-      | ID                                   | Name | Datastore | Datastore Version | Status  | Addresses                 | Flavor ID                            | Size | Region    |
-      +--------------------------------------+------+-----------+-------------------+---------+---------------------------+--------------------------------------+------+-----------+
-      | adae9a37-2c14-4dcb-9abd-66b8c3d5808b | test | mysql     | 5.7               | HEALTHY | 10.111.0.27, 172.30.5.107 | 55d9c9ac-b136-4dcf-9a1d-ecb7077697f9 |    1 | RegionOne |
-      +--------------------------------------+------+-----------+-------------------+---------+---------------------------+--------------------------------------+------+-----------+
+    $ openstack database instance create test \
+        $flavorid \
+        --size 1 \
+        --nic net-id=$netid \
+        --datastore mysql --datastore-version 5.7 \
+        --databases testdb --users user:password \
+        --is-public
+    $ openstack database instance list
+    +--------------------------------------+------+-----------+-------------------+---------+---------------------------+--------------------------------------+------+-----------+
+    | ID                                   | Name | Datastore | Datastore Version | Status  | Addresses                 | Flavor ID                            | Size | Region    |
+    +--------------------------------------+------+-----------+-------------------+---------+---------------------------+--------------------------------------+------+-----------+
+    | adae9a37-2c14-4dcb-9abd-66b8c3d5808b | test | mysql     | 5.7               | HEALTHY | 10.111.0.27, 172.30.5.107 | 55d9c9ac-b136-4dcf-9a1d-ecb7077697f9 |    1 | RegionOne |
+    +--------------------------------------+------+-----------+-------------------+---------+---------------------------+--------------------------------------+------+-----------+
 
-  In order to test upgrade, we insert some data to the database:
+In order to test upgrade, we insert some data to the database:
 
-  .. code-block:: console
+.. code-block:: console
 
-      $ ip=172.30.5.107
-      $ mysql -u user -ppassword -h $ip testdb
-      CREATE TABLE Persons (PersonID int, LastName varchar(255), FirstName varchar(255), Address varchar(255), City varchar(255));
-      insert into Persons VALUES (1, 'Kong', 'Lingxian', '150 Willis Street', 'Wellington');
+    $ ip=172.30.5.107
+    $ mysql -u user -ppassword -h $ip testdb
+    CREATE TABLE Persons (PersonID int, LastName varchar(255), FirstName varchar(255), Address varchar(255), City varchar(255));
+    insert into Persons VALUES (1, 'Kong', 'Lingxian', '150 Willis Street', 'Wellington');
 
-  Now we create a backup for the instance:
+Now we create a backup for the instance:
 
-  .. code-block:: console
+.. code-block:: console
 
-      $ dbid=adae9a37-2c14-4dcb-9abd-66b8c3d5808b
-      $ openstack database backup create $dbid backup-01
-      $ openstack database backup list
-      +--------------------------------------+--------------------------------------+-----------+-----------+-----------+---------------------+
-      | ID                                   | Instance ID                          | Name      | Status    | Parent ID | Updated             |
-      +--------------------------------------+--------------------------------------+-----------+-----------+-----------+---------------------+
-      | 5c21437f-02b3-43e0-8108-99a3497d68ad | adae9a37-2c14-4dcb-9abd-66b8c3d5808b | backup-01 | COMPLETED | None      | 2020-08-13T10:30:09 |
-      +--------------------------------------+--------------------------------------+-----------+-----------+-----------+---------------------+
-      $ openstack database backup show 5c21437f-02b3-43e0-8108-99a3497d68ad
-      +----------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-      | Field                | Value                                                                                                                             |
-      +----------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-      | created              | 2020-08-13T10:30:02                                                                                                               |
-      | datastore            | mysql                                                                                                                             |
-      | datastore_version    | 5.7                                                                                                                               |
-      | datastore_version_id | 8008a4ca-9124-40ea-a24b-13d53fc9b355                                                                                              |
-      | description          | None                                                                                                                              |
-      | id                   | 5c21437f-02b3-43e0-8108-99a3497d68ad                                                                                              |
-      | instance_id          | adae9a37-2c14-4dcb-9abd-66b8c3d5808b                                                                                              |
-      | locationRef          | http://10.0.19.85:8080/v1/AUTH_7e42f87f5d504da9a70cf781a98e0179/database_backups/5c21437f-02b3-43e0-8108-99a3497d68ad.xbstream.gz |
-      | name                 | backup-01                                                                                                                         |
-      | parent_id            | None                                                                                                                              |
-      | size                 | 0.12                                                                                                                              |
-      | status               | COMPLETED                                                                                                                         |
-      | updated              | 2020-08-13T10:30:09                                                                                                               |
-      +----------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-      $ openstack object list database_backups
-      +--------------------------------------------------+
-      | Name                                             |
-      +--------------------------------------------------+
-      | 5c21437f-02b3-43e0-8108-99a3497d68ad.xbstream.gz |
-      +--------------------------------------------------+
-
-* If you are using Trove Victoria or newer version.
-
-  TBD.
+    $ dbid=adae9a37-2c14-4dcb-9abd-66b8c3d5808b
+    $ openstack database backup create $dbid backup-01
+    $ openstack database backup list
+    +--------------------------------------+--------------------------------------+-----------+-----------+-----------+---------------------+
+    | ID                                   | Instance ID                          | Name      | Status    | Parent ID | Updated             |
+    +--------------------------------------+--------------------------------------+-----------+-----------+-----------+---------------------+
+    | 5c21437f-02b3-43e0-8108-99a3497d68ad | adae9a37-2c14-4dcb-9abd-66b8c3d5808b | backup-01 | COMPLETED | None      | 2020-08-13T10:30:09 |
+    +--------------------------------------+--------------------------------------+-----------+-----------+-----------+---------------------+
+    $ openstack database backup show 5c21437f-02b3-43e0-8108-99a3497d68ad
+    +----------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+    | Field                | Value                                                                                                                             |
+    +----------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+    | created              | 2020-08-13T10:30:02                                                                                                               |
+    | datastore            | mysql                                                                                                                             |
+    | datastore_version    | 5.7                                                                                                                               |
+    | datastore_version_id | 8008a4ca-9124-40ea-a24b-13d53fc9b355                                                                                              |
+    | description          | None                                                                                                                              |
+    | id                   | 5c21437f-02b3-43e0-8108-99a3497d68ad                                                                                              |
+    | instance_id          | adae9a37-2c14-4dcb-9abd-66b8c3d5808b                                                                                              |
+    | locationRef          | http://10.0.19.85:8080/v1/AUTH_7e42f87f5d504da9a70cf781a98e0179/database_backups/5c21437f-02b3-43e0-8108-99a3497d68ad.xbstream.gz |
+    | name                 | backup-01                                                                                                                         |
+    | parent_id            | None                                                                                                                              |
+    | size                 | 0.12                                                                                                                              |
+    | status               | COMPLETED                                                                                                                         |
+    | updated              | 2020-08-13T10:30:09                                                                                                               |
+    +----------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+    $ openstack object list database_backups
+    +--------------------------------------------------+
+    | Name                                             |
+    +--------------------------------------------------+
+    | 5c21437f-02b3-43e0-8108-99a3497d68ad.xbstream.gz |
+    +--------------------------------------------------+
 
 Upgrade Trove services
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -143,7 +139,7 @@ Upgrade Trove services
 
       $ sudo systemctl restart apache2.service; sudo systemctl restart devstack@tr-*
 
-#. Register new datastore version using the new guest image.
+#. Update the existing datastore version using the new guest image.
 
    We use MySQL datastore for an example. The following commands should be
    running using trove service tenant credentials.
@@ -153,17 +149,33 @@ Upgrade Trove services
       $ imageid=$(openstack image create trove-guest-victoria-ubuntu-bionic-dev \
           --private \
           --disk-format qcow2 --container-format bare \
-          --file ${image-path} \
+          --file ${imagefile-path} \
           --property hw_rng_model='virtio' \
           --tag trove \
           -c id -f value)
-      $ trove-manage datastore_version_update mysql 5.7.29 mysql $imageid "" 1
-      $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 $stackdir/trove/trove/templates/mysql/validation-rules.json
+
+   If the datastore version is already configured with image tag, e.g. we use
+   ``trove`` here, you don't need to do anything, trove can pick up the new
+   image automatically for creating new instances. Otherwise, you need to
+   either config image ID for the datastore version or update the datastore
+   version to use image tag.
+
+   Update image ID of the datastore version:
+
+   .. code-block:: console
+
+      $ openstack datastore version set <datastore-version-id> --image $imageid
+
+   Or, to use image tag for the datastore version:
+
+   .. code-block:: console
+
+      $ openstack datastore version set <datastore-version-id> --image-tags trove
 
 Upgrade Trove guest agent
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* If you are upgrading from Ussuri.
+* Upgrade from Ussuri.
 
   .. note::
 
@@ -207,6 +219,16 @@ Upgrade Trove guest agent
   backups) could be removed. Your database client needs to use the new address
   in the connection string unless database dns is supported in the future.
 
-* If you are upgrading from Victoria or newer release.
+* Upgrade from Victoria or newer release.
 
-  TBD.
+  From Victoria release, trove provides API to rebuild the existing instances using the new guest image, the IP address and configurations won't change after instance rebuild. The rebuild API is only available to cloud administrators by default.
+
+  .. caution::
+
+      During rebuild, the existing database connections will be dropped, the cloud users must be notified.
+
+  .. code-block:: console
+
+      $ openstack database instance rebuild $dbid $imageid
+
+  Once the instance is back to HEALTHY, you can verify the data using the same database connection string as before.
