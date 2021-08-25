@@ -324,6 +324,7 @@ class Controller(object):
             exception.ModuleAppliedToInstance,
             exception.PolicyNotAuthorized,
             exception.LogAccessForbidden,
+            exception.TroveOperationAuthError,
         ],
         webob.exc.HTTPBadRequest: [
             exception.InvalidModelError,

@@ -29,11 +29,20 @@ LOG = logging.getLogger(__name__)
 class QuotaController(wsgi.Controller):
     """Controller for quota functionality."""
 
-    @admin_context
     def show(self, req, tenant_id, id):
-        """Return all quotas for this tenant."""
+        """Return all quotas for this tenant.
+
+        Regular tenant can get his own resource quota.
+        Admin user can get quota for any tenant.
+        """
         LOG.info("Indexing quota info for tenant '%(id)s'\n"
                  "req : '%(req)s'\n\n", {"id": id, "req": req})
+
+        context = req.environ[wsgi.CONTEXT_KEY]
+        if id != tenant_id and not context.is_admin:
+            raise exception.TroveOperationAuthError(
+                tenant_id=tenant_id
+            )
 
         usages = quota_engine.get_all_quota_usages_by_tenant(id)
         limits = quota_engine.get_all_quotas_by_tenant(id)

@@ -38,7 +38,8 @@ Show resources quota for a specific project
 
 .. rest_method::  GET /v1.0/{project_id}/mgmt/quotas/{user_project}
 
-Admin only action by default.
+Admin can query resource quota of any project. The project user can only show
+the project's own quota.
 
 Normal response codes: 200
 
