@@ -31,15 +31,16 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
         master_info = super(MariaDBGTIDReplication, self).get_replica_context(
             service, adm)
 
+        replica_conf = master_info['replica_conf']
         get_pos_cmd = 'SELECT @@global.gtid_binlog_pos;'
         gtid_pos = service.execute_sql(get_pos_cmd).first()[0]
         LOG.debug('gtid_binlog_pos: %s', gtid_pos)
-        master_info['log_position']['gtid_pos'] = gtid_pos
+        replica_conf['log_position']['gtid_pos'] = gtid_pos
 
         return master_info
 
     def connect_to_master(self, service, master_info):
-        logging_config = master_info['log_position']
+        replica_conf = master_info['replica_conf']
         last_gtid = ''
 
         if 'dataset' in master_info:
@@ -59,8 +60,8 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
             {
                 'host': master_info['master']['host'],
                 'port': master_info['master']['port'],
-                'user': logging_config['replication_user']['name'],
-                'password': logging_config['replication_user']['password'],
+                'user': replica_conf['replication_user']['name'],
+                'password': replica_conf['replication_user']['password']
             })
         service.execute_sql(change_master_cmd)
 

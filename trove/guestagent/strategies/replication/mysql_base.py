@@ -92,10 +92,11 @@ class MysqlReplicationBase(base.Replication):
         replication_user = self._create_replication_user(service, adm)
         service.grant_replication_privilege(replication_user)
 
-        log_position = {
+        replica_conf = {
+            'log_position': {},
             'replication_user': replication_user
         }
-        return snapshot_info['id'], log_position
+        return snapshot_info['id'], replica_conf
 
     def enable_as_master(self, service, master_config):
         if not service.exists_replication_source_overrides():
@@ -146,7 +147,8 @@ class MysqlReplicationBase(base.Replication):
         service.grant_replication_privilege(replication_user)
         return {
             'master': self.get_master_ref(service, None),
-            'log_position': {
+            'replica_conf': {
+                'log_position': {},
                 'replication_user': replication_user
             }
         }
