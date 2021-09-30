@@ -38,12 +38,12 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
                 set_gtid_cmd = "SET GLOBAL gtid_purged='%s'" % last_gtid
                 service.execute_sql(set_gtid_cmd)
 
-        logging_config = master_info['log_position']
+        replica_conf = master_info['replica_conf']
         LOG.info(
             "Configure the slave, master: %s:%s, replication user: %s",
             master_info['master']['host'],
             master_info['master']['port'],
-            logging_config['replication_user']['name']
+            replica_conf['replication_user']['name']
         )
 
         change_master_cmd = (
@@ -57,8 +57,8 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
             {
                 'host': master_info['master']['host'],
                 'port': master_info['master']['port'],
-                'user': logging_config['replication_user']['name'],
-                'password': logging_config['replication_user']['password']
+                'user': replica_conf['replication_user']['name'],
+                'password': replica_conf['replication_user']['password']
             })
         service.execute_sql(change_master_cmd)
 

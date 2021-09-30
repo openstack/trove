@@ -882,7 +882,7 @@ class Manager(periodic_task.PeriodicTasks):
         self.replication.enable_as_master(self.app, replica_source_config)
         LOG.info('Enabled as replication master')
 
-        snapshot_id, log_position = self.replication.snapshot_for_replication(
+        snapshot_id, replica_conf = self.replication.snapshot_for_replication(
             context, self.app, self.adm, None, snapshot_info)
 
         volume_stats = self.get_filesystem_stats(context, None)
@@ -896,7 +896,7 @@ class Manager(periodic_task.PeriodicTasks):
             },
             'replication_strategy': self.replication_strategy,
             'master': self.replication.get_master_ref(self.app, snapshot_info),
-            'log_position': log_position
+            'replica_conf': replica_conf
         }
 
         return replication_snapshot

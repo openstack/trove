@@ -136,10 +136,11 @@ class PostgresqlReplicationStreaming(base.Replication):
         LOG.info('Getting or creating replication user')
         replication_user = self._get_or_create_replication_user(service)
 
-        log_position = {
+        replica_conf = {
+            'log_position': {},
             'replication_user': replication_user
         }
-        return snapshot_info['id'], log_position
+        return snapshot_info['id'], replica_conf
 
     def get_master_ref(self, service, snapshot_info):
         master_ref = {
@@ -158,7 +159,7 @@ class PostgresqlReplicationStreaming(base.Replication):
                                as_root=True)
         LOG.debug("Standby signal file created")
 
-        user = snapshot['log_position']['replication_user']
+        user = snapshot['replica_conf']['replication_user']
         conninfo = (f"host={snapshot['master']['host']} "
                     f"port={snapshot['master']['port']} "
                     f"dbname=postgres "
@@ -189,8 +190,9 @@ class PostgresqlReplicationStreaming(base.Replication):
         repl_user_info = self._get_or_create_replication_user(service)
 
         return {
+            'log_position': {},
             'master': self.get_master_ref(None, None),
-            'log_position': {'replication_user': repl_user_info}
+            'replica_conf': {'replication_user': repl_user_info}
         }
 
     def cleanup_source_on_replica_detach(self, admin_service, replica_info):
