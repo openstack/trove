@@ -16,7 +16,8 @@ for folder in "/var/lib/trove" "/etc/trove" "/etc/trove/certs" "/etc/trove/conf.
     chown -R ${GUEST_USERNAME}:root ${folder}
 done
 
-install -D -g root -o ${GUEST_USERNAME} -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
+# The logrotate file owner should be root or user with uid 0.
+install -D -g root -o root -m 0644 ${SCRIPTDIR}/guest-agent.logrotate /etc/logrotate.d/guest-agent
 
 # Create a virtual environment (with dependencies installed) for guest agent service
 /usr/bin/python3 -m venv ${GUEST_VENV}
