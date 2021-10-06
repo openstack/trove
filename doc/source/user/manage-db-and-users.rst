@@ -6,12 +6,17 @@ Assume that you installed Trove service and uploaded images with datastore of
 your choice. This section shows how to manage users and databases in a MySQL
 5.7 instance.
 
-.. warning::
+Currently, the Database and User API is only supported by mysql datastore.
 
-    Currently, the Database and User API is only supported by mysql datastore.
-    For others, the recommended way is to get root password (``POST
-    /v1.0/{project_id}/instances/{instance_id}/root``) and communicate with the
-    database service directly for database and user management.
+For database user management, there are two approaches:
+
+1. If the ``root_on_create`` option is enabled for the datastore in trove
+   service config file, the root user password is returned after creating
+   instance, which can be used directly to access the database.
+2. If ``root_on_create=False``, the recommended way is to get root password
+   (``POST /v1.0/{project_id}/instances/{instance_id}/root`` or ``openstack
+   database root enable`` in CLI) and communicate with the database service
+   directly for database and user management.
 
 Manage root user
 ~~~~~~~~~~~~~~~~
@@ -32,7 +37,7 @@ further database operations.
 If needed, ``openstack database root disable <instance_id>`` command could
 disable the root user.
 
-Database and User management via Trove API
+Database and User management via Trove CLI
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Trove provides API to manage users and databases for mysql datastore.
