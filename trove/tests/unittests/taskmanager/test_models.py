@@ -13,6 +13,7 @@
 #    under the License.
 import json
 import os
+
 from tempfile import NamedTemporaryFile
 from unittest import mock
 from unittest.mock import call
@@ -21,17 +22,19 @@ from unittest.mock import Mock
 from unittest.mock import patch
 from unittest.mock import PropertyMock
 
-from cinderclient import exceptions as cinder_exceptions
 import cinderclient.v3.client as cinderclient
-from cinderclient.v3 import volumes as cinderclient_volumes
 import neutronclient.v2_0.client as neutronclient
-from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
 import novaclient.v2.servers
+
+from cinderclient import exceptions as cinder_exceptions
+from cinderclient.v3 import volumes as cinderclient_volumes
+from novaclient import exceptions as nova_exceptions
 from oslo_config import cfg
 from swiftclient.client import ClientException
 from testtools.matchers import Equals
 from testtools.matchers import Is
+
 import trove.backup.models
 import trove.common.context
 import trove.common.template as template
@@ -405,6 +408,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_secgroup')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_root_volume')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
     @patch.object(template, 'SingleInstanceConfigTemplate')
     @patch('trove.taskmanager.models.FreshInstanceTasks._create_port')
@@ -412,6 +416,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                              mock_create_port,
                              mock_single_instance_template,
                              mock_guest_prepare,
+                             mock_create_root_volume,
                              mock_build_volume_info,
                              mock_create_secgroup,
                              mock_create_server,
@@ -445,6 +450,12 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             is_mgmt=False,
             is_public=False
         )
+        image_id = 'mysql-image-id'
+        if cfg.CONF.volume_rootdisk_support:
+            mock_create_root_volume.assert_called_with(
+                'mysql-image-id', 10, 'volume_type', None)
+            image_id = None
+
         mock_build_volume_info.assert_called_with(
             'mysql', availability_zone=None, volume_size=2,
             volume_type='volume_type'
@@ -454,7 +465,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             config_content, None, overrides, None, None, None, ds_version=None
         )
         mock_create_server.assert_called_with(
-            8, 'mysql-image-id', 'mysql',
+            8, image_id, 'mysql',
             mock_build_volume_info()['block_device'], None,
             [{'port-id': 'fake-port-id'}],
             mock_get_injected_files(),
@@ -466,6 +477,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     @patch.object(taskmanager_models.FreshInstanceTasks, 'get_injected_files')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_root_volume')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
     @patch.object(template, 'SingleInstanceConfigTemplate')
     @patch('trove.common.clients_admin.neutron_client_trove_admin')
@@ -473,6 +485,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                                             mock_neutron_client,
                                             mock_single_instance_template,
                                             mock_guest_prepare,
+                                            mock_create_root_volume,
                                             mock_build_volume_info,
                                             mock_create_server,
                                             mock_get_injected_files,
@@ -516,6 +529,11 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             access={'is_public': True, 'allowed_cidrs': ['192.168.0.1/24']}
         )
 
+        image_id = 'mysql-image-id'
+        if cfg.CONF.volume_rootdisk_support:
+            mock_create_root_volume.assert_called_with(
+                'mysql-image-id', 10, 'volume_type', None)
+            image_id = None
         mock_build_volume_info.assert_called_with(
             'mysql', availability_zone=None, volume_size=2,
             volume_type='volume_type'
@@ -524,7 +542,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
             config_content, None, mock.ANY, None, None, None, ds_version=None)
         mock_create_server.assert_called_with(
-            8, 'mysql-image-id', 'mysql',
+            8, image_id, 'mysql',
             mock_build_volume_info()['block_device'], None,
             [
                 {'port-id': 'fake-user-port-id'},

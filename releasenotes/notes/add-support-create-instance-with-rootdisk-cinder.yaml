@@ -1,0 +1,10 @@
+---
+features:
+  - Implements nova instances with root disk in cinder backend
+    if the configuration `volume_rootdisk_support` is True
+    The size of root disk being created is `volume_rootdisk_size`
+
+fixes:
+  - When creating Nova instances with a root disk in the Cinder
+    backend, it will allow live migration of Nova instances
+    and features when using Cinder as the storage backend.

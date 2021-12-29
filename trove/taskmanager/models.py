@@ -880,7 +880,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def _create_server_volume(self, flavor_id, image_id, datastore_manager,
                               volume_size, availability_zone, nics, files,
                               volume_type, scheduler_hints):
-        LOG.debug("Begin _create_server_volume for id: %s", self.id)
+        LOG.debug("Begin _create_server_volume for instance: %s", self.id)
         server = None
         volume_info = self._build_volume_info(
             datastore_manager,
@@ -888,6 +888,17 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             volume_type=volume_type,
             availability_zone=availability_zone)
         block_device_mapping_v2 = volume_info['block_device']
+
+        if CONF.volume_rootdisk_support:
+            block_device_mapping_v2.insert(
+                0, self._create_root_volume(
+                    image_id,
+                    CONF.volume_rootdisk_size,
+                    volume_type,
+                    availability_zone
+                ))
+            image_id = None
+
         try:
             server = self._create_server(
                 flavor_id, image_id,
@@ -904,7 +915,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             exc_fmt = _("Failed to create server for instance %s")
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
             self._log_and_raise(e, log_fmt, exc_fmt, self.id, err)
-        LOG.debug("End _create_server_volume for id: %s", self.id)
+        LOG.debug("End _create_server_volume for instance: %s", self.id)
         return volume_info
 
     def _build_volume_info(self, datastore_manager, volume_size=None,
@@ -952,6 +963,44 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         exc_message = '\n%s' % exc if exc else ''
         full_message = "%s%s" % (exc_fmt % fmt_content, exc_message)
         raise TroveError(message=full_message)
+
+    def _create_root_volume(self, image_id,
+                            volume_size, volume_type, availability_zone):
+        LOG.debug("Begin _create_root_volume for instance: %s", self.id)
+        volume_client = create_cinder_client(self.context, self.region_name)
+        volume_desc = ("root volume for %s" % self.id)
+        volume_kwargs = {
+            'size': volume_size,
+            'name': "trove-%s" % self.id,
+            'description': volume_desc,
+            'volume_type': volume_type,
+            'imageRef': image_id
+        }
+        if CONF.enable_volume_az:
+            volume_kwargs['availability_zone'] = availability_zone
+
+        volume_ref = volume_client.volumes.create(**volume_kwargs)
+
+        utils.poll_until(
+            lambda: volume_client.volumes.get(volume_ref.id),
+            lambda v_ref: v_ref.status in ['available', 'error'],
+            sleep_time=2,
+            time_out=CONF.volume_time_out)
+
+        v_ref = volume_client.volumes.get(volume_ref.id)
+        if v_ref.status in ['error']:
+            raise VolumeCreationFailure()
+
+        block_device_mapping_v2 = {
+            "uuid": v_ref.id,
+            "boot_index": 0,
+            "source_type": "volume",
+            "destination_type": "volume",
+            "delete_on_termination": True
+        }
+
+        LOG.debug("End _create_root_volume for instance: %s", self.id)
+        return block_device_mapping_v2
 
     def _create_volume(self, volume_size, volume_type, datastore_manager,
                        availability_zone):
