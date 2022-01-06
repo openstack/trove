@@ -12,43 +12,46 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
+
 from tempfile import NamedTemporaryFile
 from unittest import mock
-from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import Mock
-from unittest.mock import patch
 from unittest.mock import PropertyMock
+from unittest.mock import call
+from unittest.mock import patch
+
+import cinderclient.v3.client as cinderclient
+import neutronclient.v2_0.client as neutronclient
+import novaclient.v2.flavors
+import novaclient.v2.servers
 
 from cinderclient import exceptions as cinder_exceptions
 from cinderclient.v3 import volumes as cinderclient_volumes
-import cinderclient.v3.client as cinderclient
-import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
-import novaclient.v2.flavors
-import novaclient.v2.servers
 from oslo_config import cfg
 from swiftclient.client import ClientException
 from testtools.matchers import Equals
 from testtools.matchers import Is
 
+import trove.backup.models
+import trove.common.context
+import trove.common.template as template
+import trove.db.models
+import trove.guestagent.api
+
 from trove import rpc
 from trove.backup import models as backup_models
 from trove.backup import state
-import trove.backup.models
+from trove.common import exception
 from trove.common import timeutils
 from trove.common import utils
-import trove.common.context
-from trove.common import exception
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
-import trove.common.template as template
 from trove.datastore import models as datastore_models
-import trove.db.models
 from trove.extensions.common import models as common_models
 from trove.extensions.mysql import models as mysql_models
-import trove.guestagent.api
 from trove.instance.models import BaseInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
@@ -64,6 +67,7 @@ VOLUME_ID = 'volume-id-1'
 
 
 class FakeOptGroup(object):
+
     def __init__(self, tcp_ports=['3306', '3301-3307'],
                  udp_ports=[], icmp=False):
         self.tcp_ports = tcp_ports
@@ -72,6 +76,7 @@ class FakeOptGroup(object):
 
 
 class fake_Server(object):
+
     def __init__(self):
         self.id = None
         self.name = None
@@ -108,6 +113,7 @@ class fake_ServerManager(object):
 
 
 class fake_nova_client(object):
+
     def __init__(self):
         self.servers = fake_ServerManager()
 
@@ -236,7 +242,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         server = self.freshinstancetasks._create_server(
             None, None, datastore_manager, None, None, None)
 
-        self.assertEqual(server.userdata, self.userdata)
+        userdata = self.userdata + "#cloud-config\nwrite_files:\n"
+        self.assertEqual(server.userdata, userdata)
 
     def test_create_instance_with_keypair(self):
         cfg.CONF.set_override('nova_keypair', 'fake_keypair')
@@ -310,7 +317,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     def test_servers_create_block_device_mapping_v2(self,
                                                     mock_hostname,
                                                     mock_name):
-        self.freshinstancetasks.prepare_userdata = Mock(return_value=None)
+        self.freshinstancetasks.prepare_userdata = Mock(
+            return_value="#cloud-config\nwrite_files:\n")
         mock_nova_client = self.freshinstancetasks.nova_client = Mock()
         mock_servers_create = mock_nova_client.servers.create
         self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
@@ -318,14 +326,18 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         meta = {'trove_project_id': self.freshinstancetasks.tenant_id,
                 'trove_user_id': 'test_user',
                 'trove_instance_id': self.freshinstancetasks.id}
+
+        userdata = self.freshinstancetasks.prepare_userdata('mysql')
+        userdata = userdata + \
+            self.freshinstancetasks.prepare_cloud_config({})
         mock_servers_create.assert_called_with(
             'fake-name', 'fake-image',
             'fake-flavor', files={},
-            userdata=None,
+            userdata=userdata,
             block_device_mapping_v2=None,
             availability_zone=None,
             nics=None,
-            config_drive=True,
+            config_drive=False,
             scheduler_hints=None,
             key_name=None,
             meta=meta,
@@ -599,6 +611,7 @@ class ResizeVolumeTest(trove_testtools.TestCase):
                                                             self.new_vol_size)
 
         class FakeGroup(object):
+
             def __init__(self):
                 self.mount_point = 'var/lib/mysql'
                 self.device_path = '/dev/vdb'
@@ -1105,6 +1118,7 @@ class BackupTasksTest(trove_testtools.TestCase):
 
 
 class NotifyMixinTest(trove_testtools.TestCase):
+
     def test_get_service_id(self):
         id_map = {
             'mysql': '123',

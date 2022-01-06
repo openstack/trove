@@ -15,11 +15,13 @@
 #    under the License.
 
 """Model classes that form the core of instances functionality."""
-from datetime import datetime
-from datetime import timedelta
+import base64
 import json
 import os.path
 import re
+
+from datetime import datetime
+from datetime import timedelta
 
 from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
@@ -43,8 +45,8 @@ from trove.common.i18n import _
 from trove.common.trove_remote import create_trove_client
 from trove.configuration.models import Configuration
 from trove.datastore import models as datastore_models
-from trove.datastore.models import DatastoreVersionMetadata as dvm
 from trove.datastore.models import DBDatastoreVersionMetadata
+from trove.datastore.models import DatastoreVersionMetadata as dvm
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.extensions.security_group.models import SecurityGroup
@@ -614,9 +616,10 @@ def load_instance(cls, context, id, needs_server=False,
 
 def update_service_status(task_status, service_status, ins_id):
     """Update service status as needed."""
+    RESTART_REQUIRED = srvstatus.ServiceStatuses.RESTART_REQUIRED
     if (task_status == InstanceTasks.NONE and
-        service_status.status != srvstatus.ServiceStatuses.RESTART_REQUIRED and
-        not service_status.is_uptodate()):
+            service_status.status != RESTART_REQUIRED and
+            not service_status.is_uptodate()):
         LOG.warning('Guest agent heartbeat for instance %s has expried',
                     ins_id)
         service_status.status = \
@@ -718,7 +721,8 @@ class BaseInstance(SimpleInstance):
 
             from trove.cluster.models import is_cluster_deleting
             if (self.db_info.cluster_id is not None and not
-               is_cluster_deleting(self.context, self.db_info.cluster_id)):
+                    is_cluster_deleting(context=self.context,
+                                        cluster_id=self.db_info.cluster_id)):
                 raise exception.ClusterInstanceOperationNotSupported()
 
             if self.slaves:
@@ -963,6 +967,25 @@ class BaseInstance(SimpleInstance):
             self._server_group_loaded = True
         return self._server_group
 
+    def prepare_cloud_config(self, files):
+        userdata = (
+            "#cloud-config\n"
+            "write_files:\n"
+        )
+
+        for filename, content in files.items():
+            ud = encodeutils.safe_encode(content)
+            body_userdata = (
+                "- encoding: b64\n"
+                "  owner: trove:trove\n"
+                "  path: %s\n"
+                "  content: %s\n" % (
+                    filename, encodeutils.safe_decode(base64.b64encode(ud)))
+            )
+            userdata = userdata + body_userdata
+
+        return userdata
+
     def get_injected_files(self, datastore_manager, datastore_version):
         injected_config_location = CONF.get('injected_config_location')
         guest_info = CONF.get('guest_info')
@@ -1034,12 +1057,14 @@ class BaseInstance(SimpleInstance):
 
 
 class FreshInstance(BaseInstance):
+
     @classmethod
     def load(cls, context, id):
         return load_instance(cls, context, id, needs_server=False)
 
 
 class BuiltInstance(BaseInstance):
+
     @classmethod
     def load(cls, context, id, needs_server=True):
         return load_instance(cls, context, id, needs_server=needs_server)
@@ -1509,7 +1534,7 @@ class Instance(BuiltInstance):
 
         if not self.slaves:
             raise exception.BadRequest(_("Instance %s is not a replica"
-                                       " source.") % self.id)
+                                         " source.") % self.id)
 
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         last_heartbeat_delta = timeutils.utcnow() - service.updated_at
@@ -1934,6 +1959,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
 
 
 class instance_encryption_key_cache(object):
+
     def __init__(self, func, lru_cache_size=10):
         self._table = {}
         self._lru = []
