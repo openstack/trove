@@ -479,8 +479,7 @@ function create_guest_image {
     fi
 
     echo "Add the image to glance"
-    glance_image_id=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} \
-      --os-project-name service --os-username trove \
+    glance_image_id=$(openstack --os-cloud trove \
       image create ${image_name} \
       --disk-format qcow2 --container-format bare \
       --tag trove \
@@ -593,16 +592,13 @@ function config_nova_keypair {
     fi
 
     echo "Creating Trove management keypair ${TROVE_MGMT_KEYPAIR_NAME}"
-    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
-      keypair create --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
+    openstack --os-cloud trove keypair create --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
 
     iniset $TROVE_CONF DEFAULT nova_keypair ${TROVE_MGMT_KEYPAIR_NAME}
 }
 
 function config_cinder_volume_type {
-    volume_type=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} \
-      --os-project-name service --os-username trove \
-      volume type list -c Name -f value | awk 'NR==1 {print}')
+    volume_type=$(openstack --os-cloud trove volume type list -c Name -f value | awk 'NR==1 {print}')
 
     iniset $TROVE_CONF DEFAULT cinder_volume_type ${volume_type}
 }
@@ -611,14 +607,12 @@ function config_mgmt_security_group {
     local sgid
 
     echo "Creating Trove management security group."
-    sgid=$(openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove security group create ${TROVE_MGMT_SECURITY_GROUP} -f value -c id)
+    sgid=$(openstack --os-cloud trove security group create ${TROVE_MGMT_SECURITY_GROUP} -f value -c id)
 
     # Allow ICMP
-    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
-        security group rule create --proto icmp $sgid
+    openstack --os-cloud trove security group rule create --proto icmp $sgid
     # Allow SSH
-    openstack --os-region-name RegionOne --os-password ${SERVICE_PASSWORD} --os-project-name service --os-username trove \
-        security group rule create --protocol tcp --dst-port 22 $sgid
+    openstack --os-cloud trove security group rule create --protocol tcp --dst-port 22 $sgid
 
     iniset $TROVE_CONF DEFAULT management_security_groups $sgid
 }
