@@ -14,10 +14,11 @@
 
 import os
 
+import sys
+
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
-import sys
 
 topdir = os.path.normpath(
     os.path.join(os.path.abspath(sys.argv[0]), os.pardir, os.pardir))
@@ -112,8 +113,8 @@ def stream_backup_to_storage(runner_cls, storage):
                 metadata=CONF.swift_extra_metadata,
                 container=CONF.swift_container
             )
-            LOG.info('Backup successfully, checksum: %s, location: %s',
-                     checksum, location)
+        LOG.info('Backup successfully, checksum: %s, location: %s',
+                 checksum, location)
     except Exception as err:
         LOG.exception('Failed to call stream_backup_to_storage, error: %s',
                       err)
