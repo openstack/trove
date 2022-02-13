@@ -229,8 +229,8 @@ class ClusterTasks(Cluster):
         )
 
     def _all_instances_acquire_status(
-        self, instance_ids, cluster_id, shard_id, expected_status,
-        fast_fail_statuses=None):
+            self, instance_ids, cluster_id, shard_id, expected_status,
+            fast_fail_statuses=None):
 
         def _is_fast_fail_status(status):
             return ((fast_fail_statuses is not None) and
@@ -244,7 +244,7 @@ class ClusterTasks(Cluster):
                 task_status = DBInstance.find_by(
                     id=instance_id).get_task_status()
                 if (_is_fast_fail_status(status) or
-                    (task_status == InstanceTasks.BUILDING_ERROR_SERVER)):
+                        (task_status == InstanceTasks.BUILDING_ERROR_SERVER)):
                     # if one has failed, no need to continue polling
                     LOG.debug("Instance %(id)s has acquired a fast-fail "
                               "status %(status)s and"
@@ -269,7 +269,7 @@ class ClusterTasks(Cluster):
                 task_status = DBInstance.find_by(
                     id=instance_id).get_task_status()
                 if (_is_fast_fail_status(status) or
-                    (task_status == InstanceTasks.BUILDING_ERROR_SERVER)):
+                        (task_status == InstanceTasks.BUILDING_ERROR_SERVER)):
                     failed_instance_ids.append(instance_id)
             return failed_instance_ids
 
@@ -373,8 +373,8 @@ class ClusterTasks(Cluster):
             context.notification = (
                 DBaaSInstanceUpgrade(context, **request_info))
             with StartNotification(
-                context, instance_id=instance.id,
-                datastore_version_id=datastore_version.id):
+                    context, instance_id=instance.id,
+                    datastore_version_id=datastore_version.id):
                 with EndNotification(context):
                     instance.update_db(
                         datastore_version_id=datastore_version.id,
@@ -781,8 +781,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         status = service.get_status()
 
         if (status == srvstatus.ServiceStatuses.RUNNING or
-            status == srvstatus.ServiceStatuses.INSTANCE_READY or
-            status == srvstatus.ServiceStatuses.HEALTHY):
+                status == srvstatus.ServiceStatuses.INSTANCE_READY or
+                status == srvstatus.ServiceStatuses.HEALTHY):
             return True
         elif status not in [srvstatus.ServiceStatuses.NEW,
                             srvstatus.ServiceStatuses.BUILDING,
@@ -985,6 +985,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive
         key_name = CONF.nova_keypair
+
+        # Use config_drive instead by userdata
+        # We will inject guest config by cloud-config
+        if not config_drive:
+            if not userdata:
+                userdata = self.prepare_cloud_config(files)
+            else:
+                userdata = userdata + self.prepare_cloud_config(files)
+
+            files = {}
 
         server = self.nova_client.servers.create(
             self.name, image_id, flavor_id, key_name=key_name, nics=nics,
@@ -1432,6 +1442,7 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
 
 
 class BackupTasks(object):
+
     @classmethod
     def _parse_manifest(cls, manifest):
         # manifest is in the format 'container/prefix'
@@ -1530,11 +1541,11 @@ class ModuleTasks(object):
             for instance_module in instance_modules:
                 instance_id = instance_module.instance_id
                 if (instance_module.md5 != current_md5 or force) and (
-                    not md5 or md5 == instance_module.md5):
+                        not md5 or md5 == instance_module.md5):
                     instance = BuiltInstanceTasks.load(context, instance_id,
                                                        needs_server=False)
                     if instance and (
-                        include_clustered or not instance.cluster_id):
+                            include_clustered or not instance.cluster_id):
                         try:
                             module_models.Modules.validate(
                                 modules, instance.datastore.id,
@@ -1550,8 +1561,8 @@ class ModuleTasks(object):
 
                         # Sleep if we've fired off too many in a row.
                         if (batch_size and
-                            not reapply_count % batch_size and
-                            (reapply_count + skipped_count) < total_count):
+                                not reapply_count % batch_size and
+                                (reapply_count + skipped_count) < total_count):
                             LOG.debug("Applied module to %(cnt)d of %(total)d "
                                       "instances - sleeping for %(batch)ds",
                                       {'cnt': reapply_count,
@@ -1908,7 +1919,7 @@ class ResizeActionBase(object):
             self._perform_nova_action()
         finally:
             if self.instance.db_info.task_status != (
-                inst_models.InstanceTasks.NONE):
+                    inst_models.InstanceTasks.NONE):
                 self.instance.reset_task_status()
 
     def _guest_is_awake(self):
@@ -1988,6 +1999,7 @@ class ResizeActionBase(object):
 
 
 class ResizeAction(ResizeActionBase):
+
     def __init__(self, instance, old_flavor, new_flavor):
         """
         :type instance: trove.taskmanager.models.BuiltInstanceTasks
@@ -2043,6 +2055,7 @@ class ResizeAction(ResizeActionBase):
 
 
 class MigrateAction(ResizeActionBase):
+
     def __init__(self, instance, host=None):
         super(MigrateAction, self).__init__(instance)
         self.instance = instance
@@ -2070,6 +2083,7 @@ class MigrateAction(ResizeActionBase):
 
 
 class RebuildAction(ResizeActionBase):
+
     def __init__(self, instance, image_id):
         """The action to perform rebuild.
 
