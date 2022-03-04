@@ -40,7 +40,7 @@ Python-troveclient_ is a client for Trove.
 
 Dashboard plugin
 ----------------
-Trove-dashboard_ is OpenStack dashbaord plugin for Trove.
+Trove-dashboard_ is OpenStack dashboard plugin for Trove.
 
 .. _Trove-dashboard: https://opendev.org/openstack/trove-dashboard
 
