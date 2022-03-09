@@ -51,7 +51,7 @@ class TestTroveContext(trove_testtools.TestCase):
 
     def test_to_dict_with_notification(self):
         ctx = context.TroveContext(user='test_user_id',
-                                   tenant='the_tenant',
+                                   project_id='the_tenant',
                                    request_id='test_req_id')
         ctx.notification = DBaaSInstanceCreate(ctx,
                                                request=Mock())
@@ -68,11 +68,11 @@ class TestTroveContext(trove_testtools.TestCase):
         ctx = context.TroveContext.from_dict(
             {'user': 'test_user_id',
              'request_id': 'test_req_id',
-             'tenant': 'abc',
+             'project_id': 'abc',
              'blah_blah': 'blah blah'})
         self.assertThat(ctx.user, Equals('test_user_id'))
         self.assertThat(ctx.request_id, Equals('test_req_id'))
-        self.assertThat(ctx.tenant, Equals('abc'))
+        self.assertThat(ctx.project_id, Equals('abc'))
         self.assertThat(ctx.limit, Is(None))
         self.assertThat(ctx.marker, Is(None))
         self.assertThat(ctx.service_catalog, Is(None))

@@ -548,7 +548,7 @@ class ContextMiddleware(base_wsgi.Middleware):
                 break
         limits = self._extract_limits(request.params)
         context = rd_context.TroveContext(auth_token=auth_token,
-                                          tenant=tenant_id,
+                                          project_id=tenant_id,
                                           user=user_id,
                                           is_admin=is_admin,
                                           limit=limits.get('limit'),

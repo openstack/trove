@@ -33,7 +33,7 @@ from trove.tests.unittests.util import util
 
 def _prep_conf(current_time):
     current_time = str(current_time)
-    _context = context.TroveContext(tenant='TENANT-' + current_time)
+    _context = context.TroveContext(project_id='TENANT-' + current_time)
     instance_id = 'INSTANCE-' + current_time
     return _context, instance_id
 
