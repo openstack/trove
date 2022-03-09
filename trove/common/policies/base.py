@@ -57,7 +57,7 @@ rules = [
         description='Must be an administrator.'),
     policy.RuleDefault(
         'admin_or_owner',
-        'rule:admin or tenant:%(tenant)s',
+        'rule:admin or project_id:%(tenant)s',
         description='Must be an administrator or owner of the object.'),
     policy.RuleDefault(
         'default',

@@ -45,7 +45,7 @@ class Manager(periodic_task.PeriodicTasks):
         super(Manager, self).__init__(CONF)
         self.admin_context = TroveContext(
             user=CONF.service_credentials.username,
-            tenant=CONF.service_credentials.project_id,
+            project_id=CONF.service_credentials.project_id,
             user_domain_name=CONF.service_credentials.user_domain_name)
         if CONF.exists_notification_transformer:
             self.exists_transformer = importutils.import_object(
