@@ -21,7 +21,7 @@ environments if we choose to.
 
 """
 
-from collections import Mapping
+from collections.abc import Mapping
 from datetime import datetime
 import json
 import os
