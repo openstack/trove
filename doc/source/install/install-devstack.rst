@@ -102,9 +102,11 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
     enable_service q-meta
 
     # enable DVR
-    Q_PLUGIN=ml2
-    Q_ML2_TENANT_NETWORK_TYPE=vxlan
+    Q_AGENT=openvswitch
     Q_DVR_MODE=legacy
+    Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch
+    Q_ML2_TENANT_NETWORK_TYPE=vxlan
+    Q_PLUGIN=ml2
 
     # Swift
     ENABLED_SERVICES+=,swift
