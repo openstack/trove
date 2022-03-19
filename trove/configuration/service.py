@@ -88,7 +88,7 @@ class ConfigurationsController(wsgi.Controller):
             'deleted': False
         }
         if not context.is_admin:
-            kwargs['tenant_id'] = context.tenant
+            kwargs['tenant_id'] = context.project_id
         instances = instances_models.DBInstance.find_all(**kwargs)
 
         limit = int(context.limit or CONF.instances_page_size)
@@ -246,7 +246,7 @@ class ConfigurationsController(wsgi.Controller):
         LOG.debug("Re-applying configuration group '%s' to all clusters.",
                   configuration_id)
         clusters = cluster_models.DBCluster.find_all(
-            tenant_id=context.tenant,
+            tenant_id=context.project_id,
             configuration_id=configuration_id,
             deleted=False).all()
 
