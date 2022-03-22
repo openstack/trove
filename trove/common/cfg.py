@@ -441,6 +441,8 @@ common_opts = [
                 help='Extension for default datastore managers. '
                      'Allows the use of custom managers for each of '
                      'the datastores supported by Trove.'),
+    cfg.StrOpt('docker_bridge_network_ip', default=None,
+               help='Docker bridge network IP.'),
     cfg.StrOpt('template_path', default='/etc/trove/templates/',
                help='Path which leads to datastore templates.'),
     cfg.BoolOpt('sql_query_logging', default=False,

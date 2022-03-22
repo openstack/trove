@@ -1030,6 +1030,20 @@ class BaseInstance(SimpleInstance):
                 f"CONTROLLER={CONF.controller_address}"
             )
 
+        # Since Victoria, guest agent uses docker.
+        # Configure docker's daemon.json if the directives exist in trove.conf
+        docker_daemon_values = {}
+
+        # Configure docker_bridge_network_ip in order to change the docker
+        # default range(172.17.0.0/16) of bridge network
+        if CONF.docker_bridge_network_ip:
+            docker_daemon_values["bip"] = CONF.docker_bridge_network_ip
+
+        if docker_daemon_values:
+            files['/etc/docker/daemon.json'] = (
+                json.dumps(docker_daemon_values)
+            )
+
         return files
 
     def reset_status(self):
