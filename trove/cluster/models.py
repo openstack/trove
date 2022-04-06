@@ -661,7 +661,7 @@ def validate_instance_nics(context, instances):
     for instance in instances:
         nics = instance.get('nics')
         if nics:
-            instance_nics.append(nics[0].get('net-id'))
+            instance_nics.append(nics[0].get('network_id'))
     if len(set(instance_nics)) > 1:
         raise exception.ClusterNetworksNotEqual()
     if not instance_nics:
