@@ -114,7 +114,7 @@ Bulk-configure a database or databases
 
    .. code-block:: console
 
-      $ openstack database configuration create group1 '{"sync_binlog" : 1}' --datastore mysql --datastore_version mysql-5.5
+      $ openstack database configuration create group1 '{"sync_binlog" : 1}' --datastore mysql --datastore-version mysql-5.5
       +----------------------+--------------------------------------+
       |       Property       |                Value                 |
       +----------------------+--------------------------------------+
