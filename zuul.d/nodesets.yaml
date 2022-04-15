@@ -1,0 +1,15 @@
+- nodeset:
+    name: trove-ubuntu-focal
+    nodes:
+      - name: controller
+        label: nested-virt-ubuntu-focal
+    groups:
+      - name: tempest
+        nodes:
+          - controller
+
+- nodeset:
+    name: trove-ubuntu-focal-single
+    nodes:
+      - name: primary
+        label: ubuntu-focal

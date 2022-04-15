@@ -59,7 +59,7 @@ function build_guest_image() {
         elementes="$elementes ubuntu-minimal"
     fi
 
-    export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive"}
+    export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive, OpenStack"}
     elementes="$elementes cloud-init-datasources"
 
     elementes="$elementes pip-cache"
