@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -x
+
 # This file format was stolen from devstack <3
 
 # This method was stolen from devstack
@@ -234,7 +237,8 @@ function is_fedora {
         GetOSVersion
     fi
 
-    [ "$os_VENDOR" = "Fedora" ] || [ "$os_VENDOR" = "Red Hat" ] || [ "$os_VENDOR" = "CentOS" ]
+    [ "$os_VENDOR" = "Fedora" ] || [ "$os_VENDOR" = "Red Hat" ]\
+    || [ "$os_VENDOR" = "CentOS" ] || [ "$os_VENDOR" = "CentOSStream" ]
 }
 
 

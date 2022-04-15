@@ -18,6 +18,8 @@
             voting: false
         - trove-ubuntu-guest-image-build:
             voting: true
+        - trove-centos8s-guest-image-build:
+            voting: true
         - trove-tempest-postgres:
             voting: false
         - trove-tempest-ipv6-only:

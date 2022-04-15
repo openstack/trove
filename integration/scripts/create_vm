@@ -79,6 +79,7 @@ Vagrant::Config.run do |global_config|
 end
             """)
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     conf = Config.load("conf.json")
     conf.write_vagrant_file()

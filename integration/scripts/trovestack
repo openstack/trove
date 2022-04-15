@@ -9,6 +9,8 @@
 #                                                                             #
 ###############################################################################
 
+set -x
+
 SCRIPT_DIRNAME=$(dirname "$0")
 PATH_TROVE=${PATH_TROVE:=$(readlink -f "${SCRIPT_DIRNAME}"/../..)}
 TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:=$(readlink -f "${SCRIPT_DIRNAME}")}
@@ -126,6 +128,7 @@ else
     PKG_MGR=apt-get
     PKG_GET_ARGS="-y --allow-unauthenticated --force-yes -qq"
 fi
+
 PKG_INSTALL_ARG="install"
 PKG_UPDATE_ARG="update"
 
@@ -749,7 +752,13 @@ function cmd_build_image() {
 
     echo "Ensuring we have all packages needed to build image."
     sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
-    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu git kpartx debootstrap squashfs-tools python3-pip python3-setuptools
+    if is_fedora; then
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install epel-release
+      sudo $PKG_MGR config-manager --set-enabled epel
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-img git kpartx debootstrap squashfs-tools python3-pip python3-setuptools
+    else
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-utils git kpartx debootstrap squashfs-tools python3-pip python3-setuptools
+    fi
     sudo -H $HTTP_PROXY pip3 install diskimage-builder
 
     build_guest_image ${image_guest_os} ${image_guest_release} ${dev_mode} ${guest_username} ${output}

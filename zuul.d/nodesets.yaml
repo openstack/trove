@@ -13,3 +13,9 @@
     nodes:
       - name: primary
         label: ubuntu-focal
+
+- nodeset:
+    name: trove-centos8s-single
+    nodes:
+      - name: primary
+        label: centos-8-stream
