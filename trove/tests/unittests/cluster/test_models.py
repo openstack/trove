@@ -178,11 +178,11 @@ class TestModels(trove_testtools.TestCase):
 
         test_instances = [
             {'volume_size': 1, 'flavor_id': '1234',
-             'nics': [{"net-id": "surprise"}]},
+             'nics': [{"network_id": "surprise"}]},
             {'volume_size': 1, 'flavor_id': '1234',
-             'nics': [{"net-id": "foo-bar"}]},
+             'nics': [{"network_id": "foo-bar"}]},
             {'volume_size': 1, 'flavor_id': '1234',
-             'nics': [{"net-id": "foo-bar"}]}]
+             'nics': [{"network_id": "foo-bar"}]}]
 
         self.assertRaises(exception.ClusterNetworksNotEqual,
                           models.validate_instance_nics,
@@ -191,11 +191,11 @@ class TestModels(trove_testtools.TestCase):
 
         test_instances = [
             {'volume_size': 1, 'flavor_id': '1234',
-             'nics': [{"net-id": "foo-bar"}]},
+             'nics': [{"network_id": "foo-bar"}]},
             {'volume_size': 1, 'flavor_id': '1234',
-             'nics': [{"net-id": "foo-bar"}]},
+             'nics': [{"network_id": "foo-bar"}]},
             {'volume_size': 1, 'flavor_id': '1234',
-             'nics': [{"net-id": "foo-bar"}]}]
+             'nics': [{"network_id": "foo-bar"}]}]
 
         create_neutron_cli_mock.return_value.find_resource = Mock(
             side_effect=neutron_exceptions.NotFound(
