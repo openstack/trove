@@ -141,7 +141,7 @@ def load_simple_instance_server_status(context, db_info):
 
 def load_simple_instance_addresses(context, db_info):
     """Get addresses of the instance from Neutron."""
-    if 'BUILDING' == db_info.task_status.action:
+    if 'BUILDING' == db_info.task_status.action and not db_info.cluster_id:
         db_info.addresses = []
         return
 
