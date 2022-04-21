@@ -767,7 +767,7 @@ function cmd_build_image() {
 # Build guest image and upload to Glance, register the datastore and configuration parameters.
 function cmd_build_and_upload_image() {
     local guest_os=${1:-"ubuntu"}
-    local guest_release=${2:-"bionic"}
+    local guest_release=${2:-"focal"}
     local dev_mode=${3:-"true"}
     local guest_username=${4:-"ubuntu"}
     local output_dir=${5:-"$HOME/images"}

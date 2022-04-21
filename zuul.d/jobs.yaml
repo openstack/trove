@@ -424,7 +424,7 @@
       - ^integration/(scripts|tests)/
     vars:
       guest_os: ubuntu
-      guest_os_release: bionic
+      guest_os_release: focal
       guest_username: ubuntu
       branch: master
       dev_mode: false
@@ -444,7 +444,7 @@
       - ^integration/(scripts|tests)/
     vars:
       guest_os: ubuntu
-      guest_os_release: bionic
+      guest_os_release: focal
       guest_username: ubuntu
       branch: master
       dev_mode: false

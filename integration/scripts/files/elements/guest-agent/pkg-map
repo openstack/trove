@@ -1,4 +1,11 @@
 {
+  "release": {
+    "ubuntu": {
+      "focal": {
+        "ureadahead": ""
+        }
+      }
+    },
   "family": {
     "redhat": {
       "guest-agent": "openstack-trove-guest-agent",
