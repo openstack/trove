@@ -103,7 +103,8 @@ class RedisCluster(models.Cluster):
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties, locality, configuration):
+               instances, extended_properties, locality, configuration,
+               image_id=None):
         LOG.debug("Initiating cluster creation.")
 
         if configuration:

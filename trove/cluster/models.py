@@ -260,14 +260,16 @@ class Cluster(object):
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties, locality, configuration):
+               instances, extended_properties, locality, configuration,
+               image_id=None):
         locality = srv_grp.ServerGroup.build_scheduler_hint(
             context, locality, name)
         api_strategy = strategy.load_api_strategy(datastore_version.manager)
         return api_strategy.cluster_class.create(context, name, datastore,
                                                  datastore_version, instances,
                                                  extended_properties,
-                                                 locality, configuration)
+                                                 locality, configuration,
+                                                 image_id)
 
     def validate_cluster_available(self, valid_states=[ClusterTasks.NONE]):
         if self.db_info.task_status not in valid_states:
@@ -326,7 +328,18 @@ class Cluster(object):
                             instance_type = instance_type.split(',')
                         instance['instance_type'] = instance_type
                     instances.append(instance)
-                return self.grow(instances)
+
+                # Since Victoria, guest agent uses docker.
+                # Get image_id from glance if image_id in datastore_versions
+                # table is NULL.
+                image_id = self.ds_version.image_id
+                if not image_id:
+                    glance_client = clients.create_glance_client(context)
+                    image_id = common_glance.get_image_id(
+                        glance_client, self.ds_version.image_id,
+                        self.ds_version.image_tags)
+                return self.grow(instances, image_id)
+
         elif action == 'shrink':
             context.notification = DBaaSClusterShrink(context, request=req)
             instance_ids = [instance['id'] for instance in param]
@@ -371,7 +384,7 @@ class Cluster(object):
         else:
             raise exception.BadRequest(_("Action %s not supported") % action)
 
-    def grow(self, instances):
+    def grow(self, instances, image_id=None):
         raise exception.BadRequest(_("Action 'grow' not supported"))
 
     def shrink(self, instance_ids):
