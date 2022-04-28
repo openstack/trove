@@ -101,19 +101,19 @@ Run all the unit tests in one command:
 
 .. code-block:: console
 
-   tox -e py38
+   tox -e py39
 
 Run all the tests of a specific test class:
 
 .. code-block:: console
 
-   tox -e py38 -- trove.tests.unittests.instance.test_service.TestInstanceController
+   tox -e py39 -- trove.tests.unittests.instance.test_service.TestInstanceController
 
 Run a single test case:
 
 .. code-block:: console
 
-   tox -e py38 -- trove.tests.unittests.instance.test_service.TestInstanceController.test_create_multiple_versions
+   tox -e py39 -- trove.tests.unittests.instance.test_service.TestInstanceController.test_create_multiple_versions
 
 References
 ----------
