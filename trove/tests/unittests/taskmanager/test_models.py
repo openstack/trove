@@ -242,8 +242,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         server = self.freshinstancetasks._create_server(
             None, None, datastore_manager, None, None, None)
 
-        userdata = self.userdata + "#cloud-config\nwrite_files:\n"
-        self.assertEqual(server.userdata, userdata)
+        self.assertEqual(server.userdata, self.userdata)
 
     def test_create_instance_with_keypair(self):
         cfg.CONF.set_override('nova_keypair', 'fake_keypair')
@@ -317,6 +316,41 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
     def test_servers_create_block_device_mapping_v2(self,
                                                     mock_hostname,
                                                     mock_name):
+        # This testcase is to test create_server with config_drive=True.
+        # We need set use_nova_server_config_drive True explicitly
+        # because use_nova_server_config_drive becomes False since Yoga
+        cfg.CONF.set_override('use_nova_server_config_drive', True)
+        self.freshinstancetasks.prepare_userdata = Mock(return_value=None)
+        mock_nova_client = self.freshinstancetasks.nova_client = Mock()
+        mock_servers_create = mock_nova_client.servers.create
+        self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
+                                               'mysql', None, None, None)
+        meta = {'trove_project_id': self.freshinstancetasks.tenant_id,
+                'trove_user_id': 'test_user',
+                'trove_instance_id': self.freshinstancetasks.id}
+        mock_servers_create.assert_called_with(
+            'fake-name', 'fake-image',
+            'fake-flavor', files={},
+            userdata=None,
+            block_device_mapping_v2=None,
+            availability_zone=None,
+            nics=None,
+            config_drive=True,
+            scheduler_hints=None,
+            key_name=None,
+            meta=meta,
+        )
+
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'hostname',
+                  new_callable=PropertyMock,
+                  return_value='fake-hostname')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'name',
+                  new_callable=PropertyMock,
+                  return_value='fake-name')
+    def test_servers_create_block_device_mapping_v2_since_yoga(
+        self, mock_hostname, mock_name):
+
+        # This testcase is for testing with config_drive=False.
         self.freshinstancetasks.prepare_userdata = Mock(
             return_value="#cloud-config\nwrite_files:\n")
         mock_nova_client = self.freshinstancetasks.nova_client = Mock()
