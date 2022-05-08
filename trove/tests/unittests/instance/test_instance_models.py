@@ -50,11 +50,12 @@ class SimpleInstanceTest(trove_testtools.TestCase):
                 ServiceStatuses.BUILDING), ds_version=Mock(), ds=Mock(),
             locality='affinity')
         self.instance.context = self.context
-        db_info.addresses = [
-            {'type': 'private', 'address': '123.123.123.123'},
-            {'type': 'private', 'address': '10.123.123.123'},
-            {'type': 'public', 'address': '15.123.123.123'},
-        ]
+        db_info.addresses = {
+            'private': [
+                {'version': 4, 'addr': '123.123.123.123'},
+                {'version': 4, 'addr': '10.123.123.123'}],
+            'public': [
+                {'version': 4, 'addr': '15.123.123.123'}]}
         self.orig_ip_regex = CONF.ip_regex
         self.orig_black_list_regex = CONF.black_list_regex
 
@@ -76,7 +77,6 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         CONF.ip_regex = '^(15.|123.)'
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = [addr['address'] for addr in ip]
         self.assertEqual(2, len(ip))
         self.assertIn('123.123.123.123', ip)
         self.assertIn('15.123.123.123', ip)
@@ -85,7 +85,6 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         CONF.ip_regex = '.*'
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = [addr['address'] for addr in ip]
         self.assertEqual(2, len(ip))
         self.assertNotIn('10.123.123.123', ip)
 
