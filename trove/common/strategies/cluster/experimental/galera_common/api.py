@@ -78,7 +78,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
     @staticmethod
     def _create_instances(context, db_info, datastore, datastore_version,
                           instances, extended_properties, locality,
-                          configuration_id):
+                          configuration_id, image_id):
         member_config = {"id": db_info.id,
                          "instance_type": "member"}
         name_index = int(time.time())
@@ -91,7 +91,8 @@ class GaleraCommonCluster(cluster_models.Cluster):
         return [Instance.create(context,
                                 instance['name'],
                                 instance['flavor_id'],
-                                datastore_version.image_id,
+                                datastore_version.image_id
+                                if datastore_version.image_id else image_id,
                                 [], [],
                                 datastore, datastore_version,
                                 instance.get('volume_size', None),
@@ -111,7 +112,8 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties, locality, configuration):
+               instances, extended_properties, locality, configuration,
+               image_id=None):
         LOG.debug("Initiating Galera cluster creation.")
         ds_conf = CONF.get(datastore_version.manager)
         # Check number of instances is at least min_cluster_member_count
@@ -129,7 +131,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
         cls._create_instances(context, db_info, datastore, datastore_version,
                               instances, extended_properties, locality,
-                              configuration)
+                              configuration, image_id)
 
         # Calling taskmanager to further proceed for cluster-configuration
         task_api.load(context, datastore_version.manager).create_cluster(
@@ -137,7 +139,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
         return cls(context, db_info, datastore, datastore_version)
 
-    def grow(self, instances):
+    def grow(self, instances, image_id=None):
         LOG.debug("Growing cluster %s.", self.id)
 
         self.validate_cluster_available()
@@ -156,7 +158,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
             configuration_id = self.db_info.configuration_id
             new_instances = self._create_instances(
                 context, db_info, datastore, datastore_version, instances,
-                None, locality, configuration_id)
+                None, locality, configuration_id, image_id)
 
             task_api.load(context, datastore_version.manager).grow_cluster(
                 db_info.id, [instance.id for instance in new_instances])

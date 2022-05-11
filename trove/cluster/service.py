@@ -20,7 +20,9 @@ from trove.cluster import models
 from trove.cluster import views
 from trove.common import apischema
 from trove.common import cfg
+from trove.common import clients
 from trove.common import exception
+from trove.common import glance as common_glance
 from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification
@@ -172,6 +174,16 @@ class ClusterController(wsgi.Controller):
         datastore, datastore_version = (
             datastore_models.get_datastore_version(**datastore_args))
 
+        # Since Victoria, guest agent uses docker.
+        # Get image_id from glance if image_id in datastore_versions table
+        # is NULL.
+        image_id = None
+        if not datastore_version.image_id:
+            glance_client = clients.create_glance_client(context)
+            image_id = common_glance.get_image_id(
+                glance_client, datastore_version.image_id,
+                datastore_version.image_tags)
+
         extended_properties = body['cluster'].get('extended_properties', {})
 
         try:
@@ -228,7 +240,8 @@ class ClusterController(wsgi.Controller):
             cluster = models.Cluster.create(context, name, datastore,
                                             datastore_version, instances,
                                             extended_properties,
-                                            locality, configuration)
+                                            locality, configuration,
+                                            image_id)
         cluster.locality = locality
         view = views.load_view(cluster, req=req, load_servers=False)
         return wsgi.Result(view.data(), 200)
