@@ -968,23 +968,30 @@ class BaseInstance(SimpleInstance):
         return self._server_group
 
     def prepare_cloud_config(self, files):
-        userdata = (
-            "#cloud-config\n"
-            "write_files:\n"
-        )
+        # This method returns None if the files argument is None
+        userdata = None
 
-        for filename, content in files.items():
-            ud = encodeutils.safe_encode(content)
-            body_userdata = (
-                "- encoding: b64\n"
-                "  owner: trove:trove\n"
-                "  path: %s\n"
-                "  content: %s\n" % (
-                    filename, encodeutils.safe_decode(base64.b64encode(ud)))
+        if files:
+            userdata = (
+                "#cloud-config\n"
+                "write_files:\n"
             )
-            userdata = userdata + body_userdata
 
-        return userdata
+            injected_config_owner = CONF.get('injected_config_owner')
+            injected_config_group = CONF.get('injected_config_group')
+            for filename, content in files.items():
+                ud = encodeutils.safe_encode(content)
+                body_userdata = (
+                    "- encoding: b64\n"
+                    "  owner: %s:%s\n"
+                    "  path: %s\n"
+                    "  content: %s\n" % (
+                        injected_config_owner, injected_config_group, filename,
+                        encodeutils.safe_decode(base64.b64encode(ud)))
+                )
+                userdata = userdata + body_userdata
+
+        return userdata if userdata else ""
 
     def get_injected_files(self, datastore_manager, datastore_version):
         injected_config_location = CONF.get('injected_config_location')
