@@ -30,6 +30,13 @@ stored in Glance. This document shows you the steps to build the guest images.
     is created and registered in Glance automatically, unless it's disabled by
     setting ``TROVE_ENABLE_IMAGE_BUILD=false`` in devstack local.conf file.
 
+    Since Yoga release, Trove sets default use_nova_server_config_drive to
+    ``False``. This change will break instance provisioning in some cases.
+    To avoid that, make sure your ``DIB_CLOUD_INIT_DATASOURCES`` environment
+    contains ``OpenStack`` to configure cloud-init to use metadata serivce.
+    If cloud-init still doesn't inject files after changing the environment,
+    please ask your IaaS provider admin to enable OpenStack metadata service.
+
 High Level Overview of a Trove Guest Instance
 =============================================
 

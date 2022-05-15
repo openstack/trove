@@ -988,7 +988,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         # Use config_drive instead by userdata
         # We will inject guest config by cloud-config
-        if not config_drive:
+        if files:
             if not userdata:
                 userdata = self.prepare_cloud_config(files)
             else:
