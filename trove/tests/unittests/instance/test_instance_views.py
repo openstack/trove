@@ -13,12 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from unittest.mock import MagicMock
-from unittest.mock import Mock
 from trove.common import cfg
 from trove.instance.views import InstanceDetailView
 from trove.instance.views import InstanceView
 from trove.tests.unittests import trove_testtools
+from unittest.mock import MagicMock
+from unittest.mock import Mock
 
 CONF = cfg.CONF
 
@@ -27,9 +27,16 @@ class InstanceViewsTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(InstanceViewsTest, self).setUp()
-        self.addresses = {"private": [{"addr": "123.123.123.123"}],
-                          "internal": [{"addr": "10.123.123.123"}],
-                          "public": [{"addr": "15.123.123.123"}]}
+        self.addresses = [{
+            'type': 'private',
+            'address': '123.123.123.123',
+            'network': 'net-id-private'}, {
+            'type': 'private',
+            'address': '10.123.123.123',
+            'network': 'net-id-private'}, {
+            'type': 'public',
+            'address': '15.123.123.123',
+            'network': 'net-id-public'}]
         self.orig_ip_regex = CONF.ip_regex
 
     def tearDown(self):
@@ -53,11 +60,12 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.datastore_version.manager = 'mysql'
         self.instance.hostname = 'test.trove.com'
         self.ip = "1.2.3.4"
-        self.instance.addresses = {"private": [{"addr": self.ip}]}
+        self.instance.addresses = [
+            {"address": self.ip, 'type': 'private', 'network': 'net-id'}]
         self.instance.volume_used = '3'
         self.instance.root_password = 'iloveyou'
         self.instance.get_visible_ip_addresses.return_value = [
-            {'type': 'private', 'address': '1.2.3.4'}]
+            {'type': 'private', 'address': '1.2.3.4', 'network': 'net-id'}]
         self.instance.slave_of_id = None
         self.instance.slaves = []
         self.instance.locality = 'affinity'
@@ -139,7 +147,7 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         instance = MagicMock()
         instance.hostname = None
         instance.get_visible_ip_addresses.return_value = [
-            {'address': '10.111.0.27', 'type': 'private'}
+            {'address': '10.111.0.27', 'type': 'private', 'network': 'net-id'}
         ]
         instance.access = None
         instance.slaves = []
@@ -150,8 +158,8 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.assertFalse(data['access']['is_public'])
 
         instance.get_visible_ip_addresses.return_value = [
-            {'address': '10.111.0.27', 'type': 'private'},
-            {'address': '172.30.5.107', 'type': 'public'}
+            {'address': '10.111.0.27', 'type': 'private', 'network': 'net-id'},
+            {'address': '172.30.5.107', 'type': 'public', 'network': 'net-id'}
         ]
 
         view = InstanceDetailView(instance, self.req)

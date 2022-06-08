@@ -266,14 +266,13 @@ class SimpleInstance(object):
             return None
 
         IPs = []
-        for address_list in self.addresses.values():
-            for addr_info in address_list:
-                if CONF.ip_regex and CONF.black_list_regex:
-                    if not ip_visible(addr_info['addr'], CONF.ip_regex,
-                                      CONF.black_list_regex):
-                        continue
+        for address in self.addresses:
+            if CONF.ip_regex and CONF.black_list_regex:
+                if not ip_visible(address['address'], CONF.ip_regex,
+                                  CONF.black_list_regex):
+                    continue
 
-                IPs.append(addr_info['addr'])
+            IPs.append(address)
 
         return IPs
 
