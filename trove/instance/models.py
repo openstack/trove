@@ -1045,6 +1045,9 @@ class BaseInstance(SimpleInstance):
         # default range(172.17.0.0/16) of bridge network
         if CONF.docker_bridge_network_ip:
             docker_daemon_values["bip"] = CONF.docker_bridge_network_ip
+        if CONF.docker_insecure_registries:
+            docker_daemon_values["insecure-registries"] = \
+                CONF.docker_insecure_registries.split(',')
 
         if docker_daemon_values:
             files['/etc/docker/daemon.json'] = (
