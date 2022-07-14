@@ -78,9 +78,8 @@ class FakeDnsChecker(object):
         # the ability to return the IP from the API as well as a hostname,
         # since that lines up to the DnsEntry's content field.
         ip_addresses = mgmt_instance.server['addresses']
-        for network_name, ip_list in ip_addresses.items():
-            for ip in ip_list:
-                if entry.content == ip['addr']:
-                    return
+        for address in ip_addresses:
+            if entry.content == address['address']:
+                return
         fail("Couldn't find IP address %s among these values: %s"
              % (entry.content, ip_addresses))

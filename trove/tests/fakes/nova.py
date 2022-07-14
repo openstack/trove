@@ -17,6 +17,7 @@ import collections
 import uuid
 
 import eventlet
+
 from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
@@ -128,7 +129,10 @@ class FakeServer(object):
 
     @property
     def addresses(self):
-        return {"private": [{"addr": "123.123.123.123"}]}
+        return [{
+            "address": "123.123.123.123",
+            'type': 'private',
+            'network': 'net-id'}]
 
     def confirm_resize(self):
         if self.status != "VERIFY_RESIZE":
@@ -576,7 +580,7 @@ class FakeHost(object):
                 'status': server.status
             })
             if (str(server.flavor_ref).startswith('http:') or
-               str(server.flavor_ref).startswith('https:')):
+                    str(server.flavor_ref).startswith('https:')):
                 flavor = FLAVORS.get_by_href(server.flavor_ref)
             else:
                 flavor = FLAVORS.get(server.flavor_ref)

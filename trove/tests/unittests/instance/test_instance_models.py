@@ -11,9 +11,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import uuid
+
 from unittest.mock import Mock
 from unittest.mock import patch
-import uuid
 
 from trove.backup import models as backup_models
 from trove.common import cfg
@@ -25,9 +26,9 @@ from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import DBInstanceFault
 from trove.instance.models import Instance
-from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
+from trove.instance.models import instance_encryption_key_cache
 from trove.instance.service_status import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
@@ -50,12 +51,17 @@ class SimpleInstanceTest(trove_testtools.TestCase):
                 ServiceStatuses.BUILDING), ds_version=Mock(), ds=Mock(),
             locality='affinity')
         self.instance.context = self.context
-        db_info.addresses = {
-            'private': [
-                {'version': 4, 'addr': '123.123.123.123'},
-                {'version': 4, 'addr': '10.123.123.123'}],
-            'public': [
-                {'version': 4, 'addr': '15.123.123.123'}]}
+        db_info.addresses = [{
+            'type': 'private',
+            'address': '123.123.123.123',
+            'network': 'net-id-private'}, {
+            'type': 'private',
+            'address': '10.123.123.123',
+            'network': 'net-id-private'}, {
+            'type': 'public',
+            'address': '15.123.123.123',
+            'network': 'net-id-public'}]
+
         self.orig_ip_regex = CONF.ip_regex
         self.orig_black_list_regex = CONF.black_list_regex
 
@@ -78,8 +84,8 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
         self.assertEqual(2, len(ip))
-        self.assertIn('123.123.123.123', ip)
-        self.assertIn('15.123.123.123', ip)
+        self.assertIn('123.123.123.123', ip[0].get('address'))
+        self.assertIn('15.123.123.123', ip[1].get('address'))
 
     def test_filter_ips_black_list(self):
         CONF.ip_regex = '.*'
