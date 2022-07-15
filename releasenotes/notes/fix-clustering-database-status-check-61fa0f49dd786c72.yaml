@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fix the way to check instance status. Since Victoria, Trove has change 
+    the database instance status name from `RUNNING` to `HEALTHY` but 
+    some clustering databases like Apache Cassandra stil used RUNNING.

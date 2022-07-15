@@ -238,7 +238,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                     node['guest'].node_cleanup()
                     LOG.debug("Waiting for node to finish its "
                               "cleanup: %s", nid)
-                    if not self._all_instances_running([nid], cluster_id):
+                    if not self._all_instances_healthy([nid], cluster_id):
                         LOG.warning("Node did not complete cleanup "
                                     "successfully: %s", nid)
 
