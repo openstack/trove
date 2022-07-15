@@ -22,6 +22,7 @@ from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
+from trove.common import glance as common_glance
 from trove.common.i18n import _
 from trove.common.notification import (
     DBaaSClusterAttachConfiguration,

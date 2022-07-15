@@ -69,7 +69,7 @@ class Checker(object):
         self._run_assertion(assert_false, *args, **kwargs)
 
     def not_equal(self, *args, **kwargs):
-        _run_assertion(assert_not_equal, *args, **kwargs)
+        self._run_assertion(assert_not_equal, *args, **kwargs)
 
     def _run_assertion(self, assert_func, *args, **kwargs):
         """
@@ -171,10 +171,10 @@ class TypeCheck(Check):
         self.instance = instance
         super(TypeCheck, self).__init__()
 
-    def _check_type(value, attribute_type):
+    def _check_type(self, value, attribute_type):
         if not isinstance(value, attribute_type):
             self.fail("%s attribute %s is of type %s (expected %s)."
-                      % (self.name, attribute_name, type(value),
+                      % (self.name, self.attribute_name, type(value),
                          attribute_type))
 
     def has_field(self, attribute_name, attribute_type,

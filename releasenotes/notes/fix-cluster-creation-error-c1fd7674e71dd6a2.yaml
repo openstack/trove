@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fix cluster creation error which caused by
+    "NameError: name 'common_glance' is not defined"

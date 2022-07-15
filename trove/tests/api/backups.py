@@ -28,6 +28,7 @@ from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
 from trove import tests
 from trove.tests.api.instances import instance_info
+from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_RESTORE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish

@@ -743,7 +743,7 @@ class FakeSecurityGroupRules(object):
 
 class FakeServerGroup(object):
 
-    def __init__(self, name=None, policies=None, context=None):
+    def __init__(self, name=None, policies=None, description=None):
         self.name = name
         self.description = description
         self.id = "FAKE_SRVGRP_%s" % uuid.uuid4()
