@@ -39,11 +39,6 @@ def die(message, *args):
     sys.exit(1)
 
 
-def check_python_version():
-    if sys.version_info < (2, 7):
-        die("Need Python Version >= 2.7")
-
-
 def run_command(cmd, redirect_output=True, check_exit_code=True):
     """
     Runs a command in an out-of-process shell, returning the
@@ -137,7 +132,6 @@ def print_help():
 
 
 def main(argv):
-    check_python_version()
     check_dependencies()
     create_virtualenv()
     install_dependencies()

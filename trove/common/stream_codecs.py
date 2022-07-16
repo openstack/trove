@@ -19,7 +19,6 @@ import configparser
 import csv
 import io
 import re
-import sys
 
 import xmltodict
 import yaml
@@ -229,11 +228,7 @@ class IniCodec(StreamCodec):
         return buf
 
     def _init_config_parser(self, sections=None):
-        # SafeConfigParser was deprecated in Python 3.2
-        if sys.version_info >= (3, 2):
-            parser = configparser.ConfigParser(allow_no_value=True)
-        else:
-            parser = configparser.SafeConfigParser(allow_no_value=True)
+        parser = configparser.ConfigParser(allow_no_value=True)
         if sections:
             for section in sections:
                 parser.add_section(section)
@@ -452,10 +447,7 @@ class KeyValueCodec(StreamCodec):
         # Note(zhaochao): In Python 3, when files are opened in text mode,
         # newlines will be translated to '\n' by default, so we just split
         # the stream by '\n'.
-        if sys.version_info[0] >= 3:
-            lines = stream.split('\n')
-        else:
-            lines = stream.split(self._line_terminator)
+        lines = stream.split('\n')
 
         result = {}
         for line in lines:
