@@ -13,3 +13,4 @@ functionality, the following resources are provided.
    design
    functional_test
    testing
+   release-notes
