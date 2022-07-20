@@ -538,7 +538,9 @@ function config_trove_network {
     if [[ "$shared" == "False" ]]; then
         openstack network set ${PRIVATE_NETWORK_NAME} --share
     fi
-    sudo ip route replace ${IPV4_ADDRS_SAFE_TO_USE} via $ROUTER_GW_IP
+    if [[ -n ${ROUTER_GW_IP} && -n ${IPV4_ADDRS_SAFE_TO_USE} ]]; then
+        sudo ip route replace ${IPV4_ADDRS_SAFE_TO_USE} via $ROUTER_GW_IP
+    fi
 
     # Make sure we can reach the management port of the service VM, this
     # configuration is only for testing purpose. In production, it's
