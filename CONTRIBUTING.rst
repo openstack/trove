@@ -258,8 +258,7 @@ following on your development system and ensure that they pass.
 .. code-block:: bash
 
     $ tox -e pep8
-    $ tox -e py27
-    $ tox -e py34
+    $ tox -e py39
     $ tox -e pylint
 
 If you are unable to get these to pass locally, it is a waste of the
@@ -294,11 +293,11 @@ To run all tests and PEP8, run tox, like so:
 
     $ tox
 
-To run just the tests for Python 2.7, run:
+To run just the tests for Python 3.9, run:
 
 .. code-block:: bash
 
-    $ tox -epy27
+    $ tox -epy39
 
 To run just PEP8, run:
 
