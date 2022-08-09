@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import json
 import os
 
 from tempfile import NamedTemporaryFile
@@ -257,6 +258,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         cfg.CONF.set_override('guest_config', self.guestconfig)
         cfg.CONF.set_override('guest_info', 'guest_info.conf')
         cfg.CONF.set_override('injected_config_location', '/etc/trove/conf.d')
+        cfg.CONF.set_override('docker_insecure_registries',
+                              '127.0.0.1:4000,127.0.0.1:5000')
 
         # execute
         files = self.freshinstancetasks.get_injected_files("test", 'test')
@@ -268,6 +271,9 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         self.assertEqual(
             self.guestconfig_content,
             files['/etc/trove/conf.d/trove-guestagent.conf'])
+        deamon_json = json.loads(files.get('/etc/docker/daemon.json'))
+        self.assertIn('127.0.0.1:4000', deamon_json.get('insecure-registries'))
+        self.assertIn('127.0.0.1:5000', deamon_json.get('insecure-registries'))
 
     @patch.object(DBInstance, 'get_by')
     def test_create_instance_guestconfig_compat(self, patch_get_by):
@@ -285,6 +291,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         self.assertEqual(
             self.guestconfig_content,
             files['/etc/trove-guestagent.conf'])
+        self.assertFalse(files.get('/etc/docker/daemon.json'))
 
     def test_create_instance_with_az_kwarg(self):
         # execute

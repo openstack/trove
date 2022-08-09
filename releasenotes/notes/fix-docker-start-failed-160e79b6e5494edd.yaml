@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fix docker start failed in trove guest-agent when
+    docker_insecure_registries is not set.
