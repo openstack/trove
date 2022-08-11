@@ -111,7 +111,7 @@ To ssh into the Trove instance, you need to make sure:
   .. code-block:: console
 
      $ openstack server list | grep test | grep trove-mgmt
-     | 810fc014-bd9f-4464-b506-1b78f37c495e | test | ACTIVE | private=10.1.0.57; trove-mgmt=192.168.254.229 | ubuntu-xenial-mysql-5.7-dev | ds1G   |
+     | 810fc014-bd9f-4464-b506-1b78f37c495e | test | ACTIVE | private=10.1.0.57; trove-mgmt=192.168.254.229 | ubuntu-focal-mysql-5.7-dev | ds1G   |
 
 * The TCP 22 port is allowed in the Neutron security group (defined by
   ``management_security_groups`` config option) that applied to the management

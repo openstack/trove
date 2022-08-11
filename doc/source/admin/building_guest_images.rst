@@ -149,7 +149,7 @@ The trove guest image could be created by running the following command:
         ${guest_username} \
         ${output_image_path}
 
-* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=bionic`` are fully
+* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=focal`` are fully
   tested and supported.
 
 * Default input values:
@@ -157,7 +157,7 @@ The trove guest image could be created by running the following command:
   .. code-block:: ini
 
       guest_os=ubuntu
-      guest_os_release=bionic
+      guest_os_release=focal
       dev_mode=true
       guest_username=ubuntu
       output_image_path=$HOME/images/trove-guest-${guest_os}-${guest_os_release}-dev.qcow2
@@ -182,12 +182,12 @@ The trove guest image could be created by running the following command:
   extension, e.g. to build a raw image, you can specify
   ``$your-image-name.raw`` as the ``output_image_path`` parameter.
 
-For example, in order to build a guest image for Ubuntu Bionic operating
+For example, in order to build a guest image for Ubuntu focal operating
 system in development mode:
 
 .. code-block:: console
 
-    $ ./trovestack build-image ubuntu bionic true ubuntu
+    $ ./trovestack build-image ubuntu focal true ubuntu
 
 Once the image build is finished, the cloud administrator needs to register the
 image in Glance and register a new datastore or version in Trove using
@@ -195,12 +195,12 @@ image in Glance and register a new datastore or version in Trove using
 
 .. code-block:: console
 
-    $ openstack image create trove-guest-ubuntu-bionic \
+    $ openstack image create trove-guest-ubuntu-focal \
       --private \
       --disk-format qcow2 \
       --container-format bare \
       --tag trove --tag mysql \
-      --file ~/images/trove-guest-ubuntu-bionic-dev.qcow2
+      --file ~/images/trove-guest-ubuntu-focal-dev.qcow2
     $ openstack datastore version create 5.7.29 mysql mysql "" \
       --image-tags trove,mysql \
       --active --default

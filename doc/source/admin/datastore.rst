@@ -59,7 +59,7 @@ To create a datastore version:
    .. code-block:: console
 
       openstack image create \
-        trove-guest-ubuntu-bionic \
+        trove-guest-ubuntu-focal \
         --private \
         --disk-format qcow2 --container-format bare \
         --file $image_file \

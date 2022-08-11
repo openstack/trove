@@ -93,7 +93,7 @@
     vars:
       devstack_localrc:
         TROVE_RESIZE_TIME_OUT: 1800
-        TROVE_NON_DEV_IMAGE_URL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-xenial.qcow2
+        TROVE_NON_DEV_IMAGE_URL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-focal.qcow2
       trove_resize_time_out: 1800
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
@@ -415,7 +415,7 @@
     run: playbooks/image-build/run.yaml
     nodeset: trove-ubuntu-focal-single
     description: |
-      Build Ubuntu Bionic based image only on ubuntu distro.
+      Build Ubuntu focal based image only on ubuntu distro.
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
@@ -435,7 +435,7 @@
     run: playbooks/image-build/run.yaml
     nodeset: trove-centos8s-single
     description: |
-      Build Ubuntu Bionic based image only on centos8 stream.
+      Build Ubuntu focal based image only on centos8 stream.
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
@@ -451,28 +451,28 @@
       image_suffix: ""
 
 - job:
-    name: publish-trove-guest-image-ubuntu-bionic
+    name: publish-trove-guest-image-ubuntu-focal
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu Bionic based Trove guest image to
+      Build and publish Ubuntu focal based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: bionic
+      guest_os_release: focal
       guest_username: ubuntu
       branch: master
       dev_mode: false
       image_suffix: ""
 
 - job:
-    name: publish-trove-guest-image-ubuntu-bionic-dev
+    name: publish-trove-guest-image-ubuntu-focal-dev
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu Bionic based Trove guest image to
+      Build and publish Ubuntu focal based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: bionic
+      guest_os_release: focal
       guest_username: ubuntu
       branch: master
       dev_mode: true

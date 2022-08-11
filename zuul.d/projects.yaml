@@ -40,5 +40,5 @@
         - trove-scenario-mariadb-multi
     periodic:
       jobs:
-        - publish-trove-guest-image-ubuntu-bionic
-        - publish-trove-guest-image-ubuntu-bionic-dev
+        - publish-trove-guest-image-ubuntu-focal
+        - publish-trove-guest-image-ubuntu-focal-dev

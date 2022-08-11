@@ -1,0 +1,5 @@
+---
+
+deprecations:
+  - |
+    The support of Bionic has been removed.

@@ -732,7 +732,7 @@ function cmd_build_image() {
     exclaim "Params for cmd_build_image function: $@"
 
     local image_guest_os=${1:-'ubuntu'}
-    local image_guest_release=${2:-'bionic'}
+    local image_guest_release=${2:-'focal'}
     local dev_mode=${3:-'true'}
     local guest_username=${4:-'ubuntu'}
     local output=$5

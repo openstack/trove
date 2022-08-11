@@ -118,7 +118,7 @@ Upgrade Trove services
    .. code-block:: console
 
       $ stackdir=/opt/stack
-      $ $stackdir/trove/integration/scripts/trovestack build-image ubuntu bionic true ubuntu
+      $ $stackdir/trove/integration/scripts/trovestack build-image ubuntu focal true ubuntu
 
 #. Trove database migration.
 
@@ -146,7 +146,7 @@ Upgrade Trove services
 
    .. code-block:: console
 
-      $ imageid=$(openstack image create trove-guest-victoria-ubuntu-bionic-dev \
+      $ imageid=$(openstack image create trove-guest-victoria-ubuntu-focal-dev \
           --private \
           --disk-format qcow2 --container-format bare \
           --file ${imagefile-path} \
