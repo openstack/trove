@@ -23,7 +23,7 @@ function build_guest_image() {
         export ELEMENTS_PATH=${trove_elements_path}
     fi
 
-    local GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-3}
+    local GUEST_IMAGESIZE=${GUEST_IMAGESIZE:-5}
     local GUEST_CACHEDIR=${GUEST_CACHEDIR:-"$HOME/.cache/image-create"}
     sudo rm -rf ${GUEST_CACHEDIR}
 
