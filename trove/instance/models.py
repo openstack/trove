@@ -1046,7 +1046,7 @@ class BaseInstance(SimpleInstance):
             docker_daemon_values["bip"] = CONF.docker_bridge_network_ip
         if CONF.docker_insecure_registries:
             docker_daemon_values["insecure-registries"] = \
-                CONF.docker_insecure_registries.split(',')
+                CONF.docker_insecure_registries
 
         if docker_daemon_values:
             files['/etc/docker/daemon.json'] = (
