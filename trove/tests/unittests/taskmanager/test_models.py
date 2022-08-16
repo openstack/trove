@@ -253,6 +253,11 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
 
         self.assertEqual('fake_keypair', server.key_name)
 
+    def test_create_instance_prepare_cloud_config(self):
+        files = {"/tmp/fake_file": "fake text"}
+        user_data = self.freshinstancetasks.prepare_cloud_config(files)
+        self.assertTrue(user_data.startswith('#cloud-config'))
+
     @patch.object(DBInstance, 'get_by')
     def test_create_instance_guestconfig(self, patch_get_by):
         cfg.CONF.set_override('guest_config', self.guestconfig)
