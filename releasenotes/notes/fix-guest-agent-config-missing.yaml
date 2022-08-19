@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fix guest-agent.conf is not generated in trove guest vm.
+    `Stroy 2010231 <https://storyboard.openstack.org/#!/story/2010231>`__

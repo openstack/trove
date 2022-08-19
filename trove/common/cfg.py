@@ -428,10 +428,10 @@ common_opts = [
     cfg.StrOpt('injected_config_location', default='/etc/trove/conf.d',
                help='Path to folder on the Guest where config files will be '
                     'injected during instance creation.'),
-    cfg.StrOpt('injected_config_owner', default='trove',
+    cfg.StrOpt('injected_config_owner', default='ubuntu',
                help='Owner of the Guest Agent directory and files to be '
                     'injected during instance creation.'),
-    cfg.StrOpt('injected_config_group', default='trove',
+    cfg.StrOpt('injected_config_group', default='root',
                help='Group of the Guest Agent directory and files to be '
                     'injected during instance creation.'),
     cfg.StrOpt('guest_config',
