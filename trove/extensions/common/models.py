@@ -139,5 +139,5 @@ class RootHistory(object):
         history = cls.load(context, instance_id)
         if history is not None:
             return history
-        history = RootHistory(instance_id, context.user)
+        history = RootHistory(instance_id, context.user_id)
         return history.save()

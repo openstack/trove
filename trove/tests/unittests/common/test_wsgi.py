@@ -42,7 +42,7 @@ class TestWsgi(trove_testtools.TestCase):
         # assertions
         ctx = req.environ[wsgi.CONTEXT_KEY]
         self.assertThat(ctx, Not(Is(None)))
-        self.assertThat(ctx.user, Equals(user_id))
+        self.assertThat(ctx.user_id, Equals(user_id))
         self.assertThat(ctx.auth_token, Equals(token))
         self.assertEqual(0, len(ctx.service_catalog))
 

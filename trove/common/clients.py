@@ -102,7 +102,7 @@ def nova_client(context, region_name=None, password=None):
         )
 
     client = Client(CONF.nova_client_version,
-                    username=context.user,
+                    username=context.user_id,
                     password=password,
                     endpoint_override=url,
                     project_id=context.project_id,
@@ -141,7 +141,7 @@ def cinder_client(context, region_name=None):
             endpoint_type=CONF.cinder_endpoint_type
         )
 
-    client = CinderClient.Client(context.user, context.auth_token,
+    client = CinderClient.Client(context.user_id, context.auth_token,
                                  project_id=context.project_id,
                                  auth_url=CONF.service_credentials.auth_url,
                                  insecure=CONF.cinder_api_insecure)

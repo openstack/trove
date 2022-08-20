@@ -24,7 +24,7 @@ from trove.tests.unittests import trove_testtools
 class TestTroveContext(trove_testtools.TestCase):
     def test_create_with_extended_args(self):
         expected_service_catalog = {'key': 'value'}
-        ctx = context.TroveContext(user="test_user_id",
+        ctx = context.TroveContext(user_id="test_user_id",
                                    request_id="test_req_id",
                                    limit="500",
                                    marker="x",
@@ -34,23 +34,23 @@ class TestTroveContext(trove_testtools.TestCase):
         self.assertThat(ctx.service_catalog, Equals(expected_service_catalog))
 
     def test_create(self):
-        ctx = context.TroveContext(user='test_user_id',
+        ctx = context.TroveContext(user_id='test_user_id',
                                    request_id='test_req_id')
-        self.assertThat(ctx.user, Equals('test_user_id'))
+        self.assertThat(ctx.user_id, Equals('test_user_id'))
         self.assertThat(ctx.request_id, Equals('test_req_id'))
         self.assertThat(ctx.limit, Is(None))
         self.assertThat(ctx.marker, Is(None))
         self.assertThat(ctx.service_catalog, Is(None))
 
     def test_to_dict(self):
-        ctx = context.TroveContext(user='test_user_id',
+        ctx = context.TroveContext(user_id='test_user_id',
                                    request_id='test_req_id')
         ctx_dict = ctx.to_dict()
         self.assertThat(ctx_dict.get('user'), Equals('test_user_id'))
         self.assertThat(ctx_dict.get('request_id'), Equals('test_req_id'))
 
     def test_to_dict_with_notification(self):
-        ctx = context.TroveContext(user='test_user_id',
+        ctx = context.TroveContext(user_id='test_user_id',
                                    project_id='the_tenant',
                                    request_id='test_req_id')
         ctx.notification = DBaaSInstanceCreate(ctx,
@@ -70,7 +70,7 @@ class TestTroveContext(trove_testtools.TestCase):
              'request_id': 'test_req_id',
              'project_id': 'abc',
              'blah_blah': 'blah blah'})
-        self.assertThat(ctx.user, Equals('test_user_id'))
+        self.assertThat(ctx.user_id, Equals('test_user_id'))
         self.assertThat(ctx.request_id, Equals('test_req_id'))
         self.assertThat(ctx.project_id, Equals('abc'))
         self.assertThat(ctx.limit, Is(None))

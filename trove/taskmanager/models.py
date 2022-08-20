@@ -116,7 +116,7 @@ class NotifyMixin(object):
             'state_description': self.status,
             'state': self.status,
             'tenant_id': self.tenant_id,
-            'user_id': self.context.user,
+            'user_id': self.context.user_id,
         }
 
         if CONF.get(self.datastore_version.manager).volume_support:
@@ -980,7 +980,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                        nics, files={}, scheduler_hints=None):
         userdata = self.prepare_userdata(datastore_manager)
         metadata = {'trove_project_id': self.tenant_id,
-                    'trove_user_id': self.context.user,
+                    'trove_user_id': self.context.user_id,
                     'trove_instance_id': self.id}
         bdmap_v2 = block_device_mapping_v2
         config_drive = CONF.use_nova_server_config_drive

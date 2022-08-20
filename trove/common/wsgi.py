@@ -549,7 +549,7 @@ class ContextMiddleware(base_wsgi.Middleware):
         limits = self._extract_limits(request.params)
         context = rd_context.TroveContext(auth_token=auth_token,
                                           project_id=tenant_id,
-                                          user=user_id,
+                                          user_id=user_id,
                                           is_admin=is_admin,
                                           limit=limits.get('limit'),
                                           marker=limits.get('marker'),

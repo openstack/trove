@@ -115,7 +115,7 @@ class TroveBaseTraits(object):
                 'state_description': instance.status.lower(),
                 'state': instance.status.lower(),
                 'tenant_id': instance.tenant_id,
-                'user_id': instance.context.user,
+                'user_id': instance.context.user_id,
             })
 
         self.payload.update(kwargs)

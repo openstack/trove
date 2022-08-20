@@ -221,7 +221,7 @@ class BaseFreshInstanceTasksTest(trove_testtools.TestCase):
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
             None, MagicMock(), None, None)
         self.freshinstancetasks.context = trove.common.context.TroveContext(
-            user='test_user')
+            user_id='test_user')
 
     def tearDown(self):
         super(BaseFreshInstanceTasksTest, self).tearDown()
@@ -1195,16 +1195,16 @@ class RootReportTest(trove_testtools.TestCase):
 
     def test_report_root_first_time(self):
         context = Mock()
-        context.user = utils.generate_uuid()
+        context.user_id = utils.generate_uuid()
         report = mysql_models.RootHistory.create(
             context, utils.generate_uuid())
         self.assertIsNotNone(report)
 
     def test_report_root_double_create(self):
         context = Mock()
-        context.user = utils.generate_uuid()
+        context.user_id = utils.generate_uuid()
         id = utils.generate_uuid()
-        history = mysql_models.RootHistory(id, context.user).save()
+        history = mysql_models.RootHistory(id, context.user_id).save()
         with patch.object(mysql_models.RootHistory, 'load',
                           Mock(return_value=history)):
             report = mysql_models.RootHistory.create(context, id)
@@ -1219,7 +1219,7 @@ class ClusterRootTest(trove_testtools.TestCase):
     @patch.object(common_models.Root, "create")
     def test_cluster_root_create(self, root_create, root_history_create):
         context = Mock()
-        context.user = utils.generate_uuid()
+        context.user_id = utils.generate_uuid()
         id = utils.generate_uuid()
         password = "rootpassword"
         cluster_instances = [utils.generate_uuid(), utils.generate_uuid()]
