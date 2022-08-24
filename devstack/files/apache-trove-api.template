@@ -21,7 +21,7 @@ Listen %TROVE_SERVICE_PORT%
 
 <VirtualHost *:%TROVE_SERVICE_PORT%>
     WSGIDaemonProcess trove-api user=%USER% processes=%APIWORKERS% threads=1 display-name=%{GROUP}
-    WSGIScriptAlias / %TROVE_WSGI_DIR%/app.wsgi
+    WSGIScriptAlias / %TROVE_WSGI_DIR%/app_wsgi.py
     WSGIApplicationGroup %{GLOBAL}
     WSGIProcessGroup trove-api
     WSGIPassAuthorization On

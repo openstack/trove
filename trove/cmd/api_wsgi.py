@@ -38,4 +38,5 @@ def wsgimain(CONF):
     LOG.debug("Trove started on %s", CONF.host)
     return pastedeploy.paste_deploy_app(conf_file, 'trove', {})
 
+
 application = wsgimain()

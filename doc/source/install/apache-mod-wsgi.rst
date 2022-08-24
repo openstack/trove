@@ -36,7 +36,7 @@ Installing API behind mod_wsgi
    * Modify the ``WSGIDaemonProcess`` directive to set the ``user`` and
      ``group`` values to appropriate user on your server.
    * Modify the ``WSGIScriptAlias`` directive to point to the
-     trove/api/app.wsgi script.
+     trove/api/app_wsgi.py script.
    * Modify the ``Directory`` directive to set the path to the Trove API
      code.
    * Modify the ``ErrorLog and CustomLog`` to redirect the logs to the right
