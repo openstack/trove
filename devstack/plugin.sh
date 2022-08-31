@@ -169,7 +169,7 @@ function config_trove_apache_wsgi {
     local trove_apache_conf
 
     sudo mkdir -p ${TROVE_WSGI_DIR}
-    sudo cp $TROVE_DIR/trove/cmd/app_wsgi.py $TROVE_WSGI_DIR/app.wsgi
+    sudo cp $TROVE_DIR/trove/cmd/app_wsgi.py $TROVE_WSGI_DIR/app_wsgi.py
     trove_apache_conf=$(apache_site_config_for trove-api)
     sudo cp $TROVE_DEVSTACK_FILES/apache-trove-api.template ${trove_apache_conf}
     sudo sed -e "
