@@ -88,6 +88,9 @@ class BackupController(wsgi.Controller):
         swift_container = data.get('swift_container')
         restore_from = data.get('restore_from')
 
+        if swift_container:
+            utils.validate_command(swift_container)
+
         context.notification = notification.DBaaSBackupCreate(
             context, request=req)
 

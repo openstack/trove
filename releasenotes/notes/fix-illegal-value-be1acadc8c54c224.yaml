@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    check if the user input is legal, currently, trove may have a 
+    RCE vulnerability. more details see:
+    `Stroy 2010004 <https://storyboard.openstack.org/#!/story/2010004>`__
