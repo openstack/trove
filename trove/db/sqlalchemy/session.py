@@ -94,6 +94,10 @@ def _create_facade(options):
                 #                 use enginefacade.from_config() instead
                 database_opts = dict(CONF.database)
                 database_opts.pop('query_log')
+                # FIXME(wuchunyang): we need to remove reliance on autocommit
+                # semantics ASAP. since it's not compatible with
+                # SQLAlchemy 2.0
+                database_opts['autocommit'] = True
                 _FACADE = session.EngineFacade(
                     options['database']['connection'],
                     **database_opts
