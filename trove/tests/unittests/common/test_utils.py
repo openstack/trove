@@ -186,3 +186,19 @@ class TestUtils(trove_testtools.TestCase):
         expected = ('GET / HTTP/1.0\r\nHost: localhost:80\r\n'
                     'X-Auth-Project-Id: \u6d4b\u8bd5')
         self.assertEqual(expected, utils.req_to_text(req))
+
+    def test_validate_command(self):
+        string1 = "hello_world"
+        string2 = "hello world"
+        string3 = "hello@world_123"
+        string4 = "example.com/databse/mysql:5.7"
+        string5 = 'test --db-user="$(touch /rce_successful.txt)"'
+        self.assertIsNone(utils.validate_command(string1))
+        self.assertRaises(exception.InvalidValue,
+                          utils.validate_command,
+                          string2)
+        self.assertIsNone(utils.validate_command(string3))
+        self.assertIsNone(utils.validate_command(string4))
+        self.assertRaises(exception.InvalidValue,
+                          utils.validate_command,
+                          string5)
