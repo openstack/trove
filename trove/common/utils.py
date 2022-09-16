@@ -17,6 +17,7 @@
 from collections import abc
 import inspect
 import os
+import shlex
 import shutil
 import uuid
 import urllib.parse as urlparse
@@ -423,3 +424,13 @@ def req_to_text(req):
         parts.extend([b'', safe_encode(req.body)])
 
     return b'\r\n'.join(parts).decode(req.charset)
+
+
+def validate_command(string):
+    """
+    Check if the string is legal for command
+
+    raise invalidvalue if illegal
+    """
+    if string != shlex.quote(string):
+        raise exception.InvalidValue(value=string)

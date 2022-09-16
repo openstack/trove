@@ -61,6 +61,10 @@ class InvalidRPCConnectionReuse(TroveError):
     message = _("Invalid RPC Connection Reuse.")
 
 
+class InvalidValue(TroveError):
+    message = _("The value is not allowed: %(value)s.")
+
+
 class NotFound(TroveError):
 
     message = _("Resource %(uuid)s cannot be found.")
