@@ -1,4 +1,5 @@
 - project:
+    queue: trove
     templates:
       - check-requirements
       - openstack-cover-jobs
@@ -22,7 +23,6 @@
         - trove-scenario-mariadb-multi:
             voting: false
     gate:
-      queue: trove
       jobs:
         - openstack-tox-pylint
         - trove-functional-mysql
