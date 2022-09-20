@@ -9,6 +9,7 @@
           - controller
 
 - project:
+    queue: trove
     templates:
       - check-requirements
       - openstack-cover-jobs
@@ -32,7 +33,6 @@
         - trove-functional-mysql:
             voting: false
     gate:
-      queue: trove
       jobs:
         - trove-tempest:
             voting: false
