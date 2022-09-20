@@ -9,6 +9,7 @@
           - controller
 
 - project:
+    queue: trove
     templates:
       - check-requirements
       - openstack-cover-jobs
@@ -30,7 +31,6 @@
             voting: false
 
     gate:
-      queue: trove
       jobs:
         - trove-tempest
     experimental:
