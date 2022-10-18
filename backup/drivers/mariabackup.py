@@ -23,20 +23,23 @@ CONF = cfg.CONF
 
 class MariaBackup(mysql_base.MySQLBaseRunner):
     """Implementation of Backup and Restore using mariabackup."""
-    backup_log = '/tmp/mariabackup.log'
-    restore_log = '/tmp/mbstream_extract.log'
-    restore_cmd = ('mbstream -x -C %(restore_location)s 2>' + restore_log)
+    restore_cmd = ('mbstream -x -C %(restore_location)s')
     prepare_cmd = ''
+
+    def __init__(self, *args, **kwargs):
+        super(MariaBackup, self).__init__(*args, **kwargs)
+        self.backup_log = '/tmp/mariabackup.log'
+        self._gzip = True
 
     @property
     def cmd(self):
         cmd = ('mariabackup --backup --stream=xbstream ' +
-               self.user_and_pass + ' 2>' + self.backup_log)
-        return cmd + self.zip_cmd + self.encrypt_cmd
+               self.user_and_pass)
+        return cmd
 
     def check_restore_process(self):
-        LOG.debug('Checking return code of mbstream restore process.')
-        return_code = self.process.wait()
+        LOG.info('Checking return code of mbstream restore process.')
+        return_code = self.process.returncode
         if return_code != 0:
             LOG.error('mbstream exited with %s', return_code)
             return False
@@ -48,8 +51,7 @@ class MariaBackupIncremental(MariaBackup):
     """Incremental backup and restore using mariabackup."""
     incremental_prep = ('mariabackup --prepare '
                         '--target-dir=%(restore_location)s '
-                        '%(incremental_args)s '
-                        '2>/tmp/innoprepare.log')
+                        '%(incremental_args)s')
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get('lsn'):
@@ -64,11 +66,10 @@ class MariaBackupIncremental(MariaBackup):
         cmd = (
             'mariabackup --backup --stream=xbstream'
             ' --incremental-lsn=%(lsn)s ' +
-            self.user_and_pass +
-            ' 2>' +
-            self.backup_log
+            self.user_and_pass
         )
-        return cmd + self.zip_cmd + self.encrypt_cmd
+        LOG.info('cmd:{}'.format(cmd))
+        return cmd
 
     def get_metadata(self):
         meta = super(MariaBackupIncremental, self).get_metadata()
@@ -81,6 +82,6 @@ class MariaBackupIncremental(MariaBackup):
 
     def run_restore(self):
         """Run incremental restore."""
-        LOG.debug('Running incremental restore')
+        LOG.info('Running incremental restore')
         self.incremental_restore(self.location, self.checksum)
         return self.restore_content_length

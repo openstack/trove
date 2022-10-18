@@ -17,11 +17,16 @@ import re
 from oslo_concurrency import processutils
 from oslo_config import cfg
 from oslo_log import log as logging
+import semantic_version
 
 from backup.drivers import mysql_base
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+
+
+class XtraBackupException(Exception):
+    """Exception class for XtraBackup."""
 
 
 class XtraBackup(mysql_base.MySQLBaseRunner):
@@ -37,57 +42,50 @@ class XtraBackup(mysql_base.MySQLBaseRunner):
 
     innobackupex was removed in Percona XtraBackup 8.0.
     """
-    backup_log = '/tmp/xtrabackup.log'
-    prepare_log = '/tmp/prepare.log'
-    restore_cmd = ('xbstream -x -C %(restore_location)s --parallel=2'
-                   ' 2>/tmp/xbstream_extract.log')
-    prepare_cmd = (f'xtrabackup '
-                   f'--target-dir=%(restore_location)s '
-                   f'--prepare 2>{prepare_log}')
+    restore_cmd = 'xbstream -x -C %(restore_location)s --parallel=2'
+    prepare_cmd = 'xtrabackup --target-dir=%(restore_location)s --prepare'
+
+    def __init__(self, *args, **kwargs):
+        super(XtraBackup, self).__init__(*args, **kwargs)
+        self.backup_log = '/tmp/xtrabackup.log'
+        self._gzip = True
 
     @property
     def cmd(self):
         cmd = (f'xtrabackup --backup --stream=xbstream --parallel=2 '
-               f'--datadir={self.datadir} {self.user_and_pass} '
-               f'2>{self.backup_log}')
-        return cmd + self.zip_cmd + self.encrypt_cmd
+               f'--datadir=%(datadir)s --user=%(user)s '
+               f'--password=%(password)s --host=%(host)s'
+               % {
+                   'datadir': self.datadir,
+                   'user': CONF.db_user,
+                   'password': CONF.db_password,
+                   'host': CONF.db_host}
+               )
+        return cmd
 
     def check_restore_process(self):
         """Check whether xbstream restore is successful."""
         LOG.info('Checking return code of xbstream restore process.')
-        return_code = self.process.wait()
+        return_code = self.process.returncode
         if return_code != 0:
             LOG.error('xbstream exited with %s', return_code)
             return False
-
-        with open('/tmp/xbstream_extract.log', 'r') as xbstream_log:
-            for line in xbstream_log:
-                # Ignore empty lines
-                if not line.strip():
-                    continue
-
-                LOG.error('xbstream restore failed with: %s',
-                          line.rstrip('\n'))
-                return False
-
         return True
 
     def post_restore(self):
         """Prepare after data restore."""
         LOG.info("Running prepare command: %s.", self.prepare_command)
-        processutils.execute(self.prepare_command, shell=True)
-
+        stdout, stderr = processutils.execute(*self.prepare_command.split())
+        LOG.info("The command: %s : stdout: %s, stderr: %s",
+                 self.prepare_command, stdout, stderr)
         LOG.info("Checking prepare log")
-        with open(self.prepare_log, 'r') as prepare_log:
-            output = prepare_log.read()
-            if not output:
-                msg = "Empty prepare log file"
-                raise Exception(msg)
-
-            last_line = output.splitlines()[-1].strip()
-            if not re.search('completed OK!', last_line):
-                msg = "Prepare did not complete successfully"
-                raise Exception(msg)
+        if not stderr:
+            msg = "Empty prepare log file"
+            raise Exception(msg)
+        last_line = stderr.splitlines()[-1].strip()
+        if not re.search('completed OK!', last_line):
+            msg = "Prepare did not complete successfully"
+            raise Exception(msg)
 
 
 class XtraBackupIncremental(XtraBackup):
@@ -95,8 +93,7 @@ class XtraBackupIncremental(XtraBackup):
     prepare_log = '/tmp/prepare.log'
     incremental_prep = (f'xtrabackup --prepare --apply-log-only'
                         f' --target-dir=%(restore_location)s'
-                        f' %(incremental_args)s'
-                        f' 2>{prepare_log}')
+                        f' %(incremental_args)s')
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get('lsn'):
@@ -106,13 +103,24 @@ class XtraBackupIncremental(XtraBackup):
 
         super(XtraBackupIncremental, self).__init__(*args, **kwargs)
 
+    # NOTE: Since 8.0.27, xtrabackup enables strict mode by default.
+    @property
+    def add_incremental_opts(self) -> bool:
+        cmd = ["xtrabackup", "--version"]
+        _, stderr = processutils.execute(*cmd)
+        xbackup_version = semantic_version.Version.coerce(
+            str(stderr).split()[2])
+        strict_mode_version = semantic_version.Version("8.0.27")
+        return xbackup_version < strict_mode_version
+
     @property
     def cmd(self):
         cmd = (f'xtrabackup --backup --stream=xbstream '
-               f'--incremental --incremental-lsn=%(lsn)s '
-               f'--datadir={self.datadir} {self.user_and_pass} '
-               f'2>{self.backup_log}')
-        return cmd + self.zip_cmd + self.encrypt_cmd
+               f'--incremental-lsn=%(lsn)s '
+               f'--datadir={self.datadir} {self.user_and_pass}')
+        if self.add_incremental_opts:
+            return '{} --incremental'.format(cmd)
+        return cmd
 
     def get_metadata(self):
         _meta = super(XtraBackupIncremental, self).get_metadata()

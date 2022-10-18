@@ -44,7 +44,7 @@ class MySQLBaseRunner(base.BaseRunner):
 
     def check_process(self):
         """Check the backup output for 'completed OK!'."""
-        LOG.debug('Checking backup process output.')
+        LOG.info('Checking backup process output.')
         with open(self.backup_log, 'r') as backup_log:
             output = backup_log.read()
             if not output:
@@ -78,7 +78,7 @@ class MySQLBaseRunner(base.BaseRunner):
     def incremental_restore_cmd(self, incremental_dir):
         """Return a command for a restore with a incremental location."""
         args = {'restore_location': incremental_dir}
-        return (self.decrypt_cmd + self.unzip_cmd + self.restore_cmd % args)
+        return self.restore_cmd % args
 
     def incremental_prepare_cmd(self, incremental_dir):
         if incremental_dir is not None:
@@ -97,7 +97,9 @@ class MySQLBaseRunner(base.BaseRunner):
         prepare_cmd = self.incremental_prepare_cmd(incremental_dir)
 
         LOG.info("Running restore prepare command: %s.", prepare_cmd)
-        processutils.execute(prepare_cmd, shell=True)
+        stdout, stderr = processutils.execute(*prepare_cmd.split())
+        LOG.info("The command: %s, stdout: %s, stderr: %s",
+                 prepare_cmd, stdout, stderr)
 
     def incremental_restore(self, location, checksum):
         """Recursively apply backups from all parents.
@@ -134,6 +136,8 @@ class MySQLBaseRunner(base.BaseRunner):
             # super class and do not set an incremental_dir.
             LOG.info("Restoring back to full backup.")
             command = self.restore_command
+
+        LOG.debug("command:{}".format(command))
 
         self.restore_content_length += self.unpack(location, checksum, command)
         self.incremental_prepare(incremental_dir)

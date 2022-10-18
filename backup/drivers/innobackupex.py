@@ -26,63 +26,48 @@ CONF = cfg.CONF
 
 class InnoBackupEx(mysql_base.MySQLBaseRunner):
     """Implementation of Backup and Restore for InnoBackupEx."""
-    backup_log = '/tmp/innobackupex.log'
-    prepare_log = '/tmp/prepare.log'
-    restore_cmd = ('xbstream -x -C %(restore_location)s --parallel=2'
-                   ' 2>/tmp/xbstream_extract.log')
+    restore_cmd = ('xbstream -x -C %(restore_location)s --parallel=2')
     prepare_cmd = ('innobackupex'
                    ' --defaults-file=%(restore_location)s/backup-my.cnf'
                    ' --ibbackup=xtrabackup'
                    ' --apply-log'
-                   ' %(restore_location)s'
-                   ' 2>' + prepare_log)
+                   ' %(restore_location)s')
+
+    def __init__(self, *args, **kwargs):
+        super(InnoBackupEx, self).__init__(*args, **kwargs)
+        self.backup_log = '/tmp/innobackupex.log'
+        self._gzip = True
 
     @property
     def cmd(self):
         cmd = ('innobackupex'
                ' --stream=xbstream'
                ' --parallel=2 ' +
-               self.user_and_pass + ' %s' % self.datadir +
-               ' 2>' + self.backup_log
-               )
-        return cmd + self.zip_cmd + self.encrypt_cmd
+               self.user_and_pass + ' %s' % self.datadir)
+        return cmd
 
     def check_restore_process(self):
         """Check whether xbstream restore is successful."""
         LOG.info('Checking return code of xbstream restore process.')
-        return_code = self.process.wait()
+        return_code = self.process.returncode
         if return_code != 0:
             LOG.error('xbstream exited with %s', return_code)
             return False
-
-        with open('/tmp/xbstream_extract.log', 'r') as xbstream_log:
-            for line in xbstream_log:
-                # Ignore empty lines
-                if not line.strip():
-                    continue
-
-                LOG.error('xbstream restore failed with: %s',
-                          line.rstrip('\n'))
-                return False
-
         return True
 
     def post_restore(self):
         """Hook that is called after the restore command."""
         LOG.info("Running innobackupex prepare: %s.", self.prepare_command)
-        processutils.execute(self.prepare_command, shell=True)
+        stdout, stderr = processutils.execute(*self.prepare_command.split())
+        LOG.info("the prepare command stdout: %s, stderr: %s", stdout, stderr)
+        if not stderr:
+            msg = "innobackupex prepare log file empty"
+            raise Exception(msg)
 
-        LOG.info("Checking innobackupex prepare log")
-        with open(self.prepare_log, 'r') as prepare_log:
-            output = prepare_log.read()
-            if not output:
-                msg = "innobackupex prepare log file empty"
-                raise Exception(msg)
-
-            last_line = output.splitlines()[-1].strip()
-            if not re.search('completed OK!', last_line):
-                msg = "innobackupex prepare did not complete successfully"
-                raise Exception(msg)
+        last_line = stderr.splitlines()[-1].strip()
+        if not re.search('completed OK!', last_line):
+            msg = "innobackupex prepare did not complete successfully"
+            raise Exception(msg)
 
 
 class InnoBackupExIncremental(InnoBackupEx):
@@ -94,8 +79,7 @@ class InnoBackupExIncremental(InnoBackupEx):
                         ' --apply-log'
                         ' --redo-only'
                         ' %(restore_location)s'
-                        ' %(incremental_args)s'
-                        ' 2>/tmp/innoprepare.log')
+                        ' %(incremental_args)s')
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get('lsn'):
@@ -111,9 +95,8 @@ class InnoBackupExIncremental(InnoBackupEx):
                ' --stream=xbstream'
                ' --incremental'
                ' --incremental-lsn=%(lsn)s ' +
-               self.user_and_pass + ' %s' % self.datadir +
-               ' 2>' + self.backup_log)
-        return cmd + self.zip_cmd + self.encrypt_cmd
+               self.user_and_pass + ' %s' % self.datadir)
+        return cmd
 
     def get_metadata(self):
         _meta = super(InnoBackupExIncremental, self).get_metadata()
