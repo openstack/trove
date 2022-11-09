@@ -1,0 +1,68 @@
+- hosts: all
+  tasks:
+    - name: Ensure artifacts/images directory exists
+      file:
+        path: '{{ ansible_user_dir }}/images'
+        state: directory
+    - name: Install docker
+      become: true
+      package:
+        name: docker.io
+        state: present
+    - name: Start docker
+      become: true
+      systemd:
+        name: docker.io
+        daemon_reload: true
+    - name: Run docker registry
+      become: true
+      shell: docker run -d --net=host --restart=always -v /opt/trove_registry/:/var/lib/registry --name registry registry:2
+    - name: Pull and push trove datastore images
+      become: true
+      shell: docker pull {{ item }} && docker tag {{item}} 127.0.0.1:5000/trove-datastores/{{ item }} && \
+               docker push 127.0.0.1:5000/trove-datastores/{{ item }}
+      loop:
+        - "mysql:5.7"
+        - "mysql:8.0"
+        - "mariadb:10.4"
+        - "postgres:12"
+    - name: Build mysql 5.7 backup image
+      become: true
+      shell: docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mysql5.7:1.1.0 .
+      args:
+        chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
+    - name: Build mysql 8.0 backup image
+      become: true
+      shell: sed -i s/mysql5.7/mysql8.0/ Dockerfile && \
+               docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mysql8.0:1.1.0 .
+      args:
+        chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
+    - name: Build mariadb backup image
+      become: true
+      shell: sed -i s/mysql8.0/mariadb/ Dockerfile && \
+               docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mariadb:1.1.0 .
+      args:
+        chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
+    - name: Build postgresql backup image
+      become: true
+      shell: sed -i s/mariadb/postgresql/ Dockerfile && \
+               docker build -t 127.0.0.1:5000/trove-datastores/db-backup-postgresql:1.1.2 .
+      args:
+        chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
+    - name: Push the backup images
+      become: true
+      shell: docker push 127.0.0.1:5000/trove-datastores/db-backup-{{item}}
+      loop:
+        - "mariadb:1.1.0"
+        - "postgresql:1.1.2"
+    - name: Push mysql backup images
+      become: true
+      shell: docker push 127.0.0.1:5000/trove-datastores/db-backup-mysql{{ item }}:1.1.0
+      loop:
+        - "5.7"
+        - "8.0"
+    - name: Compress the docker registry files
+      become: true
+      archive:
+        path: "/opt/trove_registry/"
+        dest: '{{ ansible_user_dir }}/images/trove-datastore-registry-master.tar.gz'

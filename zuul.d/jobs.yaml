@@ -477,3 +477,14 @@
       branch: master
       dev_mode: true
       image_suffix: "-dev"
+
+- job:
+    name: publish-trove-datastore-images
+    description: |
+      Build and publish trove datastore docker images to
+      tarballs.openstack.org.
+    run: playbooks/image-build/docker-registry.yaml
+    post-run: playbooks/image-build/post.yaml
+    nodeset: trove-ubuntu-focal-single
+    required-projects:
+      - openstack/trove

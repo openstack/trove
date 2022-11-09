@@ -43,3 +43,4 @@
       jobs:
         - publish-trove-guest-image-ubuntu-focal
         - publish-trove-guest-image-ubuntu-focal-dev
+        - publish-trove-datastore-images
