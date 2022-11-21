@@ -274,6 +274,8 @@ function configure_trove {
 
     iniset $TROVE_GUESTAGENT_CONF mysql docker_image ${TROVE_DATABASE_IMAGE_MYSQL}
     iniset $TROVE_GUESTAGENT_CONF mysql backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_MYSQL}
+    iniset $TROVE_GUESTAGENT_CONF mariadb docker_image ${TROVE_DATABASE_IMAGE_MARIADB}
+    iniset $TROVE_GUESTAGENT_CONF mariadb backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_MARIADB}
     iniset $TROVE_GUESTAGENT_CONF postgresql docker_image ${TROVE_DATABASE_IMAGE_POSTGRES}
     iniset $TROVE_GUESTAGENT_CONF postgresql backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_POSTGRES}
 
@@ -501,6 +503,20 @@ function create_guest_image {
     fi
 }
 
+function create_registry_container {
+    # running a docker registry container
+    echo "Running a docker registry container..."
+    container=$(sudo docker ps -a --format "{{.Names}}" --filter name=registry)
+    if [ -z $container ]; then
+        sudo docker run -d --net=host -e REGISTRY_HTTP_ADDR=0.0.0.0:4000 --restart=always -v /opt/trove_registry/:/var/lib/registry --name registry registry:2
+        trove_agent_datastore_url=https://tarballs.opendev.org/openstack/trove/images/trove-datastore-registry-master.tar.gz
+        curl -o trove-datastore-registry-master.tar.gz $trove_agent_datastore_url
+        sudo tar -zxvf trove-datastore-registry-master.tar.gz -C /opt/trove_registry/
+        rm -rf trove-datastore-registry-master.tar.gz
+    fi
+    iniset $TROVE_CONF DEFAULT docker_insecure_registries "$TROVE_HOST_GATEWAY:4000"
+}
+
 # Set up Trove management network and make configuration change.
 function config_trove_network {
     echo "Finalizing Neutron networking for Trove"
@@ -639,6 +655,9 @@ if is_service_enabled trove; then
         config_mgmt_security_group
         config_trove_network
         create_guest_image
+        if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ] ; then
+            create_registry_container
+        fi
 
         echo_summary "Starting Trove"
         start_trove

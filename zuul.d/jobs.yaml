@@ -46,6 +46,8 @@
         Q_PLUGIN: ml2
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+        TROVE_DATASTORE_VERSION: 5.7
     run: playbooks/trove-devstack-base.yaml
     irrelevant-files:
       - ^.*\.rst$
@@ -290,11 +292,17 @@
         Q_PLUGIN: ml2
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+        TROVE_DATASTORE_VERSION: 5.7
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
             DEFAULT:
               usage_timeout: 1800
+        test-config:
+          $TEMPEST_CONFIG:
+            database:
+              default_datastore_versions: mysql:5.7
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
@@ -356,7 +364,8 @@
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         TROVE_DATASTORE_TYPE: postgresql
-        TROVE_DATASTORE_VERSION: 12.4
+        TROVE_DATASTORE_VERSION: 12
+        TROVE_ENABLE_LOCAL_REGISTRY: True
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -366,7 +375,7 @@
           $TEMPEST_CONFIG:
             database:
               enabled_datastores: "postgresql"
-              default_datastore_versions: "postgresql:12.4"
+              default_datastore_versions: "postgresql:12"
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
