@@ -484,6 +484,7 @@
       Build and publish trove datastore docker images to
       tarballs.openstack.org.
     run: playbooks/image-build/docker-registry.yaml
+    parent: publish-openstack-artifacts
     post-run: playbooks/image-build/post.yaml
     nodeset: trove-ubuntu-focal-single
     required-projects:
