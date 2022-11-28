@@ -426,7 +426,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: zed
       dev_mode: false
       image_suffix: ""
 
@@ -446,7 +446,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: zed
       dev_mode: false
       image_suffix: ""
 
@@ -460,7 +460,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: zed
       dev_mode: false
       image_suffix: ""
 
@@ -474,6 +474,6 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: zed
       dev_mode: true
       image_suffix: "-dev"
