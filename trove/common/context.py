@@ -62,6 +62,7 @@ class TroveContext(context.RequestContext):
         return parent_dict
 
     def update_store(self):
+        super(TroveContext, self).update_store()
         local.store.context = self
 
     @classmethod

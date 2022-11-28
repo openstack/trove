@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fix missing request-id in Trove services logs.
+    `Story 2010451 <https://storyboard.openstack.org/#!/story/2010451>`__
