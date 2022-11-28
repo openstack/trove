@@ -65,4 +65,4 @@
       become: true
       archive:
         path: "/opt/trove_registry/"
-        dest: '{{ ansible_user_dir }}/images/trove-datastore-registry-master.tar.gz'
+        dest: "{{ ansible_user_dir }}/images/trove-datastore-registry-master.tar.gz"
