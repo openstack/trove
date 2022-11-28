@@ -232,6 +232,9 @@ DEFAULT group
     Maximum time (in seconds) to wait for Guest Agent 'slow' requests (such as
     restarting the instance server) to complete.
 
+  database_service_uid
+    The UID(GID) of database service user.
+
 keystone_authtoken group
   Like most of other OpenStack services, Trove uses `Keystone Authentication
   Middleware
