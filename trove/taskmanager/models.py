@@ -64,6 +64,7 @@ from trove.instance.models import FreshInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
+from trove.instance.models import load_simple_instance_addresses
 from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTasks
 from trove.module import models as module_models
@@ -1154,9 +1155,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
             utils.poll_until(get_server, ip_is_available,
                              sleep_time=1, time_out=CONF.dns_time_out)
-            server = self.nova_client.servers.get(
-                self.db_info.compute_instance_id)
-            self.db_info.addresses = server.addresses
+            load_simple_instance_addresses(self.context, self.db_info)
             LOG.debug("Creating dns entry...")
             ip = self.dns_ip_address
             if not ip:
