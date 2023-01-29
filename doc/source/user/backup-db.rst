@@ -36,48 +36,52 @@ instance from the backup.
       .. code-block:: console
 
           $ openstack database instance list
-          +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
-          |                  id                  |  name  | datastore | datastore_version | status | flavor_id | size |
-          +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
-          | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 | guest1 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
-          +--------------------------------------+--------+-----------+-------------------+--------+-----------+------+
+          +--------------------------------------+--------+-----------+-------------------+--------+------------------+--------+-------------------------------------------------------------------------------------------------+-----------+------+------+
+          | ID                                   | Name   | Datastore | Datastore Version | Status | Operating Status | Public | Addresses                                                                                       | Flavor ID | Size | Role |
+          +--------------------------------------+--------+-----------+-------------------+--------+------------------+--------+-------------------------------------------------------------------------------------------------+-----------+------+------+
+          | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f | mysql1 | mysql     | 8.0.29            | ACTIVE | HEALTHY          | False  | [{'address': '10.0.0.9', 'type': 'private', 'network': '33f3a589-b806-4212-9a59-8e058cac0699'}] | d2        |    1 |      |
+          +--------------------------------------+--------+-----------+-------------------+--------+------------------+--------+-------------------------------------------------------------------------------------------------+-----------+------+------+
 
    2. Optionally, create a backup strategy for the instance. You can also specify a different swift container name (``--swift-container``) when creating the backup.
 
       .. code-block:: console
 
-          $ openstack database backup strategy create --instance-id 97b4b853-80f6-414f-ba6f-c6f455a79ae6 --swift-container my-trove-backups
+          $ openstack database backup strategy create --instance-id 78e338e3-d1c4-4189-8ea7-bfc1fab5011f --swift-container my-trove-backups
           +-----------------+--------------------------------------+
           | Field           | Value                                |
           +-----------------+--------------------------------------+
           | backend         | swift                                |
-          | instance_id     | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 |
-          | project_id      | 922b47766bcb448f83a760358337f2b4     |
+          | instance_id     | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f |
+          | project_id      | fc51186c63df417ea63cec6c65a2d564     |
           | swift_container | my-trove-backups                     |
           +-----------------+--------------------------------------+
 
 #. **Backup the database instance**
 
    Back up the database instance by using the :command:`openstack database backup create`
-   command. In this example, the backup is called ``backup1``.
+   command. In this example, the backup is called ``mysql-backup-name1``.
 
    .. code-block:: console
 
-      $ openstack database backup create 97b4b853-80f6-414f-ba6f-c6f455a79ae6 backup1
-      +-------------+--------------------------------------+
-      |   Property  |                Value                 |
-      +-------------+--------------------------------------+
-      |   created   |         2014-03-18T17:09:07          |
-      | description |                 None                 |
-      |      id     | 8af30763-61fd-4aab-8fe8-57d528911138 |
-      | instance_id | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 |
-      | locationRef |                 None                 |
-      |     name    |               backup1                |
-      |  parent_id  |                 None                 |
-      |     size    |                 None                 |
-      |    status   |                 NEW                  |
-      |   updated   |         2014-03-18T17:09:07          |
-      +-------------+--------------------------------------+
+      $ openstack database backup create mysql-backup-name1 --instance mysql1 --swift-container 'my-trove-backups'
+      +----------------------+--------------------------------------+
+      | Field                | Value                                |
+      +----------------------+--------------------------------------+
+      | created              | 2022-10-24T01:46:38                  |
+      | datastore            | mysql                                |
+      | datastore_version    | 8.0.29                               |
+      | datastore_version_id | 324f2bdf-6099-4754-a5f9-82abee026a19 |
+      | description          | None                                 |
+      | id                   | 1ecd0a75-e4aa-400b-b0c8-cb738944fd43 |
+      | instance_id          | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f |
+      | locationRef          | None                                 |
+      | name                 | mysql-backup-name1                   |
+      | parent_id            | None                                 |
+      | project_id           | fc51186c63df417ea63cec6c65a2d564     |
+      | size                 | None                                 |
+      | status               | NEW                                  |
+      | updated              | 2022-10-24T01:46:38                  |
+      +----------------------+--------------------------------------+
 
    Later on, use either :command:`openstack database backup list` command or
    :command:`openstack database backup show` command to check the backup
@@ -86,26 +90,30 @@ instance from the backup.
    .. code-block:: console
 
       $ openstack database backup list
-      +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
-      |                  id                  |             instance_id              |   name  |   status  | parent_id |       updated       |
-      +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
-      | 8af30763-61fd-4aab-8fe8-57d528911138 | 97b4b853-80f6-414f-ba6f-c6f455a79ae6 | backup1 | COMPLETED |    None   | 2014-03-18T17:09:11 |
-      +--------------------------------------+--------------------------------------+---------+-----------+-----------+---------------------+
-      $ openstack database backup show 8af30763-61fd-4aab-8fe8-57d528911138
-      +-------------+----------------------------------------------------+
-      |   Property  |                   Value                            |
-      +-------------+----------------------------------------------------+
-      |   created   |              2014-03-18T17:09:07                   |
-      | description |                   None                             |
-      |      id     |                 8af...138                          |
-      | instance_id |                 97b...ae6                          |
-      | locationRef | http://10.0.0.1:.../.../8af...138.xbstream.gz.enc  |
-      |     name    |                 backup1                            |
-      |  parent_id  |                  None                              |
-      |     size    |                  0.17                              |
-      |    status   |               COMPLETED                            |
-      |   updated   |           2014-03-18T17:09:11                      |
-      +-------------+----------------------------------------------------+
+      +--------------------------------------+--------------------------------------+------------------------------+-----------+--------------------------------------+---------------------+----------------------------------+
+      | ID                                   | Instance ID                          | Name                         | Status    | Parent ID                            | Updated             | Project ID                       |
+      +--------------------------------------+--------------------------------------+------------------------------+-----------+--------------------------------------+---------------------+----------------------------------+
+      | 1ecd0a75-e4aa-400b-b0c8-cb738944fd43 | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f | mysql-backup-name1           | COMPLETED | None                                 | 2022-10-24T01:46:55 | fc51186c63df417ea63cec6c65a2d564 |
+      +--------------------------------------+--------------------------------------+------------------------------+-----------+--------------------------------------+---------------------+----------------------------------+
+      $ openstack database backup show 1ecd0a75-e4aa-400b-b0c8-cb738944fd43
+      +----------------------+---------------------------------------------------------------------------------+
+      | Field                | Value                                                                           |
+      +----------------------+---------------------------------------------------------------------------------+
+      | created              | 2022-10-24T01:46:38                                                             |
+      | datastore            | mysql                                                                           |
+      | datastore_version    | 8.0.29                                                                          |
+      | datastore_version_id | 324f2bdf-6099-4754-a5f9-82abee026a19                                            |
+      | description          | None                                                                            |
+      | id                   | 1ecd0a75-e4aa-400b-b0c8-cb738944fd43                                            |
+      | instance_id          | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f                                            |
+      | locationRef          | http://172.../my-trove-backups/1ecd0a75-e4aa-400b-b0c8-cb738944fd43.xbstream.gz |
+      | name                 | mysql-backup-name1                                                              |
+      | parent_id            | None                                                                            |
+      | project_id           | fc51186c63df417ea63cec6c65a2d564                                                |
+      | size                 | 0.19                                                                            |
+      | status               | COMPLETED                                                                       |
+      | updated              | 2022-10-24T01:46:55                                                             |
+      +----------------------+---------------------------------------------------------------------------------+
 
 #. **Check the backup data in Swift**
 
@@ -123,84 +131,105 @@ instance from the backup.
       +--------------------------------------------------+
       | Name                                             |
       +--------------------------------------------------+
-      | 8af30763-61fd-4aab-8fe8-57d528911138.xbstream.gz |
+      | 1ecd0a75-e4aa-400b-b0c8-cb738944fd43.xbstream.gz |
       +--------------------------------------------------+
 
 #. **Restore a database instance**
 
-   Now assume that the ``guest1`` database instance is damaged and you
+   Now assume that the ``mysql1`` database instance is damaged and you
    need to restore it. In this example, you use the :command:`openstack database instance create`
-   command to create a new database instance called ``guest2``.
+   command to create a new database instance called ``mysql2``.
 
-   -  Specify that the new ``guest2`` instance has the same flavor
-      (``10``) and the same root volume size (``2``) as the original
-      ``guest1`` instance.
+   -  Specify that the new ``mysql2`` instance has the same flavor
+      (``d2``) and the same root volume size (``1``) as the original
+      ``mysql1`` instance.
 
    -  Use the ``--backup`` argument to indicate that this new
       instance is based on the backup artifact identified by
-      ``BACKUP_ID``. In this example, replace ``BACKUP_ID`` with
-      ``8af30763-61fd-4aab-8fe8-57d528911138``.
+      the ID of ``mysql-backup-name1``.
 
    .. code-block:: console
 
-      $ openstack database instance create guest2 --flavor 10 --size 2 --nic net-id=$network_id --backup BACKUP_ID
-      +-------------------+----------------------------------------------+
-      |      Property     |                Value                         |
-      +-------------------+----------------------------------------------+
-      |      created      |         2014-03-18T17:12:03                  |
-      |     datastore     | {u'version': u'mysql-5.5', u'type': u'mysql'}|
-      |datastore_version  |                mysql-5.5                     |
-      |       flavor      | {u'id': u'10', u'links': [{u'href': ...]}    |
-      |         id        |  ac7a2b35-a9b4-4ff6-beac-a1bcee86d04b        |
-      |        name       |                guest2                        |
-      |       status      |                 BUILD                        |
-      |      updated      |          2014-03-18T17:12:03                 |
-      |       volume      |             {u'size': 2}                     |
-      +-------------------+----------------------------------------------+
+      $ openstack database instance create mysql2 --flavor d2 --nic net-id=$network_id
+            --datastore mysql --datastore-version 8.0.29 --datastore-version-number 8.0.29 --size 1 \
+            --backup $(openstack database backup show mysql-backup-name1 -f value -c id)
+      +--------------------------+--------------------------------------+
+      | Field                    | Value                                |
+      +--------------------------+--------------------------------------+
+      | allowed_cidrs            | []                                   |
+      | created                  | 2022-10-24T01:56:55                  |
+      | datastore                | mysql                                |
+      | datastore_version        | 8.0.29                               |
+      | datastore_version_number | 8.0.29                               |
+      | encrypted_rpc_messaging  | True                                 |
+      | flavor                   | d2                                   |
+      | id                       | 62f0f152-8cd5-42b3-9cd6-91bda651a4c0 |
+      | name                     | mysql2                               |
+      | operating_status         |                                      |
+      | public                   | False                                |
+      | region                   | RegionOne                            |
+      | server_id                | None                                 |
+      | service_status_updated   | 2022-10-24T01:56:55                  |
+      | status                   | BUILD                                |
+      | tenant_id                | fc51186c63df417ea63cec6c65a2d564     |
+      | updated                  | 2022-10-24T01:56:55                  |
+      | volume                   | 1                                    |
+      | volume_id                | None                                 |
+      +--------------------------+--------------------------------------+
 
 #. **Verify backup**
 
-   Now check that the new ``guest2`` instance has the same
-   characteristics as the original ``guest1`` instance.
+   Now check that the new ``mysql2`` instance has the same
+   characteristics as the original ``mysql1`` instance.
 
-   Start by getting the ID of the new ``guest2`` instance.
+   Start by getting the ID of the new ``mysql2`` instance.
 
    .. code-block:: console
 
       $ openstack database instance list
-
-      +-----------+--------+-----------+-------------------+--------+-----------+------+
-      |     id    |  name  | datastore | datastore_version | status | flavor_id | size |
-      +-----------+--------+-----------+-------------------+--------+-----------+------+
-      | 97b...ae6 | guest1 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
-      | ac7...04b | guest2 |   mysql   |     mysql-5.5     | ACTIVE |     10    |  2   |
-      +-----------+--------+-----------+-------------------+--------+-----------+------+
+      +--------------------------------------+--------+-----------+-------------------+--------+------------------+--------+--------------------------------------------------------------------------------------------------+-----------+------+------+
+      | ID                                   | Name   | Datastore | Datastore Version | Status | Operating Status | Public | Addresses                                                                                        | Flavor ID | Size | Role |
+      +--------------------------------------+--------+-----------+-------------------+--------+------------------+--------+--------------------------------------------------------------------------------------------------+-----------+------+------+
+      | 6eef378d-1d9c-4e48-b206-b3db130d750d | mysql2 | mysql     | 8.0.29            | ACTIVE | HEALTHY          | False  | [{'address': '10.0.0.8', 'type': 'private', 'network': '33f3a589-b806-4212-9a59-8e058cac0699'}]  | d2        |    1 |      |
+      | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f | mysql1 | mysql     | 8.0.29            | ACTIVE | HEALTHY          | False  | [{'address': '10.0.0.18', 'type': 'private', 'network': '33f3a589-b806-4212-9a59-8e058cac0699'}] | d2        |    1 |      |
+      +--------------------------------------+--------+-----------+-------------------+--------+------------------+--------+--------------------------------------------------------------------------------------------------+-----------+------+------+
 
    Use the :command:`openstack database instance show` command to display information about the new
-   guest2 instance. Pass in guest2's ``INSTANCE_ID``, which is
-   ``ac7a2b35-a9b4-4ff6-beac-a1bcee86d04b``.
+   mysql2 instance. Pass in mysql2's ``INSTANCE_ID``, which is
+   ``6eef378d-1d9c-4e48-b206-b3db130d750d``.
 
    .. code-block:: console
 
-      $ openstack database instance show INSTANCE_ID
-      +-------------------+--------------------------------------+
-      |      Property     |                Value                 |
-      +-------------------+--------------------------------------+
-      |      created      |         2014-03-18T17:12:03          |
-      |     datastore     |                mysql                 |
-      | datastore_version |              mysql-5.5               |
-      |       flavor      |                  10                  |
-      |         id        | ac7a2b35-a9b4-4ff6-beac-a1bcee86d04b |
-      |         ip        |               10.0.0.3               |
-      |        name       |                guest2                |
-      |       status      |                ACTIVE                |
-      |      updated      |         2014-03-18T17:12:06          |
-      |       volume      |                  2                   |
-      |    volume_used    |                 0.18                 |
-      +-------------------+--------------------------------------+
+      $ openstack database instance show mysql2
+      +--------------------------+-------------------------------------------------------------------------------------------------+
+      | Field                    | Value                                                                                           |
+      +--------------------------+-------------------------------------------------------------------------------------------------+
+      | addresses                | [{'address': '10.0.0.8', 'type': 'private', 'network': '33f3a589-b806-4212-9a59-8e058cac0699'}] |
+      | allowed_cidrs            | []                                                                                              |
+      | created                  | 2022-10-24T01:58:51                                                                             |
+      | datastore                | mysql                                                                                           |
+      | datastore_version        | 8.0.29                                                                                          |
+      | datastore_version_number | 8.0.29                                                                                          |
+      | encrypted_rpc_messaging  | True                                                                                            |
+      | flavor                   | d2                                                                                              |
+      | id                       | 6eef378d-1d9c-4e48-b206-b3db130d750d                                                            |
+      | ip                       | 10.0.0.8                                                                                        |
+      | name                     | mysql2                                                                                          |
+      | operating_status         | HEALTHY                                                                                         |
+      | public                   | False                                                                                           |
+      | region                   | RegionOne                                                                                       |
+      | server_id                | 7a8cd089-bd1c-4230-aedd-ced4e945ad46                                                            |
+      | service_status_updated   | 2022-10-24T02:12:35                                                                             |
+      | status                   | ACTIVE                                                                                          |
+      | tenant_id                | fc51186c63df417ea63cec6c65a2d564                                                                |
+      | updated                  | 2022-10-24T02:05:03                                                                             |
+      | volume                   | 1                                                                                               |
+      | volume_id                | 7080954f-e22f-4442-8f40-e26aaa080c9d                                                            |
+      | volume_used              | 0.19                                                                                            |
+      +--------------------------+-------------------------------------------------------------------------------------------------+
 
    Note that the data store, flavor ID, and volume size have the same
-   values as in the original ``guest1`` instance.
+   values as in the original ``mysql1`` instance.
 
    Use the :command:`openstack database db list` command to check that the original
    databases (``db1`` and ``db2``) are present on the restored instance.
@@ -231,15 +260,15 @@ instance from the backup.
 
 #. **Notify users**
 
-   Tell the users who were accessing the now-disabled ``guest1``
-   database instance that they can now access ``guest2``. Provide them
-   with ``guest2``'s name, IP address, and any other information they
+   Tell the users who were accessing the now-disabled ``mysql1``
+   database instance that they can now access ``mysql2``. Provide them
+   with ``mysql2``'s name, IP address, and any other information they
    might need. (You can get this information by using the
    :command:`openstack database instance show` command.)
 
 #. **Clean up**
 
-   At this point, you might want to delete the disabled ``guest1``
+   At this point, you might want to delete the disabled ``mysql1``
    instance, by using the :command:`openstack database instance delete` command.
 
    .. code-block:: console
@@ -261,21 +290,26 @@ Create an incremental backup based on a parent backup:
 
 .. code-block:: console
 
-    $ openstack database backup create INSTANCE_ID backup1.1  --parent BACKUP_ID
-    +-------------+--------------------------------------+
-    |   Property  |                Value                 |
-    +-------------+--------------------------------------+
-    |   created   |         2014-03-19T14:09:13          |
-    | description |                 None                 |
-    |      id     | 1d474981-a006-4f62-b25f-43d7b8a7097e |
-    | instance_id | 792a6a56-278f-4a01-9997-d997fa126370 |
-    | locationRef |                 None                 |
-    |     name    |              backup1.1               |
-    |  parent_id  | 6dc3a9b7-1f3e-4954-8582-3f2e4942cddd |
-    |     size    |                 None                 |
-    |    status   |                 NEW                  |
-    |   updated   |         2014-03-19T14:09:13          |
-    +-------------+--------------------------------------+
+    $ openstack database backup create mysql-backup-name1.1 --instance mysql1 --swift-container 'my-trove-backups' \
+          --parent $(openstack database backup show mysql-backup-name1 -f value -c id)
+    +----------------------+--------------------------------------+
+    | Field                | Value                                |
+    +----------------------+--------------------------------------+
+    | created              | 2022-10-24T02:38:41                  |
+    | datastore            | mysql                                |
+    | datastore_version    | 8.0.29                               |
+    | datastore_version_id | 324f2bdf-6099-4754-a5f9-82abee026a19 |
+    | description          | None                                 |
+    | id                   | e15ae06a-3afb-4794-8890-7059317b2218 |
+    | instance_id          | 78e338e3-d1c4-4189-8ea7-bfc1fab5011f |
+    | locationRef          | None                                 |
+    | name                 | mysql-backup-name1.1                 |
+    | parent_id            | 1ecd0a75-e4aa-400b-b0c8-cb738944fd43 |
+    | project_id           | fc51186c63df417ea63cec6c65a2d564     |
+    | size                 | None                                 |
+    | status               | NEW                                  |
+    | updated              | 2022-10-24T02:38:41                  |
+    +----------------------+--------------------------------------+
 
 Restore backup from other regions
 ---------------------------------
