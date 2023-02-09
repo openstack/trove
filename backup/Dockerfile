@@ -1,7 +1,8 @@
 FROM ubuntu:20.04
 LABEL maintainer="anlin.kong@gmail.com"
 
-ARG DATASTORE="mysql5.7"
+ARG DATASTORE="mysql"
+ARG DATASTORE_VERSION="5.7"
 ARG APTOPTS="-y -qq --no-install-recommends --allow-unauthenticated"
 
 RUN export DEBIAN_FRONTEND="noninteractive" \
@@ -15,7 +16,7 @@ RUN apt-get update \
 
 COPY . /opt/trove/backup
 WORKDIR /opt/trove/backup
-RUN ./install.sh $DATASTORE
+RUN ./install.sh --datastore $DATASTORE --datastore-version $DATASTORE_VERSION
 
 RUN apt-get update \
     && apt-get install $APTOPTS build-essential python3-setuptools python3-all python3-all-dev python3-pip libffi-dev libssl-dev libxml2-dev libxslt1-dev libyaml-dev libpq-dev \

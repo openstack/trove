@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The user can optionally specify the datastore version of backup docker
+    image in Dockerfile by calling the install.sh script with the --datastore
+    parameter and the --datastore-version parameter.
