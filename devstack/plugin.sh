@@ -229,7 +229,6 @@ function configure_trove {
 
     iniset $TROVE_CONF database connection `database_connection_url trove`
 
-    iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
     iniset $TROVE_CONF DEFAULT control_exchange trove
     iniset $TROVE_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:5672/
     iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
@@ -257,7 +256,6 @@ function configure_trove {
 
     iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
     iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT command_process_timeout $TROVE_COMMAND_PROCESS_TIMEOUT
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT rpc_backend "rabbit"
     iniset $TROVE_GUESTAGENT_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$TROVE_HOST_GATEWAY:5672/
     iniset $TROVE_GUESTAGENT_CONF DEFAULT control_exchange trove
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin
