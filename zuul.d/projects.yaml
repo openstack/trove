@@ -4,7 +4,6 @@
     templates:
       - check-requirements
       - openstack-cover-jobs
-      # - openstack-lower-constraints-jobs
       - openstack-python3-jobs
       - openstack-python3-jobs-arm64
       - periodic-stable-jobs
@@ -25,8 +24,6 @@
         - trove-tempest-postgres:
             voting: false
         - trove-tempest-ipv6-only:
-            voting: false
-        - trove-functional-mysql:
             voting: false
     gate:
       jobs:
