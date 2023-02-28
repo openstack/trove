@@ -1536,7 +1536,8 @@ guest_agent_opts = [
     ),
     cfg.StrOpt(
         'container_registry_password',
-        help='The plaintext registry password.'
+        help='The plaintext registry password.',
+        secret=True,
     ),
 ]
 
