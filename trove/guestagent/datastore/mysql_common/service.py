@@ -589,7 +589,8 @@ class BaseMySqlApp(service.BaseDbApp):
         user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
 
         # Create folders for mysql on localhost
-        for folder in ['/etc/mysql', '/var/run/mysqld']:
+        for folder in ['/etc/mysql', '/var/run/mysqld',
+                       '/etc/mysql/mysql.conf.d']:
             operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
                 group=CONF.database_service_uid, force=True,
@@ -663,7 +664,8 @@ class BaseMySqlApp(service.BaseDbApp):
         LOG.info("Restarting mysql")
 
         # Ensure folders permission for database.
-        for folder in ['/etc/mysql', '/var/run/mysqld']:
+        for folder in ['/etc/mysql', '/var/run/mysqld',
+                       '/etc/mysql/mysql.conf.d']:
             operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
                 group=CONF.database_service_uid, force=True,
