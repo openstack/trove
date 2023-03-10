@@ -51,7 +51,6 @@ from trove.common import timeutils
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.extensions.common import models as common_models
-from trove.extensions.mysql import models as mysql_models
 from trove.instance.models import BaseInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
@@ -1211,7 +1210,7 @@ class RootReportTest(trove_testtools.TestCase):
     def test_report_root_first_time(self):
         context = Mock()
         context.user_id = utils.generate_uuid()
-        report = mysql_models.RootHistory.create(
+        report = common_models.RootHistory.create(
             context, utils.generate_uuid())
         self.assertIsNotNone(report)
 
@@ -1219,11 +1218,11 @@ class RootReportTest(trove_testtools.TestCase):
         context = Mock()
         context.user_id = utils.generate_uuid()
         id = utils.generate_uuid()
-        history = mysql_models.RootHistory(id, context.user_id).save()
-        with patch.object(mysql_models.RootHistory, 'load',
+        history = common_models.RootHistory(id, context.user_id).save()
+        with patch.object(common_models.RootHistory, 'load',
                           Mock(return_value=history)):
-            report = mysql_models.RootHistory.create(context, id)
-            self.assertTrue(mysql_models.RootHistory.load.called)
+            report = common_models.RootHistory.create(context, id)
+            self.assertTrue(common_models.RootHistory.load.called)
             self.assertEqual(history.user, report.user)
             self.assertEqual(history.id, report.id)
 

@@ -17,8 +17,8 @@ from testtools.matchers import Is
 from trove.common.exception import DatabaseForUserNotInDatabaseListError
 from trove.common.exception import DatabaseInitialDatabaseDuplicateError
 from trove.common.exception import DatabaseInitialUserDuplicateError
-from trove.extensions.mysql.common import populate_users
-from trove.extensions.mysql.common import populate_validated_databases
+from trove.extensions.common.common import populate_users
+from trove.extensions.common.common import populate_validated_databases
 from trove.tests.unittests import trove_testtools
 
 

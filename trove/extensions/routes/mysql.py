@@ -15,7 +15,6 @@
 
 from trove.common import extensions
 from trove.extensions.common import service as common_service
-from trove.extensions.mysql import service as mysql_service
 
 
 class Mysql(extensions.ExtensionDescriptor):
@@ -40,14 +39,14 @@ class Mysql(extensions.ExtensionDescriptor):
 
         resource = extensions.ResourceExtension(
             'databases',
-            mysql_service.SchemaController(),
+            common_service.SchemaController(),
             parent={'member_name': 'instance',
                     'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
 
         resource = extensions.ResourceExtension(
             'users',
-            mysql_service.UserController(),
+            common_service.UserController(),
             parent={'member_name': 'instance',
                     'collection_name': '{tenant_id}/instances'},
             member_actions={'update': 'PUT'},
@@ -57,7 +56,7 @@ class Mysql(extensions.ExtensionDescriptor):
         collection_url = '{tenant_id}/instances/:instance_id/users'
         resource = extensions.ResourceExtension(
             'databases',
-            mysql_service.UserAccessController(),
+            common_service.UserAccessController(),
             parent={'member_name': 'user',
                     'collection_name': collection_url},
             collection_actions={'update': 'PUT'})

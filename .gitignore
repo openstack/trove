@@ -56,6 +56,7 @@ publish-docs/
 *~
 .*.swp
 .bak
+.idea/
 
 # Config sample and policy sample
 etc/trove/*.sample

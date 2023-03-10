@@ -41,7 +41,7 @@ def configure_db(models_mapper=None):
         from trove.configuration import models as configurations_models
         from trove.datastore import models as datastores_models
         from trove.dns import models as dns_models
-        from trove.extensions.mysql import models as mysql_models
+        from trove.extensions.common import models as common_models
         from trove.extensions.security_group import models as secgrp_models
         from trove.guestagent import models as agent_models
         from trove.instance import models as base_models
@@ -52,7 +52,7 @@ def configure_db(models_mapper=None):
             base_models,
             datastores_models,
             dns_models,
-            mysql_models,
+            common_models,
             agent_models,
             quota_models,
             backup_models,

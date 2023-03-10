@@ -14,7 +14,7 @@
 
 from urllib.parse import unquote
 
-from trove.common.db.mysql import models as guest_models
+from trove.common.db import models as guest_models
 from trove.common import exception
 
 
@@ -27,7 +27,7 @@ def populate_validated_databases(dbs):
         databases = []
         unique_identities = set()
         for database in dbs:
-            mydb = guest_models.MySQLSchema(name=database.get('name', ''))
+            mydb = guest_models.DatastoreSchema(name=database.get('name', ''))
             mydb.check_reserved()
             if mydb.name in unique_identities:
                 raise exception.DatabaseInitialDatabaseDuplicateError()
@@ -49,8 +49,8 @@ def populate_users(users, initial_databases=None):
     users_data = []
     unique_identities = set()
     for user in users:
-        u = guest_models.MySQLUser(name=user.get('name', ''),
-                                   host=user.get('host', '%'))
+        u = guest_models.DatastoreUser(name=user.get('name', ''),
+                                       host=user.get('host', '%'))
         u.check_reserved()
         user_identity = (u.name, u.host)
         if user_identity in unique_identities:

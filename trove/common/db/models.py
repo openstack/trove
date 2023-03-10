@@ -114,6 +114,28 @@ class DatastoreSchema(DatastoreModelsBase):
         self._validate_schema_name(value)
         self._name = value
 
+    @property
+    def collate(self):
+        return self._collate
+
+    @collate.setter
+    def collate(self, value):
+        if not value:
+            pass
+        else:
+            self._collate = value
+
+    @property
+    def character_set(self):
+        return self._character_set
+
+    @character_set.setter
+    def character_set(self, value):
+        if not value:
+            pass
+        else:
+            self._character_set = value
+
     def _validate_schema_name(self, value):
         """Perform checks on a given schema name.
         :param value:        Validated schema name.

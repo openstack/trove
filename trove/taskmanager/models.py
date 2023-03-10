@@ -57,7 +57,7 @@ from trove.common import timeutils
 from trove.common import utils
 from trove.common.utils import try_recover
 from trove.configuration import models as config_models
-from trove.extensions.mysql import models as mysql_models
+from trove.extensions.common import models as common_models
 from trove.instance import models as inst_models
 from trove.instance.models import DBInstance
 from trove.instance.models import FreshInstance
@@ -789,7 +789,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                 create_fmt_content, err)
 
     def report_root_enabled(self):
-        mysql_models.RootHistory.create(self.context, self.id)
+        common_models.RootHistory.create(self.context, self.id)
 
     def update_statuses_on_time_out(self):
         if CONF.update_status_on_fail:

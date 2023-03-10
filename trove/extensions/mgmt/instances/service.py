@@ -25,11 +25,11 @@ from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import wsgi
+from trove.extensions.common import models as common_models
 from trove.extensions.mgmt.instances import models
 from trove.extensions.mgmt.instances import views
 from trove.extensions.mgmt.instances.views import DiagnosticsView
 from trove.extensions.mgmt.instances.views import HwInfoView
-from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as instance_models
 from trove.instance.service import InstanceController
 
@@ -85,8 +85,8 @@ class MgmtInstanceController(InstanceController):
         include_deleted = deleted_q == 'true'
         server = models.DetailedMgmtInstance.load(context, id,
                                                   include_deleted)
-        root_history = mysql_models.RootHistory.load(context=context,
-                                                     instance_id=id)
+        root_history = common_models.RootHistory.load(context=context,
+                                                      instance_id=id)
         return wsgi.Result(
             views.MgmtInstanceDetailView(
                 server,
@@ -189,7 +189,7 @@ class MgmtInstanceController(InstanceController):
             LOG.exception(e)
             return wsgi.Result(str(e), 404)
         rhv = views.RootHistoryView(id)
-        reh = mysql_models.RootHistory.load(context=context, instance_id=id)
+        reh = common_models.RootHistory.load(context=context, instance_id=id)
         if reh:
             rhv = views.RootHistoryView(reh.id, enabled=reh.created,
                                         user_id=reh.user)

@@ -16,9 +16,9 @@
 import jsonschema
 from testtools.matchers import Is
 
-from trove.extensions.mysql.service import SchemaController
-from trove.extensions.mysql.service import UserAccessController
-from trove.extensions.mysql.service import UserController
+from trove.extensions.common.service import SchemaController
+from trove.extensions.common.service import UserAccessController
+from trove.extensions.common.service import UserController
 from trove.tests.unittests import trove_testtools
 
 
