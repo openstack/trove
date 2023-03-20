@@ -103,10 +103,9 @@ def get_client(target, key, version_cap=None, serializer=None,
     # assert key is not None
     serializer = secure_serializer(
         sz.TroveRequestContextSerializer(serializer), key)
-    return messaging.RPCClient(TRANSPORT,
-                               target,
-                               version_cap=version_cap,
-                               serializer=serializer)
+    return messaging.get_rpc_client(
+        TRANSPORT, target, version_cap=version_cap,
+        serializer=serializer)
 
 
 def get_server(target, endpoints, key, serializer=None,
