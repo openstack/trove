@@ -205,43 +205,75 @@ class MySqlManager(manager.Manager):
             root_pass = utils.generate_random_password()
             self.app.save_password('root', root_pass)
 
-        with tempfile.NamedTemporaryFile(mode='w') as init_file, \
-            tempfile.NamedTemporaryFile(suffix='.err') as err_file:
-            operating_system.write_file(
-                init_file.name,
-                f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_pass}';"
-            )
-            command = (
-                f'mysqld_safe --init-file={init_file.name} '
-                f'--log-error={err_file.name} '
-                f'--datadir={data_dir}'
-            )
-            extra_volumes = {
-                init_file.name: {"bind": init_file.name, "mode": "rw"},
-                err_file.name: {"bind": err_file.name, "mode": "rw"},
-            }
+        init_file = tempfile.NamedTemporaryFile(mode='w')
+        operating_system.write_file(
+            init_file.name,
+            f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_pass}';"
+        )
+        err_file = tempfile.NamedTemporaryFile(suffix='.err')
 
-            # Allow database service user to access the temporary files.
+        # Get the original file owner and group before changing the owner.
+        from pathlib import Path
+        init_file_path = Path(init_file.name)
+        init_file_owner = init_file_path.owner()
+        init_file_group = init_file_path.group()
+
+        # Allow database service user to access the temporary files.
+        try:
             for file in [init_file.name, err_file.name]:
-                operating_system.chmod(file,
-                                       operating_system.FileMode.SET_ALL_RWX(),
-                                       force=True, as_root=True)
+                operating_system.chown(file, CONF.database_service_uid,
+                                       CONF.database_service_uid, force=True,
+                                       as_root=True)
+        except Exception as err:
+            LOG.error('Failed to change file owner, error: %s', str(err))
+            for file in [init_file.name, err_file.name]:
+                LOG.debug('Reverting the %s owner to %s '
+                          'before close it.', file, init_file_owner)
+                operating_system.chown(file, init_file_owner,
+                                       init_file_group, force=True,
+                                       as_root=True)
+            init_file.close()
+            err_file.close()
+            raise err
 
+        # Allow database service user to access the temporary files.
+        command = (
+            f'mysqld --init-file={init_file.name} '
+            f'--log-error={err_file.name} '
+            f'--datadir={data_dir} '
+        )
+        extra_volumes = {
+            init_file.name: {"bind": init_file.name, "mode": "rw"},
+            err_file.name: {"bind": err_file.name, "mode": "rw"},
+        }
+
+        # Start the database container process.
+        try:
+            self.app.start_db(ds_version=ds_version, command=command,
+                              extra_volumes=extra_volumes)
+        except Exception as err:
+            LOG.error('Failed to reset password for restore, error: %s',
+                      str(err))
+            raise err  # re-raised at the end of the finally clause
+        finally:
             try:
-                self.app.start_db(ds_version=ds_version, command=command,
-                                  extra_volumes=extra_volumes)
-            except Exception as err:
-                LOG.error('Failed to reset password for restore, error: %s',
-                          str(err))
-                LOG.debug('Content in init error log file: %s',
-                          err_file.read())
-                raise err
-            finally:
                 LOG.debug(
                     'The init container log: %s',
                     docker_util.get_container_logs(self.app.docker_client)
                 )
                 docker_util.remove_container(self.app.docker_client)
+            except Exception as err:
+                LOG.error('Failed to remove container. error: %s',
+                          str(err))
+                pass
+            for file in [init_file.name, err_file.name]:
+                LOG.debug('Reverting the %s owner to %s '
+                          'before close it.', file, init_file_owner)
+                operating_system.chown(file, init_file_owner,
+                                       init_file_group, force=True,
+                                       as_root=True)
+            init_file.close()
+            err_file.close()
 
         LOG.info('Finished to reset password for restore')
 
