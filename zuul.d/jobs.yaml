@@ -282,6 +282,12 @@
       - ^doc/.*$
       - ^etc/.*$
       - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^\..+
     vars: &base_vars
       tox_envlist: all
       tempest_concurrency: 1
@@ -351,6 +357,12 @@
       - ^doc/.*$
       - ^etc/.*$
       - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^\..+
       - ^trove/guestagent/(mysql.*|mariadb)/.*$
       - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*)\.py$
     vars:
