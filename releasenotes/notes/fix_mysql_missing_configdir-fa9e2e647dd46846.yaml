@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Fix guest-agent failed to start mysql-5.7 container due to the missing
+    of the configdir. note that we don't test mysql 5.7(aka.5.7.40) image
+    in Trove CI tests.
+    `Stroy 2010543 <https://storyboard.openstack.org/#!/story/2010543>`__
+
