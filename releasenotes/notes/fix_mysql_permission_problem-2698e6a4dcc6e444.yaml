@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fix mysql instance permission issue when restoring a backup.
+    `Stroy 2010467 <https://storyboard.openstack.org/#!/story/2010467>`__
