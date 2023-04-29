@@ -350,6 +350,20 @@
         '/var/log/guest-agent-logs/': 'logs'
 
 - job:
+    name: trove-tempest-mysql-network-isolation
+    parent: trove-tempest
+    vars:
+      devstack_localrc:
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+        TROVE_MGMT_GATEWAY: "192.168.254.1"
+      devstack_local_conf:
+        post-config:
+          $TROVE_CONF:
+            network:
+              network_isolation: True
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_backup
+
+- job:
     name: trove-tempest-postgres
     parent: devstack-tempest
     nodeset: trove-ubuntu-focal
@@ -449,6 +463,7 @@
     name: trove-ubuntu-guest-image-build
     run: playbooks/image-build/run.yaml
     nodeset: trove-ubuntu-focal-single
+    timeout: 3600
     description: |
       Build Ubuntu focal based image only on ubuntu distro.
     required-projects:
@@ -469,6 +484,7 @@
     name: trove-centos8s-guest-image-build
     run: playbooks/image-build/run.yaml
     nodeset: trove-centos8s-single
+    timeout: 3600
     description: |
       Build Ubuntu focal based image only on centos8 stream.
     required-projects:

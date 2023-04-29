@@ -31,14 +31,19 @@ if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then
     cp ${SCRIPTDIR}/guest-log-collection.timer /etc/systemd/system/guest-log-collection.timer
 fi
 
+# Install docker network plugin
+ln -s ${GUEST_VENV}/bin/trove-docker-plugin /usr/local/bin/trove-docker-plugin || true
+install -D -g root -o root -m 0644 ${SCRIPTDIR}/docker-hostnic.socket /lib/systemd/system/docker-hostnic.socket
+
 if [[ ${DEV_MODE} == "true" ]]; then
     [[ -n "${HOST_SCP_USERNAME}" ]] || die "HOST_SCP_USERNAME needs to be set to the trovestack host user"
     [[ -n "${ESCAPED_PATH_TROVE}" ]] || die "ESCAPED_PATH_TROVE needs to be set to the path to the trove directory on the trovestack host"
-
+    sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g" ${SCRIPTDIR}/docker-hostnic-dev.service > /lib/systemd/system/docker-hostnic.service
     sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;s/PATH_TROVE/${ESCAPED_PATH_TROVE}/g" ${SCRIPTDIR}/guest-agent-dev.service > /etc/systemd/system/guest-agent.service
 else
     # Link the trove-guestagent out to /usr/local/bin where the startup scripts look for
     ln -s ${GUEST_VENV}/bin/trove-guestagent /usr/local/bin/guest-agent || true
+    install -D -g root -o root -m 0644 ${SCRIPTDIR}/docker-hostnic.service /lib/systemd/system/docker-hostnic.service
 
     case "$DIB_INIT_SYSTEM" in
         systemd)

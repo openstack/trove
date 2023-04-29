@@ -7,7 +7,7 @@ set -eu
 set -o pipefail
 
 if [ "$DIB_INIT_SYSTEM" == "systemd" ]; then
-    systemctl enable $(svc-map guest-agent)
+    systemctl enable $(svc-map guest-agent docker-hostnic.socket)
 fi
 
 if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then

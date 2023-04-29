@@ -13,19 +13,20 @@
 #    limitations under the License.
 
 import abc
+import os
 import re
-
-import sqlalchemy
-import urllib
 
 from oslo_log import log as logging
 from oslo_utils import encodeutils
+import sqlalchemy
 from sqlalchemy import event
 from sqlalchemy import exc
 from sqlalchemy.sql.expression import text
+import urllib
 
 from trove.common import cfg
 from trove.common.configurations import MySQLConfParser
+from trove.common import constants
 from trove.common.db.mysql import models
 from trove.common import exception
 from trove.common.i18n import _
@@ -612,12 +613,18 @@ class BaseMySqlApp(service.BaseDbApp):
             for port in port_range:
                 ports[f'{port}/tcp'] = port
 
+        if CONF.network_isolation and \
+                os.path.exists(constants.ETH1_CONFIG_PATH):
+            network_mode = constants.DOCKER_HOST_NIC_MODE
+        else:
+            network_mode = constants.DOCKER_BRIDGE_MODE
+
         try:
             docker_util.start_container(
                 self.docker_client,
                 image,
                 volumes=volumes,
-                network_mode="bridge",
+                network_mode=network_mode,
                 ports=ports,
                 user=user,
                 environment={

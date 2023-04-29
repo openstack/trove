@@ -1478,7 +1478,14 @@ network_opts = [
              'This is needed for the instance initialization. The check is '
              'also necessary when creating public facing instance. A scenario '
              'to set this option False is when using Neutron provider '
-             'network.')
+             'network.'
+    ),
+    cfg.BoolOpt(
+        'network_isolation', default=False,
+        help='whether to plug user defined port to database container.'
+             'This would be useful to isolate user traffic from management'
+             'traffic and to avoid network address conflicts.'
+    )
 ]
 
 service_credentials_group = cfg.OptGroup(

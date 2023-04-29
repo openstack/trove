@@ -1,0 +1,8 @@
+[Unit]
+Description=docker hostnic driver
+
+[Socket]
+ListenStream=/run/docker/plugins/docker-hostnic.sock
+
+[Install]
+WantedBy=sockets.target

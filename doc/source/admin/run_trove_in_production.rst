@@ -94,6 +94,7 @@ Running multiple instances of the individual Trove controller components on
 separate physical hosts is recommended in order to provide scalability and
 availability of the controller software.
 
+.. _trove-management-network:
 
 Management Network
 ~~~~~~~~~~~~~~~~~~

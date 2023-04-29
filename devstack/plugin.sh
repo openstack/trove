@@ -348,8 +348,9 @@ function create_mgmt_subnet_v4 {
     local net_id=$2
     local name=$3
     local ip_range=$4
+    local gateway=$5
 
-    subnet_id=$(openstack subnet create --project ${project_id} --ip-version 4 --subnet-range ${ip_range} --gateway none --dns-nameserver 8.8.8.8 --network ${net_id} $name -c id -f value)
+    subnet_id=$(openstack subnet create --project ${project_id} --ip-version 4 --subnet-range ${ip_range} --gateway ${gateway} --dns-nameserver 8.8.8.8 --network ${net_id} $name -c id -f value)
     die_if_not_set $LINENO subnet_id "Failed to create private IPv4 subnet for network: ${net_id}, project: ${project_id}"
     echo $subnet_id
 }
@@ -386,7 +387,8 @@ function setup_mgmt_network() {
     local NET_NAME=$2
     local SUBNET_NAME=$3
     local SUBNET_RANGE=$4
-    local SHARED=$5
+    local SUBNET_GATEWAY=$5
+    local SHARED=$6
 
     local share_flag=""
     if [[ "${SHARED}" == "TRUE" ]]; then
@@ -397,9 +399,10 @@ function setup_mgmt_network() {
     die_if_not_set $LINENO network_id "Failed to create network: $NET_NAME, project: ${PROJECT_ID}"
 
     if [[ "$IP_VERSION" =~ 4.* ]]; then
-        net_subnet_id=$(create_mgmt_subnet_v4 ${PROJECT_ID} ${network_id} ${SUBNET_NAME} ${SUBNET_RANGE})
-        # 'openstack router add' has a bug that cound't show the error message
-        # openstack router add subnet ${ROUTER_ID} ${net_subnet_id} --debug
+        net_subnet_id=$(create_mgmt_subnet_v4 ${PROJECT_ID} ${network_id} ${SUBNET_NAME} ${SUBNET_RANGE} ${SUBNET_GATEWAY})
+        if [[ ${SUBNET_GATEWAY} != "none" ]]; then
+            openstack router add subnet ${ROUTER_ID} ${net_subnet_id}
+        fi
     fi
 
     # Trove doesn't support IPv6 for now.
@@ -557,6 +560,7 @@ function config_trove_network {
     echo "  SUBNETPOOL_V4_ID: $SUBNETPOOL_V4_ID"
     echo "  ROUTER_GW_IP: $ROUTER_GW_IP"
     echo "  TROVE_MGMT_SUBNET_RANGE: ${TROVE_MGMT_SUBNET_RANGE}"
+    echo "  TROVE_MGMT_GATEWAY: ${TROVE_MGMT_GATEWAY}"
 
     # Save xtrace setting
     local orig_xtrace
@@ -565,7 +569,7 @@ function config_trove_network {
 
     echo "Creating Trove management network/subnet for Trove service project."
     trove_service_project_id=$(openstack project show $SERVICE_PROJECT_NAME -c id -f value)
-    setup_mgmt_network ${trove_service_project_id} ${TROVE_MGMT_NETWORK_NAME} ${TROVE_MGMT_SUBNET_NAME} ${TROVE_MGMT_SUBNET_RANGE}
+    setup_mgmt_network ${trove_service_project_id} ${TROVE_MGMT_NETWORK_NAME} ${TROVE_MGMT_SUBNET_NAME} ${TROVE_MGMT_SUBNET_RANGE} ${TROVE_MGMT_GATEWAY}
     mgmt_net_id=$(openstack network show ${TROVE_MGMT_NETWORK_NAME} -c id -f value)
     echo "Created Trove management network ${TROVE_MGMT_NETWORK_NAME}(${mgmt_net_id})"
 

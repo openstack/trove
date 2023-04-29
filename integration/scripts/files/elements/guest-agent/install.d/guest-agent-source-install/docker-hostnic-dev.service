@@ -1,0 +1,13 @@
+[Unit]
+Description=Docker hostnic plugin Service
+Before=docker.service
+After=network.target docker-hostnic.socket
+Requires=docker-hostnic.socket docker.service
+
+[Service]
+User=root
+Group=root
+ExecStart=/opt/guest-agent-venv/bin/python /home/GUEST_USERNAME/trove/contrib/trove-network-driver
+
+[Install]
+WantedBy=multi-user.target

@@ -11,13 +11,17 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import json
 import re
 
 import docker
+from docker import errors as derros
+from docker import types
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 
 from trove.common import cfg
+from trove.common import constants
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -32,6 +36,84 @@ def stop_container(client, name="database"):
         return
 
     container.stop(timeout=CONF.state_change_wait_time)
+
+
+def create_network(client: docker.client.DockerClient,
+                   name: str) -> str:
+    networks = client.networks.list()
+    for net in networks:
+        if net.name == name:
+            return net.id
+    LOG.debug("Creating docker network: %s", name)
+    with open(constants.ETH1_CONFIG_PATH) as fs:
+        eth1_config = json.load(fs)
+    enable_ipv6 = False
+    ipam_pool = list()
+    if eth1_config.get("ipv4_address"):
+        ipam_pool.append(types.IPAMPool(
+            subnet=eth1_config.get("ipv4_cidr"),
+            gateway=eth1_config.get("ipv4_gateway"))
+        )
+    if eth1_config.get("ipv6_address"):
+        enable_ipv6 = True
+        ipam_pool.append(types.IPAMPool(
+            subnet=eth1_config.get("ipv6_cidr"),
+            gateway=eth1_config.get("ipv6_gateway")
+        ))
+
+    ipam_config = docker.types.IPAMConfig(pool_configs=ipam_pool)
+    mac_address = eth1_config.get("mac_address")
+    net = client.networks.create(name=name,
+                                 driver=constants.DOCKER_HOST_NIC_MODE,
+                                 ipam=ipam_config,
+                                 enable_ipv6=enable_ipv6,
+                                 options=dict(hostnic_mac=mac_address))
+    LOG.debug("docker network: %s created successfully", net.id)
+    return net.id
+
+
+def _create_container_with_low_level_api(image: str, param: dict) -> None:
+    # create a low-level docker api object
+    client = docker.APIClient(base_url='unix://var/run/docker.sock')
+    host_config_kwargs = dict()
+    if param.get("restart_policy"):
+        host_config_kwargs["restart_policy"] = param.get("restart_policy")
+    if param.get("privileged"):
+        host_config_kwargs["privileged"] = param.get("privileged")
+    if param.get("volumes"):
+        host_config_kwargs["binds"] = param.get("volumes")
+    host_config = client.create_host_config(**host_config_kwargs)
+
+    network_config_kwargs = dict()
+    with open(constants.ETH1_CONFIG_PATH) as fs:
+        eth1_config = json.load(fs)
+    if eth1_config.get("ipv4_address"):
+        network_config_kwargs["ipv4_address"] = eth1_config.get("ipv4_address")
+    if eth1_config.get("ipv6_address"):
+        network_config_kwargs["ipv6_address"] = eth1_config.get("ipv6_address")
+
+    networking_config = client.create_networking_config(
+        {param.get("network"):
+            client.create_endpoint_config(**network_config_kwargs)})
+    # NOTE(wuchunyang): the low-level api doesn't support RUN interface,
+    # so we need pull image first, then start the container
+    LOG.debug("Pulling docker images: %s", image)
+    try:
+        client.pull(image)
+    except derros.APIError as e:
+        LOG.error("failed to pull image: %s, due to the error: %s", image, e)
+        raise
+    LOG.debug("Creating container: %s", param.get("name"))
+    container = client.create_container(image=image,
+                                        name=param.get("name"),
+                                        detach=param.get("detach"),
+                                        user=param.get("user"),
+                                        environment=param.get("environment"),
+                                        command=param.get("command"),
+                                        host_config=host_config,
+                                        networking_config=networking_config)
+    LOG.debug("Starting container: %s", param.get("name"))
+    client.start(container=container)
 
 
 def start_container(client, image, name="database",
@@ -58,27 +140,31 @@ def start_container(client, image, name="database",
         container = client.containers.get(name)
         LOG.info(f'Starting existing container {name}')
         container.start()
+        return
     except docker.errors.NotFound:
-        LOG.info(
-            f"Creating docker container, image: {image}, "
-            f"volumes: {volumes}, ports: {ports}, user: {user}, "
-            f"network_mode: {network_mode}, environment: {environment}, "
-            f"command: {command}")
-        container = client.containers.run(
-            image,
-            name=name,
-            restart_policy={"Name": restart_policy},
-            privileged=False,
-            network_mode=network_mode,
-            detach=True,
-            volumes=volumes,
-            ports=ports,
-            user=user,
-            environment=environment,
-            command=command
-        )
+        pass
 
-    return container
+    LOG.info(
+        f"Creating docker container, image: {image}, "
+        f"volumes: {volumes}, ports: {ports}, user: {user}, "
+        f"network_mode: {network_mode}, environment: {environment}, "
+        f"command: {command}")
+    kwargs = dict(name=name,
+                  restart_policy={"Name": restart_policy},
+                  privileged=False,
+                  detach=True,
+                  volumes=volumes,
+                  ports=ports,
+                  user=user,
+                  environment=environment,
+                  command=command)
+    if network_mode == constants.DOCKER_HOST_NIC_MODE:
+        create_network(client, constants.DOCKER_NETWORK_NAME)
+        kwargs["network"] = constants.DOCKER_NETWORK_NAME
+        return _create_container_with_low_level_api(image, kwargs)
+    else:
+        kwargs["network_mode"] = network_mode
+        return client.containers.run(image, **kwargs)
 
 
 def _decode_output(output):

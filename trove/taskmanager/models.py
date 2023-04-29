@@ -13,6 +13,7 @@
 #    under the License.
 
 import copy
+import json
 import time
 import traceback
 
@@ -33,6 +34,7 @@ from trove.common import clients
 from trove.common.clients import create_cinder_client
 from trove.common.clients import create_dns_client
 from trove.common.clients import create_guest_client
+from trove.common import constants
 from trove.common import exception
 from trove.common.exception import BackupCreationError
 from trove.common.exception import GuestError
@@ -557,6 +559,26 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         )
         return networks
 
+    def _get_user_nic_info(self, port_id):
+        nic_info = dict()
+        port = self.neutron_client.show_port(port_id)
+        fixed_ips = port['port']["fixed_ips"]
+        nic_info["mac_address"] = port['port']["mac_address"]
+        for fixed_ip in fixed_ips:
+            subnet = self.neutron_client.show_subnet(
+                fixed_ip["subnet_id"])['subnet']
+            if subnet.get("ip_version") == 4:
+                nic_info["ipv4_address"] = fixed_ip.get("ip_address")
+                nic_info["ipv4_cidr"] = subnet.get("cidr")
+                nic_info["ipv4_gateway"] = subnet.get("gateway_ip")
+                nic_info["ipv4_host_routes"] = subnet.get("host_routes")
+            elif subnet.get("ip_version") == 6:
+                nic_info["ipv6_address"] = fixed_ip.get("ip_address")
+                nic_info["ipv6_cidr"] = subnet.get("cidr")
+                nic_info["ipv6_gateway"] = subnet.get("gateway_ip")
+                nic_info["ipv6_host_routes"] = subnet.get("host_routes")
+        return nic_info
+
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
                         backup_id, availability_zone, root_password, nics,
@@ -573,11 +595,21 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             "Creating instance %s, nics: %s, access: %s",
             self.id, nics, access
         )
-
         networks = self._prepare_networks_for_instance(
             datastore_manager, nics, access=access
         )
-        files = self.get_injected_files(datastore_manager, ds_version)
+
+        if CONF.network.network_isolation and len(nics) > 1:
+            # the user defined port is always the first one.
+            nic_info = self._get_user_nic_info(networks[0]["port-id"])
+            LOG.debug("Generate the eth1_config.json file: %s", nic_info)
+            files = self.get_injected_files(datastore_manager,
+                                            ds_version,
+                                            disable_bridge=True)
+            files[constants.ETH1_CONFIG_PATH] = json.dumps(nic_info)
+        else:
+            files = self.get_injected_files(datastore_manager, ds_version)
+
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         volume_info = self._create_server_volume(
             flavor['id'], image_id,

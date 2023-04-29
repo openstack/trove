@@ -12,11 +12,13 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 from collections import OrderedDict
+import os
 
 from oslo_log import log as logging
 import psycopg2
 
 from trove.common import cfg
+from trove.common import constants
 from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common import stream_codecs
@@ -200,12 +202,18 @@ class PgSqlApp(service.BaseDbApp):
             for port in port_range:
                 ports[f'{port}/tcp'] = port
 
+        if CONF.network_isolation and \
+                os.path.exists(constants.ETH1_CONFIG_PATH):
+            network_mode = constants.DOCKER_HOST_NIC_MODE
+        else:
+            network_mode = constants.DOCKER_BRIDGE_MODE
+
         try:
             docker_util.start_container(
                 self.docker_client,
                 image,
                 volumes=volumes,
-                network_mode="bridge",
+                network_mode=network_mode,
                 ports=ports,
                 user=user,
                 environment={

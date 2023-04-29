@@ -14,3 +14,7 @@
 
 BACKUP_TYPE_FULL = 'full'
 BACKUP_TYPE_INC = 'incremental'
+ETH1_CONFIG_PATH = "/etc/trove/eth1.json"
+DOCKER_NETWORK_NAME = "database-network"
+DOCKER_HOST_NIC_MODE = "docker-hostnic"
+DOCKER_BRIDGE_MODE = "bridge"

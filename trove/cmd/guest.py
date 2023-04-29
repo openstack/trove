@@ -31,7 +31,10 @@ CONF.register_opts([openstack_cfg.StrOpt('guest_id', default=None,
                                          help="ID of the Guest Instance."),
                     openstack_cfg.StrOpt('instance_rpc_encr_key',
                                          help=('Key (OpenSSL aes_cbc) for '
-                                               'instance RPC encryption.'))])
+                                               'instance RPC encryption.')),
+                    openstack_cfg.BoolOpt('network_isolation',
+                                          help='whether to plug user defined '
+                                               'port to database container')])
 LOG = logging.getLogger(__name__)
 
 

@@ -311,8 +311,8 @@ class InstanceController(wsgi.Controller):
 
         nic['network_id'] = network_id
         nic.pop('net-id', None)
-
-        self._check_network_overlap(context, network_id, subnet_id)
+        if not CONF.network.network_isolation:
+            self._check_network_overlap(context, network_id, subnet_id)
 
     def _check_network_overlap(self, context, user_network=None,
                                user_subnet=None):

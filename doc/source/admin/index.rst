@@ -12,3 +12,4 @@
    secure_oslo_messaging
    database_management
    troubleshooting
+   network_isolation

@@ -1,0 +1,8 @@
+---
+
+features:
+  - |
+    Add network_isolation config option for trove. With network_isolation enabled,
+    trove guest agent will plug the user defined port to database container.thereby
+    achieving traffic isolation between management and business traffic.
+    `Stroy 2010733 <https://storyboard.openstack.org/#!/story/2010733>`__

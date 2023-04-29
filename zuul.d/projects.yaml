@@ -17,6 +17,8 @@
             voting: true
         - trove-tempest:
             voting: false
+        - trove-tempest-mysql-network-isolation:
+            voting: true
         - trove-ubuntu-guest-image-build:
             voting: true
         - trove-centos8s-guest-image-build:

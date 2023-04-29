@@ -1,0 +1,13 @@
+[Unit]
+Description=Docker hostnic plugin Service
+Before=docker.service
+After=network.target docker-hostnic.socket
+Requires=docker-hostnic.socket docker.service
+
+[Service]
+User=root
+Group=root
+ExecStart=/usr/local/bin/trove-docker-plugin
+
+[Install]
+WantedBy=multi-user.target

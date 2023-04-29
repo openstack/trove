@@ -992,7 +992,10 @@ class BaseInstance(SimpleInstance):
 
         return userdata if userdata else ""
 
-    def get_injected_files(self, datastore_manager, datastore_version):
+    def get_injected_files(self,
+                           datastore_manager,
+                           datastore_version,
+                           **kwargs):
         injected_config_location = CONF.get('injected_config_location')
         guest_info = CONF.get('guest_info')
 
@@ -1016,6 +1019,12 @@ class BaseInstance(SimpleInstance):
             )
         }
 
+        # pass through the network_isolation to guest
+        files = {
+            guest_info_file: ("%snetwork_isolation=%s\n" %
+                              (files.get(guest_info_file),
+                               CONF.network.network_isolation))
+        }
         instance_key = get_instance_encryption_key(self.id)
         if instance_key:
             files = {
@@ -1040,10 +1049,18 @@ class BaseInstance(SimpleInstance):
         # Configure docker's daemon.json if the directives exist in trove.conf
         docker_daemon_values = {}
 
-        # Configure docker_bridge_network_ip in order to change the docker
-        # default range(172.17.0.0/16) of bridge network
-        if CONF.docker_bridge_network_ip:
-            docker_daemon_values["bip"] = CONF.docker_bridge_network_ip
+        # In case that user enables network_isolation with management/bussiness
+        # network not set
+        if CONF.network.network_isolation and \
+                kwargs.get("disable_bridge", False):
+            docker_daemon_values["bridge"] = "none"
+            docker_daemon_values["ip-forward"] = False
+            docker_daemon_values["iptables"] = False
+        else:
+            # Configure docker_bridge_network_ip in order to change the docker
+            # default range(172.17.0.0/16) of bridge network
+            if CONF.docker_bridge_network_ip:
+                docker_daemon_values["bip"] = CONF.docker_bridge_network_ip
         if CONF.docker_insecure_registries:
             docker_daemon_values["insecure-registries"] = \
                 CONF.docker_insecure_registries
