@@ -13,7 +13,6 @@
         trove_api_workers = 5
         transport_url = rabbit://stackrabbit:password@192.168.1.34:5672/
         control_exchange = trove
-        rpc_backend = rabbit
         reboot_time_out = 300
         usage_timeout = 900
         agent_call_high_timeout = 1200
@@ -69,7 +68,6 @@
       ignore_users = os_admin
       control_exchange = trove
       transport_url = rabbit://stackrabbit:password@172.24.5.1:5672/
-      rpc_backend = rabbit
       command_process_timeout = 60
       use_syslog = False
       debug = True
