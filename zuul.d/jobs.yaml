@@ -299,7 +299,7 @@
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         TROVE_ENABLE_LOCAL_REGISTRY: True
-        TROVE_DATASTORE_VERSION: 5.7
+        TROVE_DATASTORE_VERSION: 5.7.29
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -308,7 +308,7 @@
         test-config:
           $TEMPEST_CONFIG:
             database:
-              default_datastore_versions: mysql:5.7
+              default_datastore_versions: mysql:5.7.29
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
