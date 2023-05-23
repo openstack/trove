@@ -22,7 +22,7 @@
       shell: docker pull {{ item }} && docker tag {{item}} 127.0.0.1:5000/trove-datastores/{{ item }} && \
                docker push 127.0.0.1:5000/trove-datastores/{{ item }}
       loop:
-        - "mysql:5.7"
+        - "mysql:5.7.29"
         - "mysql:8.0"
         - "mariadb:10.4"
         - "postgres:12"
