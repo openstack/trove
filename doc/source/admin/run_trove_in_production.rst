@@ -301,7 +301,50 @@ Some config options specifically for trove guest agent:
 
       [mysql]
       docker_image = your-registry/your-repo/mysql
-      backup_docker_image = your-registry/your-repo/db-backup-mysql:1.1.0
+      backup_docker_image = your-registry/your-repo/db-backup-mysql
+
+Make Trove work with multiple versions for each datastore
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When Trove do a backup/restore actions, The Trove guest agent pulls container
+images with tags matching the datastore version of the database instance running.
+To Ensure the trove guest agent can run backup/restore properly, you need to ensure
+the images with the proper tags already exists in the registry.
+Such as:
+If your datastore manager is 'mariadb' and its name is 'MariaDB',
+and it has 2 datastore versions:
+
+  .. code-block:: bash
+
+      openstack datastore version list MariaDB
+      +--------------------------------------+------+---------+
+      | ID                                   | Name | Version |
+      +--------------------------------------+------+---------+
+      | 550aebf7-df97-49f1-bf24-7cd7b69fa365 | 10.3 | 10.3    |
+      | ee988cc3-bb30-4aaf-9837-e90a34f60d37 | 10.4 | 10.4    |
+      +--------------------------------------+------+---------+
+
+Configure the ``backup_docker_image`` options like following:
+
+.. path /etc/trove/trove-guestagent.conf
+.. code-block:: ini
+
+      [mariadb]
+      # Database docker image. (string value)
+      docker_image = your-registry/your-repo/db-mariadb
+
+      # The docker image used for backup and restore. (string value)
+      backup_docker_image = your-registry/your-repo/db-backup-mariadb
+
+.. note::
+
+    Do not configure the image tag for the image. because if the image doesn't
+    contain the tag, Trove will use the datastore version as the tag.
+
+Administrators need to ensure that the Docker backup image has 2 tags (10.3 & 10.4)
+in docker registry. For example:
+your-registry/your-repo/db-backup-mariadb:10.3 & your-registry/your-repo/db-backup-mariadb:10.4
+
+Finally, when trove-guestagent does backup/restore, it will pull this image with the tag equals datastore version.
 
 Initialize Trove Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~

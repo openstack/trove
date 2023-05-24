@@ -415,8 +415,32 @@ class BaseDbApp(object):
         self.reset_configuration(config_contents)
         self.start_db(update_db=True, ds_version=ds_version)
 
+    @staticmethod
+    def _image_has_tag(image):
+        """
+        Whether docker_image being config with tag
+            "example.domain:5000/repo/image_name:tag",
+            "example.domain:5000/repo/image-name:tag",
+            "example.domain:5000/repo/image-name:tag_tag",
+            "example.domain:5000/repo/image_name:tag-tag",
+            "example.domain:5000/repo/image-name",
+            "example.domain:5000/repo/image_name",
+            "example.domain:5000:5000/repo/image-name",
+            "example.domain/repo/image-name",
+            "example.domain/repo/image-name:tag"
+
+        Returns:
+            - True if match
+        """
+        return image.split('/')[-1].find(':') > 0
+
     def get_backup_image(self):
-        return cfg.get_configuration_property('backup_docker_image')
+        image = cfg.get_configuration_property('backup_docker_image')
+        if not self._image_has_tag(image):
+            ds_version = CONF.datastore_version
+            image = (f'{image}:latest' if not ds_version else
+                     f'{image}:{ds_version}')
+        return image
 
     def get_backup_strategy(self):
         return cfg.get_configuration_property('backup_strategy')
