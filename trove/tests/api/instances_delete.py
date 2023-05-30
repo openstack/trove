@@ -25,9 +25,9 @@ from proboscis import test
 from troveclient.compat import exceptions
 
 from trove import tests
+from trove.tests.api import configurations
 from trove.tests.api.instances import instance_info
 from trove.tests.config import CONFIG
-from trove.tests.api import configurations
 
 
 def do_not_delete_instance():

@@ -21,15 +21,15 @@ from oslo_messaging._drivers.common import RPCException
 from proboscis import test
 from testtools import TestCase
 
-from trove.common import template
-from trove.common import utils
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
+from trove.common import template
+from trove.common import utils
 from trove.datastore.models import DatastoreVersion
 from trove.guestagent import api as guest
-from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
+from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import models
 from trove.tests.fakes import nova

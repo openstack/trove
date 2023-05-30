@@ -15,8 +15,8 @@
 import hashlib
 import json
 
-from keystoneauth1 import session
 from keystoneauth1.identity import v3
+from keystoneauth1 import session
 from oslo_config import cfg
 from oslo_log import log as logging
 import swiftclient

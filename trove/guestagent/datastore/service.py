@@ -23,8 +23,8 @@ from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import context as trove_context
 from trove.common import exception
-from trove.common import stream_codecs
 from trove.common.i18n import _
+from trove.common import stream_codecs
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system

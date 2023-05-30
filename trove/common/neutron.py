@@ -12,9 +12,9 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 import netaddr
+from neutronclient.common import exceptions as neutron_exceptions
 from oslo_cache import core
 from oslo_log import log as logging
-from neutronclient.common import exceptions as neutron_exceptions
 
 from trove.common import cache
 from trove.common import cfg

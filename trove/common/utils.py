@@ -19,8 +19,8 @@ import inspect
 import os
 import shlex
 import shutil
-import uuid
 import urllib.parse as urlparse
+import uuid
 
 from eventlet.timeout import Timeout
 import jinja2

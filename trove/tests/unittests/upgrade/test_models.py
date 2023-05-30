@@ -14,6 +14,7 @@
 #    under the License.
 #
 from unittest.mock import patch
+
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove import rpc
 from trove.tests.unittests import trove_testtools

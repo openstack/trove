@@ -16,12 +16,12 @@ from oslo_log import log as logging
 
 from trove.backup import models as backup_model
 from trove.common import apischema
+from trove.common.auth import admin_context
 from trove.common import clients
 from trove.common import exception
 from trove.common import glance as common_glance
 from trove.common import utils
 from trove.common import wsgi
-from trove.common.auth import admin_context
 from trove.configuration import models as config_model
 from trove.datastore import models
 from trove.extensions.mgmt.datastores import views

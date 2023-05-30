@@ -20,8 +20,8 @@ import jsonschema
 from testtools.matchers import Equals
 
 from trove.backup import models
-from trove.backup import state
 from trove.backup.service import BackupController
+from trove.backup import state
 from trove.common import apischema
 from trove.common import context
 from trove.common import wsgi

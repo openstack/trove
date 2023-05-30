@@ -16,11 +16,11 @@
 from testtools.matchers import Equals
 from testtools.matchers import Is
 from testtools.matchers import Not
-import uuid
-
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import patch
+import uuid
+
 from novaclient.client import Client
 from novaclient.v2.flavors import Flavor
 from novaclient.v2.flavors import FlavorManager
@@ -28,17 +28,18 @@ from novaclient.v2.servers import Server
 from novaclient.v2.servers import ServerManager
 from oslo_config import cfg
 
-from trove import rpc
+
 from trove.backup.models import Backup
 from trove.common import clients
 from trove.common import exception
 from trove.datastore import models as datastore_models
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.guestagent.api import API
-from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
+from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTasks
+from trove import rpc
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 

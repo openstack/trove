@@ -16,6 +16,7 @@
 from unittest.mock import call
 from unittest.mock import Mock
 from unittest.mock import patch
+
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import Column
 

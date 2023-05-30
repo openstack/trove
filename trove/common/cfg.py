@@ -20,8 +20,8 @@ import os.path
 from keystoneauth1 import loading
 from keystonemiddleware import auth_token
 from oslo_config import cfg
-from oslo_config import types
 from oslo_config.cfg import NoSuchOptError
+from oslo_config import types
 from oslo_log import log as logging
 from oslo_log import versionutils
 from oslo_middleware import cors

@@ -15,8 +15,8 @@
 
 import abc
 import ast
-import csv
 import configparser
+import csv
 import io
 import re
 import sys

@@ -22,11 +22,11 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
-from trove.common import utils
 from trove.common.notification import EndNotification
-from trove.guestagent import guest_log
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
+from trove.guestagent import guest_log
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
 from trove.instance import service_status

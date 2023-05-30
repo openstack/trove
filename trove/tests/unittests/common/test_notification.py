@@ -18,14 +18,14 @@ from unittest.mock import patch
 
 from oslo_utils import timeutils
 
-from trove import rpc
 from trove.common import cfg
+from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common import notification
-from trove.common.context import TroveContext
 from trove.common.notification import EndNotification
 from trove.common.notification import StartNotification
 from trove.conductor import api as conductor_api
+from trove import rpc
 from trove.tests.unittests import trove_testtools
 
 
