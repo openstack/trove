@@ -13,43 +13,39 @@
 #    under the License.
 import json
 import os
-
 from tempfile import NamedTemporaryFile
 from unittest import mock
+from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import Mock
-from unittest.mock import PropertyMock
-from unittest.mock import call
 from unittest.mock import patch
-
-import cinderclient.v3.client as cinderclient
-import neutronclient.v2_0.client as neutronclient
-import novaclient.v2.flavors
-import novaclient.v2.servers
+from unittest.mock import PropertyMock
 
 from cinderclient import exceptions as cinder_exceptions
+import cinderclient.v3.client as cinderclient
 from cinderclient.v3 import volumes as cinderclient_volumes
+import neutronclient.v2_0.client as neutronclient
 from novaclient import exceptions as nova_exceptions
+import novaclient.v2.flavors
+import novaclient.v2.servers
 from oslo_config import cfg
 from swiftclient.client import ClientException
 from testtools.matchers import Equals
 from testtools.matchers import Is
-
 import trove.backup.models
 import trove.common.context
 import trove.common.template as template
 import trove.db.models
 import trove.guestagent.api
 
-from trove import rpc
 from trove.backup import models as backup_models
 from trove.backup import state
 from trove.common import exception
-from trove.common import timeutils
-from trove.common import utils
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
+from trove.common import timeutils
+from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.extensions.common import models as common_models
 from trove.extensions.mysql import models as mysql_models
@@ -59,6 +55,7 @@ from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
 from trove.instance.service_status import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
+from trove import rpc
 from trove.taskmanager import models as taskmanager_models
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util

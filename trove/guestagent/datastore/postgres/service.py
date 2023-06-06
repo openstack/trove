@@ -17,15 +17,15 @@ from oslo_log import log as logging
 import psycopg2
 
 from trove.common import cfg
+from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common import stream_codecs
 from trove.common import utils
-from trove.common.db.postgresql import models
 from trove.guestagent.common import configuration
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore import service
 from trove.guestagent.datastore.postgres import query
+from trove.guestagent.datastore import service
 from trove.guestagent.utils import docker as docker_util
 from trove.instance import service_status
 

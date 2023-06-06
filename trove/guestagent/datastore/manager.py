@@ -26,15 +26,15 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.notification import EndNotification
-from trove.guestagent import dbaas
-from trove.guestagent import guest_log
-from trove.guestagent import volume
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
+from trove.guestagent import dbaas
+from trove.guestagent import guest_log
 from trove.guestagent.module import driver_manager
 from trove.guestagent.module import module_manager
 from trove.guestagent.strategies import replication as repl_strategy
+from trove.guestagent import volume
 from trove.instance import service_status
 
 LOG = logging.getLogger(__name__)

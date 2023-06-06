@@ -16,10 +16,10 @@
 
 from oslo_log import log as logging
 
+from trove.common import exception
+from trove.common import utils
 from trove.guestagent.datastore.mysql_common import service as mysql_service
 from trove.guestagent.utils import mysql as mysql_util
-from trove.common import utils
-from trove.common import exception
 
 LOG = logging.getLogger(__name__)
 

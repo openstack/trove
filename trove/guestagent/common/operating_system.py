@@ -26,9 +26,9 @@ import tempfile
 from oslo_concurrency.processutils import UnknownArgumentError
 
 from trove.common import exception
-from trove.common import utils
 from trove.common.i18n import _
 from trove.common.stream_codecs import IdentityCodec
+from trove.common import utils
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'

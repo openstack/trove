@@ -16,6 +16,7 @@ import datetime
 from unittest.mock import DEFAULT
 from unittest.mock import MagicMock
 from unittest.mock import patch
+
 from swiftclient.client import ClientException
 
 from trove.backup import models

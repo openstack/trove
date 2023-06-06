@@ -14,15 +14,15 @@
 #    under the License.
 
 from migrate.changeset.constraint import UniqueConstraint
-from sqlalchemy import text
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.expression import update
+from sqlalchemy import text
 
-from trove.db.sqlalchemy import utils as db_utils
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.db.sqlalchemy import utils as db_utils
 
 
 def upgrade(migrate_engine):

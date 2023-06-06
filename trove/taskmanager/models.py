@@ -21,24 +21,19 @@ from eventlet.timeout import Timeout
 from oslo_log import log as logging
 from swiftclient.client import ClientException
 
-from trove import rpc
 from trove.backup import models as bkup_models
 from trove.backup.models import Backup
 from trove.backup.models import DBBackup
 from trove.backup.state import BackupState
-from trove.cluster import tasks
 from trove.cluster.models import Cluster
 from trove.cluster.models import DBCluster
+from trove.cluster import tasks
 from trove.common import cfg
 from trove.common import clients
-from trove.common import exception
-from trove.common import neutron
-from trove.common import template
-from trove.common import timeutils
-from trove.common import utils
 from trove.common.clients import create_cinder_client
 from trove.common.clients import create_dns_client
 from trove.common.clients import create_guest_client
+from trove.common import exception
 from trove.common.exception import BackupCreationError
 from trove.common.exception import GuestError
 from trove.common.exception import GuestTimeout
@@ -47,6 +42,7 @@ from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.exception import VolumeCreationFailure
 from trove.common.i18n import _
+from trove.common import neutron
 from trove.common.notification import DBaaSInstanceRestart
 from trove.common.notification import DBaaSInstanceUpgrade
 from trove.common.notification import EndNotification
@@ -54,20 +50,24 @@ from trove.common.notification import StartNotification
 from trove.common.notification import TroveInstanceCreate
 from trove.common.notification import TroveInstanceModifyFlavor
 from trove.common.strategies.cluster import strategy
+from trove.common import template
+from trove.common import timeutils
+from trove.common import utils
 from trove.common.utils import try_recover
 from trove.configuration import models as config_models
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as inst_models
-from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
 from trove.instance.models import FreshInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
+from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTasks
 from trove.module import models as module_models
 from trove.module import views as module_views
 from trove.quota.quota import run_with_quotas
+from trove import rpc
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

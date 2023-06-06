@@ -35,18 +35,18 @@ from trove.common import cfg
 from trove.common import clients
 from trove.common import crypto_utils as cu
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import neutron
 from trove.common import notification
 from trove.common import server_group as srv_grp
 from trove.common import template
 from trove.common import timeutils
-from trove.common import utils
-from trove.common.i18n import _
 from trove.common.trove_remote import create_trove_client
+from trove.common import utils
 from trove.configuration.models import Configuration
 from trove.datastore import models as datastore_models
-from trove.datastore.models import DBDatastoreVersionMetadata
 from trove.datastore.models import DatastoreVersionMetadata as dvm
+from trove.datastore.models import DBDatastoreVersionMetadata
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.extensions.security_group.models import SecurityGroup

@@ -16,21 +16,21 @@ from unittest import mock
 
 from novaclient.v2.servers import Server
 from proboscis import after_class
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_raises
 from proboscis import before_class
 from proboscis import SkipTest
 from proboscis import test
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_raises
 
 from trove.backup import models as backup_models
 from trove.backup import state
-from trove.common import exception
 from trove.common.context import TroveContext
+from trove.common import exception
 from trove.extensions.mgmt.instances.models import MgmtInstance
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.instance import models as imodels
-from trove.instance import service_status as srvstatus
 from trove.instance.models import DBInstance
+from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTasks
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client

@@ -16,6 +16,7 @@
 
 from unittest.mock import Mock
 from unittest.mock import patch
+
 from oslo_config.cfg import NoSuchOptError
 
 from trove.common import exception

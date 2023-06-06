@@ -14,6 +14,7 @@
 
 from unittest.mock import MagicMock
 from unittest.mock import patch
+
 from oslo_service import service as os_service
 
 from trove.cmd import common as common_cmd

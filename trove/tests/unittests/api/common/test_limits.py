@@ -17,10 +17,10 @@
 Tests dealing with HTTP rate-limiting.
 """
 
-
-import io
 from http import client as http_client
+import io
 from unittest.mock import Mock, MagicMock, patch
+
 from oslo_serialization import jsonutils
 import webob
 

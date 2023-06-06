@@ -13,6 +13,7 @@
 #    under the License.
 
 from unittest.mock import patch
+
 from oslo_utils import timeutils
 
 from trove.backup import models as bkup_models

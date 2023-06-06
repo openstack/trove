@@ -25,16 +25,16 @@ from sqlalchemy import exc
 from sqlalchemy.sql.expression import text
 
 from trove.common import cfg
-from trove.common import exception
-from trove.common import utils
 from trove.common.configurations import MySQLConfParser
 from trove.common.db.mysql import models
+from trove.common import exception
 from trove.common.i18n import _
+from trove.common import utils
+from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common import sql_query
-from trove.guestagent.common.configuration import ConfigurationManager
-from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.datastore import service
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util

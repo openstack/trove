@@ -16,17 +16,17 @@
 from oslo_log import log as logging
 from oslo_utils import strutils
 
-from trove.backup import views
 from trove.backup.models import Backup
 from trove.backup.models import BackupStrategy
+from trove.backup import views
 from trove.common import apischema
 from trove.common import exception
 from trove.common import notification
+from trove.common.notification import StartNotification
 from trove.common import pagination
 from trove.common import policy
 from trove.common import utils
 from trove.common import wsgi
-from trove.common.notification import StartNotification
 
 LOG = logging.getLogger(__name__)
 

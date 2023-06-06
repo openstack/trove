@@ -21,9 +21,9 @@ from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
+from trove.common.db.mysql import models
 from trove.common import exception
 from trove.common import utils
-from trove.common.db.mysql import models
 from trove.guestagent.common import operating_system
 from trove.guestagent.strategies.replication import base
 

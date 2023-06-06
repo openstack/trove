@@ -16,8 +16,8 @@ import re
 
 from oslo_log import log as logging
 
-from backup import utils
 from backup.drivers import base
+from backup import utils
 from backup.utils import postgresql as psql_util
 
 LOG = logging.getLogger(__name__)

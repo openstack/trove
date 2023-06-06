@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import http
 from hashlib import md5
+import http
 from unittest.mock import MagicMock, patch
 import json
 import os

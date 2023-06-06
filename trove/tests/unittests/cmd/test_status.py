@@ -14,6 +14,7 @@
 
 from unittest.mock import Mock
 from unittest.mock import patch
+
 from oslo_upgradecheck.upgradecheck import Code
 
 from trove.cmd import status

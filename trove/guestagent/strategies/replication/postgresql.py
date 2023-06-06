@@ -17,9 +17,9 @@ from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
+from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common import utils
-from trove.common.db.postgresql import models
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.postgres import service as pg_service

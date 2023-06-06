@@ -19,12 +19,12 @@ from oslo_service import periodic_task
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common import utils
 from trove.common.notification import EndNotification
-from trove.guestagent import guest_log
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
 from trove.guestagent.datastore.postgres import service
+from trove.guestagent import guest_log
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

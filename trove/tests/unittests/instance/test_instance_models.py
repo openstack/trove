@@ -26,9 +26,9 @@ from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import DBInstanceFault
 from trove.instance.models import Instance
+from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
-from trove.instance.models import instance_encryption_key_cache
 from trove.instance.service_status import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
