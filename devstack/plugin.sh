@@ -499,6 +499,8 @@ function create_guest_image {
         $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
             $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
     fi
+    # NOTE(wuchunyang): Create log directory so that guest agent can rsync logs to this directory
+    test -e /var/log/guest-agent-logs || sudo mkdir -p /var/log/guest-agent-logs/ && sudo chmod 777 /var/log/guest-agent-logs
 }
 
 function create_registry_container {

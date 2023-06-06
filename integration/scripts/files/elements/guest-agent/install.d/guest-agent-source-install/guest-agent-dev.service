@@ -21,6 +21,15 @@ ExecStartPre=/bin/bash -c "test -e /home/GUEST_USERNAME/trove-installed || sudo 
 
 ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove /var/log/trove/ /home/GUEST_USERNAME/trove"
 
+# The "[defult]" line in this file doesn't matter.
+EnvironmentFile=/etc/trove/conf.d/guest_info.conf
+
+# rsync trove guest agent log to CONTROLLER nodes, this is extremely useful for debugging in CI.
+ExecStartPre=/bin/bash -c "sudo rsync -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /home/GUEST_USERNAME/.ssh/id_rsa' -az --exclude='.*' /var/log HOST_SCP_USERNAME@$CONTROLLER:/var/log/guest-agent-logs/$guest_id"
+
+# rsync trove containers stdout to CONTROLLER nodes
+ExecStartPre=/bin/bash -c "sudo rsync -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /home/GUEST_USERNAME/.ssh/id_rsa' -az --exclude='.*' /var/lib/docker/containers HOST_SCP_USERNAME@$CONTROLLER:/var/log/guest-agent-logs/$guest_id"
+
 # Take care of the changes in requirements.txt
 ExecStartPre=/bin/bash -c "sudo /opt/guest-agent-venv/bin/pip install -r /home/GUEST_USERNAME/trove/requirements.txt -c /opt/upper-constraints.txt"
 
