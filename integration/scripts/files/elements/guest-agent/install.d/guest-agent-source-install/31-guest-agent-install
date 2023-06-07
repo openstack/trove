@@ -25,6 +25,12 @@ ${GUEST_VENV}/bin/pip install pip --upgrade
 ${GUEST_VENV}/bin/pip install -U -c /opt/upper-constraints.txt /opt/guest-agent
 chown -R ${GUEST_USERNAME}:root ${GUEST_VENV}
 
+# this should only happen in zuul system.
+if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then
+    sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;" ${SCRIPTDIR}/guest-log-collection.service > /etc/systemd/system/guest-log-collection.service
+    cp ${SCRIPTDIR}/guest-log-collection.timer /etc/systemd/system/guest-log-collection.timer
+fi
+
 if [[ ${DEV_MODE} == "true" ]]; then
     [[ -n "${HOST_SCP_USERNAME}" ]] || die "HOST_SCP_USERNAME needs to be set to the trovestack host user"
     [[ -n "${ESCAPED_PATH_TROVE}" ]] || die "ESCAPED_PATH_TROVE needs to be set to the path to the trove directory on the trovestack host"

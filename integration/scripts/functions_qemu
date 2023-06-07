@@ -37,6 +37,11 @@ function build_guest_image() {
     if [[ "${DEV_MODE}" == "true" ]]; then
         export SSH_DIR=${SSH_DIR:-"$HOME/.ssh"}
         manage_ssh_keys
+        # sync_log_to_controller only works in dev mode
+        export SYNC_LOG_TO_CONTROLLER=${SYNC_LOG_TO_CONTROLLER:-False}
+    else
+        # set SYNC_LOG_TO_CONTROLLER to false when dev mode is false
+        export SYNC_LOG_TO_CONTROLLER=False
     fi
 
     TEMP=$(mktemp -d ${working_dir}/diskimage-create.XXXXXXX)

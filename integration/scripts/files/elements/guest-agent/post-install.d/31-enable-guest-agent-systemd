@@ -9,3 +9,7 @@ set -o pipefail
 if [ "$DIB_INIT_SYSTEM" == "systemd" ]; then
     systemctl enable $(svc-map guest-agent)
 fi
+
+if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then
+    systemctl enable guest-log-collection.timer
+fi

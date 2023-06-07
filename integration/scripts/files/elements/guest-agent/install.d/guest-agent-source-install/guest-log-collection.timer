@@ -1,0 +1,11 @@
+[Unit]
+Description=OpenStack Trove Guest Log Collection Timer
+
+[Timer]
+OnActiveSec=10s
+OnUnitInactiveSec=10s
+Unit=guest-log-collection.service
+Persistent=true
+
+[Install]
+WantedBy=multi-user.target

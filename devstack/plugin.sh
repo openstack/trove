@@ -463,7 +463,7 @@ function create_guest_image {
         curl -sSL ${TROVE_NON_DEV_IMAGE_URL} -o ${image_file}
     else
         echo "Starting to create guest image"
-
+        export SYNC_LOG_TO_CONTROLLER=${SYNC_LOG_TO_CONTROLLER:-"False"}
         $DEST/trove/integration/scripts/trovestack \
           build-image \
           ${TROVE_IMAGE_OS} \
@@ -498,6 +498,10 @@ function create_guest_image {
     if [[ -f $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json ]]; then
         $TROVE_MANAGE db_load_datastore_config_parameters "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
             $DEST/trove/trove/templates/$TROVE_DATASTORE_TYPE/validation-rules.json
+    fi
+    # NOTE(wuchunyang): Create log directory so that guest agent can rsync logs to this directory
+    if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then
+    test -e /var/log/guest-agent-logs || sudo mkdir -p /var/log/guest-agent-logs/ && sudo chmod 777 /var/log/guest-agent-logs
     fi
 }
 

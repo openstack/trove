@@ -299,6 +299,7 @@
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         TROVE_ENABLE_LOCAL_REGISTRY: True
+        SYNC_LOG_TO_CONTROLLER: True
         TROVE_DATASTORE_VERSION: 5.7.29
       devstack_local_conf:
         post-config:
@@ -307,6 +308,8 @@
               usage_timeout: 1800
         test-config:
           $TEMPEST_CONFIG:
+            auth:
+              tempest_roles: ResellerAdmin
             database:
               default_datastore_versions: mysql:5.7.29
       devstack_plugins:
@@ -330,6 +333,7 @@
         s-container: true
         s-object: true
         s-proxy: true
+        tls-proxy: false
         tempest: true
         q-svc: true
         q-agt: true
@@ -341,6 +345,8 @@
         ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
+      zuul_copy_output:
+        '/var/log/guest-agent-logs/': 'logs'
 
 - job:
     name: trove-tempest-postgres
