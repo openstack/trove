@@ -357,7 +357,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                   new_callable=PropertyMock,
                   return_value='fake-name')
     def test_servers_create_block_device_mapping_v2_since_yoga(
-        self, mock_hostname, mock_name):
+            self, mock_hostname, mock_name):
 
         # This testcase is for testing with config_drive=False.
         self.freshinstancetasks.prepare_userdata = Mock(
