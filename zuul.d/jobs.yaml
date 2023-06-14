@@ -344,6 +344,7 @@
         ovn-controller: false
         ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_timeout: 3600
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
       zuul_copy_output:
         '/var/log/guest-agent-logs/': 'logs'
@@ -384,6 +385,7 @@
         TROVE_DATASTORE_TYPE: postgresql
         TROVE_DATASTORE_VERSION: 12
         TROVE_ENABLE_LOCAL_REGISTRY: True
+        SYNC_LOG_TO_CONTROLLER: True
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -391,6 +393,8 @@
               usage_timeout: 1800
         test-config:
           $TEMPEST_CONFIG:
+            auth:
+              tempest_roles: ResellerAdmin
             database:
               enabled_datastores: "postgresql"
               default_datastore_versions: "postgresql:12"
@@ -415,6 +419,7 @@
         s-container: true
         s-object: true
         s-proxy: true
+        tls-proxy: false
         tempest: true
         q-svc: true
         q-agt: true
@@ -425,7 +430,10 @@
         ovn-controller: false
         ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_timeout: 3600
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
+      zuul_copy_output:
+        '/var/log/guest-agent-logs/': 'logs'
 
 - job:
     name: publish-trove-guest-image
