@@ -770,12 +770,15 @@ class PostgresConnection(object):
     def _execute_stmt(self, statement, identifiers, data_values, fetch,
                       autocommit=False):
         cmd = self._bind(statement, identifiers)
-        with psycopg2.connect(self.connect_str) as connection:
-            connection.autocommit = autocommit
+        connection = psycopg2.connect(self.connect_str)
+        connection.autocommit = autocommit
+        try:
             with connection.cursor() as cursor:
                 cursor.execute(cmd, data_values)
                 if fetch:
                     return cursor.fetchall()
+        finally:
+            connection.close()
 
     def _bind(self, statement, identifiers):
         if identifiers:
