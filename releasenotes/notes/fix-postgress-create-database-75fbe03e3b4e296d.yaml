@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Fix guest-agent failed to start postgres container due to execution
+    of the "CREATE DATABASE" statement within the context manager of
+    psycopg library. See the following for details
+    `Stroy 2010761 <https://storyboard.openstack.org/#!/story/2010761>`__
+
