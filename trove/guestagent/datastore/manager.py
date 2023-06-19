@@ -511,7 +511,7 @@ class Manager(periodic_task.PeriodicTasks):
                         exposed)
 
                     if (gl_def[self.GUEST_LOG_TYPE_LABEL] ==
-                        guest_log.LogType.USER):
+                            guest_log.LogType.USER):
                         guestlog.enabled = self.is_log_enabled(log_name)
                         guestlog.status = (guest_log.LogStatus.Enabled
                                            if guestlog.enabled

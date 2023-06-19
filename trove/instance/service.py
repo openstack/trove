@@ -558,7 +558,7 @@ class InstanceController(wsgi.Controller):
 
         name = body['instance'].get('name')
         if ((name and len(body['instance'].keys()) > 2) or
-            (not name and len(body['instance'].keys()) >= 2)):
+                (not name and len(body['instance'].keys()) >= 2)):
             raise exception.BadRequest("Only one attribute (except 'name') is "
                                        "allowed to update.")
 
