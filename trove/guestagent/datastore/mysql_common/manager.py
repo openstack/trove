@@ -286,7 +286,7 @@ class MySqlManager(manager.Manager):
 
         volume_stats = self.get_filesystem_stats(context, None)
         if (volume_stats.get('total', 0.0) <
-            replica_info['dataset']['dataset_size']):
+                replica_info['dataset']['dataset_size']):
             raise exception.InsufficientSpaceForReplica(
                 replica_info.update({
                     'slave_volume_size': volume_stats.get('total', 0.0)
