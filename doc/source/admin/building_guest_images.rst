@@ -213,3 +213,125 @@ image in Glance and register a new datastore or version in Trove using
 If you see anything error or need help for the image creation, please ask help
 either in ``#openstack-trove`` IRC channel or sending emails to
 openstack-discuss@lists.openstack.org mailing list.
+
+--------------------------
+Use your own Docker Images
+--------------------------
+A Docker registry is a locally-hosted registry that replaces the need to pull
+from a public registry to get images.
+You can pull and push your own images when you use a private Docker registry.
+For Docker registry, please see `Docker Registry Overview`_
+
+.. _`Docker Registry Overview`: https://hub.docker.com/_/registry
+
+A very simple registry may be deployed on the current host as follows:
+
+.. code-block:: console
+
+    sudo docker run -d --net=host -e REGISTRY_HTTP_ADDR=0.0.0.0:4000 --restart=always -v /opt/trove_registry/:/var/lib/registry --name registry registry:2
+
+Before you build your own images, clone Trove's git repository and define some environments.
+Please note: your registry address should be reachable by guest agent.
+
+.. code-block:: console
+
+    $ git clone --branch |TROVE_BRANCH_NAME| https://opendev.org/openstack/trove
+    $ YOUR_TROVE_SRC_DIR=${PWD}/trove
+    $ YOUR_REGISTRY_IP=<10.x.y.z>
+    $ YOUR_REGISTRY_PORT=4000
+    $ YOUR_REGISTRY_HTTP_ADDR=${YOUR_REGISTRY_IP}:${YOUR_REGISTRY_PORT}
+    $ YOUR_REGISTRY_REPO_NAME=trove-datastores
+
+For mysql users, you can pull and push your own images to your own registry as follows:
+
+.. code-block:: console
+
+    $ DATABASE_NAME=mysql
+    $ DATABASE_VERSION=5.7
+    $ TROVE_DATABASE_IMAGE=${YOUR_REGISTRY_REPO_NAME}/${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker pull ${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker tag ${DATABASE_NAME}:${DATABASE_VERSION} ${YOUR_REGISTRY_HTTP_ADDR}/${TROVE_DATABASE_IMAGE}
+    $ docker push ${YOUR_REGISTRY_HTTP_ADDR}/${TROVE_DATABASE_IMAGE}
+
+You can build and push your backup image to your own registry as follows:
+
+.. code-block:: console
+
+    $ cd ${YOUR_TROVE_SRC_DIR}/backup
+    $ TROVE_DATABASE_BACKUP_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/db-backup-${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker build -t ${TROVE_DATABASE_BACKUP_IMAGE} --build-arg DATASTORE=${DATABASE_NAME} --build-arg DATASTORE_VERSION=${DATABASE_VERSION} .
+    $ docker push ${TROVE_DATABASE_BACKUP_IMAGE}
+
+
+For mariadb users, you can pull and push your own images to your own registry as follows:
+
+.. code-block:: console
+
+    $ DATABASE_NAME=mariadb
+    $ DATABASE_VERSION=10.4
+    $ TROVE_DATABASE_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker pull ${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker tag ${DATABASE_NAME}:${DATABASE_VERSION} ${TROVE_DATABASE_IMAGE}
+    $ docker push ${TROVE_DATABASE_IMAGE}
+
+You can build and push your backup image to your own registry as follows:
+
+.. code-block:: console
+
+    $ cd ${YOUR_TROVE_SRC_DIR}/backup
+    $ TROVE_DATABASE_BACKUP_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/db-backup-${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker build -t ${TROVE_DATABASE_BACKUP_IMAGE} --build-arg DATASTORE=${DATABASE_NAME} --build-arg DATASTORE_VERSION=${DATABASE_VERSION} .
+    $ docker push ${TROVE_DATABASE_BACKUP_IMAGE}
+
+For postgres users, you can pull and push your own images to your own registry as follows:
+
+.. code-block:: console
+
+    $ DATABASE_NAME=postgres
+    $ DATABASE_VERSION=12
+    $ TROVE_DATABASE_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker pull ${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker tag ${DATABASE_NAME}:${DATABASE_VERSION} ${TROVE_DATABASE_IMAGE}
+    $ docker push ${TROVE_DATABASE_IMAGE}
+
+
+You can build and push your backup image to your own registry as follows:
+
+.. code-block:: console
+
+    $ cd ${YOUR_TROVE_SRC_DIR}/backup
+    $ TROVE_DATABASE_BACKUP_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/db-backup-${DATABASE_NAME}:${DATABASE_VERSION}
+    $ docker build -t ${TROVE_DATABASE_BACKUP_IMAGE} --build-arg DATASTORE=${DATABASE_NAME} --build-arg DATASTORE_VERSION=${DATABASE_VERSION} .
+    $ docker push ${TROVE_DATABASE_BACKUP_IMAGE}
+
+
+After adding your own docker images to your docker registry, you should modify the configuration files and restart Trove processes.
+
+``/etc/trove/trove.conf``:
+
+  .. code-block:: ini
+
+      [DEFAULT]
+      docker_insecure_registries = 10.x.y.z:4000
+
+``/etc/trove/trove-agent.conf``:
+
+  .. code-block:: ini
+
+      [mysql]
+      docker_image = 10.x.y.z:4000/trove-datastores/mysql
+      backup_docker_image = 10.x.y.z:4000/trove-datastores/db-backup-mysql
+
+      [mariadb]
+      docker_image = 10.x.y.z:4000/trove-datastores/mariadb
+      backup_docker_image = 10.x.y.z:4000/trove-datastores/db-backup-mariadb
+
+      [postgres]
+      docker_image = 10.x.y.z:4000/trove-datastores/postgres
+      backup_docker_image = 10.x.y.z:4000/trove-datastores/db-backup-postgres
+
+      [guest_agent]
+      container_registry = 10.x.y.z:4000
+      container_registry_username =
+      container_registry_password =
+
