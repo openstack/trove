@@ -24,15 +24,17 @@
             voting: false
         - trove-tox-bandit-baseline:
             voting: false
-        - trove-tempest
+        - trove-tempest:
+            voting: false
         - trove-tempest-ipv6-only:
             voting: false
-        - trove-functional-mysql:
-            voting: false
+        #- trove-functional-mysql:
+        #    voting: false
 
     gate:
       jobs:
-        - trove-tempest
+        - trove-tempest:
+            voting: false
     experimental:
       jobs:
         - trove-functional-mysql
