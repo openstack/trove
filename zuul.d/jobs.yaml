@@ -301,6 +301,8 @@
               usage_timeout: 1800
         test-config:
           $TEMPEST_CONFIG:
+            auth:
+              tempest_roles: ResellerAdmin
             database:
               default_datastore_versions: mysql:5.7.29
       devstack_plugins:
@@ -324,6 +326,7 @@
         s-container: true
         s-object: true
         s-proxy: true
+        tls-proxy: false
         tempest: true
         q-svc: true
         q-agt: true
@@ -334,6 +337,7 @@
         ovn-controller: false
         ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_timeout: 3600
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
 
 - job:
@@ -373,6 +377,8 @@
               usage_timeout: 1800
         test-config:
           $TEMPEST_CONFIG:
+            auth:
+              tempest_roles: ResellerAdmin
             database:
               enabled_datastores: "postgresql"
               default_datastore_versions: "postgresql:12"
@@ -397,6 +403,7 @@
         s-container: true
         s-object: true
         s-proxy: true
+        tls-proxy: false
         tempest: true
         q-svc: true
         q-agt: true
@@ -407,6 +414,7 @@
         ovn-controller: false
         ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_timeout: 3600
       tempest_test_blacklist: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_blacklist.txt'
 
 - job:
@@ -435,7 +443,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: 2023.1
       dev_mode: false
       image_suffix: ""
 
@@ -455,7 +463,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: 2023.1
       dev_mode: false
       image_suffix: ""
 
@@ -469,7 +477,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: 2023.1
       dev_mode: false
       image_suffix: ""
 
@@ -483,7 +491,7 @@
       guest_os: ubuntu
       guest_os_release: focal
       guest_username: ubuntu
-      branch: master
+      branch: 2023.1
       dev_mode: true
       image_suffix: "-dev"
 
