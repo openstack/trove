@@ -1,0 +1,2 @@
+fixes:
+  - explicitly specify utf8mb3 as character set for mysql

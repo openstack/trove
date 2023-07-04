@@ -1093,8 +1093,8 @@ class TestInstanceMgmtInfo(object):
             'databases': [
                 {
                     'name': 'db2',
-                    'character_set': 'utf8',
-                    'collate': 'utf8_general_ci',
+                    'character_set': 'utf8mb3',
+                    'collate': 'utf8mb3_general_ci',
                 },
                 {
                     'name': 'firstdb',

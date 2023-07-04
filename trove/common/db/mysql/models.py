@@ -29,8 +29,8 @@ class MySQLSchema(models.DatastoreSchema):
     """Represents a MySQL database and its properties."""
 
     # Defaults
-    __charset__ = "utf8"
-    __collation__ = "utf8_general_ci"
+    __charset__ = "utf8mb3"
+    __collation__ = "utf8mb3_general_ci"
     dbname = re.compile(r"^[A-Za-z0-9_-]+[\s\?\#\@]*[A-Za-z0-9_-]+$")
 
     # Complete list of acceptable values
