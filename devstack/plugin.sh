@@ -506,6 +506,8 @@ function create_guest_image {
 }
 
 function create_registry_container {
+    # install docker on the host.
+    $DEST/trove/integration/scripts/trovestack install-docker
     # running a docker registry container
     echo "Running a docker registry container..."
     container=$(sudo docker ps -a --format "{{.Names}}" --filter name=registry)
