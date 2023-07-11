@@ -135,7 +135,7 @@ connection = sqlite:///trove_test.sqlite
 # idle connections. This can result in 'MySQL Gone Away' exceptions. If you
 # notice this, you can lower this value to ensure that SQLAlchemy reconnects
 # before MySQL can drop the connection.
-idle_timeout = 3600
+connection_recycle_time = 3600
 
 [composite:trove]
 use = call:trove.common.wsgi:versioned_urlmap

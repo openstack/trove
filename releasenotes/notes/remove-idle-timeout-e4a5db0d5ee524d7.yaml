@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Removed the ``[database] idle_timeout`` and ``[DEFAULT] idle_timeout`` options.
+    These were all legacy aliases for ``[database] connection_recycle_time``.
