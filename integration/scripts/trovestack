@@ -727,6 +727,26 @@ function cmd_test_init() {
     pip3 install -U git+https://opendev.org/openstack/python-troveclient@master#egg=python-troveclient
 }
 
+function cmd_install_docker() {
+    exclaim "install and configure docker: $@"
+    # It seems that rocky8 or newer use podman to emulate docker cli.
+    # the daemon.json file may make no sense here for rocky, but it may be useful for centos distro.
+    sudo mkdir /etc/docker
+    sudo tee /etc/docker/daemon.json >/dev/null <<EOF
+{
+    "bridge": "none",
+    "ip-forward": false,
+    "iptables": false
+}
+EOF
+    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
+    if is_fedora; then
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install docker
+    else
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install docker.io
+    fi
+}
+
 # Build trove guest image
 function cmd_build_image() {
     exclaim "Params for cmd_build_image function: $@"
@@ -1283,6 +1303,7 @@ function print_usage() {
                           - Set DEVSTACK_BRANCH to switch the branch/commit of devstack
                             (i.e. 'stable/kilo' or '7ef2462')
           test-init       - Configure the test configuration files and add keystone test users
+          install-docker  - Install docker and configure docker to not manipulate iptables.
           build-image     - Builds the vm image for the trove guest
           initialize      - Reinitialize the trove database, users, services, and test config
 
@@ -1340,6 +1361,7 @@ function run_command() {
         "build-image" ) shift; cmd_build_image $@;;
         "upload-image" ) shift; cmd_build_and_upload_image $@;;
         "int-tests" ) shift; cmd_int_tests $@;;
+        "install-docker" ) shift; cmd_install_docker $@;;
         "debug" ) shift; echo "Enabling debugging."; \
                   set -o xtrace; TROVESTACK_DUMP_ENV=true; run_command $@;;
         "gate-tests" ) shift; cmd_gate_tests $@;;
