@@ -275,6 +275,7 @@
     {
       "name": "innodb_ft_result_cache_limit",
       "restart_required": false,
+      "max": 4294967295,
       "min": 1000000,
       "type": "integer"
     },
@@ -317,7 +318,7 @@
       "name": "innodb_log_buffer_size",
       "restart_required": true,
       "max": 4294967295,
-      "min": 262144,
+      "min": 1048576,
       "type": "integer"
     },
     {
@@ -340,6 +341,7 @@
     {
       "name": "innodb_log_write_ahead_size",
       "restart_required": false,
+      "max": 65536,
       "min": 512,
       "type": "integer"
     },
@@ -359,6 +361,7 @@
     {
       "name": "innodb_max_purge_lag_delay",
       "restart_required": false,
+      "max": 10000000,
       "min": 0,
       "type": "integer"
     },
@@ -397,7 +400,7 @@
     {
       "name": "innodb_open_files",
       "restart_required": true,
-      "max": 4294967295,
+      "max": 2147483647,
       "min": 10,
       "type": "integer"
     },
