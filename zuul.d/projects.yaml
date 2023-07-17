@@ -12,9 +12,9 @@
     check:
       jobs:
         - openstack-tox-cover:
-            voting: false
+            voting: true
         - trove-tox-bandit-baseline:
-            voting: false
+            voting: true
         - trove-tempest:
             voting: false
         - trove-ubuntu-guest-image-build:
