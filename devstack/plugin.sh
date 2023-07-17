@@ -513,10 +513,24 @@ function create_registry_container {
     container=$(sudo docker ps -a --format "{{.Names}}" --filter name=registry)
     if [ -z $container ]; then
         sudo docker run -d --net=host -e REGISTRY_HTTP_ADDR=0.0.0.0:4000 --restart=always -v /opt/trove_registry/:/var/lib/registry --name registry registry:2
-        trove_agent_datastore_url=https://tarballs.opendev.org/openstack/trove/images/trove-datastore-registry-master.tar.gz
-        curl -o trove-datastore-registry-master.tar.gz $trove_agent_datastore_url
-        sudo tar -zxvf trove-datastore-registry-master.tar.gz -C /opt/trove_registry/
-        rm -rf trove-datastore-registry-master.tar.gz
+        for img in {"mysql:5.7.29","mysql:8.0","mariadb:10.4","postgres:12"};
+        do
+        sudo docker pull ${img} && sudo docker tag ${img} 127.0.0.1:4000/trove-datastores/${img} && sudo docker push 127.0.0.1:4000/trove-datastores/${img}
+        done
+        pushd $DEST/trove/backup
+        # build backup images
+        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-mysql5.7:1.1.0 --build-arg DATASTORE=mysql5.7 .
+        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-mysql8.0:1.1.0 --build-arg DATASTORE=mysql8.0 .
+        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-mariadb:1.1.0 --build-arg DATASTORE=mariadb .
+        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-postgresql:1.1.2 --build-arg DATASTORE=postgresql .
+        popd
+        # push backup images
+        for backupimg in {"db-backup-mysql5.7:1.1.0","db-backup-mysql8.0:1.1.0","db-backup-mariadb:1.1.0","db-backup-postgresql:1.1.2"};
+        do
+        sudo docker push 127.0.0.1:4000/trove-datastores/${backupimg}
+        done
+        # clean up backup images.
+        sudo docker image prune -a -f
     fi
     iniset $TROVE_CONF DEFAULT docker_insecure_registries "$TROVE_HOST_GATEWAY:4000"
 }
