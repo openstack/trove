@@ -6,3 +6,4 @@ oslo.service!=1.28.1  # Apache-2.0
 keystoneauth1  # Apache-2.0
 python-swiftclient  # Apache-2.0
 psycopg2-binary>=2.6.2 # LGPL/ZPL
+cryptography>=2.1.4  # BSD/Apache-2.0
