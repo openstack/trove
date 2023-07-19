@@ -507,7 +507,12 @@ function create_guest_image {
 
 function create_registry_container {
     # install docker on the host.
-    $DEST/trove/integration/scripts/trovestack install-docker
+    local ret='0'
+    which docker >/dev/null 2>&1 || { local ret='1'; }
+    if [[ "$ret" -ne 0 ]]; then
+        echo "Installing docker on the host"
+        $DEST/trove/integration/scripts/trovestack install-docker
+    fi
     # running a docker registry container
     echo "Running a docker registry container..."
     container=$(sudo docker ps -a --format "{{.Names}}" --filter name=registry)
@@ -519,10 +524,10 @@ function create_registry_container {
         done
         pushd $DEST/trove/backup
         # build backup images
-        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-mysql5.7:1.1.0 --build-arg DATASTORE=mysql5.7 .
-        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-mysql8.0:1.1.0 --build-arg DATASTORE=mysql8.0 .
-        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-mariadb:1.1.0 --build-arg DATASTORE=mariadb .
-        sudo docker build -t 127.0.0.1:4000/trove-datastores/db-backup-postgresql:1.1.2 --build-arg DATASTORE=postgresql .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mysql5.7:1.1.0 --build-arg DATASTORE=mysql5.7 .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mysql8.0:1.1.0 --build-arg DATASTORE=mysql8.0 .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mariadb:1.1.0 --build-arg DATASTORE=mariadb .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-postgresql:1.1.2 --build-arg DATASTORE=postgresql .
         popd
         # push backup images
         for backupimg in {"db-backup-mysql5.7:1.1.0","db-backup-mysql8.0:1.1.0","db-backup-mariadb:1.1.0","db-backup-postgresql:1.1.2"};
