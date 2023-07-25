@@ -1,18 +1,18 @@
 - nodeset:
-    name: trove-ubuntu-focal
+    name: trove-ubuntu-jammy
     nodes:
       - name: controller
-        label: nested-virt-ubuntu-focal
+        label: nested-virt-ubuntu-jammy
     groups:
       - name: tempest
         nodes:
           - controller
 
 - nodeset:
-    name: trove-ubuntu-focal-single
+    name: trove-ubuntu-jammy-single
     nodes:
       - name: primary
-        label: ubuntu-focal
+        label: ubuntu-jammy
 
 - nodeset:
     name: trove-centos8s-single

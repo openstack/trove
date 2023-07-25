@@ -2,7 +2,7 @@
 
 ## Steps to setup environment
 
-Install a fresh Ubuntu 20.04 (focal) image. We suggest creating a development virtual machine using the image.
+Install a fresh Ubuntu 22.04 (jammy) image. We suggest creating a development virtual machine using the image.
 
 1. Login to the machine as root
 1. Make sure we have git installed
@@ -137,10 +137,10 @@ PATH_DEVSTACK_OUTPUT=/opt/stack \
 - If `dev_mode=true`, no Trove code is injected into the guest image. The guest
   agent will download Trove code during the service initialization.
 
-For example, build a Mysql image for Ubuntu Focal operating system:
+For example, build a Mysql image for Ubuntu jammy operating system:
 
 ```shell
-$ ./trovestack build-image mysql ubuntu focal false
+$ ./trovestack build-image mysql ubuntu jammy false
 ```
 
 ### Running Integration Tests
