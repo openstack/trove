@@ -28,25 +28,22 @@
         - "postgres:12"
     - name: Build mysql 5.7 backup image
       become: true
-      shell: docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mysql5.7:1.1.0 .
+      shell: docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mysql5.7:1.1.0 --build-arg DATASTORE=mysql5.7 .
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
     - name: Build mysql 8.0 backup image
       become: true
-      shell: sed -i s/mysql5.7/mysql8.0/ Dockerfile && \
-               docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mysql8.0:1.1.0 .
+      shell: docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mysql8.0:1.1.0 --build-arg DATASTORE=mysql8.0 .
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
     - name: Build mariadb backup image
       become: true
-      shell: sed -i s/mysql8.0/mariadb/ Dockerfile && \
-               docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mariadb:1.1.0 .
+      shell: docker build -t 127.0.0.1:5000/trove-datastores/db-backup-mariadb:1.1.0 --build-arg DATASTORE=mariadb .
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
     - name: Build postgresql backup image
       become: true
-      shell: sed -i s/mariadb/postgresql/ Dockerfile && \
-               docker build -t 127.0.0.1:5000/trove-datastores/db-backup-postgresql:1.1.2 .
+      shell: docker build -t 127.0.0.1:5000/trove-datastores/db-backup-postgresql:1.1.2 --build-arg DATASTORE=postgresql .
       args:
         chdir: "{{ ansible_user_dir }}/src/opendev.org/openstack/trove/backup"
     - name: Push the backup images
