@@ -17,13 +17,15 @@ import re
 from oslo_log import log as logging
 
 from backup.drivers import base
-from backup import utils
+from backup.utils import poll_until
 from backup.utils import postgresql as psql_util
 
 LOG = logging.getLogger(__name__)
 
 
 class PgBasebackup(base.BaseRunner):
+    _is_read_only = None
+
     def __init__(self, *args, **kwargs):
         if not kwargs.get('wal_archive_dir'):
             raise AttributeError('wal_archive_dir attribute missing')
@@ -54,6 +56,20 @@ class PgBasebackup(base.BaseRunner):
     def manifest(self):
         """Target file name."""
         return "%s.tar.gz%s" % (self.filename, self.encrypt_manifest)
+
+    @property
+    def is_read_only(self):
+        """Checks if PostgreSQL is in read-only mode.
+
+        Returns:
+            True if PostgreSQL is in read-only mode, False otherwise.
+        """
+        if self._is_read_only is None:
+            with psql_util.PostgresConnection('postgres') as conn:
+                self._is_read_only = conn.query(
+                    "SELECT pg_is_in_recovery();")[0][0]
+
+        return self._is_read_only
 
     def get_wal_files(self, backup_pos=0):
         """Return the WAL files since the provided last backup.
@@ -134,6 +150,12 @@ class PgBasebackup(base.BaseRunner):
          """
         def _metadata_found():
             backup_file = self.get_backup_file()
+            LOG.info("backup_file: %s" % [backup_file])
+            LOG.info("Doing backup Postgres in read-only mode: %s" %
+                     self.is_read_only)
+            if not backup_file and self.is_read_only:
+                return True
+
             if not backup_file:
                 return False
 
@@ -144,7 +166,7 @@ class PgBasebackup(base.BaseRunner):
 
         try:
             LOG.debug("Polling for backup metadata... ")
-            utils.poll_until(_metadata_found, sleep_time=5, time_out=60)
+            poll_until(_metadata_found, sleep_time=5, time_out=60)
         except Exception as e:
             raise RuntimeError(f"Failed to get backup metadata for backup "
                                f"{self.filename}: {str(e)}")
@@ -155,6 +177,9 @@ class PgBasebackup(base.BaseRunner):
         # If any of the below variables were not set by either metadata()
         # or direct retrieval from the pgsql backup commands, then something
         # has gone wrong
+        if self.is_read_only:
+            return True
+
         if not self.start_segment or not self.start_wal_file:
             LOG.error("Unable to determine starting WAL file/segment")
             return False
