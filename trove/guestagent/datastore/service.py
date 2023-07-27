@@ -562,3 +562,13 @@ class BaseDbApp(object):
                 sent=timeutils.utcnow_ts(microsecond=True),
                 **backup_state)
             LOG.debug("Updated state for %s to %s.", backup_id, backup_state)
+
+    @property
+    def database_service_uid(self):
+        return cfg.get_configuration_property(
+            'database_service_uid') or CONF.database_service_uid
+
+    @property
+    def database_service_gid(self):
+        return cfg.get_configuration_property(
+            'database_service_gid') or self.database_service_uid

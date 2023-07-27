@@ -85,8 +85,8 @@ class PgSqlApp(service.BaseDbApp):
 
         self._configuration_manager = configuration.ConfigurationManager(
             CONFIG_FILE,
-            CONF.database_service_uid,
-            CONF.database_service_uid,
+            self.database_service_uid,
+            self.database_service_gid,
             stream_codecs.KeyValueCodec(
                 value_quoting=True,
                 bool_case=stream_codecs.KeyValueCodec.BOOL_LOWER,
@@ -143,8 +143,8 @@ class PgSqlApp(service.BaseDbApp):
             stream_codecs.PropertiesCodec(string_mappings={'\t': None}),
             as_root=True)
         operating_system.chown(HBA_CONFIG_FILE,
-                               CONF.database_service_uid,
-                               CONF.database_service_uid,
+                               self.database_service_uid,
+                               self.database_service_gid,
                                as_root=True)
         operating_system.chmod(HBA_CONFIG_FILE,
                                operating_system.FileMode.SET_USR_RO,
@@ -174,14 +174,14 @@ class PgSqlApp(service.BaseDbApp):
             postgres_pass = utils.generate_random_password()
 
         # Get uid and gid
-        user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
+        user = "%s:%s" % (self.database_service_uid, self.database_service_gid)
 
         # Create folders for postgres on localhost
         for folder in ['/etc/postgresql',
                        constants.POSTGRESQL_HOST_SOCKET_PATH]:
             operating_system.ensure_directory(
-                folder, user=CONF.database_service_uid,
-                group=CONF.database_service_uid, force=True,
+                folder, user=self.database_service_uid,
+                group=self.database_service_gid, force=True,
                 as_root=True)
 
         volumes = {
@@ -244,8 +244,8 @@ class PgSqlApp(service.BaseDbApp):
         for folder in ['/etc/postgresql',
                        constants.POSTGRESQL_HOST_SOCKET_PATH]:
             operating_system.ensure_directory(
-                folder, user=CONF.database_service_uid,
-                group=CONF.database_service_uid, force=True,
+                folder, user=self.database_service_uid,
+                group=self.database_service_gid, force=True,
                 as_root=True)
 
         try:
@@ -311,8 +311,8 @@ class PgSqlApp(service.BaseDbApp):
             raise Exception(msg)
 
         for dir in [WAL_ARCHIVE_DIR, self.datadir]:
-            operating_system.chown(dir, CONF.database_service_uid,
-                                   CONF.database_service_uid, force=True,
+            operating_system.chown(dir, self.database_service_uid,
+                                   self.database_service_gid, force=True,
                                    as_root=True)
 
     def is_replica(self):
@@ -341,7 +341,7 @@ class PgSqlApp(service.BaseDbApp):
     def pg_rewind(self, conn_info):
         docker_image = CONF.get(CONF.datastore_manager).docker_image
         image = f'{docker_image}:{CONF.datastore_version}'
-        user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
+        user = "%s:%s" % (self.database_service_uid, self.database_service_gid)
         volumes = {
             constants.POSTGRESQL_HOST_SOCKET_PATH:
                 {"bind": "/var/run/postgresql", "mode": "rw"},

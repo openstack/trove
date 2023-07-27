@@ -303,6 +303,25 @@ Some config options specifically for trove guest agent:
       docker_image = your-registry/your-repo/mysql
       backup_docker_image = your-registry/your-repo/db-backup-mysql
 
+* Setting username, uid, gid for each datastore
+
+  Currently, when a database container is running, it is owned by user:
+  database (UID: 1001) and group: database (GID: 1001).
+
+  In some cases, you may need to set the owner of files,
+  directories or container to adapt to your own datastore image.
+
+  To achieve this, you can configure the option 
+  database_service_uname, database_service_uid, database_service_gid
+  in trove-guestagent.conf with following:
+
+  .. code-block:: ini
+
+      [<datastore_manage>]
+      database_service_uid = 1001
+      database_service_gid = 0
+      database_service_uname = postgres
+
 Make Trove work with multiple versions for each datastore
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 When Trove do a backup/restore actions, The Trove guest agent pulls container

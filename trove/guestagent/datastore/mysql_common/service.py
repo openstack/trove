@@ -445,7 +445,7 @@ class BaseMySqlApp(service.BaseDbApp):
             return self._configuration_manager
 
         self._configuration_manager = ConfigurationManager(
-            MYSQL_CONFIG, CONF.database_service_uid, CONF.database_service_uid,
+            MYSQL_CONFIG, self.database_service_uid, self.database_service_gid,
             service.BaseDbApp.CFG_CODEC, requires_root=True,
             override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT)
         )
@@ -591,14 +591,14 @@ class BaseMySqlApp(service.BaseDbApp):
             root_pass = utils.generate_random_password()
 
         # Get uid and gid
-        user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
+        user = "%s:%s" % (self.database_service_uid, self.database_service_gid)
 
         # Create folders for mysql on localhost
         for folder in ['/etc/mysql', constants.MYSQL_HOST_SOCKET_PATH,
                        '/etc/mysql/mysql.conf.d']:
             operating_system.ensure_directory(
-                folder, user=CONF.database_service_uid,
-                group=CONF.database_service_uid, force=True,
+                folder, user=self.database_service_uid,
+                group=self.database_service_gid, force=True,
                 as_root=True)
 
         volumes = {
@@ -678,8 +678,8 @@ class BaseMySqlApp(service.BaseDbApp):
         for folder in ['/etc/mysql', constants.MYSQL_HOST_SOCKET_PATH,
                        '/etc/mysql/mysql.conf.d']:
             operating_system.ensure_directory(
-                folder, user=CONF.database_service_uid,
-                group=CONF.database_service_uid, force=True,
+                folder, user=self.database_service_uid,
+                group=self.database_service_gid, force=True,
                 as_root=True)
 
         try:
@@ -742,8 +742,8 @@ class BaseMySqlApp(service.BaseDbApp):
 
         LOG.debug('Deleting ib_logfile files after restore from backup %s',
                   backup_id)
-        operating_system.chown(restore_location, CONF.database_service_uid,
-                               CONF.database_service_uid, force=True,
+        operating_system.chown(restore_location, self.database_service_uid,
+                               self.database_service_gid, force=True,
                                as_root=True)
         self.wipe_ib_logfiles()
 

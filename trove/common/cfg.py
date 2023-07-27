@@ -544,6 +544,12 @@ mysql_group = cfg.OptGroup(
     'mysql', title='MySQL options',
     help="Oslo option group designed for MySQL datastore")
 mysql_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -621,6 +627,12 @@ percona_group = cfg.OptGroup(
     'percona', title='Percona options',
     help="Oslo option group designed for Percona datastore")
 percona_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -690,6 +702,12 @@ pxc_group = cfg.OptGroup(
     'pxc', title='Percona XtraDB Cluster options',
     help="Oslo option group designed for Percona XtraDB Cluster datastore")
 pxc_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -771,6 +789,12 @@ redis_group = cfg.OptGroup(
     'redis', title='Redis options',
     help="Oslo option group designed for Redis datastore")
 redis_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -830,6 +854,12 @@ cassandra_group = cfg.OptGroup(
     'cassandra', title='Cassandra options',
     help="Oslo option group designed for Cassandra datastore")
 cassandra_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -914,6 +944,12 @@ couchbase_group = cfg.OptGroup(
     'couchbase', title='Couchbase options',
     help="Oslo option group designed for Couchbase datastore")
 couchbase_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -959,6 +995,12 @@ mongodb_group = cfg.OptGroup(
     'mongodb', title='MongoDB options',
     help="Oslo option group designed for MongoDB datastore")
 mongodb_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -1038,6 +1080,12 @@ postgresql_group = cfg.OptGroup(
     'postgresql', title='PostgreSQL options',
     help="Oslo option group for the PostgreSQL datastore.")
 postgresql_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt(
         'enable_clean_wal_archives',
         default=True,
@@ -1123,6 +1171,12 @@ couchdb_group = cfg.OptGroup(
     'couchdb', title='CouchDB options',
     help="Oslo option group designed for CouchDB datastore")
 couchdb_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -1174,6 +1228,12 @@ vertica_group = cfg.OptGroup(
     'vertica', title='Vertica options',
     help="Oslo option group designed for Vertica datastore")
 vertica_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -1241,6 +1301,12 @@ db2_group = cfg.OptGroup(
     'db2', title='DB2 options',
     help="Oslo option group designed for DB2 datastore")
 db2_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
@@ -1284,6 +1350,12 @@ mariadb_group = cfg.OptGroup(
     'mariadb', title='MariaDB options',
     help="Oslo option group designed for MariaDB datastore")
 mariadb_opts = [
+    cfg.StrOpt('database_service_uname', default='database',
+               help='The name of database service user.'),
+    cfg.StrOpt('database_service_uid',
+               help='The UID of database service user.'),
+    cfg.StrOpt('database_service_gid',
+               help='The GID of database service user.'),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
                 deprecated_for_removal=True),
