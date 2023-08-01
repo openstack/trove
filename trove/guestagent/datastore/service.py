@@ -290,15 +290,15 @@ class BaseDbStatus(object):
         # outside.
         loop = True
 
-        # We need 3 (by default) consecutive success db connections for status
+        # We need 5 (by default) consecutive success db connections for status
         # 'HEALTHY'
         healthy_count = 0
-
+        state_healthy_counts = CONF.state_healthy_counts - 1
         while loop:
             self.status = self.get_actual_db_status()
             if self.status == status:
                 if (status == service_status.ServiceStatuses.HEALTHY and
-                        healthy_count < 2):
+                        healthy_count < state_healthy_counts):
                     healthy_count += 1
                     time.sleep(CONF.state_change_poll_time)
                     continue
@@ -310,7 +310,8 @@ class BaseDbStatus(object):
             # should we remain in this loop? this is the thing
             # that emulates the do-while construct.
             loop = (time.time() < end_time)
-
+            # reset the healthy_count
+            healthy_count = 0
             # no point waiting if our time is up and we're
             # just going to error out anyway.
             if loop:

@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Fix potential PostgreSQL database creation failures from the instance create API
