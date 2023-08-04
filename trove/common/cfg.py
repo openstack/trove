@@ -201,6 +201,8 @@ common_opts = [
                     'change.'),
     cfg.IntOpt('state_change_poll_time', default=3,
                help='Interval between state change poll requests (seconds).'),
+    cfg.IntOpt('state_healthy_counts', default=5,
+               help='consecutive success db connections for status HEALTHY'),
     cfg.IntOpt('agent_heartbeat_time', default=10,
                help='Maximum time (in seconds) for the Guest Agent to reply '
                     'to a heartbeat request.'),
