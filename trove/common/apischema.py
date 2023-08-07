@@ -993,6 +993,8 @@ mgmt_datastore_version = {
                     "packages": package_list,
                     "image": uuid,
                     "image_tags": image_tags,
+                    "registry_ext": non_empty_string,
+                    "repl_strategy": non_empty_string,
                     "active": {"enum": [True, False]},
                     "default": {"enum": [True, False]},
                     "version": non_empty_string
@@ -1010,6 +1012,8 @@ mgmt_datastore_version = {
             "packages": package_list,
             "image": uuid,
             "image_tags": image_tags,
+            "registry_ext": non_empty_string,
+            "repl_strategy": non_empty_string,
             "active": {"enum": [True, False]},
             "default": {"enum": [True, False]},
             "name": non_empty_string

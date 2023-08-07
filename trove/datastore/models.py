@@ -20,6 +20,7 @@ from oslo_utils import uuidutils
 
 from trove.common import cfg
 from trove.common.clients import create_nova_client
+from trove.common import constants
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import timeutils
@@ -212,6 +213,7 @@ class CapabilityOverride(BaseCapability):
     specific datastore version that overrides the default setting in the
     base capability's entry for Trove.
     """
+
     def __init__(self, db_info):
         super(CapabilityOverride, self).__init__(db_info)
         # This *may* be better solved with a join in the SQLAlchemy model but
@@ -468,6 +470,14 @@ class DatastoreVersion(object):
         return self.db_info.packages
 
     @property
+    def registry_ext(self):
+        return self.db_info.registry_ext
+
+    @property
+    def repl_strategy(self):
+        return self.db_info.repl_strategy
+
+    @property
     def active(self):
         return (True if self.db_info.active else False)
 
@@ -600,7 +610,8 @@ def update_datastore(name, default_version):
 
 
 def update_datastore_version(datastore, name, manager, image_id, image_tags,
-                             packages, active, version=None, new_name=None):
+                             packages, active, registry_ext=None,
+                             repl_strategy=None, version=None, new_name=None):
     """Create or update datastore version."""
     version = version or name
     db_api.configure_db(CONF)
@@ -622,6 +633,16 @@ def update_datastore_version(datastore, name, manager, image_id, image_tags,
                              if type(image_tags) is list else image_tags)
     ds_version.packages = packages
     ds_version.active = active
+    if not registry_ext:
+        registry_ext = constants.REGISTRY_EXT_DEFAULTS.get(manager)
+    ds_version.registry_ext = registry_ext
+
+    if not repl_strategy:
+        repl_strategy = "%(repl_namespace)s.%(repl_strategy)s" % {
+            'repl_namespace': CONF.get(manager).replication_namespace,
+            'repl_strategy': CONF.get(manager).replication_strategy
+        }
+    ds_version.repl_strategy = repl_strategy
 
     db_api.save(ds_version)
 

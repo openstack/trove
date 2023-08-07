@@ -534,7 +534,7 @@ common_opts = [
     cfg.BoolOpt(
         'enable_volume_az', default=False,
         help='If true create the volume in the same availability-zone as the '
-             'instance'),
+             'instance')
 ]
 
 # Mysql

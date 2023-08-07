@@ -52,6 +52,8 @@ class DatastoreVersionController(wsgi.Controller):
         # For backward compatibility, use name as default value for version if
         # not specified
         version_str = body['version'].get('version', version_name)
+        registry_ext = body['version'].get('registry_ext')
+        repl_strategy = body['version'].get('repl_strategy')
 
         LOG.info("Tenant: '%(tenant)s' is adding the datastore "
                  "version: '%(version)s' to datastore: '%(datastore)s'",
@@ -80,10 +82,11 @@ class DatastoreVersionController(wsgi.Controller):
             raise exception.DatastoreVersionAlreadyExists(
                 name=version_name, version=version_str)
         except exception.DatastoreVersionNotFound:
-            models.update_datastore_version(datastore.name, version_name,
-                                            manager, image_id, image_tags,
-                                            packages, active,
-                                            version=version_str)
+            models.update_datastore_version(
+                datastore.name, version_name,
+                manager, image_id, image_tags,
+                packages, active, registry_ext, repl_strategy,
+                version=version_str)
 
         if default:
             models.update_datastore(datastore.name, version_name)
@@ -129,6 +132,9 @@ class DatastoreVersionController(wsgi.Controller):
         if type(packages) is list:
             packages = ','.join(packages)
 
+        registry_ext = body.get('registry_ext', datastore_version.registry_ext)
+        repl_strategy = body.get(
+            'repl_strategy', datastore_version.repl_strategy)
         if image_id or image_tags:
             client = clients.create_glance_client(context)
             common_glance.get_image_id(client, image_id, image_tags)
@@ -147,12 +153,12 @@ class DatastoreVersionController(wsgi.Controller):
         if not image_id and not image_tags:
             raise exception.BadRequest("Image must be specified.")
 
-        models.update_datastore_version(datastore_version.datastore_name,
-                                        datastore_version.name,
-                                        manager, image_id, image_tags,
-                                        packages, active,
-                                        version=datastore_version.version,
-                                        new_name=name)
+        models.update_datastore_version(
+            datastore_version.datastore_name,
+            datastore_version.name,
+            manager, image_id, image_tags,
+            packages, active, registry_ext, repl_strategy,
+            version=datastore_version.version, new_name=name)
 
         if default:
             models.update_datastore(datastore_version.datastore_name,

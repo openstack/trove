@@ -37,6 +37,12 @@ def get_instance(manager):
     if not __replication_instance or manager != __replication_manager:
         replication_strategy = get_strategy(manager)
         __replication_namespace = CONF.get(manager).replication_namespace
+
+        if CONF.replication_strategy:
+            replication_strategy = CONF.replication_strategy.split('.')[-1]
+            __replication_namespace = '.'.join(
+                CONF.replication_strategy.split('.')[0:-1])
+
         replication_strategy_cls = get_strategy_cls(
             replication_strategy, __replication_namespace)
         __replication_instance = replication_strategy_cls()

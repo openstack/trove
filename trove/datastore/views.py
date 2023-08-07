@@ -84,14 +84,17 @@ class DatastoreVersionView(object):
             "links": self._build_links(),
         }
         if include_datastore_id:
-            datastore_version_dict["datastore"] = (self.datastore_version.
-                                                   datastore_id)
+            datastore_version_dict["datastore"] = (
+                self.datastore_version.datastore_id)
         if self.context.is_admin:
             datastore_version_dict['active'] = self.datastore_version.active
-            datastore_version_dict['packages'] = (self.datastore_version.
-                                                  packages)
+            datastore_version_dict['packages'] = (
+                self.datastore_version.packages)
             datastore_version_dict['image'] = self.datastore_version.image_id
-
+            datastore_version_dict[
+                'registry_ext'] = self.datastore_version.registry_ext
+            datastore_version_dict[
+                'repl_strategy'] = self.datastore_version.repl_strategy
             image_tags = []
             if self.datastore_version.image_tags:
                 image_tags = self.datastore_version.image_tags.split(',')

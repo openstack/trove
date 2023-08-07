@@ -32,6 +32,8 @@ class DatastoreVersionView(object):
             "packages": (self.datastore_version.packages.split(
                 ',') if self.datastore_version.packages else ['']),
             "active": self.datastore_version.active,
+            "registry_ext": self.datastore_version.registry_ext,
+            "repl_strategy": self.datastore_version.repl_strategy,
             "default": self.datastore_version.default}
 
         return {'version': datastore_version_dict}

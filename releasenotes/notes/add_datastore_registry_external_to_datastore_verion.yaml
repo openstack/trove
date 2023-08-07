@@ -1,0 +1,5 @@
+---
+features:
+  - Users with the administrator role can configure the datastore registry external
+    for each datastore version using a command, without editing configuration files.
+

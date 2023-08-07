@@ -62,16 +62,19 @@ class Commands(object):
             print(e)
 
     def datastore_version_update(self, datastore, version_name, manager,
-                                 image_id, packages, active, image_tags=None,
-                                 version=None):
+                                 image_id, packages, active, registry_ext,
+                                 repl_strategy,
+                                 image_tags=None, version=None):
         try:
-            datastore_models.update_datastore_version(datastore,
-                                                      version_name,
-                                                      manager,
-                                                      image_id,
-                                                      image_tags,
-                                                      packages, active,
-                                                      version=version)
+            datastore_models.update_datastore_version(
+                datastore,
+                version_name,
+                manager,
+                image_id,
+                image_tags,
+                packages, active,
+                registry_ext, repl_strategy,
+                version=version)
             print("Datastore version '%s(%s)' updated." %
                   (version_name, version or version_name))
         except exception.DatastoreNotFound as e:
@@ -251,6 +254,16 @@ def main():
             'image_id',
             help='ID of the image used to create an instance of '
                  'the datastore version.')
+        parser.add_argument(
+            '--registry-ext',
+            help='Extension for default datastore managers. '
+            'Allows the use of custom managers for each of '
+            'the datastores supported by Trove.')
+        parser.add_argument(
+            '--repl-strategy',
+            help='Extension for default strategy for replication. '
+            'Allows the use of custom managers for each of '
+            'the datastores supported by Trove.')
         parser.add_argument(
             'packages', help='Packages required by the datastore version that '
             'are installed on the guest image.')
