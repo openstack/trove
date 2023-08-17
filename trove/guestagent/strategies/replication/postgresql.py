@@ -11,12 +11,14 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import json
 import os
 
 from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
+from trove.common import constants
 from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common import utils
@@ -143,8 +145,18 @@ class PostgresqlReplicationStreaming(base.Replication):
         return snapshot_info['id'], replica_conf
 
     def get_master_ref(self, service, snapshot_info):
+        ip_address = None
+        if CONF.network_isolation and \
+                os.path.exists(constants.ETH1_CONFIG_PATH):
+            # Get IP_address from eth1.json, ipv4 address was preferred.
+            with open(constants.ETH1_CONFIG_PATH) as fd:
+                eth1_config = json.load(fd)
+            ip_address = eth1_config.get("ipv4_address", None) or \
+                eth1_config.get("ipv6_address", None)
+        if not ip_address:
+            ip_address = netutils.get_my_ipv4()
         master_ref = {
-            'host': netutils.get_my_ipv4(),
+            'host': ip_address,
             'port': cfg.get_configuration_property('postgresql_port')
         }
         return master_ref
