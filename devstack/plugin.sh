@@ -172,12 +172,17 @@ function config_trove_apache_wsgi {
     sudo cp $TROVE_DIR/trove/cmd/app_wsgi.py $TROVE_WSGI_DIR/app_wsgi.py
     trove_apache_conf=$(apache_site_config_for trove-api)
     sudo cp $TROVE_DEVSTACK_FILES/apache-trove-api.template ${trove_apache_conf}
+    local wsgi_venv_config=""
+    if [[ "$GLOBAL_VENV" == "True" ]] ; then
+        wsgi_venv_config="WSGIPythonHome $DEVSTACK_VENV"
+    fi
     sudo sed -e "
         s|%TROVE_SERVICE_PORT%|${TROVE_SERVICE_PORT}|g;
         s|%TROVE_WSGI_DIR%|${TROVE_WSGI_DIR}|g;
         s|%USER%|${STACK_USER}|g;
         s|%APACHE_NAME%|${APACHE_NAME}|g;
         s|%APIWORKERS%|${API_WORKERS}|g;
+        s|%WSGIPYTHONHOME%|${wsgi_venv_config}|g;
     " -i ${trove_apache_conf}
     enable_apache_site trove-api
 }
