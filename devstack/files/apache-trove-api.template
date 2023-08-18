@@ -43,3 +43,5 @@ Listen %TROVE_SERVICE_PORT%
         </IfVersion>
     </Directory>
 </VirtualHost>
+
+%WSGIPYTHONHOME%
