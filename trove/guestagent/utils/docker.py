@@ -45,8 +45,8 @@ def create_network(client: docker.client.DockerClient,
         if net.name == name:
             return net.id
     LOG.debug("Creating docker network: %s", name)
-    with open(constants.ETH1_CONFIG_PATH) as fs:
-        eth1_config = json.load(fs)
+    with open(constants.ETH1_CONFIG_PATH) as fd:
+        eth1_config = json.load(fd)
     enable_ipv6 = False
     ipam_pool = list()
     if eth1_config.get("ipv4_address"):
@@ -85,8 +85,8 @@ def _create_container_with_low_level_api(image: str, param: dict) -> None:
     host_config = client.create_host_config(**host_config_kwargs)
 
     network_config_kwargs = dict()
-    with open(constants.ETH1_CONFIG_PATH) as fs:
-        eth1_config = json.load(fs)
+    with open(constants.ETH1_CONFIG_PATH) as fd:
+        eth1_config = json.load(fd)
     if eth1_config.get("ipv4_address"):
         network_config_kwargs["ipv4_address"] = eth1_config.get("ipv4_address")
     if eth1_config.get("ipv6_address"):
