@@ -78,7 +78,7 @@ class RedisHelper(TestHelper):
     def create_client(self, host, *args, **kwargs):
         user = self.get_helper_credentials()
         password = kwargs.get('password', user['password'])
-        client = redis.StrictRedis(password=password, host=host)
+        client = redis.Redis(password=password, host=host)
         return client
 
     # Add data overrides
