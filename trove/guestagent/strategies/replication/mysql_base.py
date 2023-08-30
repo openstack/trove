@@ -15,12 +15,15 @@
 #
 
 import abc
+import json
+import os
 import uuid
 
 from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
+from trove.common import constants
 from trove.common.db.mysql import models
 from trove.common import exception
 from trove.common import utils
@@ -35,8 +38,18 @@ class MysqlReplicationBase(base.Replication):
     """Base class for MySql Replication strategies."""
 
     def get_master_ref(self, service, snapshot_info):
+        ip_address = None
+        if CONF.network_isolation and \
+                os.path.exists(constants.ETH1_CONFIG_PATH):
+            # Get IP_address from eth1.json, ipv4 address was preferred.
+            with open(constants.ETH1_CONFIG_PATH) as fd:
+                eth1_config = json.load(fd)
+            ip_address = eth1_config.get("ipv4_address", None) or \
+                eth1_config.get("ipv6_address", None)
+        if not ip_address:
+            ip_address = netutils.get_my_ipv4()
         master_ref = {
-            'host': netutils.get_my_ipv4(),
+            'host': ip_address,
             'port': service.get_port()
         }
         return master_ref
