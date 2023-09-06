@@ -39,9 +39,9 @@
         - trove-scenario-mariadb-multi
     periodic:
       jobs:
-        - publish-trove-guest-image-ubuntu-focal:
+        - publish-trove-guest-image-ubuntu-jammy:
             branches: ^(?!stable/.*).*$
-        - publish-trove-guest-image-ubuntu-focal-dev:
+        - publish-trove-guest-image-ubuntu-jammy-dev:
             branches: ^(?!stable/.*).*$
         - publish-trove-datastore-images:
             branches: ^(?!stable/.*).*$

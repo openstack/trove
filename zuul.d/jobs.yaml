@@ -79,7 +79,7 @@
 - job:
     name: trove-functional-mysql
     parent: trove-devstack-base
-    nodeset: trove-ubuntu-focal
+    nodeset: trove-ubuntu-jammy
     timeout: 10800
     vars:
       devstack_localrc:
@@ -95,7 +95,7 @@
     vars:
       devstack_localrc:
         TROVE_RESIZE_TIME_OUT: 1800
-        TROVE_NON_DEV_IMAGE_URL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-focal.qcow2
+        TROVE_NON_DEV_IMAGE_URL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-jammy.qcow2
       trove_resize_time_out: 1800
       trove_test_datastore: 'mysql'
       trove_test_group: 'mysql'
@@ -270,7 +270,7 @@
 - job:
     name: trove-tempest
     parent: devstack-tempest
-    nodeset: trove-ubuntu-focal
+    nodeset: trove-ubuntu-jammy
     timeout: 10800
     required-projects: &base_required_projects
       - openstack/trove
@@ -366,7 +366,7 @@
 - job:
     name: trove-tempest-postgres
     parent: devstack-tempest
-    nodeset: trove-ubuntu-focal
+    nodeset: trove-ubuntu-jammy
     timeout: 10800
     required-projects:
       - openstack/trove
@@ -462,10 +462,10 @@
 - job:
     name: trove-ubuntu-guest-image-build
     run: playbooks/image-build/run.yaml
-    nodeset: trove-ubuntu-focal-single
+    nodeset: trove-ubuntu-jammy-single
     timeout: 3600
     description: |
-      Build Ubuntu focal based image only on ubuntu distro.
+      Build Ubuntu jammy based image only on ubuntu distro.
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
@@ -474,7 +474,7 @@
       - ^integration/(scripts|tests)/
     vars:
       guest_os: ubuntu
-      guest_os_release: focal
+      guest_os_release: jammy
       guest_username: ubuntu
       branch: master
       dev_mode: false
@@ -486,7 +486,7 @@
     nodeset: trove-centos8s-single
     timeout: 3600
     description: |
-      Build Ubuntu focal based image only on centos8 stream.
+      Build Ubuntu jammy based image only on centos8 stream.
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
@@ -495,35 +495,35 @@
       - ^integration/(scripts|tests)/
     vars:
       guest_os: ubuntu
-      guest_os_release: focal
+      guest_os_release: jammy
       guest_username: ubuntu
       branch: master
       dev_mode: false
       image_suffix: ""
 
 - job:
-    name: publish-trove-guest-image-ubuntu-focal
+    name: publish-trove-guest-image-ubuntu-jammy
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu focal based Trove guest image to
+      Build and publish Ubuntu jammy based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: focal
+      guest_os_release: jammy
       guest_username: ubuntu
       branch: master
       dev_mode: false
       image_suffix: ""
 
 - job:
-    name: publish-trove-guest-image-ubuntu-focal-dev
+    name: publish-trove-guest-image-ubuntu-jammy-dev
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu focal based Trove guest image to
+      Build and publish Ubuntu jammy based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: focal
+      guest_os_release: jammy
       guest_username: ubuntu
       branch: master
       dev_mode: true
@@ -537,6 +537,6 @@
     run: playbooks/image-build/docker-registry.yaml
     parent: publish-openstack-artifacts
     post-run: playbooks/image-build/post.yaml
-    nodeset: trove-ubuntu-focal-single
+    nodeset: trove-ubuntu-jammy-single
     required-projects:
       - openstack/trove
