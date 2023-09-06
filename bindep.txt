@@ -10,9 +10,10 @@ libxslt-devel [platform:rpm test]
 libxslt1-dev [platform:dpkg test]
 locales [platform:debian]
 mysql [platform:rpm]
-mysql-client [platform:dpkg]
+mysql-client [platform:dpkg !platform:debian]
 mysql-devel [platform:rpm test]
-mysql-server
+mysql-server [!platform:debian]
+mariadb-server [platform:debian]
 pkg-config [platform:dpkg test]
 pkgconfig [platform:rpm test]
 postgresql
