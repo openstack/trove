@@ -300,7 +300,7 @@
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         TROVE_ENABLE_LOCAL_REGISTRY: True
         SYNC_LOG_TO_CONTROLLER: True
-        TROVE_DATASTORE_VERSION: 5.7.29
+        TROVE_DATASTORE_VERSION: 5.7
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -311,7 +311,7 @@
             auth:
               tempest_roles: ResellerAdmin
             database:
-              default_datastore_versions: mysql:5.7.29
+              default_datastore_versions: mysql:5.7
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
