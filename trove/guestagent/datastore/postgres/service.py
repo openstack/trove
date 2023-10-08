@@ -263,8 +263,8 @@ class PgSqlApp(service.BaseDbApp):
     def restore_backup(self, context, backup_info, restore_location):
         backup_id = backup_info['id']
         storage_driver = CONF.storage_strategy
-        backup_driver = cfg.get_configuration_property('backup_strategy')
-        image = cfg.get_configuration_property('backup_docker_image')
+        backup_driver = self.get_backup_strategy()
+        image = self.get_backup_image()
         name = 'db_restore'
         volumes = {
             '/var/lib/postgresql/data': {

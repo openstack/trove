@@ -660,10 +660,12 @@ mysql_opts = [
         help='Database docker image.'
     ),
     cfg.StrOpt(
-        'backup_docker_image', default='openstacktrove/db-backup-mysql:1.1.0',
-        help='The docker image used for backup and restore. For mysql, '
-             'the minor version is added to the image name as a suffix before '
-             'creating container, e.g. openstacktrove/db-backup-mysql5.7:1.0.0'
+        'backup_docker_image',
+        sample_default='your-registry/your-repo/db-backup-mysql',
+        help='The docker image used for backup and restore. Trove will uses'
+             'datastore version as the image tag, for example: '
+             'your-registry/your-repo/db-backup-mysql:5.7 is used for mysql'
+             'datastore with version 5.7'
     ),
 ]
 
@@ -1112,8 +1114,11 @@ postgresql_opts = [
     ),
     cfg.StrOpt(
         'backup_docker_image',
-        default='openstacktrove/db-backup-postgresql:1.1.2',
-        help='The docker image used for backup and restore.'
+        sample_default='your-registry/your-repo/db-backup-postgresql',
+        help='The docker image used for backup and restore. Trove will uses'
+             'datastore version as the image tag, for example: '
+             'your-registry/your-repo/db-backup-postgresql:12 is used for'
+             'postgresql datastore with version 12'
     ),
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.',
@@ -1437,8 +1442,11 @@ mariadb_opts = [
     ),
     cfg.StrOpt(
         'backup_docker_image',
-        default='openstacktrove/db-backup-mariadb:1.1.0',
-        help='The docker image used for backup and restore.'
+        sample_default='your-registry/your-repo/db-backup-mariadb',
+        help='The docker image used for backup and restore. Trove will uses'
+             'datastore version as the image tag, for example: '
+             'your-registry/your-repo/db-backup-mariadb:10.3 is used for '
+             'postgresql datastore with version 10.3'
     ),
 ]
 

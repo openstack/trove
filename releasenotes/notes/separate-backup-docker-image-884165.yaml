@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Add support for multiple datastore versions for each datastore.
+    more details:
+    `Story 2010770 <https://storyboard.openstack.org/#!/story/2010770>`__
