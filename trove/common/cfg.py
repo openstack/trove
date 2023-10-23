@@ -1446,7 +1446,7 @@ mariadb_opts = [
         help='The docker image used for backup and restore. Trove will uses'
              'datastore version as the image tag, for example: '
              'your-registry/your-repo/db-backup-mariadb:10.3 is used for '
-             'postgresql datastore with version 10.3'
+             'mariadb datastore with version 10.3'
     ),
 ]
 
