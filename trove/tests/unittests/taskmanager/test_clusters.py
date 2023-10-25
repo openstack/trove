@@ -34,6 +34,60 @@ from trove.instance.service_status import ServiceStatuses
 from trove.tests.unittests import trove_testtools
 
 
+class CassandraClusterTasksTest(trove_testtools.TestCase):
+    def setUp(self):
+        super(CassandraClusterTasksTest, self).setUp()
+        self.cluster_id = "1234"
+        self.cluster_name = "test1"
+        self.tenant_id = "2345"
+        self.db_cluster = DBCluster(ClusterTaskStatus.NONE,
+                                    id=self.cluster_id,
+                                    created=str(datetime.date),
+                                    updated=str(datetime.date),
+                                    name=self.cluster_name,
+                                    task_id=ClusterTaskStatus.NONE._code,
+                                    tenant_id=self.tenant_id,
+                                    datastore_version_id="1",
+                                    deleted=False)
+        self.dbinst1 = DBInstance(InstanceTasks.NONE, id="1", name="member1",
+                                  compute_instance_id="compute-1",
+                                  task_id=InstanceTasks.NONE._code,
+                                  task_description=InstanceTasks.NONE._db_text,
+                                  volume_id="volume-1",
+                                  datastore_version_id="1",
+                                  cluster_id=self.cluster_id,
+                                  shard_id="shard-1",
+                                  type="member")
+        self.dbinst2 = DBInstance(InstanceTasks.NONE, id="2", name="member2",
+                                  compute_instance_id="compute-2",
+                                  task_id=InstanceTasks.NONE._code,
+                                  task_description=InstanceTasks.NONE._db_text,
+                                  volume_id="volume-2",
+                                  datastore_version_id="1",
+                                  cluster_id=self.cluster_id,
+                                  shard_id="shard-1",
+                                  type="member")
+        mock_ds1 = Mock()
+        mock_ds1.name = 'cassandra'
+        mock_dv1 = Mock()
+        mock_dv1.name = '4.0.0'
+        self.clustertasks = ClusterTasks(Mock(),
+                                         self.db_cluster,
+                                         datastore=mock_ds1,
+                                         datastore_version=mock_dv1)
+
+    @patch.object(DBInstance, 'find_by')
+    @patch.object(InstanceServiceStatus, 'find_by')
+    def test_all_instances_healthy(self, mock_find, mock_db_find):
+        (mock_find.return_value.
+         get_status.return_value) = ServiceStatuses.HEALTHY
+        (mock_db_find.return_value.
+         get_task_status.return_value) = InstanceTasks.NONE
+        ret_val = self.clustertasks._all_instances_healthy(["1", "2"],
+                                                           self.cluster_id)
+        self.assertTrue(ret_val)
+
+
 class MongoDbClusterTasksTest(trove_testtools.TestCase):
     def setUp(self):
         super(MongoDbClusterTasksTest, self).setUp()
