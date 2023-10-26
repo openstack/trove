@@ -298,19 +298,22 @@
         Q_PLUGIN: ml2
         Q_ML2_TENANT_NETWORK_TYPE: vxlan
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
-        TROVE_ENABLE_LOCAL_REGISTRY: True
         SYNC_LOG_TO_CONTROLLER: True
         TROVE_DATASTORE_VERSION: 5.7
+        TROVE_MGMT_GATEWAY: "192.168.254.1"
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
             DEFAULT:
               usage_timeout: 1800
+            network:
+              network_isolation: True
         test-config:
           $TEMPEST_CONFIG:
             auth:
               tempest_roles: ResellerAdmin
             database:
+              database_build_timeout: 2400
               default_datastore_versions: mysql:5.7
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
@@ -345,23 +348,98 @@
         ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
       tempest_test_timeout: 3600
-      tempest_test_exclude_list: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_exclude_list.txt'
       zuul_copy_output:
         '/var/log/guest-agent-logs/': 'logs'
 
 - job:
-    name: trove-tempest-mysql-network-isolation
+    name: trove-tempest-ubuntu-base
+    parent: trove-tempest
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^backup/
+      - ^\..+
+    vars:
+      devstack_services:
+        swift: false
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance
+
+- job:
+    name: trove-tempest-ubuntu-backup
     parent: trove-tempest
     vars:
       devstack_localrc:
         TROVE_ENABLE_LOCAL_REGISTRY: True
-        TROVE_MGMT_GATEWAY: "192.168.254.1"
-      devstack_local_conf:
-        post-config:
-          $TROVE_CONF:
-            network:
-              network_isolation: True
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_backup
+
+- job:
+    name: trove-tempest-ubuntu-replication
+    parent: trove-tempest
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^backup/
+      - ^\..+
+    vars:
+      devstack_localrc:
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_replication
+
+- job:
+    name: trove-tempest-ubuntu-base-mysql5.7
+    parent: trove-tempest-ubuntu-base
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_VERSION: 5.7
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                default_datastore_versions: mysql:5.7
+
+- job:
+    name: trove-tempest-ubuntu-backup-mysql5.7
+    parent: trove-tempest-ubuntu-backup
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_VERSION: 5.7
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                default_datastore_versions: mysql:5.7
+
+- job:
+    name: trove-tempest-ubuntu-replication-mysql5.7
+    parent: trove-tempest-ubuntu-replication
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_VERSION: 5.7
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                default_datastore_versions: mysql:5.7
 
 - job:
     name: trove-tempest-postgres
