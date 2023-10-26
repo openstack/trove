@@ -36,9 +36,14 @@ def _get_user_keystone_session(auth_url, token, tenant_id):
     return session.Session(auth=auth, verify=False)
 
 
-def _get_service_client(auth_url, token, tenant_id):
+def _get_service_client(auth_url, token, tenant_id, region_name=None):
     sess = _get_user_keystone_session(auth_url, token, tenant_id)
-    return swiftclient.Connection(session=sess)
+    os_options = None
+    if region_name:
+        os_options = {
+            'region_name': region_name
+        }
+    return swiftclient.Connection(session=sess, os_options=os_options)
 
 
 def _set_attr(original):
@@ -111,7 +116,8 @@ class StreamReader(object):
 class SwiftStorage(base.Storage):
     def __init__(self):
         self.client = _get_service_client(CONF.os_auth_url, CONF.os_token,
-                                          CONF.os_tenant_id)
+                                          CONF.os_tenant_id,
+                                          region_name=CONF.os_region_name)
 
     def save(self, stream, metadata=None, container='database_backups'):
         """Persist data from the stream to swift.
