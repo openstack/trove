@@ -698,6 +698,7 @@ class BaseMySqlApp(service.BaseDbApp):
         backup_driver = self.get_backup_strategy()
         user_token = context.auth_token
         auth_url = CONF.service_credentials.auth_url
+        region_name = CONF.service_credentials.region_name
         user_tenant = context.project_id
         image = self.get_backup_image()
         name = 'db_restore'
@@ -707,7 +708,7 @@ class BaseMySqlApp(service.BaseDbApp):
             f'/usr/bin/python3 main.py --nobackup '
             f'--storage-driver={storage_driver} --driver={backup_driver} '
             f'--os-token={user_token} --os-auth-url={auth_url} '
-            f'--os-tenant-id={user_tenant} '
+            f'--os-tenant-id={user_tenant} --os-region-name={region_name} '
             f'--restore-from={backup_info["location"]} '
             f'--restore-checksum={backup_info["checksum"]}'
         )
