@@ -267,7 +267,8 @@ class PgSqlApp(service.BaseDbApp):
 
         os_cred = (f"--os-token={context.auth_token} "
                    f"--os-auth-url={CONF.service_credentials.auth_url} "
-                   f"--os-tenant-id={context.project_id}")
+                   f"--os-tenant-id={context.project_id} "
+                   f"--os-region-name={CONF.service_credentials.region_name}")
 
         command = (
             f'/usr/bin/python3 main.py --nobackup '

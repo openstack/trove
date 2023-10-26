@@ -438,7 +438,8 @@ class BaseDbApp(object):
         image = self.get_backup_image()
         os_cred = (f"--os-token={context.auth_token} "
                    f"--os-auth-url={CONF.service_credentials.auth_url} "
-                   f"--os-tenant-id={context.project_id}")
+                   f"--os-tenant-id={context.project_id} "
+                   f"--os-region-name={CONF.service_credentials.region_name}")
 
         db_userinfo = ''
         if need_dbuser:
