@@ -532,13 +532,13 @@ function create_registry_container {
         done
         pushd $DEST/trove/backup
         # build backup images
-        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mysql5.7:1.1.0 --build-arg DATASTORE=mysql --build-arg DATASTORE_VERSION=5.7 .
-        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mysql8.0:1.1.0 --build-arg DATASTORE=mysql --build-arg DATASTORE_VERSION=8.0 .
-        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mariadb:1.1.0 --build-arg DATASTORE=mariadb --build-arg DATASTORE_VERSION=10.4 .
-        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-postgresql:1.1.2 --build-arg DATASTORE=postgresql --build-arg DATASTORE_VERSION=12 .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mysql:5.7 --build-arg DATASTORE=mysql --build-arg DATASTORE_VERSION=5.7 .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mysql:8.0 --build-arg DATASTORE=mysql --build-arg DATASTORE_VERSION=8.0 .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-mariadb:10.4 --build-arg DATASTORE=mariadb --build-arg DATASTORE_VERSION=10.4 .
+        sudo docker build --network host -t 127.0.0.1:4000/trove-datastores/db-backup-postgresql:12 --build-arg DATASTORE=postgresql --build-arg DATASTORE_VERSION=12 .
         popd
         # push backup images
-        for backupimg in {"db-backup-mysql5.7:1.1.0","db-backup-mysql8.0:1.1.0","db-backup-mariadb:1.1.0","db-backup-postgresql:1.1.2"};
+        for backupimg in {"db-backup-mysql:5.7","db-backup-mysql:8.0","db-backup-mariadb:10.4","db-backup-postgresql:12"};
         do
         sudo docker push 127.0.0.1:4000/trove-datastores/${backupimg}
         done

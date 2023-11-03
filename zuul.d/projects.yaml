@@ -11,20 +11,17 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - trove-tempest-ubuntu-base-mysql5.7
+        - trove-tempest-ubuntu-backup-mysql5.7
+        - trove-tempest-ubuntu-replication-mysql5.7
         - openstack-tox-cover:
             voting: true
         - trove-tox-bandit-baseline:
-            voting: true
-        - trove-tempest:
-            voting: false
-        - trove-tempest-mysql-network-isolation:
             voting: true
         - trove-ubuntu-guest-image-build:
             voting: true
         - trove-centos8s-guest-image-build:
             voting: true
-        - trove-tempest-postgres:
-            voting: false
     gate:
       jobs:
         - trove-tempest:
