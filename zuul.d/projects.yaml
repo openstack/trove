@@ -14,6 +14,9 @@
         - trove-tempest-ubuntu-base-mysql5.7
         - trove-tempest-ubuntu-backup-mysql5.7
         - trove-tempest-ubuntu-replication-mysql5.7
+        - trove-tempest-ubuntu-base-mariadb10.4
+        - trove-tempest-ubuntu-backup-mariadb10.4
+        - trove-tempest-ubuntu-replication-mariadb10.4
         - openstack-tox-cover:
             voting: true
         - trove-tox-bandit-baseline:

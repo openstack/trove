@@ -442,6 +442,48 @@
                 default_datastore_versions: mysql:5.7
 
 - job:
+    name: trove-tempest-ubuntu-base-mariadb10.4
+    parent: trove-tempest-ubuntu-base
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mariadb
+          TROVE_DATASTORE_VERSION: 10.4
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                enabled_datastores: "mariadb"
+                default_datastore_versions: mariadb:10.4
+
+- job:
+    name: trove-tempest-ubuntu-backup-mariadb10.4
+    parent: trove-tempest-ubuntu-backup
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mariadb
+          TROVE_DATASTORE_VERSION: 10.4
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                enabled_datastores: "mariadb"
+                default_datastore_versions: mariadb:10.4
+
+- job:
+    name: trove-tempest-ubuntu-replication-mariadb10.4
+    parent: trove-tempest-ubuntu-replication
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mariadb
+          TROVE_DATASTORE_VERSION: 10.4
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                enabled_datastores: "mariadb"
+                default_datastore_versions: mariadb:10.4
+
+- job:
     name: trove-tempest-postgres
     parent: devstack-tempest
     nodeset: trove-ubuntu-jammy
