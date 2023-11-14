@@ -17,6 +17,9 @@
         - trove-tempest-ubuntu-base-mariadb10.4
         - trove-tempest-ubuntu-backup-mariadb10.4
         - trove-tempest-ubuntu-replication-mariadb10.4
+        - trove-tempest-ubuntu-base-postgresql12
+        - trove-tempest-ubuntu-backup-postgresql12
+        - trove-tempest-ubuntu-replication-postgresql12
         - openstack-tox-cover:
             voting: true
         - trove-tox-bandit-baseline:
@@ -27,16 +30,12 @@
             voting: true
     gate:
       jobs:
-        - trove-tempest:
-            voting: false
+        - trove-tempest-ubuntu-base-mysql5.7
+        - trove-tempest-ubuntu-base-mariadb10.4
+        - trove-tempest-ubuntu-base-postgresql12
     experimental:
       jobs:
         - trove-tempest-ipv6-only
-        - trove-functional-mysql
-        - trove-scenario-mysql-single
-        - trove-scenario-mysql-multi
-        - trove-scenario-mariadb-single
-        - trove-scenario-mariadb-multi
     periodic:
       jobs:
         - publish-trove-guest-image-ubuntu-jammy:

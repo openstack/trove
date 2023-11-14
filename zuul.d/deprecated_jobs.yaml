@@ -1,0 +1,332 @@
+- job:
+    name: trove-devstack-base
+    parent: devstack
+    abstract: true
+    timeout: 10800
+    required-projects:
+      - openstack/tempest
+      - openstack/diskimage-builder
+      - openstack/tripleo-image-elements
+      - openstack/trove
+      - openstack/trove-dashboard
+    vars:
+      devstack_services:
+        tempest: true
+        etcd3: false
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        q-svc: true
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-ovn-metadata-agent: false
+        ovn-controller: false
+        ovn-northd: false
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove
+      # NOTE(zhaochao): we have to override the default settings from the
+      # the base devstack job about "SERVICE_HOST" and "HOST_IP", as trove
+      # guestagent should use public addresses to access the underlying
+      # components(MQ and Swift), and the previous devstack-gate jobs didn't
+      # set these variables. However we cannot unset variables in job
+      # definition, so we just set SERVICE_HOST and HOST_IP to empty strings,
+      # and VNCSERVER_PROXYCLIENT_ADDRESS to 127.0.0.1 instead.
+      devstack_localrc:
+        SERVICE_HOST: ''
+        HOST_IP: ''
+        VNCSERVER_PROXYCLIENT_ADDRESS: 127.0.0.1
+        USE_PYTHON3: True
+        Q_AGENT: openvswitch
+        Q_PLUGIN: ml2
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+        TROVE_DATASTORE_VERSION: 5.7
+    run: playbooks/trove-devstack-base.yaml
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^releasenotes/.*$
+      - ^tools/.*$
+      - ^trove/hacking/.*$
+      - ^trove/tests/unittests/.*$
+
+- job:
+    name: trove-fakemodetests-base
+    parent: openstack-tox-py36
+    abstract: true
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^contrib/.*$
+      - ^doc/.*$
+      - ^releasenotes/.*$
+      - ^setup.cfg$
+      - ^tools/.*$
+      - ^trove/hacking/.*$
+      - ^trove/tests/api/.*$
+      - ^trove/tests/db/.*$
+      - ^trove/tests/scenario/.*$
+      - ^trove/tests/unittests/.*$
+
+- job:
+    name: trove-functional-mysql
+    parent: trove-devstack-base
+    nodeset: trove-ubuntu-jammy
+    timeout: 10800
+    vars:
+      devstack_localrc:
+        TROVE_RESIZE_TIME_OUT: 1800
+      trove_resize_time_out: 1800
+      trove_test_datastore: 'mysql'
+      trove_test_group: 'mysql'
+      trove_test_datastore_version: '5.7.29'
+
+- job:
+    name: trove-functional-mysql-nondev
+    parent: trove-devstack-base
+    vars:
+      devstack_localrc:
+        TROVE_RESIZE_TIME_OUT: 1800
+        TROVE_NON_DEV_IMAGE_URL: https://tarballs.opendev.org/openstack/trove/images/trove-master-mysql-ubuntu-jammy.qcow2
+      trove_resize_time_out: 1800
+      trove_test_datastore: 'mysql'
+      trove_test_group: 'mysql'
+      trove_test_datastore_version: '5.7.29'
+
+- job:
+    name: trove-scenario-cassandra-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: cassandra
+      trove_test_group: cassandra-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-cassandra-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: cassandra
+      trove_test_group: cassandra-supported-multi
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-couchdb-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: couchdb
+      trove_test_group: couchdb-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-couchbase-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: couchbase
+      trove_test_group: couchbase-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-mariadb-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: mariadb
+      trove_test_group: mariadb-supported-single
+      trove_test_datastore_version: 10.4.12
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-mariadb-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: mariadb
+      trove_test_group: mariadb-supported-multi
+      trove_test_datastore_version: 10.4.12
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-mysql-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: mysql
+      trove_test_group: mysql-supported-single
+      trove_test_datastore_version: 5.7.29
+
+- job:
+    name: trove-scenario-mysql-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: mysql
+      trove_test_group: mysql-supported-multi
+      trove_test_datastore_version: 5.7.29
+
+- job:
+    name: trove-scenario-percona-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: percona
+      trove_test_group: percona-supported-multi
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-percona-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: percona
+      trove_test_group: percona-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-postgresql-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: postgresql
+      trove_test_group: postgresql-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-postgresql-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: postgresql
+      trove_test_group: postgresql-supported-multi
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-pxc-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: pxc
+      trove_test_group: pxc-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-pxc-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: pxc
+      trove_test_group: pxc-supported-multi
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-redis-single
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: redis
+      trove_test_group: redis-supported-single
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-scenario-redis-multi
+    parent: trove-devstack-base
+    vars:
+      trove_test_datastore: redis
+      trove_test_group: redis-supported-multi
+      devstack_localrc:
+        TROVE_ENABLE_IMAGE_BUILD: false
+
+- job:
+    name: trove-tempest-postgres
+    parent: devstack-tempest
+    nodeset: trove-ubuntu-jammy
+    timeout: 10800
+    required-projects:
+      - openstack/trove
+      - openstack/trove-tempest-plugin
+      - openstack/tempest
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^\..+
+      - ^trove/guestagent/(mysql.*|mariadb)/.*$
+      - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*)\.py$
+    vars:
+      tox_envlist: all
+      tempest_concurrency: 1
+      devstack_localrc:
+        TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
+        USE_PYTHON3: true
+        Q_AGENT: openvswitch
+        Q_PLUGIN: ml2
+        Q_ML2_TENANT_NETWORK_TYPE: vxlan
+        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
+        TROVE_DATASTORE_TYPE: postgresql
+        TROVE_DATASTORE_VERSION: 12
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+        SYNC_LOG_TO_CONTROLLER: True
+      devstack_local_conf:
+        post-config:
+          $TROVE_CONF:
+            DEFAULT:
+              usage_timeout: 1800
+        test-config:
+          $TEMPEST_CONFIG:
+            auth:
+              tempest_roles: ResellerAdmin
+            database:
+              enabled_datastores: "postgresql"
+              default_datastore_versions: "postgresql:12"
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove.git
+      devstack_services:
+        etcd3: false
+        ceilometer-acentral: false
+        ceilometer-acompute: false
+        ceilometer-alarm-evaluator: false
+        ceilometer-alarm-notifier: false
+        ceilometer-anotification: false
+        ceilometer-api: false
+        ceilometer-collector: false
+        cinder: true
+        c-sch: true
+        c-api: true
+        c-vol: true
+        c-bak: false
+        swift: true
+        s-account: true
+        s-container: true
+        s-object: true
+        s-proxy: true
+        tls-proxy: false
+        tempest: true
+        q-svc: true
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-ovn-metadata-agent: false
+        ovn-controller: false
+        ovn-northd: false
+      tempest_test_regex: ^trove_tempest_plugin\.tests
+      tempest_test_timeout: 3600
+      tempest_test_exclude_list: '{{ ansible_user_dir }}/{{ zuul.projects["opendev.org/openstack/trove-tempest-plugin"].src_dir }}/tempest_exclude_list.txt'
+      zuul_copy_output:
+        '/var/log/guest-agent-logs/': 'logs'
