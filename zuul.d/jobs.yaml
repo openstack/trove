@@ -82,7 +82,7 @@
         s-container: true
         s-object: true
         s-proxy: true
-        tls-proxy: false
+        tls-proxy: true
         tempest: true
         q-svc: true
         q-agt: true
