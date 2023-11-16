@@ -43,7 +43,9 @@ def _get_service_client(auth_url, token, tenant_id, region_name=None):
         os_options = {
             'region_name': region_name
         }
-    return swiftclient.Connection(session=sess, os_options=os_options)
+    return swiftclient.Connection(session=sess,
+                                  os_options=os_options,
+                                  insecure=True)
 
 
 def _set_attr(original):

@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fix a bug where swift client in the trove guest instance failed to verify
+    certification against the self-signed certificate authority.
+    `Story 2010674 <https://storyboard.openstack.org/#!/story/2010674>`__
