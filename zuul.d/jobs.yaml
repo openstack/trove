@@ -72,13 +72,6 @@
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
         etcd3: false
-        ceilometer-acentral: false
-        ceilometer-acompute: false
-        ceilometer-alarm-evaluator: false
-        ceilometer-alarm-notifier: false
-        ceilometer-anotification: false
-        ceilometer-api: false
-        ceilometer-collector: false
         cinder: true
         c-sch: true
         c-api: true
