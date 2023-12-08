@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fix a bug where docker daemon occasionally returns error:
+    `failed to set IPv6 gateway while updating gateway: file exists: unknown`
+    when network_isolation is enabled.
