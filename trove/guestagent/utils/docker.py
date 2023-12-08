@@ -82,8 +82,6 @@ def _create_container_with_low_level_api(image: str, param: dict) -> None:
         host_config_kwargs["privileged"] = param.get("privileged")
     if param.get("volumes"):
         host_config_kwargs["binds"] = param.get("volumes")
-    if param.get("sysctls"):
-        host_config_kwargs["sysctls"] = param.get("sysctls")
     host_config = client.create_host_config(**host_config_kwargs)
 
     network_config_kwargs = dict()
@@ -163,8 +161,6 @@ def start_container(client, image, name="database",
     if network_mode == constants.DOCKER_HOST_NIC_MODE:
         create_network(client, constants.DOCKER_NETWORK_NAME)
         kwargs["network"] = constants.DOCKER_NETWORK_NAME
-        # eth0 is the nic name in the database container.
-        kwargs['sysctls'] = {"net.ipv6.conf.eth0.accept_ra": 0}
         return _create_container_with_low_level_api(image, kwargs)
     else:
         kwargs["network_mode"] = network_mode
