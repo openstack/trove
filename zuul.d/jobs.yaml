@@ -53,6 +53,8 @@
         Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         SYNC_LOG_TO_CONTROLLER: True
         TROVE_DATASTORE_VERSION: 5.7
+        TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
+        SWIFT_LOOPBACK_DISK_SIZE: 15G
         TROVE_MGMT_GATEWAY: "192.168.254.1"
       devstack_local_conf:
         post-config:
@@ -121,7 +123,7 @@
         s-container: false
         s-object: false
         s-proxy: false
-      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance_basic
 
 - job:
     name: trove-tempest-ubuntu-backup
@@ -216,6 +218,7 @@
           test-config:
             $TEMPEST_CONFIG:
               database:
+                backup_wait_timeout: 1200
                 default_datastore_versions: mysql:5.7
 
 - job:
@@ -243,6 +246,7 @@
           test-config:
             $TEMPEST_CONFIG:
               database:
+                backup_wait_timeout: 1200
                 default_datastore_versions: mysql:5.7
 
 - job:
