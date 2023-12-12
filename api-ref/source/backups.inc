@@ -54,6 +54,7 @@ Response Parameters
     - status: backup_status
     - updated: updated
     - project_id: project_uuid
+    - storage_driver: storage_driver
 
 
 Response Example
@@ -104,6 +105,7 @@ Request
    - description: backup_description
    - swift_container: swift_container
    - restore_from: backup_restore_from
+   - storage_driver: storage_driver
 
 Request Example
 ---------------
@@ -132,6 +134,7 @@ Response Parameters
     - status: backup_status
     - updated: updated
     - project_id: project_uuid
+    - storage_driver: storage_driver
 
 
 Response Example
@@ -181,6 +184,7 @@ Response Parameters
     - status: backup_status
     - updated: updated
     - project_id: project_uuid
+    - storage_driver: storage_driver
 
 
 Response Example

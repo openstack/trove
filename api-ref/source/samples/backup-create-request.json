@@ -3,6 +3,7 @@
         "description": "My Backup",
         "incremental": 0,
         "instance": "44b277eb-39be-4921-be31-3d61b43651d7",
-        "name": "snapshot"
+        "name": "snapshot",
+        "storage_driver": "cinder"
     }
 }

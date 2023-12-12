@@ -536,7 +536,16 @@ common_opts = [
     cfg.BoolOpt(
         'enable_volume_az', default=False,
         help='If true create the volume in the same availability-zone as the '
-             'instance')
+             'instance'),
+    cfg.StrOpt(
+        'replica_snapshot_driver',
+        choices=['cinder', 'swift'],
+        help='by default, this is the same as storage_strategy. it may be '
+             'useful to set to different driver to avoid the limitation of '
+             'backup drivers. for example, we can set to cinder when '
+             'storage_strate is swift to increase the backup speed, and '
+             'set to swift when storage_strate is cinder to support backup '
+             'cross az or region'),
 ]
 
 # Mysql

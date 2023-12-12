@@ -17,6 +17,7 @@
 from unittest.mock import MagicMock, Mock, patch, PropertyMock
 
 from trove.backup.models import Backup
+from trove.common import cfg
 from trove.common.exception import TroveError, ReplicationSlaveAttachError
 from trove.common import server_group as srv_grp
 from trove.instance.tasks import InstanceTasks
@@ -24,6 +25,8 @@ from trove.taskmanager.manager import Manager
 from trove.taskmanager import models
 from trove.taskmanager import service
 from trove.tests.unittests import trove_testtools
+
+CONF = cfg.CONF
 
 
 class TestManager(trove_testtools.TestCase):
@@ -208,7 +211,33 @@ class TestManager(trove_testtools.TestCase):
                                          None, None)
         mock_tasks.get_replication_master_snapshot.assert_called_with(
             self.context, 'some-master-id', mock_flavor,
-            parent_backup_id='temp-backup-id')
+            parent_backup_id='temp-backup-id', snapshot_driver='swift')
+        mock_backup_delete.assert_called_with(self.context, 'test-id')
+
+    @patch.object(Backup, 'delete')
+    @patch.object(models.BuiltInstanceTasks, 'load')
+    def test_create_replication_cinder(self, mock_load, mock_backup_delete):
+        CONF.set_override('replica_snapshot_driver', 'cinder')
+        mock_tasks = Mock()
+        mock_snapshot = {'dataset': {'snapshot_id': 'test-id'}}
+        mock_tasks.get_replication_master_snapshot = Mock(
+            return_value=mock_snapshot)
+        mock_flavor = Mock()
+        mock_volume = mock_tasks.volume_client.volumes.get.return_value
+        mock_volume.availability_zone = 'nova'
+
+        mock_tasks.get_instance()
+        with patch.object(models.FreshInstanceTasks, 'load',
+                          return_value=mock_tasks):
+            self.manager._create_replication_slave(
+                self.context, ['id_slave'], 'mysql-server',
+                mock_flavor, Mock(), None, None,
+                'mysql', None, 2, 'nova', ['password'], None,
+                None, 'some-master-id', None, None, None, None, None)
+
+        mock_tasks.get_replication_master_snapshot.assert_called_with(
+            self.context, 'some-master-id', mock_flavor,
+            parent_backup_id=None, snapshot_driver='cinder')
         mock_backup_delete.assert_called_with(self.context, 'test-id')
 
     @patch.object(models.FreshInstanceTasks, 'load')

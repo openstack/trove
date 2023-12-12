@@ -132,10 +132,11 @@ class PostgresqlReplicationStreaming(base.Replication):
                 {"bind": "/var/run/postgresql", "mode": "ro"},
         }
         extra_params = f"--pg-wal-archive-dir {pg_service.WAL_ARCHIVE_DIR}"
-        service.create_backup(context, snapshot_info,
-                              volumes_mapping=volumes_mapping,
-                              need_dbuser=False,
-                              extra_params=extra_params)
+        if snapshot_info.get('storage_driver') not in ["cinder"]:
+            service.create_backup(context, snapshot_info,
+                                  volumes_mapping=volumes_mapping,
+                                  need_dbuser=False,
+                                  extra_params=extra_params)
 
         LOG.info('Getting or creating replication user')
         replication_user = self._get_or_create_replication_user(service)

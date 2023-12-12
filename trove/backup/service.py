@@ -87,6 +87,7 @@ class BackupController(wsgi.Controller):
         incremental = data.get('incremental')
         swift_container = data.get('swift_container')
         restore_from = data.get('restore_from')
+        storage_driver = data.get('storage_driver')
 
         if swift_container:
             utils.validate_command(swift_container)
@@ -108,7 +109,8 @@ class BackupController(wsgi.Controller):
             backup = Backup.create(context, instance, name, desc,
                                    parent_id=parent, incremental=incremental,
                                    swift_container=swift_container,
-                                   restore_from=restore_from)
+                                   restore_from=restore_from,
+                                   storage_driver=storage_driver)
 
         return wsgi.Result(views.BackupView(backup).data(), 202)
 

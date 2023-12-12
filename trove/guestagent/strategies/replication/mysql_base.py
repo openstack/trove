@@ -99,8 +99,10 @@ class MysqlReplicationBase(base.Replication):
                                                "mode": "ro"},
             '/tmp': {'bind': '/tmp', 'mode': 'rw'}
         }
-        service.create_backup(context, snapshot_info,
-                              volumes_mapping=volumes_mapping)
+
+        if snapshot_info.get('storage_driver') not in ["cinder"]:
+            service.create_backup(context, snapshot_info,
+                                  volumes_mapping=volumes_mapping)
 
         LOG.info('Creating replication user')
         replication_user = self._create_replication_user(service, adm)

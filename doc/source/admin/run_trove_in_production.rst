@@ -365,6 +365,48 @@ your-registry/your-repo/db-backup-mariadb:10.3 & your-registry/your-repo/db-back
 
 Finally, when trove-guestagent does backup/restore, it will pull this image with the tag equals datastore version.
 
+Configure backup storage strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+By default, trove uses swift as backup storage backend. when using the swift storage backend, it's relatively slow to
+backup and restore instances. as trove guest agent needs to run backup container first, then do backup action and
+save it to swift finally.
+
+trove also supports cinder storage strategy. Compare to Swift, Cinder can do backup/restore action quickly, because
+guest agent doesn't need to do backup in instance, instead, Trove taskmanager calls Cinder api to do a snapshot for
+the data disk. and then restore from the snapshot later.
+
+pros and cons of swift and cinder:
+
+* Swift backend supports restoring from any places that are accessible but more slow.
+* Cinder backend backs up more quickly but doesn't support restore across storage system.
+
+administrator can configure different strategies for backing up and replications according to the demands.
+
+For example:
+
+Setting the relevant opts in `/etc/trove/trove-guestagent.conf`
+
+.. path /etc/trove/trove-guestagent.conf
+.. code-block:: ini
+
+      [DEFAULT]
+      storage_strategy = swift
+      replica_snapshot_driver = cinder
+
+Setting the relevant opts in `/etc/trove/trove.conf` as well.
+
+.. path /etc/trove/trove.conf
+.. code-block:: ini
+
+      [DEFAULT]
+      storage_strategy = swift
+      replica_snapshot_driver = cinder
+
+.. note::
+
+  administrator needs to set these opts in both `trove-geustagent.conf` and `trove.conf`
+
+
 Initialize Trove Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

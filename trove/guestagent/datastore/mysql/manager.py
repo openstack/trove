@@ -13,11 +13,19 @@
 #    limitations under the License.
 import semantic_version
 
+
+from oslo_log import log as logging
+
+
 from trove.common import cfg
+from trove.common import exception
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mysql import service
 from trove.guestagent.datastore.mysql_common import manager
 
+
 CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 
 
 class Manager(manager.MySqlManager):
@@ -48,3 +56,32 @@ class Manager(manager.MySqlManager):
                       f"--ignore-db-dir=conf.d")
 
         return params
+
+    def pre_create_backup(self, context, **kwargs):
+        LOG.info("Running pre_create_backup")
+        status = {}
+        try:
+            INFO_FILE = "%s/xtrabackup_binlog_info" % self.app.get_data_dir()
+            self.app.execute_sql("FLUSH TABLES WITH READ LOCK;")
+            stt = self.app.execute_sql("SHOW MASTER STATUS;")
+            for row in stt:
+                status = {
+                    'log_file': row._mapping['File'],
+                    'log_position': row._mapping['Position'],
+                    'log_executed_gtid_set': row._mapping['Executed_Gtid_Set'],
+                }
+
+                binlog = "\t".join(map(str, [
+                    status['log_file'],
+                    status['log_position'],
+                    status['log_executed_gtid_set']]))
+                operating_system.write_file(INFO_FILE, binlog, as_root=True)
+
+            mount_point = CONF.get(CONF.datastore_manager).mount_point
+            operating_system.sync(mount_point)
+            operating_system.fsfreeze(mount_point)
+        except Exception as e:
+            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+            raise exception.BackupCreationError(str(e))
+
+        return status

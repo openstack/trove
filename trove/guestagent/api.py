@@ -46,7 +46,7 @@ class API(object):
 
     # API_LATEST_VERSION should bump the minor number each time
     # a method signature is added or changed
-    API_LATEST_VERSION = '1.1'
+    API_LATEST_VERSION = '1.2'
 
     # API_BASE_VERSION should only change on major version upgrade
     API_BASE_VERSION = '1.0'
@@ -60,6 +60,7 @@ class API(object):
         'newton': '1.0',
         'ussuri': '1.0',
         'victoria': '1.1',
+        'epoxy': '1.2',
 
         'latest': API_LATEST_VERSION
     }
@@ -699,3 +700,23 @@ class API(object):
         self._cast("rebuild", version=version,
                    ds_version=ds_version, config_contents=config_contents,
                    config_overrides=config_overrides)
+
+    def pre_create_backup(self, **kwargs):
+        version = "1.2"
+        if not self.client.can_send_version(version):
+            raise exception.GuestError(
+                original_message="Operation requires guest version 1.2 or "
+                "later")
+
+        return self._call("pre_create_backup", self.agent_high_timeout,
+                          version=version, **kwargs)
+
+    def post_create_backup(self, **kwargs):
+        version = "1.2"
+        if not self.client.can_send_version(version):
+            raise exception.GuestError(
+                original_message="Operation requires guest version 1.2 or "
+                "later")
+
+        return self._call("post_create_backup", self.agent_high_timeout,
+                          version=version, **kwargs)

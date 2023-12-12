@@ -363,3 +363,15 @@ class MySqlManager(manager.Manager):
             raise
         finally:
             self.status.end_install(error_occurred=self.prepare_error)
+
+    def post_create_backup(self, context, **kwargs):
+        LOG.info("Running post_create_backup")
+        try:
+            self.app.execute_sql("UNLOCK TABLES;")
+
+            mount_point = CONF.get(CONF.datastore_manager).mount_point
+            operating_system.fsunfreeze(mount_point)
+        except Exception as e:
+            LOG.error("Run post_create_backup failed, error: %s" % str(e))
+
+        return {}

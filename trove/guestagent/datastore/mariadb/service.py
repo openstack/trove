@@ -16,11 +16,16 @@
 
 from oslo_log import log as logging
 
+from trove.common import cfg
+from trove.common import constants
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.datastore.mysql_common import service as mysql_service
+from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
 
+
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -79,6 +84,32 @@ class MariaDBApp(mysql_service.BaseMySqlApp):
         cmd = "SELECT MASTER_GTID_WAIT('%s')" % txn
         with mysql_util.SqlClient(self.get_engine()) as client:
             client.execute(cmd)
+
+    def reset_data_for_restore_snapshot(self, data_dir):
+        """This function try remove slave status in database"""
+        command = "mysqld --skip-slave-start=ON --datadir=%s" % data_dir
+
+        extra_volumes = {
+            "/etc/mysql": {"bind": "/etc/mysql", "mode": "rw"},
+            constants.MYSQL_HOST_SOCKET_PATH: {
+                "bind": "/var/run/mysqld", "mode": "rw"},
+            data_dir: {"bind": data_dir, "mode": "rw"},
+        }
+
+        try:
+            self.start_db(ds_version=CONF.datastore_version, command=command,
+                          extra_volumes=extra_volumes)
+            self.stop_slave(for_failover=False)
+        except Exception as e:
+            LOG.error("Failed to start db to restore snapshot: %s", str(e))
+        finally:
+            try:
+                LOG.debug(
+                    'The init container log: %s',
+                    docker_util.get_container_logs(self.docker_client))
+                docker_util.remove_container(self.docker_client)
+            except Exception as err:
+                LOG.error('Failed to remove container. error: %s', str(err))
 
 
 class MariaDBRootAccess(mysql_service.BaseMySqlRootAccess):

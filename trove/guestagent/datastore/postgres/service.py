@@ -264,7 +264,7 @@ class PgSqlApp(service.BaseDbApp):
 
     def restore_backup(self, context, backup_info, restore_location):
         backup_id = backup_info['id']
-        storage_driver = CONF.storage_strategy
+        storage_driver = backup_info.get('storage_driver', 'swift')
         backup_driver = self.get_backup_strategy()
         image = self.get_backup_image()
         name = 'db_restore'
@@ -365,6 +365,18 @@ class PgSqlApp(service.BaseDbApp):
             msg = f'Failed to run pg_rewind in container, error: {result}'
             LOG.error(msg)
             raise Exception(msg)
+
+    def reset_data_for_restore_snapshot(self, restore_location):
+        LOG.info('Run reset_data_for_restore_snapshot work has been defined.')
+        files = [
+            f"{self.datadir}/recovery.signal"
+        ]
+        for file in files:
+            try:
+                operating_system.remove(
+                    path=file, force=True, recursive=True, as_root=True)
+            except Exception as e:
+                LOG.warning(e)
 
 
 class PgSqlAdmin(object):

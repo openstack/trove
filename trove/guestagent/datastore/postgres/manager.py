@@ -16,6 +16,7 @@ import re
 
 from oslo_log import log as logging
 from oslo_service import periodic_task
+import semantic_version
 
 from trove.common import cfg
 from trove.common import constants
@@ -29,6 +30,7 @@ from trove.guestagent import guest_log
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+PG_FILE_AUTOCONF = 'postgresql.auto.conf'
 
 
 class PostgresManager(manager.Manager):
@@ -143,7 +145,9 @@ class PostgresManager(manager.Manager):
         # Restore data from backup and reset root password
         if backup_info:
             self.perform_restore(context, self.app.datadir, backup_info)
-            if not snapshot:
+            is_swift = backup_info.get(
+                'storage_driver', 'swift') == "swift"
+            if not snapshot and is_swift:
                 signal_file = f"{self.app.datadir}/recovery.signal"
                 operating_system.execute_shell_cmd(
                     f"touch {signal_file}", [], shell=True, as_root=True)
@@ -301,3 +305,75 @@ class PostgresManager(manager.Manager):
             raise
         finally:
             self.status.end_install(error_occurred=self.prepare_error)
+
+    def pre_create_backup(self, context, **kwargs):
+        LOG.info("Running pre_create_backup")
+
+        cur_version = semantic_version.Version.coerce(CONF.datastore_version)
+
+        def _start_backup():
+            # See this commit:
+            # https://git.postgresql.org/gitweb/?p=postgresql.git;
+            # a=commit;h=58c41712d55fadd35477b2ec3a02d12eca2bfbf2
+            # Avoid:
+            # https://www.postgresql.org/message-id/
+            # CAB7nPqTQ7KkijePPtXjGQ65QunKx_KQfc03AzBnO5
+            # %2B4bLSbObQ%40mail.gmail.com
+            if not self.app.is_replica():
+                if cur_version < semantic_version.Version('15.0.0'):
+                    cmd = "SELECT pg_start_backup('snapshot backup', true)"
+                else:
+                    cmd = "SELECT pg_backup_start('snapshot backup', true)"
+
+                self.app.adm.query(cmd)
+            else:
+                self.app.adm.psql("CHECKPOINT;")
+
+            # Advoid:
+            # https://www.postgresql.org/message-id/
+            # 20220203094727.w3ca3sukfu5xu7hk%40jrouhaud
+            autoconf_file = (f"{self.app.datadir}/"
+                             f"{PG_FILE_AUTOCONF}")
+            cmd = "SHOW max_connections;"
+            result = self.app.adm.query(cmd)[0][0]
+            max_connections = f'max_connections={result}'
+            operating_system.write_file(autoconf_file,
+                                        max_connections, as_root=True)
+
+        _start_backup()
+
+        try:
+            mount_point = CONF.get(CONF.datastore_manager).mount_point
+            operating_system.sync(mount_point)
+            operating_system.fsfreeze(mount_point)
+        except Exception as e:
+            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+            raise exception.BackupCreationError(str(e))
+        return {}
+
+    def post_create_backup(self, context, **kwargs):
+        """This is called after do create backup without drivers
+        that do in guest
+        """
+
+        cur_version = semantic_version.Version.coerce(CONF.datastore_version)
+
+        def _stop_backup():
+            try:
+                if cur_version < semantic_version.Version('15.0.0'):
+                    command = "SELECT pg_stop_backup(true)"
+                else:
+                    command = "SELECT pg_backup_stop(true)"
+
+                self.app.adm.query(command)
+            except Exception as e:
+                LOG.error("Run _stop_backup failed, error: %s" % str(e))
+
+        try:
+            mount_point = CONF.get(CONF.datastore_manager).mount_point
+            operating_system.fsunfreeze(mount_point)
+        except Exception as e:
+            LOG.warning('Failed to run post_create_backup %s' % e)
+            raise exception.BackupCreationError(str(e))
+        _stop_backup()
+        return {}

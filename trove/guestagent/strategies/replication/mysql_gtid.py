@@ -22,13 +22,17 @@ LOG = logging.getLogger(__name__)
 
 class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
     """MySql Replication coordinated by GTIDs."""
+
     def connect_to_master(self, service, master_info):
         if 'dataset' in master_info:
             # pull the last executed GTID from the master via
             # the xtrabackup metadata file. If that value is
             # provided we need to set the gtid_purged variable
             # before executing the CHANGE MASTER TO command
-            last_gtid = self.read_last_master_gtid(service)
+            if master_info.get('dataset', {}).get('log_executed_gtid_set'):
+                last_gtid = master_info['dataset']['log_executed_gtid_set']
+            else:
+                last_gtid = self.read_last_master_gtid(service)
             LOG.info("last_gtid value is %s", last_gtid)
             if '-' in last_gtid:
                 # See

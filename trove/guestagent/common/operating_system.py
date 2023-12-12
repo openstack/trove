@@ -921,3 +921,27 @@ def get_filesystem_size(path):
     """
     ret = os.statvfs(path)
     return ret.f_blocks * ret.f_frsize
+
+
+def sync(path):
+    """Sync path files to disk."""
+    if not exists(path, is_directory=True, as_root=True):
+        raise exception.UnprocessableEntity(
+            _("Invalid path: %s") % path)
+    execute_shell_cmd('sync', [], path, as_root=True)
+
+
+def fsfreeze(mount_point):
+    """Freeze mount point file system"""
+    if not exists(mount_point, is_directory=True, as_root=True):
+        raise exception.UnprocessableEntity(
+            _("Invalid path: %s") % mount_point)
+    execute_shell_cmd('fsfreeze', [('f', True)], mount_point, as_root=True)
+
+
+def fsunfreeze(mount_point):
+    """Unfreeze mount point file system"""
+    if not exists(mount_point, is_directory=True, as_root=True):
+        raise exception.UnprocessableEntity(
+            _("Invalid path: %s") % mount_point)
+    execute_shell_cmd('fsfreeze', [('u', True)], mount_point, as_root=True)

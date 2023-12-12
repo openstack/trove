@@ -15,7 +15,8 @@
             "parent_id": null,
             "size": 0.14,
             "status": "COMPLETED",
-            "updated": "2014-10-30T12:30:00"
+            "updated": "2014-10-30T12:30:00",
+            "storage_driver": "cinder"
         },
         {
             "created": "2014-10-30T12:30:00",
@@ -32,7 +33,8 @@
             "parent_id": "a9832168-7541-4536-b8d9-a8a9b79cf1b4",
             "size": 0.14,
             "status": "COMPLETED",
-            "updated": "2014-10-30T12:30:00"
+            "updated": "2014-10-30T12:30:00",
+            "storage_driver": "swift"
         }
     ]
 }

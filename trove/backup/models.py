@@ -52,7 +52,7 @@ class Backup(object):
     @classmethod
     def create(cls, context, instance, name, description=None,
                parent_id=None, incremental=False, swift_container=None,
-               restore_from=None):
+               restore_from=None, storage_driver=None):
         """
         create db record for Backup
         :param cls:
@@ -66,6 +66,8 @@ class Backup(object):
         :param swift_container: Swift container name.
         :param restore_from: A dict that contains backup information of another
                              region.
+        :param storage_driver: The storage driver - that being use
+                               to save backup data.
         :return:
         """
         backup_state = BackupState.NEW
@@ -76,6 +78,9 @@ class Backup(object):
         location = None
         backup_type = constants.BACKUP_TYPE_FULL
         size = None
+
+        if not storage_driver:
+            storage_driver = CONF.storage_strategy
 
         if restore_from:
             # Check location and datastore version.
@@ -112,7 +117,8 @@ class Backup(object):
 
             cls.validate_can_perform_action(instance_model, 'backup_create')
 
-            cls.verify_swift_auth_token(context)
+            if storage_driver == "swift":
+                cls.verify_swift_auth_token(context)
 
             ds = instance_model.datastore
             ds_version = instance_model.datastore_version
@@ -151,7 +157,8 @@ class Backup(object):
                     location=location,
                     checksum=checksum,
                     backup_type=backup_type,
-                    size=size
+                    size=size,
+                    storage_driver=storage_driver
                 )
             except exception.InvalidModelError as ex:
                 LOG.exception("Unable to create backup record for "
@@ -169,6 +176,7 @@ class Backup(object):
                     'parent': parent,
                     'datastore': ds.name,
                     'datastore_version': ds_version.name,
+                    'storage_driver': storage_driver,
                     'swift_container': swift_container
                 }
                 api.API(context).create_backup(backup_info, instance_id)
@@ -412,7 +420,7 @@ class DBBackup(DatabaseModelBase):
                     'size', 'tenant_id', 'state', 'instance_id',
                     'checksum', 'backup_timestamp', 'deleted', 'created',
                     'updated', 'deleted_at', 'parent_id',
-                    'datastore_version_id']
+                    'datastore_version_id', 'storage_driver']
     _table_name = 'backups'
 
     @property
@@ -457,6 +465,16 @@ class DBBackup(DatabaseModelBase):
             return datastore_models.DatastoreVersion.load_by_uuid(
                 self.datastore_version_id)
 
+    @property
+    def is_snapshot(self):
+        if not self.location:
+            return False
+
+        if self.location.startswith("cinder://"):
+            return True
+
+        return False
+
     def check_swift_object_exist(self, context, verify_checksum=False):
         try:
             parts = self.location.split('/')
@@ -480,6 +498,24 @@ class DBBackup(DatabaseModelBase):
                 return False
             else:
                 raise exception.SwiftAuthError(tenant_id=context.project_id)
+
+    def check_volume_snapshot_exist(self, context, verify_checksum=False):
+        try:
+            snapshot_id = self.location.split('/')[-1]
+            client = clients.create_cinder_client(context)
+            LOG.debug("Checking if backup exists in %s", self.location)
+            client.volume_snapshots.get(snapshot_id)
+
+            return True
+        except Exception as e:
+            LOG.error(e)
+            return False
+
+    def check_location_exist(self, context, verify_checksum=False):
+        if self.is_snapshot:
+            return self.check_volume_snapshot_exist(context, verify_checksum)
+
+        return self.check_swift_object_exist(context, verify_checksum)
 
 
 class DBBackupStrategy(DatabaseModelBase):

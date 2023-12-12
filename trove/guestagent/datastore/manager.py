@@ -792,7 +792,13 @@ class Manager(periodic_task.PeriodicTasks):
                                        'encrypted backup.')
 
         try:
-            self.app.restore_backup(context, backup_info, restore_location)
+            storage_driver = backup_info.get(
+                'storage_driver', CONF.storage_strategy)
+            if storage_driver in ["cinder"]:
+                self.app.restore_snapshot(
+                    context, backup_info, restore_location)
+            else:
+                self.app.restore_backup(context, backup_info, restore_location)
         except Exception:
             LOG.error("Failed to restore from backup %s.", backup_info['id'])
             self.status.set_status(service_status.ServiceStatuses.FAILED)
@@ -941,3 +947,32 @@ class Manager(periodic_task.PeriodicTasks):
     def wait_for_txn(self, context, txn):
         raise exception.DatastoreOperationNotSupported(
             operation='wait_for_txn', datastore=self.manager)
+
+    def pre_create_backup(self, context, **kwargs):
+        """This is called before do create backup without drivers
+        that do in guest
+        """
+        LOG.info('No pre_create_backup work has been defined.')
+        try:
+            mount_point = CONF.get(CONF.datastore_manager).mount_point
+            # Sync Disk
+            operating_system.sync(mount_point)
+            # Freeze FS
+            operating_system.fsfreeze(mount_point)
+        except Exception as e:
+            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+
+        return {}
+
+    def post_create_backup(self, context, **kwargs):
+        """This is called after do create backup without drivers
+        that do in guest
+        """
+        LOG.info('No post_create_backup work has been defined.')
+        try:
+            mount_point = CONF.get(CONF.datastore_manager).mount_point
+            operating_system.fsunfreeze(mount_point)
+        except Exception as e:
+            LOG.error("Run post_create_backup failed, error: %s" % str(e))
+
+        return {}

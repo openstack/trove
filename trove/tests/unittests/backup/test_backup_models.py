@@ -66,7 +66,7 @@ class BackupCreateTest(trove_testtools.TestCase):
                 tenant_id=self.context.project_id).delete()
 
     @patch.object(api.API, 'get_client', MagicMock(return_value=MagicMock()))
-    def test_create(self):
+    def test_create_backup(self):
         instance = MagicMock()
         with patch.object(instance_models.BuiltInstance, 'load',
                           return_value=instance):
@@ -393,6 +393,69 @@ class BackupORMTest(trove_testtools.TestCase):
 
     def test_filename(self):
         self.assertEqual(BACKUP_FILENAME, self.backup.filename)
+
+    def test_is_failed(self):
+        self.backup.state = state.BackupState.FAILED
+        self.backup.location = None
+        self.backup.save()
+        self.assertIsNone(self.backup.container_name)
+
+    def test_create_snapshot(self):
+        backup = models.DBBackup.create(tenant_id=self.context.project_id,
+                                        name=BACKUP_NAME,
+                                        state=BACKUP_STATE,
+                                        instance_id=self.instance_id,
+                                        deleted=False,
+                                        size=2.0,
+                                        storage_driver="cinder",
+                                        location="cinder://snapshot_id")
+        self.assertEqual(backup.is_snapshot, True)
+
+    def test_create_without_snapshot(self):
+        backup = models.DBBackup.create(tenant_id=self.context.project_id,
+                                        name=BACKUP_NAME,
+                                        state=BACKUP_STATE,
+                                        instance_id=self.instance_id,
+                                        deleted=False,
+                                        size=2.0,
+                                        storage_driver="swift",
+                                        location=BACKUP_LOCATION)
+        self.assertEqual(backup.is_snapshot, False)
+        self.assertEqual(backup.location, BACKUP_LOCATION)
+
+    def test_create_without_storage_driver_swift(self):
+        self.patch_conf_property('storage_strategy', 'swift')
+        backup = models.DBBackup.create(tenant_id=self.context.project_id,
+                                        name=BACKUP_NAME,
+                                        state=BACKUP_STATE,
+                                        instance_id=self.instance_id,
+                                        deleted=False,
+                                        size=2.0,
+                                        location=BACKUP_LOCATION)
+        self.assertFalse(backup.is_snapshot)
+
+    def test_create_without_storage_driver_cinder(self):
+        self.patch_conf_property('storage_strategy', 'cinder')
+        backup = models.DBBackup.create(tenant_id=self.context.project_id,
+                                        name=BACKUP_NAME,
+                                        state=BACKUP_STATE,
+                                        instance_id=self.instance_id,
+                                        deleted=False,
+                                        size=2.0,
+                                        location="cinder://snapshot_id")
+        self.assertTrue(backup.is_snapshot)
+
+    def test_check_location_exist_cinder(self):
+        self.patch_conf_property('storage_strategy', 'cinder')
+        backup = models.DBBackup.create(tenant_id=self.context.project_id,
+                                        name=BACKUP_NAME,
+                                        state=BACKUP_STATE,
+                                        instance_id=self.instance_id,
+                                        deleted=False,
+                                        size=2.0,
+                                        location="cinder://snapshot_id")
+        self.assertTrue(backup.is_snapshot)
+        self.assertFalse(backup.check_location_exist(self.context))
 
     def test_filename_bad(self):
 

@@ -1304,7 +1304,7 @@ class Instance(BuiltInstance):
                 raise exception.BackupTooLarge(
                     backup_size=backup_info.size, disk_size=target_size)
 
-            if not backup_info.check_swift_object_exist(
+            if not backup_info.check_location_exist(
                     context,
                     verify_checksum=CONF.verify_swift_checksum_on_restore):
                 raise exception.BackupFileNotFound(

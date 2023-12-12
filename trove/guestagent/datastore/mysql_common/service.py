@@ -698,7 +698,7 @@ class BaseMySqlApp(service.BaseDbApp):
 
     def restore_backup(self, context, backup_info, restore_location):
         backup_id = backup_info['id']
-        storage_driver = CONF.storage_strategy
+        storage_driver = backup_info.get('storage_driver', 'swift')
         backup_driver = self.get_backup_strategy()
         user_token = context.auth_token
         auth_url = CONF.service_credentials.auth_url
@@ -854,6 +854,29 @@ class BaseMySqlApp(service.BaseDbApp):
         LOG.info('Starting new db container with version %s for upgrade',
                  new_version)
         self.start_db(update_db=True, ds_version=new_version)
+
+    def restore_snapshot(self, context, backup_info, restore_location):
+        LOG.info('Doing restore snapshot.')
+        backup_id = backup_info['id']
+        LOG.debug('Stop the database before restore from %s', backup_id)
+        self.stop_db()
+
+        LOG.debug('Deleting ib_logfile files before restore from snapshot %s',
+                  backup_id)
+        operating_system.chown(restore_location, self.database_service_uid,
+                               self.database_service_gid, force=True,
+                               as_root=True)
+
+        files = [
+            "%s/%s.cnf" % (guestagent_utils.get_conf_dir(), ADMIN_USER_NAME),
+            "%s/%s.cnf" % (self.get_data_dir(), 'auto')
+        ]
+        for file in files:
+            operating_system.remove(
+                path=file, force=True, recursive=True, as_root=True)
+        # Start to run restore inside a separate docker container
+        LOG.info('Starting to restore snapshot %s', backup_id)
+        self.reset_data_for_restore_snapshot(restore_location)
 
 
 class BaseMySqlRootAccess(object):

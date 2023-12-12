@@ -447,7 +447,8 @@ class BaseDbApp(object):
 
     def create_backup(self, context, backup_info, volumes_mapping={},
                       need_dbuser=True, extra_params=''):
-        storage_driver = CONF.storage_strategy
+        storage_driver = backup_info.get(
+            'storage_driver', CONF.storage_strategy)
         backup_driver = self.get_backup_strategy()
         incremental = ''
         backup_type = 'full'
@@ -572,3 +573,11 @@ class BaseDbApp(object):
     def database_service_gid(self):
         return cfg.get_configuration_property(
             'database_service_gid') or self.database_service_uid
+
+    def restore_snapshot(self, context, backup_info, restore_location):
+        LOG.info('Doing restore snapshot.')
+        self.reset_data_for_restore_snapshot(restore_location)
+
+    def reset_data_for_restore_snapshot(self, restore_location):
+        LOG.info('No reset_data_for_restore_snapshot work has been defined.')
+        pass

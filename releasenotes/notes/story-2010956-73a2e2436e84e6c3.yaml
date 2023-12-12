@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Add support of new backup storage driver "cinder".
+    We can provision a new replica instance or backup fast
+    if we use cinder as the backend storage.

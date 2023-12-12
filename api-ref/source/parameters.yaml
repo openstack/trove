@@ -855,6 +855,12 @@ slave_of:
   in: body
   required: false
   type: string
+storage_driver:
+  description: |
+    The backup strategy
+  type: string
+  in: body
+  required: false
 swift_container:
   description: |
     User defined swift container name. When creating backups, the swift

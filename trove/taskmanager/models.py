@@ -20,9 +20,8 @@ import traceback
 from eventlet import greenthread
 from eventlet.timeout import Timeout
 from oslo_log import log as logging
-from swiftclient.client import ClientException
+from oslo_utils import timeutils as otimeutils
 
-from trove.backup import models as bkup_models
 from trove.backup.models import Backup
 from trove.backup.models import DBBackup
 from trove.backup.state import BackupState
@@ -56,6 +55,7 @@ from trove.common import template
 from trove.common import timeutils
 from trove.common import utils
 from trove.common.utils import try_recover
+from trove.conductor import api as conductor_api
 from trove.configuration import models as config_models
 from trove.extensions.common import models as common_models
 from trove.instance import models as inst_models
@@ -627,26 +627,31 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         else:
             files = self.get_injected_files(datastore_manager, ds_version)
 
+        backup_info = None
+        cinder_snapshot_id = None
+        if backup_id is not None:
+            backup = Backup.get_by_id(self.context, backup_id)
+            backup_info = {
+                'id': backup_id,
+                'instance_id': backup.instance_id,
+                'location': backup.location,
+                'type': backup.backup_type,
+                'checksum': backup.checksum,
+                'storage_driver': backup.storage_driver
+            }
+            if backup.storage_driver in ["cinder"]:
+                cinder_snapshot_id = backup.location.split("/")[-1]
+
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         volume_info = self._create_server_volume(
             flavor['id'], image_id,
             datastore_manager, volume_size,
             availability_zone, networks,
-            files, cinder_volume_type,
-            scheduler_hints
+            files, cinder_snapshot_id,
+            cinder_volume_type, scheduler_hints
         )
 
         config = self._render_config(flavor)
-
-        backup_info = None
-        if backup_id is not None:
-            backup = bkup_models.Backup.get_by_id(self.context, backup_id)
-            backup_info = {'id': backup_id,
-                           'instance_id': backup.instance_id,
-                           'location': backup.location,
-                           'type': backup.backup_type,
-                           'checksum': backup.checksum,
-                           }
         self._guest_prepare(flavor['ram'], volume_info,
                             packages, databases, users, backup_info,
                             config.config_contents, root_password,
@@ -682,7 +687,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self._log_and_raise(e, log_fmt, exc_fmt, self.id, err)
 
     def get_replication_master_snapshot(self, context, slave_of_id, flavor,
-                                        parent_backup_id=None):
+                                        parent_backup_id=None,
+                                        snapshot_driver='swift'):
         # First check to see if we need to take a backup
         master = BuiltInstanceTasks.load(context, slave_of_id)
         backup_required = master.backup_required_for_replication()
@@ -707,6 +713,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             'datastore_version_id': self.datastore_version.id,
             'deleted': False,
             'replica_number': 1,
+            'backup_info': {},
+            'storage_driver': snapshot_driver
         }
 
         replica_backup_id = None
@@ -744,6 +752,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             snapshot.update({
                 'config': self._render_replica_config(flavor).config_contents
             })
+
+            # Create a cinder snapshot without call agent
+            if snapshot_driver == 'cinder':
+                master.create_backup(snapshot_info)
+
+            snapshot['dataset'].update(snapshot_info.get('backup_info'))
             return snapshot
         except Exception as e_create:
             create_log_fmt = (
@@ -880,11 +894,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume(self, flavor_id, image_id, datastore_manager,
                               volume_size, availability_zone, nics, files,
-                              volume_type, scheduler_hints):
+                              snapshot_id, volume_type, scheduler_hints):
         LOG.debug("Begin _create_server_volume for instance: %s", self.id)
         server = None
         volume_info = self._build_volume_info(
             datastore_manager,
+            snapshot_id=snapshot_id,
             volume_size=volume_size,
             volume_type=volume_type,
             availability_zone=availability_zone)
@@ -919,7 +934,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("End _create_server_volume for instance: %s", self.id)
         return volume_info
 
-    def _build_volume_info(self, datastore_manager, volume_size=None,
+    def _build_volume_info(self, datastore_manager,
+                           snapshot_id=None, volume_size=None,
                            volume_type=None, availability_zone=None):
         volume_info = None
         volume_support = self.volume_support
@@ -930,7 +946,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             try:
                 volume_info = self._create_volume(
                     volume_size, volume_type, datastore_manager,
-                    availability_zone)
+                    availability_zone, snapshot_id=snapshot_id)
             except Exception as e:
                 log_fmt = "Failed to create volume for instance %s"
                 exc_fmt = _("Failed to create volume for instance %s")
@@ -1004,7 +1020,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return block_device_mapping_v2
 
     def _create_volume(self, volume_size, volume_type, datastore_manager,
-                       availability_zone):
+                       availability_zone, snapshot_id=None):
         LOG.debug("Begin _create_volume for id: %s", self.id)
         volume_client = create_cinder_client(self.context, self.region_name)
         volume_desc = ("datastore volume for %s" % self.id)
@@ -1013,6 +1029,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             'name': "trove-%s" % self.id,
             'description': volume_desc,
             'volume_type': volume_type}
+
+        if snapshot_id:
+            volume_kwargs.update({'snapshot_id': snapshot_id})
+
         if CONF.enable_volume_az:
             volume_kwargs['availability_zone'] = availability_zone
         volume_ref = volume_client.volumes.create(**volume_kwargs)
@@ -1257,7 +1277,11 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
     def create_backup(self, backup_info):
         LOG.info("Initiating backup for instance %s, backup_info: %s", self.id,
                  backup_info)
-        self.guest.create_backup(backup_info)
+        storage_driver = backup_info.get('storage_driver', 'swfit')
+        if storage_driver in ["cinder"]:
+            SnapshotTasks(self, backup_info)._create_snapshot()
+        else:
+            self.guest.create_backup(backup_info)
 
     def backup_required_for_replication(self):
         LOG.debug("Check if replication backup is required for instance %s.",
@@ -1570,6 +1594,14 @@ class BackupTasks(object):
             client.delete_object(container, filename)
 
     @classmethod
+    def delete_snapshot_from_cinder(cls, context, snapshot_id):
+        client = clients.create_cinder_client(context)
+        try:
+            client.volume_snapshots.delete(snapshot_id)
+        except Exception as e:
+            LOG.error(e)
+
+    @classmethod
     def delete_backup(cls, context, backup_id):
         """Delete backup from swift."""
 
@@ -1581,31 +1613,114 @@ class BackupTasks(object):
             backup.save()
 
         LOG.info("Deleting backup %s.", backup_id)
-        backup = bkup_models.Backup.get_by_id(context, backup_id)
+        backup = Backup.get_by_id(context, backup_id)
         try:
             filename = backup.filename
             # Do not remove the object if the backup was restored from remote
             # location.
-            if filename and backup.state != bkup_models.BackupState.RESTORED:
-                BackupTasks.delete_files_from_swift(context,
-                                                    backup.container_name,
-                                                    filename)
-        except ValueError:
-            _delete(backup)
-        except ClientException as e:
-            if e.http_status == 404:
-                # Backup already deleted in swift
-                _delete(backup)
-            else:
-                LOG.exception("Error occurred when deleting from swift. "
-                              "Details: %s", e)
-                backup.state = bkup_models.BackupState.DELETE_FAILED
-                backup.save()
-                raise TroveError(_("Failed to delete swift object for backup "
-                                   "%s.") % backup_id)
-        else:
+            if filename and backup.state != BackupState.RESTORED:
+                if backup.storage_driver in ["cinder"]:
+                    backup_id = backup.location.split("/")[-1]
+                    BackupTasks.delete_snapshot_from_cinder(context, backup_id)
+                else:
+                    BackupTasks.delete_files_from_swift(context,
+                                                        backup.container_name,
+                                                        filename)
+        except Exception as e:
+            LOG.exception("Error occurred when deleting. "
+                          "Details: %s", e)
+            backup.state = BackupState.DELETE_FAILED
+            backup.save()
+            raise TroveError(_("Failed to delete object for backup "
+                               "%s.") % backup_id)
+        finally:
             _delete(backup)
         LOG.info("Deleted backup %s successfully.", backup_id)
+
+
+class SnapshotTasks(object):
+    """Performs volume snapshot action"""
+
+    def __init__(self, instance, backup_info):
+        self.backup_id = backup_info.get('id')
+        self.instance = instance
+        self.cinder = self.instance.volume_client
+        self.snapshot_id = None
+        self.snapshot_info = backup_info
+        self.backup_type = backup_info.get(
+            'backup_type', constants.BACKUP_TYPE_FULL)
+        self.ds_version = instance.ds_version
+
+        self.description = backup_info.get('description')
+        self.metadata = {
+            'backup_id': self.backup_id,
+            'backup_type': self.backup_type,
+            'datastore': self.ds_version.manager,
+            'datastore_version': self.ds_version.version,
+            'instance_id': self.instance.id,
+            'tenant_id': self.instance.tenant_id,
+        }
+        self.name = "trove-%s-backup" % self.backup_id
+
+    def _wait_snapshot_available(self):
+        snap = self.cinder.volume_snapshots.get(self.snapshot_id)
+        return snap.status == "available"
+
+    def _create_snapshot(self):
+        backup_state = {
+            'backup_id': self.backup_id,
+            'size': 0.0,
+            'state': BackupState.BUILDING,
+            'backup_type': self.backup_type
+        }
+        conductor = conductor_api.API(self.instance.context)
+
+        conductor.update_backup(self.instance.id,
+                                sent=otimeutils.utcnow_ts(microsecond=True),
+                                **backup_state)
+        try:
+            bak = self.instance.guest.pre_create_backup()
+            # !IMPORTANT update backup_info to pass guestagent
+            self.snapshot_info.update({'backup_info': bak})
+
+            snap = self.cinder.volume_snapshots.create(
+                self.instance.volume_id,
+                force=True, name=self.name,
+                description=self.description, metadata=self.metadata)
+
+            self.snapshot_id = snap.id
+
+            utils.poll_until(self._wait_snapshot_available,
+                             sleep_time=2,
+                             time_out=CONF.volume_time_out)
+
+            backup_state.update({
+                'checksum': None,
+                'location': "cinder://%s" % self.snapshot_id,
+                'size': snap.size,
+                'state': BackupState.COMPLETED,
+                'success': True,
+            })
+            self.instance.guest.post_create_backup()
+            LOG.info("Completed backup %s.", self.backup_id)
+        except GuestError as err:
+            LOG.error("Failed to create backup %s: %s" % (self.backup_id, err))
+            backup_state.update({
+                'success': False,
+                'state': BackupState.FAILED,
+            })
+        except Exception as e:
+            LOG.error("Failed to create backup %s: %s" % (self.backup_id, e))
+            backup_state.update({
+                'success': False,
+                'state': BackupState.FAILED,
+            })
+            self.instance.guest.post_create_backup()
+        finally:
+            conductor.update_backup(
+                self.instance.id,
+                sent=otimeutils.utcnow_ts(microsecond=True),
+                **backup_state)
 
 
 class ModuleTasks(object):

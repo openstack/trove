@@ -452,7 +452,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
 
         mock_build_volume_info.assert_called_with(
             'mysql', availability_zone=None, volume_size=2,
-            volume_type='volume_type'
+            volume_type='volume_type', snapshot_id=None
         )
         mock_guest_prepare.assert_called_with(
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
@@ -536,7 +536,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             image_id = None
         mock_build_volume_info.assert_called_with(
             'mysql', availability_zone=None, volume_size=2,
-            volume_type='volume_type'
+            volume_type='volume_type', snapshot_id=None
         )
         mock_guest_prepare.assert_called_with(
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
@@ -1093,6 +1093,7 @@ class BackupTasksTest(trove_testtools.TestCase):
         self.backup.updated = 'today'
         self.backup.size = 2.0
         self.backup.state = state.BackupState.NEW
+        self.backup.storage_driver = 'backup'
         self.bm_backup_patches = patch.multiple(
             backup_models.Backup,
             delete=MagicMock(return_value=None),

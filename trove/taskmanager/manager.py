@@ -339,13 +339,16 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Using scheduler hints %s for creating instance %s",
                   scheduler_hints, instance_id)
 
+        snapshot_driver = CONF.replica_snapshot_driver or CONF.storage_strategy
+
         # Create backup for master
         snapshot = None
         try:
             instance_tasks = FreshInstanceTasks.load(context, ids[0])
             snapshot = instance_tasks.get_replication_master_snapshot(
                 context, slave_of_id, flavor,
-                parent_backup_id=replica_backup_id)
+                parent_backup_id=replica_backup_id,
+                snapshot_driver=snapshot_driver)
             LOG.info('Snapshot info for creating replica of %s: %s',
                      slave_of_id, snapshot)
         except Exception as err:
