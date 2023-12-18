@@ -572,11 +572,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 nic_info["ipv4_cidr"] = subnet.get("cidr")
                 nic_info["ipv4_gateway"] = subnet.get("gateway_ip")
                 nic_info["ipv4_host_routes"] = subnet.get("host_routes")
+            # NOTE: only if the ipv6_ra_mode is dhcpv6-stateful,
+            # we need to configure the ip route for container. for slaac
+            # and dhcpv6-stateless mode, the route will be configured
+            # by the nic itself via the RA protocol.
             elif subnet.get("ip_version") == 6:
                 nic_info["ipv6_address"] = fixed_ip.get("ip_address")
                 nic_info["ipv6_cidr"] = subnet.get("cidr")
-                nic_info["ipv6_gateway"] = subnet.get("gateway_ip")
                 nic_info["ipv6_host_routes"] = subnet.get("host_routes")
+                if subnet.get("ipv6_ra_mode") == "dhcpv6-stateful":
+                    nic_info["ipv6_gateway"] = subnet.get("gateway_ip")
         return nic_info
 
     def create_instance(self, flavor, image_id, databases, users,
