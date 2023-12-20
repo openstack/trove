@@ -60,6 +60,7 @@
         post-config:
           $TROVE_CONF:
             DEFAULT:
+              swift_api_insecure: True
               usage_timeout: 1800
             network:
               network_isolation: True
