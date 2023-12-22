@@ -15,7 +15,6 @@
 #    under the License.
 
 from unittest.mock import MagicMock, Mock, patch, PropertyMock
-from proboscis.asserts import assert_equal
 
 from trove.backup.models import Backup
 from trove.common.exception import TroveError, ReplicationSlaveAttachError
@@ -61,7 +60,7 @@ class TestManager(trove_testtools.TestCase):
             with patch.object(self.manager, '_get_replica_txns',
                               return_value=txn_list):
                 result = self.manager._most_current_replica(master, None)
-                assert_equal(result, selected_master)
+                self.assertEqual(result, selected_master)
 
         with self.assertRaisesRegex(TroveError,
                                     'not all replicating from same'):
