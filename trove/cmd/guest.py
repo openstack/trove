@@ -22,6 +22,7 @@ from trove.common import cfg
 from trove.common import debug_utils
 from trove.common.i18n import _
 from trove.guestagent import api as guest_api
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent import volume
 
@@ -62,6 +63,16 @@ def main():
         msg = (_("The guest_id parameter is not set. guest_info.conf "
                "was not injected into the guest or not read by guestagent"))
         raise RuntimeError(msg)
+    if CONF.network_isolation:
+        # disable user-defined port to avoid potential default gateway
+        # conflict
+        try:
+            guestagent_utils.disable_user_defined_port()
+        except Exception as e:
+            LOG.warn("failed to down the user defined port when "
+                     "network_isolation is set to true due to: %s."
+                     "pass...", str(e))
+            pass
 
     # Create user and group for running docker container.
     LOG.info('Creating user and group for database service')
