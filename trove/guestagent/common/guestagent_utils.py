@@ -14,10 +14,14 @@
 #    under the License.
 
 from collections import abc
+import json
 import os
 import re
 
+from pyroute2 import IPRoute
+
 from trove.common import cfg
+from trove.common import constants
 from trove.common import pagination
 from trove.common import utils
 from trove.guestagent.common import operating_system
@@ -179,3 +183,16 @@ def get_conf_dir():
         operating_system.ensure_directory(conf_dir, as_root=True)
 
     return conf_dir
+
+
+def disable_user_defined_port():
+    with open(constants.ETH1_CONFIG_PATH) as fd:
+        eth1_config = json.load(fd)
+    ipr = IPRoute()
+    ifaces = ipr.get_links(address=eth1_config.get("mac_address"))
+    if not ifaces:
+        return
+    ifname = ifaces[0].get_attr('IFLA_IFNAME')
+    operating_system.execute_shell_cmd(f"ip link set {ifname} down", [],
+                                       shell=True,
+                                       as_root=True)
