@@ -12,6 +12,8 @@
 
 from oslo_policy import policy
 
+ADMIN_CTX_POLICY = 'context_is_admin'
+
 PATH_BASE = '/v1.0/{account_id}'
 
 PATH_INSTANCES = PATH_BASE + '/instances'
@@ -51,6 +53,10 @@ PATH_MODULES = PATH_BASE + '/modules'
 PATH_MODULE = PATH_MODULES + '/{module}'
 
 rules = [
+    policy.RuleDefault(
+        ADMIN_CTX_POLICY,
+        'role:admin',
+        description='Rule for cloud admin access'),
     policy.RuleDefault(
         'admin',
         'role:admin or is_admin:True',

@@ -37,6 +37,7 @@ from trove.common import context as rd_context
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import pastedeploy
+from trove.common import policy
 from trove.common import utils
 
 CONTEXT_KEY = 'trove.context'
@@ -541,10 +542,6 @@ class ContextMiddleware(base_wsgi.Middleware):
         user_id = request.headers.get('X-User-ID', None)
         roles = request.headers.get('X-Role', '').split(',')
         is_admin = False
-        for role in roles:
-            if role.lower() in self.admin_roles:
-                is_admin = True
-                break
         limits = self._extract_limits(request.params)
         context = rd_context.TroveContext(auth_token=auth_token,
                                           project_id=tenant_id,
@@ -554,6 +551,13 @@ class ContextMiddleware(base_wsgi.Middleware):
                                           marker=limits.get('marker'),
                                           service_catalog=service_catalog,
                                           roles=roles)
+        if self.admin_roles:
+            for role in roles:
+                if role.lower() in self.admin_roles:
+                    context.is_admin = True
+                    break
+        else:
+            context.is_admin = policy.check_is_admin(context)
         request.environ[CONTEXT_KEY] = context
 
     @classmethod

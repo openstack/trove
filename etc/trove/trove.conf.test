@@ -73,9 +73,6 @@ http_delete_rate = 500
 # default datastore
 default_datastore = a00000a0-00a0-0a00-00a0-000a000000aa
 
-# Auth
-admin_roles = admin
-
 # Users to ignore for user create/list/delete operations
 ignore_users = os_admin, root
 ignore_dbs = lost+found, mysql, information_schema

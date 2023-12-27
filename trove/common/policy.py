@@ -20,6 +20,7 @@ from oslo_policy import policy
 
 from trove.common import exception as trove_exceptions
 from trove.common import policies
+from trove.common.policies import base
 
 CONF = cfg.CONF
 _ENFORCER = None
@@ -49,6 +50,13 @@ def authorize_on_target(context, rule, target):
         return __authorize(context, rule, target=target)
     raise trove_exceptions.TroveError(
         "BUG: Target must not evaluate to False.")
+
+
+def check_is_admin(context):
+    try:
+        return authorize_on_tenant(context, base.ADMIN_CTX_POLICY)
+    except trove_exceptions.PolicyNotAuthorized:
+        return False
 
 
 def __authorize(context, rule, target=None):
