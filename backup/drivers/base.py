@@ -13,6 +13,7 @@
 #    limitations under the License.
 
 import os
+import re
 import signal
 import subprocess
 
@@ -30,6 +31,7 @@ class BaseRunner(object):
     cmd = ''
     restore_cmd = ''
     prepare_cmd = ''
+    backup_log = ''
 
     encrypt_key = CONF.backup_encryption_key
 
@@ -40,6 +42,7 @@ class BaseRunner(object):
         self.storage = kwargs.pop('storage', None)
         self.location = kwargs.pop('location', '')
         self.checksum = kwargs.pop('checksum', '')
+        self._gzip = False
 
         if 'restore_location' not in kwargs:
             kwargs['restore_location'] = self.datadir
@@ -56,9 +59,7 @@ class BaseRunner(object):
         # Only decrypt if the object name ends with .enc
         if self.location.endswith('.enc'):
             self.restore_command = self.decrypt_cmd
-        self.restore_command = (self.restore_command +
-                                self.unzip_cmd +
-                                (self.restore_cmd % kwargs))
+        self.restore_command = self.restore_cmd % kwargs
         self.prepare_command = self.prepare_cmd % kwargs
 
     @property
@@ -75,11 +76,11 @@ class BaseRunner(object):
 
     @property
     def zip_cmd(self):
-        return ' | gzip'
+        return self._gzip
 
     @property
     def unzip_cmd(self):
-        return 'gzip -d -c | '
+        return self._gzip
 
     @property
     def zip_manifest(self):
@@ -114,12 +115,26 @@ class BaseRunner(object):
         return '.enc' if self.encrypt_key else ''
 
     def _run(self):
+        """Running backup cmd"""
         LOG.info("Running backup cmd: %s", self.command)
-        self.process = subprocess.Popen(self.command, shell=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        preexec_fn=os.setsid)
-        self.pid = self.process.pid
+        with open(self.backup_log, "w+") as fp:
+            if not self._gzip:
+                self.process = subprocess.Popen(self.command.split(),
+                                                shell=False,
+                                                stdout=subprocess.PIPE,
+                                                stderr=fp,
+                                                preexec_fn=os.setsid)
+            else:
+                bkup_process = subprocess.Popen(self.command.split(),
+                                                shell=False,
+                                                stdout=subprocess.PIPE,
+                                                stderr=fp)
+                self.process = subprocess.Popen(["gzip"], shell=False,
+                                                stdin=bkup_process.stdout,
+                                                stdout=subprocess.PIPE,
+                                                stderr=fp)
+                bkup_process.stdout.close()
+            self.pid = self.process.pid
 
     def __enter__(self):
         """Start up the process."""
@@ -141,14 +156,11 @@ class BaseRunner(object):
             if exc_type is not None:
                 return False
 
-            try:
-                err = self.process.stderr.read()
-                if err:
-                    raise Exception(err)
-            except OSError:
-                pass
-
             if not self.check_process():
+                with open(self.backup_log, "r") as fp:
+                    err = fp.read()
+                    if err:
+                        raise Exception(err)
                 raise Exception()
 
         self.post_backup()
@@ -190,23 +202,42 @@ class BaseRunner(object):
         stream = self.storage.load(location, checksum)
 
         LOG.info('Running restore from stream, command: %s', command)
-        self.process = subprocess.Popen(command, shell=True,
-                                        stdin=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
         content_length = 0
-        for chunk in stream:
-            self.process.stdin.write(chunk)
-            content_length += len(chunk)
-        self.process.stdin.close()
-
-        try:
-            err = self.process.stderr.read()
-            if err:
-                raise Exception(err)
-        except OSError:
-            pass
+        if not re.match(r'.*.gz', location) or not self._gzip:
+            LOG.info('gz processor without gz file or with gzip disabled')
+            self.process = subprocess.Popen(command.split(), shell=False,
+                                            stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE)
+            for chunk in stream:
+                self.process.stdin.write(chunk)  # write data to mbstream
+                content_length += len(chunk)
+            stdout, stderr = self.process.communicate()
+        else:
+            LOG.info('gz processor with gz file')
+            gunzip = subprocess.Popen(["gzip", "-d", "-c"], shell=False,
+                                      stdin=subprocess.PIPE,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+            self.process = subprocess.Popen(command.split(), shell=False,
+                                            stdin=gunzip.stdout,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE)
+            for chunk in stream:
+                gunzip.stdin.write(chunk)  # write data to mbstream
+                content_length += len(chunk)
+            gunzip.stdin.close()
+            gunzip.stdout.close()
+            stdout, stderr = self.process.communicate()
+        stdout_str = stdout.decode()
+        stderr_str = stderr.decode()
+        LOG.info("command: %s, stdout: %s, stderr: %s",
+                 command, stdout_str, stderr_str)
 
         if not self.check_restore_process():
+            LOG.info('self.check_restore_process() False')
+            if stderr_str:
+                raise Exception(stderr_str)
             raise Exception()
 
         return content_length

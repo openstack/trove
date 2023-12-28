@@ -27,6 +27,8 @@ class PgBasebackup(base.BaseRunner):
     _is_read_only = None
 
     def __init__(self, *args, **kwargs):
+        self.backup_log = '/tmp/pgbackup.log'
+        self._gzip = False
         if not kwargs.get('wal_archive_dir'):
             raise AttributeError('wal_archive_dir attribute missing')
         self.wal_archive_dir = kwargs.pop('wal_archive_dir')
@@ -188,6 +190,14 @@ class PgBasebackup(base.BaseRunner):
             return False
         if not self.label:
             LOG.error("No backup label found")
+            return False
+        return True
+
+    def check_restore_process(self):
+        LOG.info('Checking return code of postgres restore process.')
+        return_code = self.process.returncode
+        if return_code != 0:
+            LOG.error('postgres process exited with %s', return_code)
             return False
         return True
 
