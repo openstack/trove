@@ -11,7 +11,9 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import re
 
+from oslo_concurrency import processutils
 from oslo_config import cfg
 from oslo_log import log as logging
 
@@ -24,7 +26,7 @@ CONF = cfg.CONF
 class MariaBackup(mysql_base.MySQLBaseRunner):
     """Implementation of Backup and Restore using mariabackup."""
     restore_cmd = ('mbstream -x -C %(restore_location)s')
-    prepare_cmd = ''
+    prepare_cmd = 'mariabackup --prepare --target--dir=%(restore_location)s'
 
     def __init__(self, *args, **kwargs):
         super(MariaBackup, self).__init__(*args, **kwargs)
@@ -45,6 +47,21 @@ class MariaBackup(mysql_base.MySQLBaseRunner):
             return False
 
         return True
+
+    def post_restore(self):
+        """Prepare after data restore."""
+        LOG.info("Running prepare command: %s.", self.prepare_command)
+        stdout, stderr = processutils.execute(*self.prepare_command.split())
+        LOG.info("The command: %s : stdout: %s, stderr: %s",
+                 self.prepare_command, stdout, stderr)
+        LOG.info("Checking prepare log")
+        if not stderr:
+            msg = "Empty prepare log file"
+            raise Exception(msg)
+        last_line = stderr.splitlines()[-1].strip()
+        if not re.search('completed OK!', last_line):
+            msg = "Prepare did not complete successfully"
+            raise Exception(msg)
 
 
 class MariaBackupIncremental(MariaBackup):
