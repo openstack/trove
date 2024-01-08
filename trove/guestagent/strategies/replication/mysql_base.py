@@ -95,7 +95,8 @@ class MysqlReplicationBase(base.Replication):
 
         volumes_mapping = {
             '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'},
-            "/var/run/mysqld": {"bind": "/var/run/mysqld", "mode": "ro"},
+            constants.MYSQL_HOST_SOCKET_PATH: {"bind": "/var/run/mysqld",
+                                               "mode": "ro"},
             '/tmp': {'bind': '/tmp', 'mode': 'rw'}
         }
         service.create_backup(context, snapshot_info,

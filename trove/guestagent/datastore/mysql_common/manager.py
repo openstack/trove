@@ -21,6 +21,7 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import configurations
+from trove.common import constants
 from trove.common import exception
 from trove.common.notification import EndNotification
 from trove.common import utils
@@ -115,7 +116,8 @@ class MySqlManager(manager.Manager):
             # Set /var/run/mysqld to allow localhost access.
             volumes_mapping = {
                 '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'},
-                "/var/run/mysqld": {"bind": "/var/run/mysqld", "mode": "ro"},
+                constants.MYSQL_HOST_SOCKET_PATH: {"bind": "/var/run/mysqld",
+                                                   "mode": "ro"},
                 '/tmp': {'bind': '/tmp', 'mode': 'rw'}
             }
             self.app.create_backup(context, backup_info,
