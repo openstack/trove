@@ -656,9 +656,7 @@ mysql_opts = [
                deprecated_reason='Will be replaced by a configuration group '
                'option: long_query_time'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.'),
     cfg.StrOpt(
         'docker_image', default='mysql',
         help='Database docker image.'
@@ -739,9 +737,7 @@ percona_opts = [
                'option: long_query_time'),
     cfg.IntOpt('default_password_length',
                default='${mysql.default_password_length}',
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # Percona XtraDB Cluster
@@ -821,9 +817,7 @@ pxc_opts = [
                'option: long_query_time'),
     cfg.IntOpt('default_password_length',
                default='${mysql.default_password_length}',
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 
@@ -883,9 +877,7 @@ redis_opts = [
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # Cassandra
@@ -949,9 +941,7 @@ cassandra_opts = [
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.'),
     cfg.BoolOpt('enable_cluster_instance_backup',
                 default=False,
                 help='Allows backup of single instance in the cluster.'),
@@ -1016,9 +1006,7 @@ couchbase_opts = [
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=24, min=6, max=24,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # MongoDB
@@ -1097,9 +1085,7 @@ mongodb_opts = [
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # PostgreSQL
@@ -1184,9 +1170,7 @@ postgresql_opts = [
                deprecated_reason='Will be replaced by configuration group '
                                  'option: log_min_duration_statement'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # Apache CouchDB
@@ -1237,9 +1221,7 @@ couchdb_opts = [
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # Vertica
@@ -1306,9 +1288,7 @@ vertica_opts = [
     cfg.IntOpt('min_ksafety', default=0,
                help='Minimum k-safety setting permitted for vertica clusters'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # DB2
@@ -1351,9 +1331,7 @@ db2_opts = [
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.')
 ]
 
 # MariaDB
@@ -1437,9 +1415,7 @@ mariadb_opts = [
                     'logic.'),
     cfg.IntOpt('default_password_length',
                default='${mysql.default_password_length}',
-               help='Character length of generated passwords.',
-               deprecated_name='default_password_length',
-               deprecated_group='DEFAULT'),
+               help='Character length of generated passwords.'),
     cfg.StrOpt(
         'docker_image', default='mariadb',
         help='Database docker image.'
