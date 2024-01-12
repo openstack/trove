@@ -352,7 +352,7 @@ common_opts = [
                           'behalf of the user. This option is ignored.'
     ),
     cfg.StrOpt(
-        'backup_aes_cbc_key', default='',
+        'backup_aes_cbc_key', default='', secret=True,
         help='Default OpenSSL aes_cbc key for decrypting backup data created '
              'prior to Victoria.',
         deprecated_for_removal=True,
