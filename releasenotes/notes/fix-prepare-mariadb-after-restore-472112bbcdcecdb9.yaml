@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fix MariaDB failed to start after restoring from an unprepared backup file.
+    This bug will appear if the backup file is created while MariaDB is processing
+    too many update requests. See the following for more details:
+    `Story 2010999 <https://storyboard.openstack.org/#!/story/2010999>` __
