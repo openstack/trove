@@ -44,8 +44,9 @@ from trove.instance import service_status
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 ADMIN_USER_NAME = "os_admin"
-CONNECTION_STR_FORMAT = ("mysql+pymysql://%s:%s@localhost/?"
-                         "unix_socket=/var/run/mysqld/mysqld.sock")
+CONNECTION_STR_FORMAT = ("mysql+pymysql://%s:%s@localhost/?" +
+                         f"unix_socket={constants.MYSQL_HOST_SOCKET_PATH}"
+                         "/mysqld.sock")
 ENGINE = None
 INCLUDE_MARKER_OPERATORS = {
     True: ">=",
@@ -590,7 +591,7 @@ class BaseMySqlApp(service.BaseDbApp):
         user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
 
         # Create folders for mysql on localhost
-        for folder in ['/etc/mysql', '/var/run/mysqld',
+        for folder in ['/etc/mysql', constants.MYSQL_HOST_SOCKET_PATH,
                        '/etc/mysql/mysql.conf.d']:
             operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
@@ -599,8 +600,8 @@ class BaseMySqlApp(service.BaseDbApp):
 
         volumes = {
             "/etc/mysql": {"bind": "/etc/mysql", "mode": "rw"},
-            "/var/run/mysqld": {"bind": "/var/run/mysqld",
-                                "mode": "rw"},
+            constants.MYSQL_HOST_SOCKET_PATH: {"bind": "/var/run/mysqld",
+                                               "mode": "rw"},
             "/var/lib/mysql": {"bind": "/var/lib/mysql", "mode": "rw"},
         }
         if extra_volumes:
@@ -671,7 +672,7 @@ class BaseMySqlApp(service.BaseDbApp):
         LOG.info("Restarting mysql")
 
         # Ensure folders permission for database.
-        for folder in ['/etc/mysql', '/var/run/mysqld',
+        for folder in ['/etc/mysql', constants.MYSQL_HOST_SOCKET_PATH,
                        '/etc/mysql/mysql.conf.d']:
             operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
