@@ -1,0 +1,7 @@
+---
+
+fixes:
+  - |
+    Fix a bug where the postgresql container is unable to recover
+    after a reboot of the Nova instance.
+    `Story 2010599 <https://storyboard.openstack.org/#!/story/2010599>`__

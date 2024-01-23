@@ -126,8 +126,8 @@ class PostgresqlReplicationStreaming(base.Replication):
             '/var/lib/postgresql/data': {
                 'bind': '/var/lib/postgresql/data', 'mode': 'rw'
             },
-            "/var/run/postgresql": {"bind": "/var/run/postgresql",
-                                    "mode": "ro"},
+            constants.POSTGRESQL_HOST_SOCKET_PATH:
+                {"bind": "/var/run/postgresql", "mode": "ro"},
         }
         extra_params = f"--pg-wal-archive-dir {pg_service.WAL_ARCHIVE_DIR}"
         service.create_backup(context, snapshot_info,

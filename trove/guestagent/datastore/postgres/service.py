@@ -177,7 +177,8 @@ class PgSqlApp(service.BaseDbApp):
         user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
 
         # Create folders for postgres on localhost
-        for folder in ['/etc/postgresql', '/var/run/postgresql']:
+        for folder in ['/etc/postgresql',
+                       constants.POSTGRESQL_HOST_SOCKET_PATH]:
             operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
                 group=CONF.database_service_uid, force=True,
@@ -185,8 +186,8 @@ class PgSqlApp(service.BaseDbApp):
 
         volumes = {
             "/etc/postgresql": {"bind": "/etc/postgresql", "mode": "rw"},
-            "/var/run/postgresql": {"bind": "/var/run/postgresql",
-                                    "mode": "rw"},
+            constants.POSTGRESQL_HOST_SOCKET_PATH:
+                {"bind": "/var/run/postgresql", "mode": "rw"},
             "/var/lib/postgresql": {"bind": "/var/lib/postgresql",
                                     "mode": "rw"},
             "/var/lib/postgresql/data": {"bind": "/var/lib/postgresql/data",
@@ -240,7 +241,8 @@ class PgSqlApp(service.BaseDbApp):
         LOG.info("Restarting database")
 
         # Ensure folders permission for database.
-        for folder in ['/etc/postgresql', '/var/run/postgresql']:
+        for folder in ['/etc/postgresql',
+                       constants.POSTGRESQL_HOST_SOCKET_PATH]:
             operating_system.ensure_directory(
                 folder, user=CONF.database_service_uid,
                 group=CONF.database_service_uid, force=True,
@@ -341,8 +343,8 @@ class PgSqlApp(service.BaseDbApp):
         image = f'{docker_image}:{CONF.datastore_version}'
         user = "%s:%s" % (CONF.database_service_uid, CONF.database_service_uid)
         volumes = {
-            "/var/run/postgresql": {"bind": "/var/run/postgresql",
-                                    "mode": "rw"},
+            constants.POSTGRESQL_HOST_SOCKET_PATH:
+                {"bind": "/var/run/postgresql", "mode": "rw"},
             "/var/lib/postgresql": {"bind": "/var/lib/postgresql",
                                     "mode": "rw"},
             "/var/lib/postgresql/data": {"bind": "/var/lib/postgresql/data",
@@ -746,7 +748,8 @@ class PgSqlAdmin(object):
 
 
 class PostgresConnection(object):
-    def __init__(self, user, password=None, host='/var/run/postgresql',
+    def __init__(self, user, password=None,
+                 host=constants.POSTGRESQL_HOST_SOCKET_PATH,
                  port=5432):
         """Utility class to communicate with PostgreSQL.
 
