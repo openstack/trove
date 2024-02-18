@@ -12,8 +12,6 @@
 
 import re
 
-import pycodestyle
-
 from hacking import core
 
 _all_log_levels = (
@@ -59,20 +57,19 @@ def check_raised_localized_exceptions(logical_line, filename):
 
 
 @core.flake8ext
-def no_translate_logs(physical_line, logical_line, filename):
+def no_translate_logs(logical_line, filename, noqa):
     """T105 - Log messages shouldn't be translated from the
     Pike release.
     :param logical_line: The logical line to check.
-    :param physical_line: The physical line to check.
     :param filename: The file name where the logical line exists.
+    :param noqa: whether the check should be skipped
     :returns: None if the logical line passes the check, otherwise a tuple
     is yielded that contains the offending index in logical line and a
     message describe the check validation failure.
     """
-    if _translation_is_not_expected(filename):
+    if noqa:
         return
-
-    if pycodestyle.noqa(physical_line):
+    if _translation_is_not_expected(filename):
         return
 
     msg = "T105: Log message shouldn't be translated."

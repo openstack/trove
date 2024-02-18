@@ -506,9 +506,9 @@ class JsonCodec(StreamCodec):
         return jsonutils.dumps(dict_data)
 
     def deserialize(self, stream):
-        if type(stream) == str:
+        if isinstance(stream, str):
             return jsonutils.load(io.StringIO(stream))
-        if type(stream) == bytes:
+        if isinstance(stream, bytes):
             return jsonutils.load(io.BytesIO(stream))
 
 

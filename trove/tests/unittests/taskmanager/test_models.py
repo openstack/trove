@@ -269,10 +269,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         # execute
         files = self.freshinstancetasks.get_injected_files("test", 'test')
         # verify
-        self.assertTrue(
-            '/etc/trove/conf.d/guest_info.conf' in files)
-        self.assertTrue(
-            '/etc/trove/conf.d/trove-guestagent.conf' in files)
+        self.assertIn('/etc/trove/conf.d/guest_info.conf', files)
+        self.assertIn('/etc/trove/conf.d/trove-guestagent.conf', files)
         self.assertEqual(
             self.guestconfig_content,
             files['/etc/trove/conf.d/trove-guestagent.conf'])
@@ -289,10 +287,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         # execute
         files = self.freshinstancetasks.get_injected_files("test", 'test')
         # verify
-        self.assertTrue(
-            '/etc/guest_info' in files)
-        self.assertTrue(
-            '/etc/trove-guestagent.conf' in files)
+        self.assertIn('/etc/guest_info', files)
+        self.assertIn('/etc/trove-guestagent.conf', files)
         self.assertEqual(
             self.guestconfig_content,
             files['/etc/trove-guestagent.conf'])

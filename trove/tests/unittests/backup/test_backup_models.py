@@ -208,9 +208,9 @@ class BackupCreateTest(trove_testtools.TestCase):
         instance = MagicMock()
         instance.cluster_id = 'bad_id'
         with patch.object(instance_models.BuiltInstance, 'load',
-                          return_value=instance),\
+                          return_value=instance), \
             patch.object(models.Backup, 'validate_can_perform_action',
-                         return_value=None),\
+                         return_value=None), \
             patch.object(models.Backup, 'verify_swift_auth_token',
                          return_value=None):
             self.assertRaises(exception.ClusterInstanceOperationNotSupported,
@@ -223,13 +223,13 @@ class BackupCreateTest(trove_testtools.TestCase):
         instance = MagicMock()
         instance.cluster_id = None
         with patch.object(instance_models.BuiltInstance, 'load',
-                          return_value=instance),\
+                          return_value=instance), \
             patch.object(models.Backup, 'validate_can_perform_action',
-                         return_value=None),\
+                         return_value=None), \
             patch.object(models.Backup, 'verify_swift_auth_token',
-                         return_value=None),\
+                         return_value=None), \
             patch.object(DatabaseModelBase, 'is_valid',
-                         return_value=False),\
+                         return_value=False), \
             patch('trove.quota.quota.QuotaEngine.reserve',
                   return_value=[]):
             DatabaseModelBase.errors = {}

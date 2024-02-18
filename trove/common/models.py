@@ -67,7 +67,7 @@ class ModelBase(object):
         """Overloaded to cause this object to look like a data entity."""
         if not hasattr(other, 'id'):
             return False
-        return type(other) == type(self) and other.id == self.id
+        return type(other) is type(self) and other.id == self.id
 
     def __ne__(self, other):
         """Overloaded to cause this object to look like a data entity."""

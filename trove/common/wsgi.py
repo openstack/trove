@@ -40,7 +40,6 @@ from trove.common import pastedeploy
 from trove.common import utils
 
 CONTEXT_KEY = 'trove.context'
-Router = base_wsgi.Router
 Debug = base_wsgi.Debug
 Middleware = base_wsgi.Middleware
 JSONDictSerializer = base_wsgi.JSONDictSerializer
