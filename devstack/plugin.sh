@@ -266,6 +266,7 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_dir /var/log/trove/
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_file trove-guestagent.log
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT swift_api_insecure false
 
     iniset $TROVE_GUESTAGENT_CONF service_credentials username trove
     iniset $TROVE_GUESTAGENT_CONF service_credentials user_domain_name Default
