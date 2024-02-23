@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from oslo_service import periodic_task
 
 from trove.common import cfg
+from trove.common import constants
 from trove.common import exception
 from trove.common.notification import EndNotification
 from trove.common import utils
@@ -212,8 +213,8 @@ class PostgresManager(manager.Manager):
                 '/var/lib/postgresql/data': {
                     'bind': '/var/lib/postgresql/data', 'mode': 'rw'
                 },
-                "/var/run/postgresql": {"bind": "/var/run/postgresql",
-                                        "mode": "ro"},
+                constants.POSTGRESQL_HOST_SOCKET_PATH:
+                    {"bind": "/var/run/postgresql", "mode": "ro"},
             }
             extra_params = f"--pg-wal-archive-dir {service.WAL_ARCHIVE_DIR}"
 
