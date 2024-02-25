@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Now the healthcheck middleware from oslo.middleware library is enabled by
+    default. Edit ``api-paste.ini`` to disable the middlewware.
