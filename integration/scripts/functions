@@ -305,7 +305,7 @@ function git_checkout() {
 
     if [ -n "$REPO_BRANCH" ]; then
         pushd "$REPO_DIR"
-        if [ $PROJECT == "diskimage-builder" ] || [ $PROJECT == "tripleo-image-elements" ]; then
+        if [ $PROJECT == "diskimage-builder" ]; then
             REPO_BRANCH=master
         fi
         CURRENT_BRANCH=$(git branch | grep "\*" | awk '{print $2}')
