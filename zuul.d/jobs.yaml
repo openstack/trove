@@ -6,7 +6,6 @@
     required-projects:
       - openstack/tempest
       - openstack/diskimage-builder
-      - openstack/tripleo-image-elements
       - openstack/trove
       - openstack/trove-dashboard
     vars:
@@ -457,7 +456,6 @@
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
-      - openstack/tripleo-image-elements
 
 - job:
     name: trove-ubuntu-guest-image-build
@@ -469,7 +467,6 @@
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
-      - openstack/tripleo-image-elements
     files:
       - ^integration/(scripts|tests)/
     vars:
@@ -490,7 +487,6 @@
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
-      - openstack/tripleo-image-elements
     files:
       - ^integration/(scripts|tests)/
     vars:
