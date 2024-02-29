@@ -6,7 +6,6 @@
     required-projects:
       - openstack/tempest
       - openstack/diskimage-builder
-      - openstack/tripleo-image-elements
       - openstack/trove
       - openstack/trove-dashboard
     vars:
