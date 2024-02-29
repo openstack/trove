@@ -39,8 +39,14 @@
     periodic:
       jobs:
         - publish-trove-guest-image-ubuntu-focal:
-            branches: ^(?!stable/.*).*$
+            branches:
+                regex: ^stable/.*$
+                negate: true
         - publish-trove-guest-image-ubuntu-focal-dev:
-            branches: ^(?!stable/.*).*$
+            branches:
+                regex: ^stable/.*$
+                negate: true
         - publish-trove-datastore-images:
-            branches: ^(?!stable/.*).*$
+            branches:
+                regex: ^stable/.*$
+                negate: true
