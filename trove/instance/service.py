@@ -502,7 +502,7 @@ class InstanceController(wsgi.Controller):
             if configuration_ref:
                 configuration_id = utils.get_id_from_href(configuration_ref)
                 return configuration_id
-            return ""
+            return None
 
     def _modify_instance(self, context, req, instance, **kwargs):
         if 'detach_replica' in kwargs and kwargs['detach_replica']:
@@ -510,7 +510,8 @@ class InstanceController(wsgi.Controller):
                 context, request=req)
             with StartNotification(context, instance_id=instance.id):
                 instance.detach_replica()
-        elif 'configuration_id' in kwargs:
+
+        if 'configuration_id' in kwargs:
             if kwargs['configuration_id']:
                 context.notification = (
                     notification.DBaaSInstanceAttachConfiguration(context,
@@ -525,7 +526,8 @@ class InstanceController(wsgi.Controller):
                                                                   request=req))
                 with StartNotification(context, instance_id=instance.id):
                     instance.detach_configuration()
-        elif 'datastore_version' in kwargs:
+
+        if 'datastore_version' in kwargs:
             datastore_version = ds_models.DatastoreVersion.load(
                 instance.datastore, kwargs['datastore_version'])
 
@@ -539,7 +541,8 @@ class InstanceController(wsgi.Controller):
             with StartNotification(context, instance_id=instance.id,
                                    datastore_version_id=datastore_version.id):
                 instance.upgrade(datastore_version)
-        elif 'access' in kwargs:
+
+        if 'access' in kwargs:
             instance.update_access(kwargs['access'])
 
     def update(self, req, id, body, tenant_id):
@@ -574,8 +577,9 @@ class InstanceController(wsgi.Controller):
         if detach_replica:
             args['detach_replica'] = detach_replica
 
+        args['configuration_id'] = None
         configuration_id = self._configuration_parse(context, body)
-        if configuration_id is not None:
+        if configuration_id:
             args['configuration_id'] = configuration_id
 
         if 'access' in body['instance']:
