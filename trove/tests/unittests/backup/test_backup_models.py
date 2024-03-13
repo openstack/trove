@@ -468,8 +468,8 @@ class PaginationTests(trove_testtools.TestCase):
 
     def tearDown(self):
         super(PaginationTests, self).tearDown()
-        query = models.DBBackup.query()
-        query.filter_by(instance_id=self.instance_id).delete()
+        with models.DBBackup.query() as query:
+            query.filter_by(instance_id=self.instance_id).delete()
 
     def test_pagination_list(self):
         # page one
@@ -541,8 +541,8 @@ class OrderingTests(trove_testtools.TestCase):
 
     def tearDown(self):
         super(OrderingTests, self).tearDown()
-        query = models.DBBackup.query()
-        query.filter_by(instance_id=self.instance_id).delete()
+        with models.DBBackup.query() as query:
+            query.filter_by(instance_id=self.instance_id).delete()
 
     def test_list(self):
         backups, marker = models.Backup.list(self.context)

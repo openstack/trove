@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from contextlib import contextmanager
+
 from oslo_log import log as logging
 from oslo_utils import strutils
 
@@ -53,8 +55,11 @@ class DatabaseModelBase(models.ModelBase):
         return hasattr(self, 'deleted') and hasattr(self, 'deleted_at')
 
     @classmethod
+    @contextmanager
     def query(cls):
-        return get_db_api()._base_query(cls)
+        query = get_db_api()._base_query(cls)
+        yield query
+        query.session.commit()
 
     def save(self):
         if not self.is_valid():

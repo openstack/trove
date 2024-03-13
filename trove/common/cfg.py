@@ -22,6 +22,7 @@ from keystonemiddleware import auth_token
 from oslo_config import cfg
 from oslo_config.cfg import NoSuchOptError
 from oslo_config import types
+from oslo_db import options as db_options
 from oslo_log import log as logging
 from oslo_log import versionutils
 from oslo_middleware import cors
@@ -535,64 +536,6 @@ common_opts = [
         help='If true create the volume in the same availability-zone as the '
              'instance'),
 ]
-
-
-database_opts = [
-    cfg.StrOpt('connection',
-               default='sqlite:///trove_test.sqlite',
-               help='SQL Connection.',
-               secret=True,
-               deprecated_name='sql_connection',
-               deprecated_group='DEFAULT'),
-    cfg.IntOpt('connection_recycle_time',
-               default=3600),
-    cfg.BoolOpt('query_log',
-                default=False,
-                deprecated_name='sql_query_log',
-                deprecated_group='DEFAULT',
-                deprecated_for_removal=True),
-    cfg.BoolOpt('sqlite_synchronous',
-                default=True,
-                help='If True, SQLite uses synchronous mode.'),
-    cfg.StrOpt('slave_connection',
-               secret=True,
-               help='The SQLAlchemy connection string to use to connect to the'
-                    ' slave database.'),
-    cfg.StrOpt('mysql_sql_mode',
-               default='TRADITIONAL',
-               help='The SQL mode to be used for MySQL sessions. '
-                    'This option, including the default, overrides any '
-                    'server-set SQL mode. To use whatever SQL mode '
-                    'is set by the server configuration, '
-                    'set this to no value. Example: mysql_sql_mode='),
-    cfg.IntOpt('max_pool_size',
-               help='Maximum number of SQL connections to keep open in a '
-                    'pool.'),
-    cfg.IntOpt('max_retries',
-               default=10,
-               help='Maximum number of database connection retries '
-                    'during startup. Set to -1 to specify an infinite '
-                    'retry count.'),
-    cfg.IntOpt('retry_interval',
-               default=10,
-               help='Interval between retries of opening a SQL connection.'),
-    cfg.IntOpt('max_overflow',
-               help='If set, use this value for max_overflow with '
-                    'SQLAlchemy.'),
-    cfg.IntOpt('connection_debug',
-               default=0,
-               help='Verbosity of SQL debugging information: 0=None, '
-                    '100=Everything.'),
-    cfg.BoolOpt('connection_trace',
-                default=False,
-                help='Add Python stack traces to SQL as comment strings.'),
-    cfg.IntOpt('pool_timeout',
-               help='If set, use this value for pool_timeout with '
-                    'SQLAlchemy.'),
-]
-
-
-# Datastore specific option groups
 
 # Mysql
 mysql_group = cfg.OptGroup(
@@ -1541,9 +1484,6 @@ CONF = cfg.CONF
 CONF.register_opts(path_opts)
 CONF.register_opts(versions_opts)
 CONF.register_opts(common_opts)
-
-CONF.register_opts(database_opts, 'database')
-
 CONF.register_group(mysql_group)
 CONF.register_group(percona_group)
 CONF.register_group(pxc_group)
@@ -1577,6 +1517,7 @@ CONF.register_opts(service_credentials_opts, service_credentials_group)
 CONF.register_opts(guest_agent_opts, guest_agent_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
+db_options.set_defaults(CONF, connection='sqlite://')
 
 profiler.set_defaults(CONF)
 logging.register_options(CONF)
@@ -1590,7 +1531,6 @@ def list_opts():
 
     trove_opts = [
         (None, path_opts + versions_opts + common_opts),
-        ('database', database_opts),
         (mysql_group, mysql_opts),
         (postgresql_group, postgresql_opts),
         (mariadb_group, mariadb_opts),

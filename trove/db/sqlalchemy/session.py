@@ -14,9 +14,8 @@
 #    under the License.
 
 import contextlib
-import threading
 
-from oslo_db.sqlalchemy import session
+from oslo_db.sqlalchemy import session as db_session
 from oslo_log import log as logging
 from sqlalchemy import MetaData
 
@@ -25,8 +24,6 @@ from trove.common.i18n import _
 from trove.db.sqlalchemy import mappers
 
 _FACADE = None
-_LOCK = threading.Lock()
-
 
 LOG = logging.getLogger(__name__)
 
@@ -73,35 +70,9 @@ def configure_db(options, models_mapper=None):
 
 
 def _create_facade(options):
-    global _LOCK, _FACADE
-    # TODO(mvandijk): Refactor this once oslo.db spec is implemented:
-    # https://specs.openstack.org/openstack/oslo-specs/specs/kilo/
-    #     make-enginefacade-a-facade.html
+    global _FACADE
     if _FACADE is None:
-        with _LOCK:
-            if _FACADE is None:
-                conf = CONF.database
-                # pop the deprecated config option 'query_log'
-                if conf.query_log:
-                    if conf.connection_debug < 50:
-                        conf['connection_debug'] = 50
-                    LOG.warning(('Configuration option "query_log" has been '
-                                 'depracated. Use "connection_debug" '
-                                 'instead. Setting connection_debug = '
-                                 '%(debug_level)s instead.'),
-                                conf.get('connection_debug'))
-                # TODO(mvandijk): once query_log is removed,
-                #                 use enginefacade.from_config() instead
-                database_opts = dict(CONF.database)
-                database_opts.pop('query_log')
-                # FIXME(wuchunyang): we need to remove reliance on autocommit
-                # semantics ASAP. since it's not compatible with
-                # SQLAlchemy 2.0
-                database_opts['autocommit'] = True
-                _FACADE = session.EngineFacade(
-                    options['database']['connection'],
-                    **database_opts
-                )
+        _FACADE = db_session.EngineFacade.from_config(options)
     return _FACADE
 
 

@@ -21,19 +21,31 @@ from trove.db.sqlalchemy import session
 
 
 def list(query_func, *args, **kwargs):
-    return query_func(*args, **kwargs).all()
+    query = query_func(*args, **kwargs)
+    res = query.all()
+    query.session.commit()
+    return res
 
 
 def count(query, *args, **kwargs):
-    return query(*args, **kwargs).count()
+    query = query(*args, **kwargs)
+    res = query.count()
+    query.session.commit()
+    return res
 
 
 def first(query, *args, **kwargs):
-    return query(*args, **kwargs).first()
+    query = query(*args, **kwargs)
+    res = query.first()
+    query.session.commit()
+    return res
 
 
 def join(query, model, *args):
-    return query(model).join(*args)
+    query = query(model)
+    res = query.join(*args)
+    query.session.commit()
+    return res
 
 
 def find_all(model, **conditions):
@@ -47,7 +59,10 @@ def find_all_by_limit(query_func, model, conditions, limit, marker=None,
 
 
 def find_by(model, **kwargs):
-    return _query_by(model, **kwargs).first()
+    query = _query_by(model, **kwargs)
+    res = query.first()
+    query.session.commit()
+    return res
 
 
 def find_by_filter(model, **kwargs):
@@ -58,9 +73,10 @@ def find_by_filter(model, **kwargs):
 def save(model):
     try:
         db_session = session.get_session()
-        model = db_session.merge(model)
-        db_session.flush()
-        return model
+        with db_session.begin():
+            model = db_session.merge(model)
+            db_session.flush()
+            return model
     except sqlalchemy.exc.IntegrityError as error:
         raise exception.DBConstraintError(model_name=model.__class__.__name__,
                                           error=str(error.orig))
@@ -68,13 +84,16 @@ def save(model):
 
 def delete(model):
     db_session = session.get_session()
-    model = db_session.merge(model)
-    db_session.delete(model)
-    db_session.flush()
+    with db_session.begin():
+        model = db_session.merge(model)
+        db_session.delete(model)
+        db_session.flush()
 
 
 def delete_all(query_func, model, **conditions):
-    query_func(model, **conditions).delete()
+    query = query_func(model, **conditions)
+    query.delete()
+    query.session.commit()
 
 
 def update(model, **values):
@@ -83,7 +102,9 @@ def update(model, **values):
 
 
 def update_all(query_func, model, conditions, values):
-    query_func(model, **conditions).update(values)
+    query = query_func(model, **conditions)
+    query.update()
+    query.session.commit()
 
 
 def configure_db(options, *plugins):
@@ -119,7 +140,9 @@ def db_reset(options, *plugins):
 
 
 def _base_query(cls):
-    return session.get_session().query(cls)
+    db_session = session.get_session()
+    query = db_session.query(cls)
+    return query
 
 
 def _query_by(cls, **conditions):

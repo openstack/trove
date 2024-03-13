@@ -145,7 +145,6 @@ class TestBackupController(trove_testtools.TestCase):
         req = mock.MagicMock(GET={'project_id': str(uuid.uuid4())},
                              environ={wsgi.CONTEXT_KEY: self.context},
                              url='http://localhost')
-
         res = self.controller.index(req, 'fake_tenant_id')
 
         self.assertEqual(200, res.status)

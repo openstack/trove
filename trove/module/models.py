@@ -63,14 +63,16 @@ class Modules(object):
             # build a query manually, since we need current tenant
             # plus the 'all' tenant ones
             query_opts['visible'] = True
-            db_info = DBModule.query().filter_by(**query_opts)
-            db_info = db_info.filter(
-                or_(DBModule.tenant_id == context.project_id,
-                    DBModule.tenant_id.is_(None))
-            )
-            if db_info.count() == 0:
-                LOG.debug("No modules found for tenant %s", context.project_id)
-        modules = db_info.all()
+            with DBModule.query() as query:
+                db_info = query.filter_by(**query_opts)
+                db_info = db_info.filter(
+                    or_(DBModule.tenant_id == context.project_id,
+                        DBModule.tenant_id.is_(None))
+                )
+                if db_info.count() == 0:
+                    LOG.debug("No modules found for tenant %s",
+                              context.project_id)
+                modules = db_info.all()
         return modules
 
     @staticmethod
@@ -83,14 +85,16 @@ class Modules(object):
 
         query_opts = {'deleted': False,
                       'auto_apply': True}
-        db_info = DBModule.query().filter_by(**query_opts)
-        db_info = Modules.add_tenant_filter(db_info, context.project_id)
-        db_info = Modules.add_datastore_filter(db_info, datastore_id)
-        db_info = Modules.add_ds_version_filter(db_info, datastore_version_id)
-        if db_info.count() == 0:
-            LOG.debug("No auto-apply modules found for tenant %s",
-                      context.project_id)
-        modules = db_info.all()
+        with DBModule.query() as query:
+            db_info = query.filter_by(**query_opts)
+            db_info = Modules.add_tenant_filter(db_info, context.project_id)
+            db_info = Modules.add_datastore_filter(db_info, datastore_id)
+            db_info = Modules.add_ds_version_filter(db_info,
+                                                    datastore_version_id)
+            if db_info.count() == 0:
+                LOG.debug("No auto-apply modules found for tenant %s",
+                          context.project_id)
+            modules = db_info.all()
         return modules
 
     @staticmethod
@@ -122,12 +126,13 @@ class Modules(object):
         modules = []
         if module_ids:
             query_opts = {'deleted': False}
-            db_info = DBModule.query().filter_by(**query_opts)
-            if not context.is_admin:
-                db_info = Modules.add_tenant_filter(db_info,
-                                                    context.project_id)
-            db_info = db_info.filter(DBModule.id.in_(module_ids))
-            modules = db_info.all()
+            with DBModule.query() as query:
+                db_info = query.filter_by(**query_opts)
+                if not context.is_admin:
+                    db_info = Modules.add_tenant_filter(db_info,
+                                                        context.project_id)
+                db_info = db_info.filter(DBModule.id.in_(module_ids))
+                modules = db_info.all()
         return modules
 
     @staticmethod

@@ -33,9 +33,8 @@ class TestUpgradeChecksInstancesWithTasks(trove_testtools.TestCase):
                                             fake_get_db_api):
         fake_get_db_api.return_value = self.fake_db_api
 
-        mock_instance.query.return_value.filter.return_value.filter_by.\
-            return_value.count.return_value = 0
-
+        mock_instance.query.return_value.__enter__.return_value.filter.\
+            return_value.filter_by.return_value.count.return_value = 0
         check_result = self.cmd._check_instances_with_running_tasks()
         self.assertEqual(Code.SUCCESS, check_result.code)
 
@@ -43,8 +42,7 @@ class TestUpgradeChecksInstancesWithTasks(trove_testtools.TestCase):
                                          fake_get_db_api):
         fake_get_db_api.return_value = self.fake_db_api
 
-        mock_instance.query.return_value.filter.return_value.filter_by.\
-            return_value.count.return_value = 1
-
+        mock_instance.query.return_value.__enter__.return_value.filter.\
+            return_value.filter_by.return_value.count.return_value = 1
         check_result = self.cmd._check_instances_with_running_tasks()
         self.assertEqual(Code.WARNING, check_result.code)
