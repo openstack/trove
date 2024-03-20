@@ -189,14 +189,15 @@ class Backup(object):
         :param instance_id: Id of the instance
         :param exclude: Backup ID to exclude from the query (any other running)
         """
-        query = DBBackup.query()
-        query = query.filter(DBBackup.instance_id == instance_id,
-                             DBBackup.state.in_(BackupState.RUNNING_STATES))
-        # filter out deleted backups, PEP8 does not like field == False!
-        query = query.filter_by(deleted=False)
-        if exclude:
-            query = query.filter(DBBackup.id != exclude)
-        return query.first()
+        with DBBackup.query() as query:
+            query = query.filter(DBBackup.instance_id == instance_id,
+                                 DBBackup.state.in_(
+                                     BackupState.RUNNING_STATES))
+            # filter out deleted backups, PEP8 does not like field == False!
+            query = query.filter_by(deleted=False)
+            if exclude:
+                query = query.filter(DBBackup.id != exclude)
+            return query.first()
 
     @classmethod
     def get_by_id(cls, context, backup_id, deleted=False):
@@ -233,30 +234,31 @@ class Backup(object):
             marker = None
         else:
             marker += limit
-        return query.all(), marker
+        res = query.all()
+        return res, marker
 
     @classmethod
     def list(cls, context, datastore=None, instance_id=None, project_id=None,
              all_projects=False):
-        query = DBBackup.query()
-        filters = [DBBackup.deleted == 0]
+        with DBBackup.query() as query:
+            filters = [DBBackup.deleted == 0]
 
-        if project_id:
-            filters.append(DBBackup.tenant_id == project_id)
-        elif not all_projects:
-            filters.append(DBBackup.tenant_id == context.project_id)
+            if project_id:
+                filters.append(DBBackup.tenant_id == project_id)
+            elif not all_projects:
+                filters.append(DBBackup.tenant_id == context.project_id)
 
-        if instance_id:
-            filters.append(DBBackup.instance_id == instance_id)
+            if instance_id:
+                filters.append(DBBackup.instance_id == instance_id)
 
-        if datastore:
-            ds = datastore_models.Datastore.load(datastore)
-            filters.append(datastore_models.DBDatastoreVersion.
-                           datastore_id == ds.id)
-            query = query.join(datastore_models.DBDatastoreVersion)
+            if datastore:
+                ds = datastore_models.Datastore.load(datastore)
+                filters.append(datastore_models.DBDatastoreVersion.
+                               datastore_id == ds.id)
+                query = query.join(datastore_models.DBDatastoreVersion)
 
-        query = query.filter(*filters)
-        return cls._paginate(context, query)
+            query = query.filter(*filters)
+            return cls._paginate(context, query)
 
     @classmethod
     def list_for_instance(cls, context, instance_id):
@@ -266,15 +268,15 @@ class Backup(object):
         :param instance_id:
         :return:
         """
-        query = DBBackup.query()
-        if context.is_admin:
-            query = query.filter_by(instance_id=instance_id,
-                                    deleted=False)
-        else:
-            query = query.filter_by(instance_id=instance_id,
-                                    tenant_id=context.project_id,
-                                    deleted=False)
-        return cls._paginate(context, query)
+        with DBBackup.query() as query:
+            if context.is_admin:
+                query = query.filter_by(instance_id=instance_id,
+                                        deleted=False)
+            else:
+                query = query.filter_by(instance_id=instance_id,
+                                        tenant_id=context.project_id,
+                                        deleted=False)
+            return cls._paginate(context, query)
 
     @classmethod
     def get_last_completed(cls, context, instance_id,
@@ -300,13 +302,14 @@ class Backup(object):
 
     @classmethod
     def fail_for_instance(cls, instance_id):
-        query = DBBackup.query()
-        query = query.filter(DBBackup.instance_id == instance_id,
-                             DBBackup.state.in_(BackupState.RUNNING_STATES))
-        query = query.filter_by(deleted=False)
-        for backup in query.all():
-            backup.state = BackupState.FAILED
-            backup.save()
+        with DBBackup.query() as query:
+            query = query.filter(DBBackup.instance_id == instance_id,
+                                 DBBackup.state.in_(
+                                     BackupState.RUNNING_STATES))
+            query = query.filter_by(deleted=False)
+            for backup in query.all():
+                backup.state = BackupState.FAILED
+                backup.save()
 
     @classmethod
     def delete(cls, context, backup_id):
@@ -319,13 +322,13 @@ class Backup(object):
         """
 
         # Recursively delete all children and grandchildren of this backup.
-        query = DBBackup.query()
-        query = query.filter_by(parent_id=backup_id, deleted=False)
-        for child in query.all():
-            try:
-                cls.delete(context, child.id)
-            except exception.NotFound:
-                LOG.warning("Backup %s cannot be found.", backup_id)
+        with DBBackup.query() as query:
+            query = query.filter_by(parent_id=backup_id, deleted=False)
+            for child in query.all():
+                try:
+                    cls.delete(context, child.id)
+                except exception.NotFound:
+                    LOG.warning("Backup %s cannot be found.", backup_id)
 
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)

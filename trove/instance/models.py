@@ -2069,22 +2069,23 @@ def module_instance_count(context, module_id, include_clustered=False):
                func.max(module_models.DBInstanceModule.updated)]
     filters = [module_models.DBInstanceModule.module_id == module_id,
                module_models.DBInstanceModule.deleted == 0]
-    query = module_models.DBInstanceModule.query()
-    query = query.join(
-        module_models.DBModule,
-        module_models.DBInstanceModule.module_id == module_models.DBModule.id)
-    query = query.join(
-        DBInstance,
-        module_models.DBInstanceModule.instance_id == DBInstance.id)
-    if not include_clustered:
-        filters.append(DBInstance.cluster_id.is_(None))
-    if not context.is_admin:
-        filters.append(DBInstance.tenant_id == context.project_id)
-    query = query.group_by(module_models.DBInstanceModule.md5)
-    query = query.add_columns(*columns)
-    query = query.filter(*filters)
-    query = query.order_by(module_models.DBInstanceModule.updated)
-    return query.all()
+    with module_models.DBInstanceModule.query() as query:
+        query = query.join(
+            module_models.DBModule,
+            module_models.DBInstanceModule.module_id ==
+            module_models.DBModule.id)
+        query = query.join(
+            DBInstance,
+            module_models.DBInstanceModule.instance_id == DBInstance.id)
+        if not include_clustered:
+            filters.append(DBInstance.cluster_id.is_(None))
+        if not context.is_admin:
+            filters.append(DBInstance.tenant_id == context.project_id)
+        query = query.group_by(module_models.DBInstanceModule.md5)
+        query = query.add_columns(*columns)
+        query = query.filter(*filters)
+        query = query.order_by(module_models.DBInstanceModule.updated)
+        return query.all()
 
 
 def persist_instance_fault(notification, event_qualifier):

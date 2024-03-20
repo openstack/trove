@@ -41,10 +41,10 @@ class Checks(upgradecheck.UpgradeCommands):
         db_api = db.get_db_api()
         db_api.configure_db(cfg.CONF)
 
-        query = DBInstance.query()
-        query = query.filter(DBInstance.task_status != InstanceTasks.NONE)
-        query = query.filter_by(deleted=False)
-        instances_with_tasks = query.count()
+        with DBInstance.query() as query:
+            query = query.filter(DBInstance.task_status != InstanceTasks.NONE)
+            query = query.filter_by(deleted=False)
+            instances_with_tasks = query.count()
 
         if instances_with_tasks:
             return upgradecheck.Result(
