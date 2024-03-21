@@ -141,14 +141,14 @@ def load_simple_instance_server_status(context, db_info):
 
 def load_simple_instance_addresses(context, db_info):
     """Get addresses of the instance from Neutron."""
-    if 'BUILDING' == db_info.task_status.action and not db_info.cluster_id:
-        db_info.addresses = []
-        return
-
     addresses = []
     user_ports = []
-    client = clients.create_neutron_client(context, db_info.region_id)
-    ports = neutron.get_instance_ports(client, db_info.compute_instance_id)
+    try:
+        client = clients.create_neutron_client(context, db_info.region_id)
+        ports = neutron.get_instance_ports(client, db_info.compute_instance_id)
+    except nova_exceptions.NotFound:
+        db_info.addresses = []
+        return
     for port in ports:
         if port['network_id'] not in CONF.management_networks:
             LOG.debug('Found user port %s for instance %s', port['id'],
@@ -249,7 +249,7 @@ class SimpleInstance(object):
         ips = self.get_visible_ip_addresses()
         if ips:
             # FIXME
-            return ips[0]
+            return ips[0]['address']
 
     @property
     def flavor_id(self):

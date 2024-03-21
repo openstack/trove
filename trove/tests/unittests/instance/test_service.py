@@ -135,11 +135,13 @@ class TestInstanceController(trove_testtools.TestCase):
             mock.MagicMock(), body, mock.ANY
         )
 
+    @mock.patch('trove.instance.models.load_simple_instance_addresses')
     @mock.patch.object(clients, 'create_nova_client',
                        return_value=mock.MagicMock())
     @mock.patch('trove.rpc.get_client')
     def test_update_datastore_version(self, mock_get_rpc_client,
-                                      mock_create_nova_client):
+                                      mock_create_nova_client,
+                                      mock_load_addresses):
         # Create an instance in db.
         instance = ins_models.DBInstance.create(
             name=self.random_name('instance'),
@@ -176,6 +178,8 @@ class TestInstanceController(trove_testtools.TestCase):
             mock.ANY, "upgrade",
             instance_id=instance.id,
             datastore_version_id=new_ds_version.id)
+
+        mock_load_addresses.assert_called_once()
 
     @mock.patch('trove.instance.models.load_server_group_info')
     @mock.patch('trove.instance.models.load_guest_info')
