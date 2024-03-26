@@ -30,9 +30,9 @@ from oslo_service import loopingcall
 from oslo_utils.encodeutils import safe_encode
 from oslo_utils import importutils
 from oslo_utils import strutils
-from passlib import pwd
 
 from trove.common import cfg
+from trove.common import crypto_utils
 from trove.common import exception
 from trove.common.i18n import _
 
@@ -298,7 +298,7 @@ def generate_random_password(password_length=None):
         password_length or
         cfg.get_configuration_property('default_password_length')
     )
-    return pwd.genword(length=password_length)
+    return crypto_utils.generate_random_key(length=password_length)
 
 
 def try_recover(func):
