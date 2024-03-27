@@ -54,8 +54,11 @@ def find_all(model, **conditions):
 
 def find_all_by_limit(query_func, model, conditions, limit, marker=None,
                       marker_column=None):
-    return _limits(query_func, model, conditions, limit, marker,
-                   marker_column).all()
+    query = _limits(query_func, model, conditions, limit, marker,
+                    marker_column)
+    res = query.all()
+    query.session.commit()
+    return res
 
 
 def find_by(model, **kwargs):
