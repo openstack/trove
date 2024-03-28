@@ -67,6 +67,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "datastore_manager": "mysql",
                 "image": image_id,
                 "image_tags": [],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "active": True,
                 "default": False
             }
@@ -85,6 +87,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "name": ver_name,
                 "datastore_manager": "mysql",
                 "image_tags": ['a', 'b', 'c', 'd', 'e', 'f'],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "active": True,
                 "default": False
             }
@@ -104,6 +108,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "datastore_manager": "mysql",
                 "image": image_id,
                 "image_tags": [],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "active": True,
                 "default": False
             }
@@ -129,6 +135,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "datastore_manager": "mysql",
                 "image": image_id,
                 "image_tags": [],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "packages": "test-pkg",
                 "active": True,
                 "default": True
@@ -152,6 +160,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "datastore_manager": "mysql",
                 "image": image_id,
                 "image_tags": [],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "packages": "",
                 "active": True,
                 "default": False,
@@ -177,6 +187,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "name": ver_name,
                 "datastore_manager": "mysql",
                 "image_tags": ["trove", "mysql"],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "active": True,
                 "default": True
             }
@@ -209,6 +221,8 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
                 "datastore_manager": "mysql",
                 "image": image_id,
                 "image_tags": [],
+                "registry_ext": "registry_ext",
+                "repl_strategy": "repl_strategy",
                 "packages": "test-pkg",
                 "active": True,
                 "default": True

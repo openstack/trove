@@ -28,14 +28,21 @@ from trove.guestagent import volume
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
-CONF.register_opts([openstack_cfg.StrOpt('guest_id', default=None,
-                                         help="ID of the Guest Instance."),
-                    openstack_cfg.StrOpt('instance_rpc_encr_key',
-                                         help=('Key (OpenSSL aes_cbc) for '
-                                               'instance RPC encryption.')),
-                    openstack_cfg.BoolOpt('network_isolation',
-                                          help='whether to plug user defined '
-                                               'port to database container')])
+CONF.register_opts([
+    openstack_cfg.StrOpt('guest_id', default=None,
+                         help="ID of the Guest Instance."),
+    openstack_cfg.StrOpt('instance_rpc_encr_key',
+                         help=('Key (OpenSSL aes_cbc) for '
+                               'instance RPC encryption.')),
+    openstack_cfg.BoolOpt('network_isolation',
+                          help='whether to plug user defined '
+                          'port to database container'),
+    openstack_cfg.StrOpt('replication_strategy',
+                         default='trove.guestagent.strategies.replication.'
+                         'mysql_gtid.MysqlGTIDReplication',
+                         help='Namespace to load replication strategies from.')
+])
+
 LOG = logging.getLogger(__name__)
 
 
@@ -61,7 +68,7 @@ def main():
 
     if not CONF.guest_id:
         msg = (_("The guest_id parameter is not set. guest_info.conf "
-               "was not injected into the guest or not read by guestagent"))
+                 "was not injected into the guest or not read by guestagent"))
         raise RuntimeError(msg)
     if CONF.network_isolation:
         # disable user-defined port to avoid potential default gateway

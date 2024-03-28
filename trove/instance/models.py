@@ -33,6 +33,7 @@ from sqlalchemy import func
 from trove.backup.models import Backup
 from trove.common import cfg
 from trove.common import clients
+from trove.common import constants
 from trove.common import crypto_utils as cu
 from trove.common import exception
 from trove.common.i18n import _
@@ -992,6 +993,28 @@ class BaseInstance(SimpleInstance):
 
         return userdata if userdata else ""
 
+    @property
+    def datastore_registry_ext(self):
+        registry_ext = constants.REGISTRY_EXT_DEFAULTS.get(
+            self.ds_version.manager)
+        if self.ds_version.registry_ext:
+            registry_ext = self.ds_version.registry_ext
+
+        return "%(manager)s:%(registry_ext)s" % {
+            "manager": self.ds_version.manager,
+            "registry_ext": registry_ext
+        }
+
+    @property
+    def datastore_repl_strategy(self):
+        if self.ds_version.repl_strategy:
+            return self.ds_version.repl_strategy
+
+        return "%s.%s" % (
+            CONF.get(self.ds_version.manager).replication_namespace,
+            CONF.get(self.ds_version.manager).replication_strategy
+        )
+
     def get_injected_files(self,
                            datastore_manager,
                            datastore_version,
@@ -1014,8 +1037,11 @@ class BaseInstance(SimpleInstance):
                 "datastore_manager=%s\n"
                 "datastore_version=%s\n"
                 "tenant_id=%s\n"
+                "datastore_registry_ext=%s\n"
+                "replication_strategy=%s\n"
                 % (self.id, datastore_manager, datastore_version,
-                   self.tenant_id)
+                   self.tenant_id, self.datastore_registry_ext,
+                   self.datastore_repl_strategy)
             )
         }
 

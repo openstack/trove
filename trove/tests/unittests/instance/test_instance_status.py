@@ -59,6 +59,8 @@ class BaseInstanceStatusTestCase(trove_testtools.TestCase):
             name='5.7' + str(uuid.uuid4()),
             manager='mysql',
             image_id=str(uuid.uuid4()),
+            registry_ext="registry_ext",
+            repl_strategy="repl_strategy",
             active=1,
             packages="mysql-server-5.7"
         )

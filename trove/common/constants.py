@@ -20,3 +20,30 @@ DOCKER_HOST_NIC_MODE = "docker-hostnic"
 DOCKER_BRIDGE_MODE = "bridge"
 MYSQL_HOST_SOCKET_PATH = "/var/lib/mysqld"
 POSTGRESQL_HOST_SOCKET_PATH = "/var/lib/postgresql-socket"
+
+REGISTRY_EXT_DEFAULTS = {
+    'mysql':
+        'trove.guestagent.datastore.mysql.manager.Manager',
+    'mariadb':
+        'trove.guestagent.datastore.mariadb.manager.Manager',
+    'postgresql':
+        'trove.guestagent.datastore.postgres.manager.PostgresManager',
+    'percona':
+        'trove.guestagent.datastore.experimental.percona.manager.Manager',
+    'pxc':
+        'trove.guestagent.datastore.experimental.pxc.manager.Manager',
+    'redis':
+        'trove.guestagent.datastore.experimental.redis.manager.Manager',
+    'cassandra':
+        'trove.guestagent.datastore.experimental.cassandra.manager.Manager',
+    'couchbase':
+        'trove.guestagent.datastore.experimental.couchbase.manager.Manager',
+    'mongodb':
+        'trove.guestagent.datastore.experimental.mongodb.manager.Manager',
+    'couchdb':
+        'trove.guestagent.datastore.experimental.couchdb.manager.Manager',
+    'vertica':
+        'trove.guestagent.datastore.experimental.vertica.manager.Manager',
+    'db2':
+        'trove.guestagent.datastore.experimental.db2.manager.Manager',
+}

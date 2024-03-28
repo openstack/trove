@@ -136,6 +136,8 @@ class CreateInstanceTest(trove_testtools.TestCase):
                 manager="mysql",
                 image_id="image_id",
                 packages="",
+                registry_ext="registry_ext",
+                repl_strategy="repl_strategy",
                 active=True))
         self.volume_size = 1
         self.az = "az"
@@ -264,6 +266,8 @@ class TestInstanceUpgrade(trove_testtools.TestCase):
             packages=str(uuid.uuid4()),
             datastore_id=self.datastore.id,
             manager='test',
+            registry_ext="registry_ext",
+            repl_strategy="repl_strategy",
             active=1)
 
         self.datastore_version2 = datastore_models.DBDatastoreVersion.create(
@@ -273,6 +277,8 @@ class TestInstanceUpgrade(trove_testtools.TestCase):
             packages=str(uuid.uuid4()),
             datastore_id=self.datastore.id,
             manager='test',
+            registry_ext="registry_ext",
+            repl_strategy="repl_strategy",
             active=1)
 
         self.safe_nova_client = clients.create_nova_client
@@ -337,6 +343,8 @@ class TestReplication(trove_testtools.TestCase):
             packages=str(uuid.uuid4()),
             datastore_id=self.datastore.id,
             manager='mysql',
+            registry_ext="registry_ext",
+            repl_strategy="repl_strategy",
             active=1)
 
         self.databases = []
