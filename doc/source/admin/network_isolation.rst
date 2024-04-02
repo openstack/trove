@@ -9,10 +9,7 @@ Isolate bussiness network from management network
 
 This document aims to help administrator to configure network_isolation in trove.
 
-Before ``Bobcat`` release, trove didn't isolate the management network from bussiness network, sometimes, this
-may cause network performance issue or security issue.
-
-Since ``Bobcat`` release, trove adds a new configure option(network_isolation) to configure network isolation.
+Since ``Bobcat`` release, trove adds a new configure option ``network_isolation`` to configure network isolation.
 
 network_isolation has the following behaviors and requirements:
 
@@ -36,13 +33,28 @@ Configure network isolation
     [DEFAULT]
     management_networks = <your-network-id>
 
-* Setting network_isolation to True(default is False)
+* Setting network_isolation to True(default is already True)
 
 .. path /etc/trove/trove.conf
 .. code-block:: ini
 
     [network]
     network_isolation: True
+
+  .. note::
+
+     User can disable this feature by setting `network_isolation` to `False`
+
+Debugging with network issue
+----------------------------
+
+.. code-block:: console
+
+    ssh -i <your-private-key> <username>@<instance-ip>
+    sudo ln -s /var/run/docker/netns/ /var/run/netns
+    sudo ip netns
+    sudo ip netns exec <netns-id> ip a
+
 
 Upgrade
 -------
