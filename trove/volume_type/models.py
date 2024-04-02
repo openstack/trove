@@ -32,7 +32,7 @@ class VolumeType(object):
 
     @classmethod
     def load(cls, volume_type_id, context=None, client=None):
-        if not(client or context):
+        if not (client or context):
             raise trove_exception.InvalidModelError(
                 "client or context must be provided to load a volume_type")
         if not client:

@@ -312,7 +312,7 @@ class TestPgBasebackupIncremental(unittest.TestCase):
     def test_incremental_restore_cmd(self):
         # prepare the test
         runner = self.runner_cls(**self.params)
-        cmd = f'tar xzf - -C /var/lib/postgresql/data/pgdata'
+        cmd = 'tar xzf - -C /var/lib/postgresql/data/pgdata'
 
         # call the method
         ret = runner.incremental_restore_cmd()

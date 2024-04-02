@@ -41,24 +41,23 @@ class HackingTestCase(trove_testtools.TestCase):
         for level in all_log_levels:
             bad = 'LOG.%s(_("Bad"))' % level
             self.assertEqual(
-                1, len(list(tc.no_translate_logs(bad, bad, 'f'))))
+                1, len(list(tc.no_translate_logs(bad, 'f', False))))
             bad = "LOG.%s(_('Bad'))" % level
             self.assertEqual(
-                1, len(list(tc.no_translate_logs(bad, bad, 'f'))))
+                1, len(list(tc.no_translate_logs(bad, 'f', False))))
             ok = 'LOG.%s("OK")' % level
             self.assertEqual(
-                0, len(list(tc.no_translate_logs(ok, ok, 'f'))))
-            ok = "LOG.%s(_('OK'))    # noqa" % level
+                0, len(list(tc.no_translate_logs(ok, 'f', False))))
+            ok = "LOG.%s(_('OK'))" % level
             self.assertEqual(
-                0, len(list(tc.no_translate_logs(ok, ok, 'f'))))
+                0, len(list(tc.no_translate_logs(ok, 'f', True))))
             ok = "LOG.%s(variable)" % level
             self.assertEqual(
-                0, len(list(tc.no_translate_logs(ok, ok, 'f'))))
+                0, len(list(tc.no_translate_logs(ok, 'f', False))))
             # Do not do validations in tests
             ok = 'LOG.%s(_("OK - unit tests"))' % level
             self.assertEqual(
-                0, len(list(tc.no_translate_logs(ok, ok,
-                                                 'f/tests/f'))))
+                0, len(list(tc.no_translate_logs(ok, 'f/tests/f', False))))
 
     def test_check_localized_exception_messages(self):
         f = tc.check_raised_localized_exceptions

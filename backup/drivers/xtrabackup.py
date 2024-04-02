@@ -52,9 +52,9 @@ class XtraBackup(mysql_base.MySQLBaseRunner):
 
     @property
     def cmd(self):
-        cmd = (f'xtrabackup --backup --stream=xbstream --parallel=2 '
-               f'--datadir=%(datadir)s --user=%(user)s '
-               f'--password=%(password)s --host=%(host)s'
+        cmd = ('xtrabackup --backup --stream=xbstream --parallel=2 '
+               '--datadir=%(datadir)s --user=%(user)s '
+               '--password=%(password)s --host=%(host)s'
                % {
                    'datadir': self.datadir,
                    'user': CONF.db_user,
@@ -91,9 +91,9 @@ class XtraBackup(mysql_base.MySQLBaseRunner):
 class XtraBackupIncremental(XtraBackup):
     """XtraBackup incremental backup."""
     prepare_log = '/tmp/prepare.log'
-    incremental_prep = (f'xtrabackup --prepare --apply-log-only'
-                        f' --target-dir=%(restore_location)s'
-                        f' %(incremental_args)s')
+    incremental_prep = ('xtrabackup --prepare --apply-log-only'
+                        ' --target-dir=%(restore_location)s'
+                        ' %(incremental_args)s')
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get('lsn'):

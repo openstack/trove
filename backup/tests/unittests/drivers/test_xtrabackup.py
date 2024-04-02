@@ -68,9 +68,9 @@ class TestXtraBackup(unittest.TestCase):
         runner = self.runner_cls(**self.params)
 
         # assertions
-        cmd = (f'xtrabackup --backup --stream=xbstream --parallel=2 '
-               f'--datadir=%(datadir)s --user=%(user)s '
-               f'--password=%(password)s --host=%(host)s'
+        cmd = ('xtrabackup --backup --stream=xbstream --parallel=2 '
+               '--datadir=%(datadir)s --user=%(user)s '
+               '--password=%(password)s --host=%(host)s'
                % {
                    'datadir': runner.datadir,
                    'user': CONF.db_user,

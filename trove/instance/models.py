@@ -505,7 +505,7 @@ class SimpleInstance(object):
     @property
     def access(self):
         if hasattr(self.db_info, 'access'):
-            if type(self.db_info.access) == str:
+            if isinstance(self.db_info.access, str):
                 return json.loads(self.db_info.access)
             return self.db_info.access
         else:
