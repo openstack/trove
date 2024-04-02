@@ -92,7 +92,7 @@ elif [ "${OPT_DATASTORE}" = "mariadb" ]; then
 	# See the url below about the supported version.
 	# https://mariadb.com/docs/xpand/ref/repo/cli/mariadb_repo_setup/mariadb-server-version/
 	apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
-	if $(curl -LsS -O https://downloads.mariadb.com/MariaDB/mariadb_repo_setup); then
+	if $(curl -LsS -O https://r.mariadb.com/downloads/mariadb_repo_setup); then
 		if [ -f "./mariadb_repo_setup" ]; then
 			chmod u+x "./mariadb_repo_setup"
 			if $(./mariadb_repo_setup --mariadb-server-version=${OPT_DATASTORE_VERSION}); then
