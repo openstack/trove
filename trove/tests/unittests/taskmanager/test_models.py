@@ -498,6 +498,12 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         mock_client.list_ports.return_value = {
             'ports': [{'id': 'fake-port-id'}]
         }
+        mock_client.show_port.return_value = {
+            'port': {
+                'mac_address': '00:00:00:00:00:0',
+                'fixed_ips': []
+            }
+        }
         mock_neutron_client.return_value = mock_client
 
         mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
