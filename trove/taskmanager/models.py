@@ -230,6 +230,17 @@ class ClusterTasks(Cluster):
             ]
         )
 
+    def _all_instances_healthy(self, instance_ids, cluster_id, shard_id=None):
+        """Wait for all instances to become HEALTHY."""
+        return self._all_instances_acquire_status(
+            instance_ids, cluster_id, shard_id,
+            srvstatus.ServiceStatuses.HEALTHY,
+            fast_fail_statuses=[
+                srvstatus.ServiceStatuses.FAILED,
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT
+            ]
+        )
+
     def _all_instances_acquire_status(
             self, instance_ids, cluster_id, shard_id, expected_status,
             fast_fail_statuses=None):
