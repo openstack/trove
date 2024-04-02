@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Enable `network_isolation` by Default. This option has no impact on existing
+    Trove instances. For more information, Please
+    refer to  the document `network_isolation
+    <https://docs.openstack.org/trove/latest/admin/network_isolation.html>`__.
