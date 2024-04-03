@@ -262,7 +262,6 @@ function install_prep_packages() {
       #pkg_install git-core kvm-ipxe gettext
       pkg_install git-core gettext
     fi
-    sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
 }
 
 function install_devstack_code() {
