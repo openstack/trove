@@ -1414,7 +1414,7 @@ network_opts = [
              'network.'
     ),
     cfg.BoolOpt(
-        'network_isolation', default=False,
+        'network_isolation', default=True,
         help='whether to plug user defined port to database container.'
              'This would be useful to isolate user traffic from management'
              'traffic and to avoid network address conflicts.'
