@@ -12,6 +12,10 @@ However, Trove team is not going to migrate all the existing functional tests to
 
 Since Victoria, the upstream CI jobs keep failing because of the poor performance of the CI devstack host (virtual machine), trove project contributors should guarantee any proposed patch passes both the functional test and trove tempest test by themselves, the code reviewer may ask for the test result.
 
+.. note::
+
+    Since Caracal, functional test are removed from Trove project.
+
 Install DevStack
 ----------------
 
