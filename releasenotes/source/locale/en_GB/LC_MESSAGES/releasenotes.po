@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: trove\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-03 02:02+0000\n"
+"POT-Creation-Date: 2024-04-19 08:02+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -74,14 +74,11 @@ msgstr "18.0.1"
 msgid "19.0.0"
 msgstr "19.0.0"
 
-msgid "19.0.0-12"
-msgstr "19.0.0-12"
+msgid "19.0.0-14"
+msgstr "19.0.0-14"
 
 msgid "20.0.0"
 msgstr "20.0.0"
-
-msgid "20.0.0-9"
-msgstr "20.0.0-9"
 
 msgid "2023.1 Series Release Notes"
 msgstr "2023.1 Series Release Notes"
@@ -91,12 +88,6 @@ msgstr "2023.2 Series Release Notes"
 
 msgid "2024.1 Series Release Notes"
 msgstr "2024.1 Series Release Notes"
-
-msgid "21.0.0.0rc1"
-msgstr "21.0.0.0rc1"
-
-msgid "21.0.0.0rc1-12"
-msgstr "21.0.0.0rc1-12"
 
 msgid "5.0.0"
 msgstr "5.0.0"
