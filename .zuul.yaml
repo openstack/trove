@@ -56,7 +56,6 @@
     required-projects:
       - openstack/tempest
       - openstack/diskimage-builder
-      - openstack/tripleo-image-elements
       - openstack/trove
       - openstack/trove-dashboard
     vars:
@@ -458,7 +457,6 @@
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
-      - openstack/tripleo-image-elements
 
 - job:
     name: publish-trove-guest-image-ubuntu-bionic
