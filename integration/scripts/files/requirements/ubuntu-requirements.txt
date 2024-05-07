@@ -1,9 +1,5 @@
-# The order of packages is significant, because pip processes them in the order
-# of appearance. Changing the order has an impact on the overall integration
-# process, which may cause wedges in the gate later.
 unittest2
 testtools
-extras
 python-novaclient>=2.18.0
 python-swiftclient>=2.2.0
 python-cinderclient>=1.1.0
@@ -23,6 +19,5 @@ oslo.service>=0.1.0 # Apache-2.0
 oslo.utils>=1.1.0
 osprofiler>=0.3.0
 oslo.concurrency>=0.3.0
-enum34;python_version=='2.7' or python_version=='2.6' or python_version=='3.3'  # BSD
 cryptography>=2.1.4  # BSD/Apache-2.0
 xmltodict>=0.10.1  # MIT
