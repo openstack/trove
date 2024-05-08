@@ -46,6 +46,8 @@ class SqlClient(object):
 
     def execute(self, t, **kwargs):
         LOG.debug('Execute SQL: %s', t)
+        if isinstance(t, str):
+            t = text(t)
         try:
             return self.conn.execute(t, kwargs)
         except Exception as err:

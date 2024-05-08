@@ -1,0 +1,10 @@
+---
+features:
+    - Support Alembic database migration tool.
+
+upgrade:
+    -  Trove has removed support for SQLAlchemy-Migrate. If users are
+       upgrading from a version prior to "Wallaby," they need to first
+       upgrade to a version between "Wallaby" and "Bobocat" using
+       SQLAlchemy-Migrate to complete the database schema migration,
+       and then use trove-manage to upgrade to the latest version.

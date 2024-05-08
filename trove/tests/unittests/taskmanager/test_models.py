@@ -61,7 +61,6 @@ from trove.instance.tasks import InstanceTasks
 from trove import rpc
 from trove.taskmanager import models as taskmanager_models
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 INST_ID = 'dbinst-id-1'
 VOLUME_ID = 'volume-id-1'
@@ -1205,7 +1204,6 @@ class RootReportTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(RootReportTest, self).setUp()
-        util.init_db()
 
     def tearDown(self):
         super(RootReportTest, self).tearDown()

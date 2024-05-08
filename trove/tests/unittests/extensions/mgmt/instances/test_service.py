@@ -24,7 +24,6 @@ from trove.tests.unittests.util import util
 class TestMgmtInstanceController(trove_testtools.TestCase):
     @classmethod
     def setUpClass(cls):
-        util.init_db()
         cls.controller = ins_service.MgmtInstanceController()
 
         cls.ds_name = cls.random_name('datastore')

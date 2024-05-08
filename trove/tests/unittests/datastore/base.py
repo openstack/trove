@@ -19,13 +19,11 @@ from trove.datastore.models import DatastoreVersion
 from trove.datastore.models import DatastoreVersionMetadata
 from trove.datastore.models import DBCapabilityOverrides
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 
 class TestDatastoreBase(trove_testtools.TestCase):
     @classmethod
     def setUpClass(cls):
-        util.init_db()
 
         cls.ds_name = cls.random_name(name='test-datastore')
         cls.ds_version_name = cls.random_name(name='test-version')

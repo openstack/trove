@@ -13,6 +13,8 @@
 #    limitations under the License.
 import semantic_version
 
+from sqlalchemy.sql.expression import text
+
 from trove.common import cfg
 from trove.guestagent.datastore.mysql_common import service
 from trove.guestagent.utils import mysql as mysql_util
@@ -31,15 +33,16 @@ class MySqlApp(service.BaseMySqlApp):
 
     def _get_gtid_executed(self):
         with mysql_util.SqlClient(self.get_engine()) as client:
-            return client.execute('SELECT @@global.gtid_executed').first()[0]
+            return client.execute(
+                text('SELECT @@global.gtid_executed')).first()[0]
 
     def _get_slave_status(self):
         with mysql_util.SqlClient(self.get_engine()) as client:
-            return client.execute('SHOW SLAVE STATUS').first()
+            return client.execute(text('SHOW SLAVE STATUS')).first()
 
     def _get_master_UUID(self):
         slave_status = self._get_slave_status()
-        return slave_status and slave_status['Master_UUID'] or None
+        return slave_status and slave_status._mapping['Master_UUID'] or None
 
     def get_latest_txn_id(self):
         return self._get_gtid_executed()
@@ -57,8 +60,8 @@ class MySqlApp(service.BaseMySqlApp):
 
     def wait_for_txn(self, txn):
         with mysql_util.SqlClient(self.get_engine()) as client:
-            client.execute("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')"
-                           % txn)
+            client.execute(
+                text("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')" % txn))
 
     def get_backup_image(self):
         """Get the actual container image based on datastore version.

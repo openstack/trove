@@ -16,13 +16,11 @@ from unittest.mock import Mock
 from trove.common import template
 from trove.datastore.models import DatastoreVersion
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 
 class TemplateTest(trove_testtools.TestCase):
     def setUp(self):
         super(TemplateTest, self).setUp()
-        util.init_db()
         self.env = template.ENV
         self.template = self.env.get_template("mysql/config.template")
         self.flavor_dict = {'ram': 1024, 'name': 'small', 'id': '55'}

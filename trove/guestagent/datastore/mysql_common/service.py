@@ -119,8 +119,9 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
             db_result = client.execute(t)
             for db in db_result:
                 LOG.debug("\t db: %s.", db)
-                if db['grantee'] == "'%s'@'%s'" % (user.name, user.host):
-                    user.databases = db['table_schema']
+                if db._mapping['grantee'] == "'%s'@'%s'" % (user.name,
+                                                            user.host):
+                    user.databases = db._mapping['table_schema']
 
     def change_passwords(self, users):
         """Change the passwords of one or more existing users."""
@@ -264,7 +265,7 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
             if len(result) != 1:
                 return None
             found_user = result[0]
-            user.host = found_user['Host']
+            user.host = found_user._mapping['Host']
             self._associate_dbs(user)
             return user
 
@@ -404,11 +405,11 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
                 if limit is not None and count >= limit:
                     break
                 LOG.debug("user = %s", str(row))
-                mysql_user = models.MySQLUser(name=row['User'],
-                                              host=row['Host'])
+                mysql_user = models.MySQLUser(name=row._mapping['User'],
+                                              host=row._mapping['Host'])
                 mysql_user.check_reserved()
                 self._associate_dbs(mysql_user)
-                next_marker = row['Marker']
+                next_marker = row._mapping['Marker']
                 users.append(mysql_user.serialize())
         if limit is not None and result.rowcount <= limit:
             next_marker = None
@@ -478,6 +479,8 @@ class BaseMySqlApp(service.BaseDbApp):
 
     def execute_sql(self, sql_statement, use_flush=False):
         LOG.debug("Executing SQL: %s", sql_statement)
+        if isinstance(sql_statement, str):
+            sql_statement = text(sql_statement)
         with mysql_util.SqlClient(
                 self.get_engine(), use_flush=use_flush) as client:
             return client.execute(sql_statement)
@@ -775,14 +778,14 @@ class BaseMySqlApp(service.BaseDbApp):
 
     def get_port(self):
         with mysql_util.SqlClient(self.get_engine()) as client:
-            result = client.execute('SELECT @@port').first()
+            result = client.execute(text('SELECT @@port')).first()
             return result[0]
 
     def wait_for_slave_status(self, status, client, max_time):
         def verify_slave_status():
-            ret = client.execute(
+            ret = client.execute(text(
                 "SELECT SERVICE_STATE FROM "
-                "performance_schema.replication_connection_status").first()
+                "performance_schema.replication_connection_status")).first()
             if not ret:
                 actual_status = 'OFF'
             else:
@@ -803,7 +806,7 @@ class BaseMySqlApp(service.BaseDbApp):
     def start_slave(self):
         LOG.info("Starting slave replication.")
         with mysql_util.SqlClient(self.get_engine()) as client:
-            client.execute('START SLAVE')
+            client.execute(text('START SLAVE'))
             self.wait_for_slave_status("ON", client, 180)
 
     def stop_slave(self, for_failover):
@@ -811,13 +814,13 @@ class BaseMySqlApp(service.BaseDbApp):
 
         replication_user = None
         with mysql_util.SqlClient(self.get_engine()) as client:
-            result = client.execute('SHOW SLAVE STATUS')
+            result = client.execute(text('SHOW SLAVE STATUS'))
             replication_user = result.first()['Master_User']
-            client.execute('STOP SLAVE')
-            client.execute('RESET SLAVE ALL')
+            client.execute(text('STOP SLAVE'))
+            client.execute(text('RESET SLAVE ALL'))
             self.wait_for_slave_status('OFF', client, 180)
             if not for_failover:
-                client.execute('DROP USER IF EXISTS ' + replication_user)
+                client.execute(text('DROP USER IF EXISTS ' + replication_user))
 
         return {
             'replication_user': replication_user
@@ -826,7 +829,7 @@ class BaseMySqlApp(service.BaseDbApp):
     def stop_master(self):
         LOG.info("Stopping replication master.")
         with mysql_util.SqlClient(self.get_engine()) as client:
-            client.execute('RESET MASTER')
+            client.execute(text('RESET MASTER'))
 
     def make_read_only(self, read_only):
         with mysql_util.SqlClient(self.get_engine()) as client:

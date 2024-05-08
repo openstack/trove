@@ -51,12 +51,14 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster_name = "Cluster" + self.cluster_id
         self.tenant_id = "23423432"
         self.dv_id = "1"
+        self.configuration_id = "2"
         self.db_info = DBCluster(ClusterTasks.NONE,
                                  id=self.cluster_id,
                                  name=self.cluster_name,
                                  tenant_id=self.tenant_id,
                                  datastore_version_id=self.dv_id,
-                                 task_id=ClusterTasks.NONE._code)
+                                 task_id=ClusterTasks.NONE._code,
+                                 configuration_id=self.configuration_id)
         self.context = trove_testtools.TroveTestContext(self)
         self.datastore = Mock()
         self.dv = Mock()

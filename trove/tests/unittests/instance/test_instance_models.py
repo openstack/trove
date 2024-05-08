@@ -34,7 +34,6 @@ from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.tests.fakes import nova
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 CONF = cfg.CONF
 
@@ -117,7 +116,6 @@ class CreateInstanceTest(trove_testtools.TestCase):
 
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     def setUp(self):
-        util.init_db()
         self.context = trove_testtools.TroveTestContext(self, is_admin=True)
         self.name = "name"
         self.flavor_id = 5
@@ -252,7 +250,6 @@ class TestInstanceUpgrade(trove_testtools.TestCase):
 
     def setUp(self):
         self.context = trove_testtools.TroveTestContext(self, is_admin=True)
-        util.init_db()
 
         self.datastore = datastore_models.DBDatastore.create(
             id=str(uuid.uuid4()),
@@ -329,7 +326,6 @@ class TestInstanceUpgrade(trove_testtools.TestCase):
 class TestReplication(trove_testtools.TestCase):
 
     def setUp(self):
-        util.init_db()
 
         self.datastore = datastore_models.DBDatastore.create(
             id=str(uuid.uuid4()),

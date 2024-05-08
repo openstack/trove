@@ -46,7 +46,6 @@ class FakeDBInstance(object):
 class BaseInstanceStatusTestCase(trove_testtools.TestCase):
     @classmethod
     def setUpClass(cls):
-        util.init_db()
         cls.db_info = FakeDBInstance()
         cls.datastore = models.DBDatastore.create(
             id=str(uuid.uuid4()),

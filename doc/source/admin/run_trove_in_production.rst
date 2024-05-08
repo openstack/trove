@@ -348,14 +348,21 @@ Finally, when trove-guestagent does backup/restore, it will pull this image with
 
 Initialize Trove Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-This is controlled through `sqlalchemy-migrate
-<https://code.google.com/archive/p/sqlalchemy-migrate/>`_ scripts under the
-trove/db/sqlalchemy/migrate_repo/versions directory in this repository. The
+
+.. versionchanged:: Caracal
+
+   The database migration engine was changed from ``sqlalchemy-migrate`` to
+   ``alembic``, and the ``sqlalchemy-migrate`` was removed.
+
+This is controlled through `alembic`__ scripts under the
+trove/db/sqlalchemy/migrations/versions directory in this repository. The
 script ``trove-manage`` (which should be installed together with Trove
 controller software) could be used to aid in the initialization of the Trove
 database. Note that this tool looks at the ``/etc/trove/trove.conf`` file for
 its database credentials, so initializing the database must happen after Trove
 is configured.
+
+.. __: https://alembic.sqlalchemy.org/en/latest/
 
 
 Launching the Trove Controller

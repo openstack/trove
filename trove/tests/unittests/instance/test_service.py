@@ -31,7 +31,6 @@ CONF = cfg.CONF
 class TestInstanceController(trove_testtools.TestCase):
     @classmethod
     def setUpClass(cls):
-        util.init_db()
 
         cls.ds_name = cls.random_name('datastore',
                                       prefix='TestInstanceController')

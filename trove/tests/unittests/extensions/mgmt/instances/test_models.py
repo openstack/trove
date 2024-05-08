@@ -41,7 +41,6 @@ from trove.instance import service_status as srvstatus
 from trove.instance.tasks import InstanceTasks
 from trove import rpc
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 CONF = cfg.CONF
 
@@ -50,7 +49,6 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        util.init_db()
         cls.version_id = str(uuid.uuid4())
         cls.datastore = datastore_models.DBDatastore.create(
             id=str(uuid.uuid4()),

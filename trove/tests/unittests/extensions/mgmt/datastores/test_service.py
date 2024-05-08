@@ -31,7 +31,6 @@ from trove.tests.unittests.util import util
 class TestDatastoreVersionController(trove_testtools.TestCase):
     @classmethod
     def setUpClass(cls):
-        util.init_db()
         cls.ds_name = cls.random_name('datastore')
         cls.ds_version_number = '5.7.30'
         models.update_datastore(name=cls.ds_name, default_version=None)

@@ -89,7 +89,7 @@ def get_facade():
 
 
 def get_engine(use_slave=False):
-    _check_facade()
+    _create_facade(CONF)
     return _FACADE.get_engine(use_slave=use_slave)
 
 
@@ -105,7 +105,7 @@ def clean_db():
     engine = get_engine()
     meta = MetaData()
     meta.bind = engine
-    meta.reflect()
+    meta.reflect(bind=engine)
     with contextlib.closing(engine.connect()) as con:
         trans = con.begin()  # pylint: disable=E1101
         for table in reversed(meta.sorted_tables):

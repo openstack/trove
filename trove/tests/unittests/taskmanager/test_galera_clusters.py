@@ -31,13 +31,11 @@ from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceTasks
 from trove.instance.service_status import ServiceStatuses
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 
 class GaleraClusterTasksTest(trove_testtools.TestCase):
     def setUp(self):
         super(GaleraClusterTasksTest, self).setUp()
-        util.init_db()
         self.cluster_id = "1232"
         self.cluster_name = "Cluster-1234"
         self.tenant_id = "6789"

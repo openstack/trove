@@ -23,14 +23,12 @@ from trove.datastore import models as datastore_models
 from trove.module import models
 from trove.taskmanager import api as task_api
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 
 class CreateModuleTest(trove_testtools.TestCase):
 
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     def setUp(self):
-        util.init_db()
         self.context = Mock()
         self.name = "name"
         self.module_type = 'ping'

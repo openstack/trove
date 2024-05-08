@@ -24,7 +24,6 @@ from trove.conductor import manager as conductor_manager
 from trove.instance import models as t_models
 from trove.instance.service_status import ServiceStatuses
 from trove.tests.unittests import trove_testtools
-from trove.tests.unittests.util import util
 
 # See LP bug #1255178
 OLD_DBB_SAVE = bkup_models.DBBackup.save
@@ -35,7 +34,6 @@ class ConductorMethodTests(trove_testtools.TestCase):
         # See LP bug #1255178
         bkup_models.DBBackup.save = OLD_DBB_SAVE
         super(ConductorMethodTests, self).setUp()
-        util.init_db()
         self.cond_mgr = conductor_manager.Manager()
         self.instance_id = utils.generate_uuid()
 

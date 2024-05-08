@@ -46,11 +46,6 @@
       tempest_concurrency: 1
       devstack_localrc:
         TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
-        USE_PYTHON3: true
-        Q_AGENT: openvswitch
-        Q_PLUGIN: ml2
-        Q_ML2_TENANT_NETWORK_TYPE: vxlan
-        Q_ML2_PLUGIN_MECHANISM_DRIVERS: openvswitch
         SYNC_LOG_TO_CONTROLLER: True
         TROVE_DATASTORE_VERSION: 5.7
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
@@ -87,14 +82,6 @@
         s-proxy: true
         tls-proxy: true
         tempest: true
-        q-svc: true
-        q-agt: true
-        q-dhcp: true
-        q-l3: true
-        q-meta: true
-        q-ovn-metadata-agent: false
-        ovn-controller: false
-        ovn-northd: false
       tempest_test_regex: ^trove_tempest_plugin\.tests
       tempest_test_timeout: 3600
       zuul_copy_output:

@@ -23,7 +23,6 @@ from trove.tests.unittests.util import util
 class TestQuotaController(trove_testtools.TestCase):
     @classmethod
     def setUpClass(cls):
-        util.init_db()
         cls.controller = quota_service.QuotaController()
         cls.admin_project_id = cls.random_uuid()
         super(TestQuotaController, cls).setUpClass()
