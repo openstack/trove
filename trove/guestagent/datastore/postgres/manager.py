@@ -266,3 +266,38 @@ class PostgresManager(manager.Manager):
         except exception.PollTimeOut:
             raise exception.TroveError(
                 f"Timeout occurred waiting for wal offset to change to {txn}")
+
+    def rebuild(self, context, ds_version, config_contents=None,
+                config_overrides=None):
+        """Restore datastore service after instance rebuild."""
+        LOG.info("Starting to restore database service")
+        self.status.begin_install()
+
+        mount_point = CONF.get(CONF.datastore_manager).mount_point
+        data_dir = mount_point + '/data'
+        operating_system.ensure_directory(data_dir,
+                                          user=self.app.database_service_uid,
+                                          group=self.app.database_service_gid,
+                                          as_root=True)
+
+        try:
+            # Prepare postgres configuration
+            LOG.debug('Preparing database configuration')
+            self.app.configuration_manager.reset_configuration(config_contents)
+
+            # note that this is a different 'datadir' from the one above.
+            # The actual postgres data is in the 'pgdata' subdir of the
+            # volume mount.
+            self.app.set_data_dir(self.app.datadir)
+            self.app.update_overrides(config_overrides)
+
+            # Start database service.
+            command = f"postgres -c config_file={service.CONFIG_FILE}"
+            self.app.start_db(ds_version=ds_version, command=command)
+        except Exception as e:
+            LOG.error(f"Failed to restore database service after rebuild, "
+                      f"error: {str(e)}")
+            self.prepare_error = True
+            raise
+        finally:
+            self.status.end_install(error_occurred=self.prepare_error)

@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Rebuild of postgresql database instances is now supported. Older postgresql
+    instances can be rebuilt as long as the target guest image is built from this
+    release or later.
