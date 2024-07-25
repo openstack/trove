@@ -208,7 +208,7 @@ function configure_trove {
     # (Re)create trove conf files
     rm -f $TROVE_CONF $TROVE_GUESTAGENT_CONF
 
-    TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
+    TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI
 
     ################################################################ trove conf
     setup_trove_logging $TROVE_CONF
