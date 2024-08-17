@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Add support of setting owner,uid,gid for each datastore instances
+    by configuring database_service_uname,
+    database_service_uid and database_service_gid
+    Story 2010827 <https://storyboard.openstack.org/#!/story/2010827>

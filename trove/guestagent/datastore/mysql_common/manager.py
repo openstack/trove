@@ -71,10 +71,11 @@ class MySqlManager(manager.Manager):
         """This is called from prepare in the base class."""
         data_dir = mount_point + '/data'
         self.app.stop_db()
-        operating_system.ensure_directory(data_dir,
-                                          user=CONF.database_service_uid,
-                                          group=CONF.database_service_uid,
-                                          as_root=True)
+        operating_system.ensure_directory(
+            data_dir,
+            user=self.app.database_service_uid,
+            group=self.app.database_service_gid,
+            as_root=True)
         # This makes sure the include dir is created.
         self.app.set_data_dir(data_dir)
 
@@ -223,9 +224,11 @@ class MySqlManager(manager.Manager):
         # Allow database service user to access the temporary files.
         try:
             for file in [init_file.name, err_file.name]:
-                operating_system.chown(file, CONF.database_service_uid,
-                                       CONF.database_service_uid, force=True,
-                                       as_root=True)
+                operating_system.chown(
+                    file,
+                    self.app.database_service_uid,
+                    self.app.database_service_gid,
+                    force=True, as_root=True)
         except Exception as err:
             LOG.error('Failed to change file owner, error: %s', str(err))
             for file in [init_file.name, err_file.name]:
@@ -338,8 +341,8 @@ class MySqlManager(manager.Manager):
         mount_point = CONF.get(CONF.datastore_manager).mount_point
         data_dir = mount_point + '/data'
         operating_system.ensure_directory(data_dir,
-                                          user=CONF.database_service_uid,
-                                          group=CONF.database_service_uid,
+                                          user=self.app.database_service_uid,
+                                          group=self.app.database_service_gid,
                                           as_root=True)
         # This makes sure the include dir is created.
         self.app.set_data_dir(data_dir)

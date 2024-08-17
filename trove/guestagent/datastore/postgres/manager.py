@@ -123,14 +123,12 @@ class PostgresManager(manager.Manager):
                    device_path, mount_point, backup_info,
                    config_contents, root_password, overrides,
                    cluster_config, snapshot, ds_version=None):
-        operating_system.ensure_directory(self.app.datadir,
-                                          user=CONF.database_service_uid,
-                                          group=CONF.database_service_uid,
-                                          as_root=True)
-        operating_system.ensure_directory(service.WAL_ARCHIVE_DIR,
-                                          user=CONF.database_service_uid,
-                                          group=CONF.database_service_uid,
-                                          as_root=True)
+        for datadir in [self.app.datadir, service.WAL_ARCHIVE_DIR]:
+            operating_system.ensure_directory(
+                datadir,
+                user=self.app.database_service_uid,
+                group=self.app.database_service_gid,
+                as_root=True)
 
         LOG.info('Preparing database config files')
         self.app.configuration_manager.reset_configuration(config_contents)
@@ -149,9 +147,11 @@ class PostgresManager(manager.Manager):
                 signal_file = f"{self.app.datadir}/recovery.signal"
                 operating_system.execute_shell_cmd(
                     f"touch {signal_file}", [], shell=True, as_root=True)
-                operating_system.chown(signal_file, CONF.database_service_uid,
-                                       CONF.database_service_uid, force=True,
-                                       as_root=True)
+                operating_system.chown(
+                    signal_file,
+                    user=self.app.database_service_uid,
+                    group=self.app.database_service_gid,
+                    force=True, as_root=True)
 
         if snapshot:
             # This instance is a replica
@@ -198,7 +198,8 @@ class PostgresManager(manager.Manager):
         }
 
     def is_log_enabled(self, logname):
-        return self.configuration_manager.get_value('logging_collector', False)
+        return self.configuration_manager.get_value(
+            'logging_collector', default=False)
 
     def create_backup(self, context, backup_info):
         """Create backup for the database.

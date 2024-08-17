@@ -83,8 +83,11 @@ def main():
 
     # Create user and group for running docker container.
     LOG.info('Creating user and group for database service')
-    uid = cfg.get_configuration_property('database_service_uid')
-    operating_system.create_user('database', uid)
+    uid = CONF.get(CONF.datastore_manager
+                   ).database_service_uid or CONF.database_service_uid
+    gid = CONF.get(CONF.datastore_manager).database_service_gid or uid
+    uname = CONF.get(CONF.datastore_manager).database_service_uname
+    operating_system.create_user(uname, user_id=uid, group_id=gid)
 
     # Mount device if needed.
     # When doing rebuild, the device should be already formatted but not
@@ -97,9 +100,8 @@ def main():
                  device_path, mount_point)
         device.format()
         device.mount(mount_point)
-        operating_system.chown(mount_point, CONF.database_service_uid,
-                               CONF.database_service_uid,
-                               recursive=True, as_root=True)
+        operating_system.chown(
+            mount_point, uid, gid, recursive=True, as_root=True)
 
     # rpc module must be loaded after decision about thread monkeypatching
     # because if thread module is not monkeypatched we can't use eventlet

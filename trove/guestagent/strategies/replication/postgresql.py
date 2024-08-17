@@ -41,8 +41,9 @@ class PostgresqlReplicationStreaming(base.Replication):
         """
         pw = utils.generate_random_password()
         operating_system.write_file(pwfile, pw, as_root=True)
-        operating_system.chown(pwfile, user=CONF.database_service_uid,
-                               group=CONF.database_service_uid, as_root=True)
+        operating_system.chown(pwfile, user=service.database_service_uid,
+                               group=service.database_service_gid,
+                               as_root=True)
         operating_system.chmod(pwfile, FileMode.SET_USR_RWX(),
                                as_root=True)
         LOG.debug(f"File {pwfile} created")
@@ -108,8 +109,9 @@ class PostgresqlReplicationStreaming(base.Replication):
         operating_system.copy(tmp_hba, pg_service.HBA_CONFIG_FILE,
                               force=True, as_root=True)
         operating_system.chown(pg_service.HBA_CONFIG_FILE,
-                               user=CONF.database_service_uid,
-                               group=CONF.database_service_uid, as_root=True)
+                               user=service.database_service_uid,
+                               group=service.database_service_gid,
+                               as_root=True)
         operating_system.chmod(pg_service.HBA_CONFIG_FILE,
                                FileMode.SET_USR_RWX(),
                                as_root=True)
@@ -166,8 +168,8 @@ class PostgresqlReplicationStreaming(base.Replication):
         signal_file = f"{service.datadir}/standby.signal"
         operating_system.execute_shell_cmd(
             f"touch {signal_file}", [], shell=True, as_root=True)
-        operating_system.chown(signal_file, CONF.database_service_uid,
-                               CONF.database_service_uid, force=True,
+        operating_system.chown(signal_file, service.database_service_uid,
+                               service.database_service_gid, force=True,
                                as_root=True)
         LOG.debug("Standby signal file created")
 
@@ -217,8 +219,8 @@ class PostgresqlReplicationStreaming(base.Replication):
         signal_file = f"{service.datadir}/standby.signal"
         operating_system.execute_shell_cmd(
             f"touch {signal_file}", [], shell=True, as_root=True)
-        operating_system.chown(signal_file, CONF.database_service_uid,
-                               CONF.database_service_uid, force=True,
+        operating_system.chown(signal_file, service.database_service_uid,
+                               service.database_service_gid, force=True,
                                as_root=True)
         LOG.debug("Standby signal file created")
 
