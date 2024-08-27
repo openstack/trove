@@ -82,7 +82,7 @@ class Commands(object):
 
     def db_recreate(self, repo_path):
         """Drops the database and recreates it."""
-        self.db_api.drop_db(CONF)
+        self.db_api.drop_db()
         self.db_sync(repo_path)
 
     def db_load_datastore_config_parameters(self,

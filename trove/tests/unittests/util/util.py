@@ -32,7 +32,7 @@ def init_db():
                               "database")
             db_api = get_db_api()
             db_api.db_sync(CONF)
-            session.configure_db(CONF)
+            session.configure_db()
             DB_SETUP = True
 
 

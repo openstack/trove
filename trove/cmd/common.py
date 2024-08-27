@@ -43,7 +43,7 @@ def initialize(extra_opts=None, pre_logging=None):
 
     # Initialize Trove database.
     from trove.db import get_db_api
-    get_db_api().configure_db(conf)
+    get_db_api().configure_db()
 
     return conf  # May be used by other scripts
 

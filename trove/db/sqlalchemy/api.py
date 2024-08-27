@@ -124,18 +124,18 @@ def update_all(query_func, model, conditions, values):
     query.session.commit()
 
 
-def configure_db(options, *plugins):
-    session.configure_db(options)
-    configure_db_for_plugins(options, *plugins)
+def configure_db(*plugins):
+    session.configure_db()
+    configure_db_for_plugins(*plugins)
 
 
-def configure_db_for_plugins(options, *plugins):
+def configure_db_for_plugins(*plugins):
     for plugin in plugins:
-        session.configure_db(options, models_mapper=plugin.mapper)
+        session.configure_db(models_mapper=plugin.mapper)
 
 
-def drop_db(options):
-    session.drop_db(options)
+def drop_db():
+    session.drop_db()
 
 
 def clean_db():
@@ -196,14 +196,16 @@ def _migrate_legacy_database(config):
             raise exception.BadRequest(message)
 
 
-def _configure_alembic(options):
+def _configure_alembic(conf=None):
+    if conf is None:
+        conf = conf.CONF
     alembic_ini = Path(__file__).joinpath('..', 'alembic.ini').resolve()
     if alembic_ini.exists():
         # alembic configuration
         config = alembic_config.Config(alembic_ini)
         # override the database configuration from the file
         config.set_main_option('sqlalchemy.url',
-                               options['database']['connection'])
+                               conf['database']['connection'])
         # override the logger configuration from the file
         # https://stackoverflow.com/a/42691781/613428
         config.attributes['configure_logger'] = False
@@ -213,8 +215,8 @@ def _configure_alembic(options):
         return None
 
 
-def db_sync(options, version=None, repo_path=None):
-    config = _configure_alembic(options)
+def db_sync(conf=None, version=None, repo_path=None):
+    config = _configure_alembic(conf=conf)
     if config:
         # Check the version
         if version is None:
@@ -233,8 +235,8 @@ def db_sync(options, version=None, repo_path=None):
                                    'no longer supported')
 
 
-def db_upgrade(options, version=None, repo_path=None):
-    config = _configure_alembic(options)
+def db_upgrade(conf=None, version=None, repo_path=None):
+    config = _configure_alembic(conf=conf)
     if config:
         # Check the version
         if version is None:
@@ -253,10 +255,10 @@ def db_upgrade(options, version=None, repo_path=None):
                                    'no longer supported')
 
 
-def db_reset(options, *plugins):
-    drop_db(options)
-    db_sync(options)
-    configure_db(options)
+def db_reset(*plugins):
+    drop_db()
+    db_sync()
+    configure_db()
 
 
 def _base_query(cls):
