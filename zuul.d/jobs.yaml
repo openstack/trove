@@ -445,25 +445,6 @@
       image_suffix: ""
 
 - job:
-    name: trove-centos8s-guest-image-build
-    run: playbooks/image-build/run.yaml
-    nodeset: trove-centos8s-single
-    description: |
-      Build Ubuntu focal based image only on centos8 stream.
-    required-projects:
-      - openstack/diskimage-builder
-      - openstack/trove
-    files:
-      - ^integration/(scripts|tests)/
-    vars:
-      guest_os: ubuntu
-      guest_os_release: focal
-      guest_username: ubuntu
-      branch: 2023.1
-      dev_mode: false
-      image_suffix: ""
-
-- job:
     name: publish-trove-guest-image-ubuntu-focal
     parent: publish-trove-guest-image
     description: |
