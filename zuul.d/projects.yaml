@@ -32,8 +32,6 @@
             voting: true
         - trove-ubuntu-guest-image-build:
             voting: true
-        - trove-centos8s-guest-image-build:
-            voting: true
     gate:
       jobs:
         - trove-tempest-ubuntu-base-mysql5.7
