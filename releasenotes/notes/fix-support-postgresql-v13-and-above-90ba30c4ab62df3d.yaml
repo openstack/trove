@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    Fixes support for PostgreSQL v13 and above.
+    Sets the `wal_keep_size` or `wal_keep_segments` in the instance
+    configuration file depending on the version in the data store version name.
+    The version number is parsed from the Datastore Version name and is exposed
+    to the database instance configuration templates to allow the the use of
+    conditional based on the version.
+
+    `Story 2008285 <https://storyboard.openstack.org/#!/story/2008285>`__
