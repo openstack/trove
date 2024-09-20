@@ -907,6 +907,12 @@
       "type": "integer"
     },
     {
+      "name": "wal_keep_size",
+      "restart_required": true,
+      "min": 0,
+      "type": "integer"
+    },
+    {
       "name": "wal_log_hints",
       "restart_required": true,
       "type": "boolean"

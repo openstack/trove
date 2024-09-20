@@ -17,6 +17,8 @@
 from oslo_config import cfg as oslo_config
 from oslo_log import log as logging
 
+from semantic_version import Version
+
 from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
@@ -69,15 +71,20 @@ class SingleInstanceConfigTemplate(object):
             'name': self.datastore_version.datastore_name,
             'manager': self.datastore_version.manager,
             'version': self.datastore_version.name,
+            'semantic_version': self._parse_datastore_version(),
         }
         self.instance_id = instance_id
 
     def get_template(self):
         patterns = ['{name}/{version}/{template_name}',
+                    '{name}/{major}.{minor}/{template_name}',
+                    '{name}/{major}/{template_name}',
                     '{name}/{template_name}',
                     '{manager}/{template_name}']
         context = self.datastore_dict.copy()
         context['template_name'] = self.template_name
+        context['major'] = str(context['semantic_version'].major)
+        context['minor'] = str(context['semantic_version'].minor)
         names = [name.format(**context) for name in patterns]
         return ENV.select_template(names)
 
@@ -114,6 +121,24 @@ class SingleInstanceConfigTemplate(object):
         :return: a positive integer
         """
         return abs(hash(self.instance_id) % (2 ** 31))
+
+    def _parse_datastore_version(self):
+        """
+        Attempt to parse a version from the DatastoreVersion name.
+        Returns version 0.0.0 if unable to parse.
+
+        :return: A Version instance.
+        """
+        try:
+            return Version.coerce(self.datastore_version.version or
+                                  self.datastore_version.name)
+        except ValueError:
+            LOG.warning('Unable to parse a version number from datastore '
+                        'version name "%s" or "%s"',
+                        self.datastore_version.name,
+                        self.datastore_version.version)
+            # TODO(adrianjarvis) define default version for each datastore
+            return Version(major=0, minor=0, patch=0)
 
 
 def _validate_datastore(datastore_manager):
