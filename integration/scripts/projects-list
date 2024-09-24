@@ -9,4 +9,3 @@ python-openstackclient
 python-novaclient
 python-troveclient
 python-neutronclient
-python-heatclient
