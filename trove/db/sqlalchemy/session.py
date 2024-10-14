@@ -15,7 +15,7 @@
 
 import contextlib
 
-from oslo_db.sqlalchemy import session as db_session
+from oslo_db.sqlalchemy import enginefacade
 from oslo_log import log as logging
 from sqlalchemy import MetaData
 
@@ -30,8 +30,8 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-def configure_db(options, models_mapper=None):
-    facade = _create_facade(options)
+def configure_db(models_mapper=None):
+    facade = _create_facade()
     if models_mapper:
         models_mapper.map(facade)
     else:
@@ -69,10 +69,11 @@ def configure_db(options, models_mapper=None):
         mappers.map(get_engine(), models)
 
 
-def _create_facade(options):
+def _create_facade():
     global _FACADE
     if _FACADE is None:
-        _FACADE = db_session.EngineFacade.from_config(options)
+        ctx = enginefacade.transaction_context()
+        _FACADE = ctx.writer
     return _FACADE
 
 
@@ -88,13 +89,15 @@ def get_facade():
     return _FACADE
 
 
-def get_engine(use_slave=False):
-    _create_facade(CONF)
-    return _FACADE.get_engine(use_slave=use_slave)
+def get_engine():
+    _create_facade()
+    return _FACADE.get_engine()
 
 
 def get_session(**kwargs):
-    return get_facade().get_session(**kwargs)
+    facade = _create_facade()
+    sessionmaker = facade.get_sessionmaker()
+    return sessionmaker(**kwargs)
 
 
 def raw_query(model, **kwargs):
@@ -114,9 +117,8 @@ def clean_db():
         trans.commit()
 
 
-def drop_db(options):
-    if options:
-        _create_facade(options)
+def drop_db():
+    _create_facade()
     engine = get_engine()
     meta = MetaData()
     meta.bind = engine

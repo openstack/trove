@@ -589,7 +589,7 @@ def get_datastore_or_version(datastore=None, datastore_version=None):
 
 
 def update_datastore(name, default_version):
-    db_api.configure_db(CONF)
+    db_api.configure_db()
     try:
         datastore = DBDatastore.find_by(name=name)
     except exception.ModelNotFoundError:
@@ -614,7 +614,7 @@ def update_datastore_version(datastore, name, manager, image_id, image_tags,
                              repl_strategy=None, version=None, new_name=None):
     """Create or update datastore version."""
     version = version or name
-    db_api.configure_db(CONF)
+    db_api.configure_db()
     datastore = Datastore.load(datastore)
     try:
         ds_version = DBDatastoreVersion.find_by(datastore_id=datastore.id,
@@ -655,7 +655,7 @@ class DatastoreVersionMetadata(object):
         Helper to find a datastore version id for a given
         datastore and datastore version name.
         """
-        db_api.configure_db(CONF)
+        db_api.configure_db()
         db_ds_record = DBDatastore.find_by(
             name=datastore_name
         )

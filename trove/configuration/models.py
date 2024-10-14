@@ -336,7 +336,7 @@ def create_or_update_datastore_configuration_parameter(name,
                                                        data_type,
                                                        max_size,
                                                        min_size):
-    get_db_api().configure_db(CONF)
+    get_db_api().configure_db()
     datastore_version = dstore_models.DatastoreVersion.load_by_uuid(
         datastore_version_id)
     try:
@@ -362,7 +362,7 @@ def create_or_update_datastore_configuration_parameter(name,
 
 def load_datastore_configuration_parameters(datastore, datastore_version,
                                             config_file, version_number=None):
-    get_db_api().configure_db(CONF)
+    get_db_api().configure_db()
     (ds, ds_v) = dstore_models.get_datastore_version(
         type=datastore, version=datastore_version, return_inactive=True,
         version_number=version_number)
@@ -381,7 +381,7 @@ def load_datastore_configuration_parameters(datastore, datastore_version,
 
 def remove_datastore_configuration_parameters(datastore, datastore_version,
                                               version_number=None):
-    get_db_api().configure_db(CONF)
+    get_db_api().configure_db()
     (ds, ds_version) = dstore_models.get_datastore_version(
         type=datastore, version=datastore_version, return_inactive=True,
         version_number=version_number)

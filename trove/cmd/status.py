@@ -39,7 +39,7 @@ class Checks(upgradecheck.UpgradeCommands):
         """
 
         db_api = db.get_db_api()
-        db_api.configure_db(cfg.CONF)
+        db_api.configure_db()
 
         with DBInstance.query() as query:
             query = query.filter(DBInstance.task_status != InstanceTasks.NONE)
