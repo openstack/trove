@@ -10,8 +10,7 @@ dnf install -y python-devel libxml2-devel libxslt-devel python-setuptools \
     python-sqlalchemy python-lxml \
     python-routes python-eventlet python-webob \
     python-kombu python-paste-deploy python-paste python-netaddr \
-    python-httplib2 python-iso8601 python-pip python-mysql \
-    python-migrate python-anyjson gcc python-pexpect
+    python-pip python-mysql python-migrate python-anyjson gcc python-pexpect
 
 # pick up the requirements file left for us by
 # extra-data.d/15-reddwarf-dep
