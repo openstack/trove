@@ -6,7 +6,6 @@
       - openstack-cover-jobs
       # - openstack-lower-constraints-jobs
       - openstack-python3-zed-jobs
-      - periodic-stable-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
@@ -38,13 +37,3 @@
         - trove-scenario-mysql-multi
         - trove-scenario-mariadb-single
         - trove-scenario-mariadb-multi
-    periodic:
-      jobs:
-        - publish-trove-guest-image-ubuntu-focal:
-            branches:
-                regex: ^stable/.*$
-                negate: true
-        - publish-trove-guest-image-ubuntu-focal-dev:
-            branches:
-                regex: ^stable/.*$
-                negate: true
