@@ -15,7 +15,6 @@
       - openstack-cover-jobs
       # - openstack-lower-constraints-jobs
       - openstack-python3-yoga-jobs
-      - periodic-stable-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
@@ -43,10 +42,6 @@
         - trove-scenario-mysql-multi
         - trove-scenario-mariadb-single
         - trove-scenario-mariadb-multi
-    periodic:
-      jobs:
-        - publish-trove-guest-image-ubuntu-bionic
-        - publish-trove-guest-image-ubuntu-bionic-dev
 
 - job:
     name: trove-devstack-base
