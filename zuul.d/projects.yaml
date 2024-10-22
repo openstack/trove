@@ -12,6 +12,7 @@
     check:
       jobs:
         - trove-tempest-ubuntu-base-mysql5.7
+        - trove-tempest-ubuntu-base-mysql5.7-jammy
         - trove-tempest-ubuntu-backup-mysql5.7:
             voting: false
         - trove-tempest-ubuntu-replication-mysql5.7:
@@ -35,6 +36,7 @@
     gate:
       jobs:
         - trove-tempest-ubuntu-base-mysql5.7
+        - trove-tempest-ubuntu-base-mysql5.7-jammy
         - trove-tempest-ubuntu-base-mariadb10.4
         - trove-tempest-ubuntu-base-postgresql12
     experimental:

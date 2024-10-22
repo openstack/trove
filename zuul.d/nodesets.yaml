@@ -1,4 +1,20 @@
 - nodeset:
+    name: trove-ubuntu-noble
+    nodes:
+      - name: controller
+        label: nested-virt-ubuntu-noble
+    groups:
+      - name: tempest
+        nodes:
+          - controller
+
+- nodeset:
+    name: trove-ubuntu-noble-single
+    nodes:
+      - name: primary
+        label: ubuntu-noble
+
+- nodeset:
     name: trove-ubuntu-jammy
     nodes:
       - name: controller
@@ -7,9 +23,3 @@
       - name: tempest
         nodes:
           - controller
-
-- nodeset:
-    name: trove-ubuntu-jammy-single
-    nodes:
-      - name: primary
-        label: ubuntu-jammy

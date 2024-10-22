@@ -23,7 +23,7 @@
 - job:
     name: trove-tempest
     parent: devstack-tempest
-    nodeset: trove-ubuntu-jammy
+    nodeset: trove-ubuntu-noble
     timeout: 10800
     required-projects: &base_required_projects
       - openstack/trove
@@ -181,6 +181,15 @@
             $TEMPEST_CONFIG:
               database:
                 default_datastore_versions: mysql:5.7
+
+# TODO(gmann): As per the 2025.1 testing runtime, we need to run at least
+# one job on jammy. This job can be removed as per the future testing
+# runtime (whenever we start testing Ubuntu 26.04 as default version).
+- job:
+    name: trove-tempest-ubuntu-base-mysql5.7-jammy
+    description: This is integrated job testing on Ubuntu jammy(22.04)
+    parent: trove-tempest-ubuntu-base-mysql5.7
+    nodeset: trove-ubuntu-jammy
 
 - job:
     name: trove-tempest-ubuntu-backup-mysql5.7
@@ -421,7 +430,7 @@
 - job:
     name: trove-ubuntu-guest-image-build
     run: playbooks/image-build/run.yaml
-    nodeset: trove-ubuntu-jammy-single
+    nodeset: trove-ubuntu-noble-single
     timeout: 3600
     description: |
       Build Ubuntu jammy based image only on ubuntu distro.
@@ -474,6 +483,6 @@
     run: playbooks/image-build/docker-registry.yaml
     parent: publish-openstack-artifacts
     post-run: playbooks/image-build/post.yaml
-    nodeset: trove-ubuntu-jammy-single
+    nodeset: trove-ubuntu-noble-single
     required-projects:
       - openstack/trove
