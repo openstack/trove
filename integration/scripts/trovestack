@@ -774,12 +774,13 @@ function cmd_build_image() {
     if is_fedora; then
       sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install epel-release
       sudo $PKG_MGR config-manager --set-enabled epel
-      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-img git kpartx debootstrap squashfs-tools python3-pip python3-setuptools zstd
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-img git kpartx debootstrap squashfs-tools python3-pip python3-setuptools zstd python3-venv
     else
-      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-utils git kpartx debootstrap squashfs-tools python3-pip python3-setuptools
+      sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-utils git kpartx debootstrap squashfs-tools python3-pip python3-setuptools python3-venv
     fi
-    sudo -H $HTTP_PROXY pip3 install diskimage-builder
-
+    python3 -m venv ~/diskimage-builder-env
+    $HTTP_PROXY ~/diskimage-builder-env/bin/pip3 install setuptools diskimage-builder
+    source ~/diskimage-builder-env/bin/activate
     build_guest_image ${image_guest_os} ${image_guest_release} ${dev_mode} ${guest_username} ${output}
 }
 
