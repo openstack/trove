@@ -65,7 +65,8 @@ class DBCapabilityOverrides(dbmodels.DatabaseModelBase):
 
 class DBDatastoreVersion(dbmodels.DatabaseModelBase):
     _data_fields = ['datastore_id', 'name', 'image_id', 'image_tags',
-                    'packages', 'active', 'manager', 'version']
+                    'packages', 'active', 'manager', 'version',
+                    'registry_ext', 'repl_strategy']
     _table_name = 'datastore_versions'
 
 

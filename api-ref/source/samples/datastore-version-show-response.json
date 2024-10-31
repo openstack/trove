@@ -1,18 +1,26 @@
 {
     "version": {
-        "datastore": "cc9ee471-e781-43bf-a796-423c5d549997",
-        "id": "4eb0179d-fe11-4556-9422-5267d2fc7625",
-        "links": [
-            {
-                "href": "https://127.0.0.1:8779/v1.0/9f8dd5eacb074c9f87d2d822c9092aa5/datastores/versions/4eb0179d-fe11-4556-9422-5267d2fc7625",
-                "rel": "self"
-            },
-            {
-                "href": "https://127.0.0.1:8779/datastores/versions/4eb0179d-fe11-4556-9422-5267d2fc7625",
-                "rel": "bookmark"
-            }
-        ],
-        "name": "12",
-        "version": "5.7.29"
+      "id": "800774c4-0505-4ae7-8cf9-aae131e065ae",
+      "name": "5.7",
+      "version": "5.7",
+      "links": [
+        {
+          "href": "https://127.0.0.1:8779/v1.0/0600c20b16444bfa979b879b099805a1/datastores/versions/800774c4-0505-4ae7-8cf9-aae131e065ae",
+          "rel": "self"
+        },
+        {
+          "href": "https://127.0.0.1:8779/datastores/versions/800774c4-0505-4ae7-8cf9-aae131e065ae",
+          "rel": "bookmark"
+        }
+      ],
+      "datastore": "3423e828-3355-48ef-9c16-5c41e7c196fb",
+      "active": true,
+      "packages": "",
+      "image": null,
+      "registry_ext": "trove.guestagent.datastore.mysql.manager.Manager",
+      "repl_strategy": "trove.guestagent.strategies.replication.mysql_gtid.MysqlGTIDReplication",
+      "image_tags": [
+        "trove"
+      ]
     }
 }
