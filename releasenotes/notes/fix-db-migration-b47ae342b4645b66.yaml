@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    fix a bug where the trove-manage script fails to upgrade
+    the database when the DBDatastoreVersion table is not empty.

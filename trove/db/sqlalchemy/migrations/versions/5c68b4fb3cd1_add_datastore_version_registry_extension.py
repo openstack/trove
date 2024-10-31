@@ -75,7 +75,11 @@ def upgrade() -> None:
             'repl_namespace': repl_namespaces.get(dsv_manager, ''),
             'repl_strategy': repl_strategies.get(dsv_manager, '')
         }
-        ds_versions_table = table("datastore_versions", column("", String))
+        ds_versions_table = table(
+            "datastore_versions",
+            column("id", String),
+            column("registry_ext", String),
+            column("repl_strategy", String))
         op.execute(
             ds_versions_table.update()
             .where(ds_versions_table.c.id == dsv_id)
