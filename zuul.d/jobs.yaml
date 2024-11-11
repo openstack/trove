@@ -434,7 +434,7 @@
       guest_os: ubuntu
       guest_os_release: jammy
       guest_username: ubuntu
-      branch: master
+      branch: 2024.2
       dev_mode: false
       image_suffix: ""
 
@@ -448,7 +448,7 @@
       guest_os: ubuntu
       guest_os_release: jammy
       guest_username: ubuntu
-      branch: master
+      branch: 2024.2
       dev_mode: false
       image_suffix: ""
 
@@ -462,7 +462,7 @@
       guest_os: ubuntu
       guest_os_release: jammy
       guest_username: ubuntu
-      branch: master
+      branch: 2024.2
       dev_mode: true
       image_suffix: "-dev"
 
