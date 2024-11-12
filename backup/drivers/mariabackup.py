@@ -26,7 +26,7 @@ CONF = cfg.CONF
 class MariaBackup(mysql_base.MySQLBaseRunner):
     """Implementation of Backup and Restore using mariabackup."""
     restore_cmd = ('mbstream -x -C %(restore_location)s')
-    prepare_cmd = 'mariabackup --prepare --target--dir=%(restore_location)s'
+    prepare_cmd = 'mariabackup --prepare --target-dir=%(restore_location)s'
 
     def __init__(self, *args, **kwargs):
         super(MariaBackup, self).__init__(*args, **kwargs)
