@@ -815,7 +815,7 @@ class BaseMySqlApp(service.BaseDbApp):
         replication_user = None
         with mysql_util.SqlClient(self.get_engine()) as client:
             result = client.execute(text('SHOW SLAVE STATUS'))
-            replication_user = result.first()['Master_User']
+            replication_user = result.first()._mapping['Master_User']
             client.execute(text('STOP SLAVE'))
             client.execute(text('RESET SLAVE ALL'))
             self.wait_for_slave_status('OFF', client, 180)

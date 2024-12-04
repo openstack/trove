@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fix a bug where replications failed to detach from the source instance
+    because of the upgrade of the sqlachemy library.
