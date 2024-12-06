@@ -1,0 +1,10 @@
+- hosts: all
+  tasks:
+    - name: Install Python3 pip and setuptools
+      package:
+        name:
+          - python3-pip
+          - python3-setuptools
+      become: true
+    - name: Create virtualenv
+      command: python3 -m venv /tmp/trove-virtualenv
