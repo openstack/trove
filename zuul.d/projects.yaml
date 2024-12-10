@@ -48,7 +48,7 @@
             branches:
                 regex: ^stable/.*$
                 negate: true
-        - publish-trove-datastore-images:
+        - publish-trove-images-quay:
             branches:
                 regex: ^stable/.*$
                 negate: true

@@ -23,3 +23,29 @@
       - name: tempest
         nodes:
           - controller
+
+- secret:
+    name: trove_quay_io_creds
+    data:
+      username: !encrypted/pkcs1-oaep
+        - RikBORnOJ0l12Tb4KmXm7HM1P12ig8WsNy8ANfpMBY4AnrsETdw/RfQ35pyTimisu6dkl
+          L25+6049BOQYT3qHYCtf5nMj7AT9/KtNWTT93fFnj2YvbH8wNJAsCYqCodxa2YKg+rAN3
+          xF00+7NDKU3wdl7eXC946ypwBmVZTC8U+chEINNlV0iyHQK1Jv9peifl+HfPbMZtB9Xrb
+          /3tLcAqSZkWkjx/u1tW0FYCUUyTHpPeTkoSV6Xjd/iMp2IINkp8aDszTAl6nFnre+Cqxi
+          vWjOb9Phfb8j3U6L84Z83BgTAgZX3L+J/lgFLPCVMc2R3WMfHuYs7pYNTxFRCTlPpjQpu
+          +sg22Fg4QxWaicppdxDSIPQphFALDq7HQxIWcLokpT1U0mY4D64bmeawhCzNYuZ+Hasp2
+          94vLPkGwrlVZkIeqLh1+y5HViCNmxlPJd64koT2cGLTw7YtQpWUguB3/0j2xMC/qtnQhw
+          dSx4rDEWYiQTBYtlA8YTC8PXHInUxeHcgAC0NJWI56jpfhfke963XwHRt+wqKEQV83zG2
+          bSzfp26x6/PUSaUfXG+2DSINe42tBpUfpd4qTEmt60PIdiQEFrm5FMPlQP3we6iHHP4XB
+          XephdzL+rkkazuetM2osK6XYTfaddF6k6ZlnbX5zPqDyA+mhMndP6uezx4uJws=
+      password: !encrypted/pkcs1-oaep
+        - 5BdlzdWHAxMjZOFZx4vNqru66lB31Yr3q04v0iq2APWXBHMegDjDz8aMmAYlWNlf5kxN8
+          399DV/PKZ8mFS3kCrgKZntMIZV3TrVlGxr5aoFQJc+uUEXtJ+qnahD9PqeCQu1nnniHtW
+          579YkGNR+1iG/ijbQigu3/ty9rvx+r/B3zpAynJ+nBdvtToFuKV8JlCsLZDtV/FRaskGi
+          iKMmvjh0BozYR/nDdka8LZFrpvehawkKZ/ToOisiGeSFIgkOfH7av4tp8DCou/0pSPZHb
+          30VZYTtTRtw4bIxFS1jwm+JsEzBKMuKxi9KKhqlvRm0lTmizLT4ZEwVyyAtwiB4vJZ6Ax
+          FaWyyjXle6i0TCqjuTM2HSguLwCF8NgDd4yVtdUNC7Eg9vaJ3YbK57v/ul7r83O2Dtb5B
+          OiFeu8BMp/g2lCkkM3O6OZ+Eie4SDLlvfU0BGwi+y6P2BhCZU4jaHLBsuxs+gdyTGyjKQ
+          XIIDStaglQJFV7UG5AIsOCgtvSlP6cu/VpHE3/CIu5dKDA/65zZcbqKH+j6y4+aynIgQ5
+          CfmqR7FHDj9LCgQSWM+36CNhYxWvanQLR4d2L7X9si6K4DxHr2VGb0GqEtkeTkCAYwpXZ
+          UzKVxd2dqOrnlvy4qMdXBvGOT1fdjjq7QN9Ou4W+L2C793owTiix9lK7Ev1pBs=

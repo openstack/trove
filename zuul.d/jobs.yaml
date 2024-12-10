@@ -476,13 +476,13 @@
       image_suffix: "-dev"
 
 - job:
-    name: publish-trove-datastore-images
+    name: publish-trove-images-quay
     description: |
-      Build and publish trove datastore docker images to
-      tarballs.openstack.org.
+      Build and sync trove images to quay.io/openstack.trove.
+    pre-run: playbooks/image-build/pre.yaml
     run: playbooks/image-build/docker-registry.yaml
-    parent: publish-openstack-artifacts
-    post-run: playbooks/image-build/post.yaml
     nodeset: trove-ubuntu-noble-single
     required-projects:
       - openstack/trove
+    secrets:
+      - trove_quay_io_creds
