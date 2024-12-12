@@ -19,12 +19,13 @@
         daemon_reload: true
 
     - name: Login to quay.io
+      become: true
       docker_login:
         registry: quay.io
         username: "{{ trove_quay_io_creds.username | trim }}"
         password: "{{ trove_quay_io_creds.password | trim }}"
 
-    # sync images to quay.io to avoid docker rate limitation
+    # sync images to quay.io to avoid docker pull rate limit.
     - name: retag and push images
       become: true
       community.docker.docker_image:
