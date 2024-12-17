@@ -526,10 +526,10 @@ function create_registry_container {
     echo "Running a docker registry container..."
     container=$(sudo docker ps -a --format "{{.Names}}" --filter name=registry)
     if [ -z $container ]; then
-        sudo docker run -d --net=host -e REGISTRY_HTTP_ADDR=0.0.0.0:4000 --restart=always -v /opt/trove_registry/:/var/lib/registry --name registry registry:2
+        sudo docker run -d --net=host -e REGISTRY_HTTP_ADDR=0.0.0.0:4000 --restart=always -v /opt/trove_registry/:/var/lib/registry --name registry quay.io/openstack.trove/registry:2
         for img in {"mysql:5.7","mysql:8.0","mariadb:10.4","postgres:12"};
         do
-        sudo docker pull ${img} && sudo docker tag ${img} 127.0.0.1:4000/trove-datastores/${img} && sudo docker push 127.0.0.1:4000/trove-datastores/${img}
+        sudo docker pull quay.io/openstack.trove/${img} && sudo docker tag quay.io/openstack.trove/${img} 127.0.0.1:4000/trove-datastores/${img} && sudo docker push 127.0.0.1:4000/trove-datastores/${img}
         done
         pushd $DEST/trove/backup
         # build backup images
