@@ -779,7 +779,7 @@ function cmd_build_image() {
       sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-utils git kpartx debootstrap squashfs-tools python3-pip python3-setuptools python3-venv
     fi
     python3 -m venv ~/diskimage-builder-env
-    $HTTP_PROXY ~/diskimage-builder-env/bin/pip3 install setuptools diskimage-builder
+    sudo $HTTP_PROXY ~/diskimage-builder-env/bin/pip3 install setuptools diskimage-builder
     source ~/diskimage-builder-env/bin/activate
     build_guest_image ${image_guest_os} ${image_guest_release} ${dev_mode} ${guest_username} ${output}
 }
