@@ -45,3 +45,49 @@ class RootEnabledView(object):
 
     def data(self):
         return {'rootEnabled': self.is_root_enabled}
+
+
+class UsersView(object):
+
+    def __init__(self, users):
+        self.users = users
+
+    def data(self):
+        userlist = [{"name": user.name,
+                     "host": user.host,
+                     "databases": user.databases}
+                    for user in self.users]
+
+        return {"users": userlist}
+
+
+class UserAccessView(object):
+    def __init__(self, databases):
+        self.databases = databases
+
+    def data(self):
+        dbs = [{"name": db.name} for db in self.databases]
+        return {"databases": dbs}
+
+
+class SchemaView(object):
+
+    def __init__(self, schema):
+        self.schema = schema
+
+    def data(self):
+        return {"name": self.schema.name}
+
+
+class SchemasView(object):
+
+    def __init__(self, schemas):
+        self.schemas = schemas
+
+    def data(self):
+        data = []
+        # These are model instances
+        for schema in self.schemas:
+            data.append(SchemaView(schema).data())
+
+        return {"databases": data}

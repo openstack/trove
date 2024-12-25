@@ -34,8 +34,8 @@ from trove.common import policy
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as ds_models
-from trove.extensions.mysql.common import populate_users
-from trove.extensions.mysql.common import populate_validated_databases
+from trove.extensions.common.common import populate_users
+from trove.extensions.common.common import populate_validated_databases
 from trove.instance import models, views
 from trove.module import models as module_models
 from trove.module import views as module_views

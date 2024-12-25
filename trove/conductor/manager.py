@@ -22,7 +22,7 @@ from trove.common import exception as trove_exception
 from trove.common.rpc import version as rpc_version
 from trove.common.serializable_notification import SerializableNotification
 from trove.conductor.models import LastSeen
-from trove.extensions.mysql import models as mysql_models
+from trove.extensions.common import models as common_models
 from trove.instance import models as inst_models
 from trove.instance import service_status as svc_status
 
@@ -150,7 +150,7 @@ class Manager(periodic_task.PeriodicTasks):
         if user is not None:
             LOG.debug("calling report_root with a username: %s, "
                       "is deprecated now!" % user)
-        mysql_models.RootHistory.create(context, instance_id)
+        common_models.RootHistory.create(context, instance_id)
 
     def notify_end(self, context, serialized_notification, notification_args):
         notification = SerializableNotification.deserialize(

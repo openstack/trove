@@ -19,7 +19,7 @@ from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
 from trove.common import timeutils
-from trove.extensions.mysql import models as mysql_models
+from trove.extensions.common import models as common_models
 from trove.instance import models as instance_models
 from trove import rpc
 
@@ -131,8 +131,8 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
             instance.volume = None
             # Populate the volume_used attribute from the guest agent.
         instance_models.load_guest_info(instance, context, id)
-        instance.root_history = mysql_models.RootHistory.load(context=context,
-                                                              instance_id=id)
+        instance.root_history = common_models.RootHistory.load(context=context,
+                                                               instance_id=id)
         return instance
 
 
