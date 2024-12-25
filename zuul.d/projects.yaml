@@ -41,9 +41,7 @@
       jobs:
         - publish-trove-guest-image-ubuntu-jammy:
             branches:
-                regex: ^stable/.*$
-                negate: true
+                regex: master
         - publish-trove-datastore-images:
             branches:
-                regex: ^stable/.*$
-                negate: true
+                regex: master
