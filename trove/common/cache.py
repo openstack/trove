@@ -18,6 +18,20 @@ from oslo_cache import core
 from oslo_config import cfg
 
 
+PORTS_CACHE_GROUP = cfg.OptGroup('instance_ports_cache')
+PORTS_CACHE_OPTS = [
+    cfg.IntOpt('expiration_time', default=86400,
+               help='TTL, in seconds, for any cached item in the '
+                    'dogpile.cache region used for caching of the '
+                    'instance ports.'),
+    cfg.BoolOpt("caching", default=True,
+                help='Toggle to enable/disable caching when getting trove '
+                     'instance ports. Please note that the global toggle '
+                     'for oslo.cache(enabled=True in [cache] group) '
+                     'must be enabled to use this feature.')
+]
+
+
 def register_cache_configurations(conf):
     """Register all configurations required for oslo.cache.
 
@@ -26,20 +40,8 @@ def register_cache_configurations(conf):
     """
     core.configure(conf)
 
-    ports_cache_group = cfg.OptGroup('instance_ports_cache')
-    ports_cache_opts = [
-        cfg.IntOpt('expiration_time', default=86400,
-                   help='TTL, in seconds, for any cached item in the '
-                        'dogpile.cache region used for caching of the '
-                        'instance ports.'),
-        cfg.BoolOpt("caching", default=True,
-                    help='Toggle to enable/disable caching when getting trove '
-                         'instance ports. Please note that the global toggle '
-                         'for oslo.cache(enabled=True in [cache] group) '
-                         'must be enabled to use this feature.')
-    ]
-    conf.register_group(ports_cache_group)
-    conf.register_opts(ports_cache_opts, group=ports_cache_group)
+    conf.register_group(PORTS_CACHE_GROUP)
+    conf.register_opts(PORTS_CACHE_OPTS, group=PORTS_CACHE_GROUP)
 
     return conf
 

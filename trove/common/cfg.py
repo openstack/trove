@@ -28,6 +28,7 @@ from oslo_log import versionutils
 from oslo_middleware import cors
 from osprofiler import opts as profiler
 
+from trove.common import cache
 from trove.common.i18n import _
 from trove.version import version_info as version
 
@@ -1611,6 +1612,7 @@ def list_opts():
         (network_group, network_opts),
         (service_credentials_group, service_credentials_opts),
         (guest_agent_group, guest_agent_opts),
+        (cache.PORTS_CACHE_GROUP, cache.PORTS_CACHE_OPTS)
     ]
 
     return keystone_middleware_opts + keystone_loading_opts + trove_opts
