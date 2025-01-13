@@ -120,7 +120,7 @@ class TestConfigurationController(trove_testtools.TestCase):
             self._test_validate_configuration_with_action(body,
                                                           action='create',
                                                           is_valid=False))
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
 
     def test_validate_edit_configuration(self):
         body = {

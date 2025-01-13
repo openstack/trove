@@ -62,7 +62,7 @@ class TestUserController(trove_testtools.TestCase):
         error_messages = [error.message for error in errors]
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
         self.assertIn("password", error_paths)
 
@@ -86,7 +86,7 @@ class TestUserController(trove_testtools.TestCase):
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(3))
         self.assertIn("'password' is a required property", error_messages)
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
         self.assertIn("name", error_paths)
 
@@ -185,7 +185,7 @@ class TestUserController(trove_testtools.TestCase):
         error_messages = [error.message for error in errors]
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
         self.assertIn("password", error_paths)
 
@@ -199,7 +199,7 @@ class TestUserController(trove_testtools.TestCase):
         error_messages = [error.message for error in errors]
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
         self.assertIn("password", error_paths)
 
@@ -213,7 +213,7 @@ class TestUserController(trove_testtools.TestCase):
         error_messages = [error.message for error in errors]
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("password", error_paths)
 
     def test_validate_update_no_password(self):
@@ -252,7 +252,7 @@ class TestUserController(trove_testtools.TestCase):
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(3))
         self.assertIn("'password' is a required property", error_messages)
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
         self.assertIn("name", error_paths)
 

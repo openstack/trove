@@ -103,7 +103,7 @@ class TestClusterController(trove_testtools.TestCase):
         error_messages = [error.message for error in errors]
         error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' should be non-empty", error_messages)
         self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
         self.assertIn("type", error_paths)
 

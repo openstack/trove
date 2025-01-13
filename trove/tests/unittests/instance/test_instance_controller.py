@@ -284,7 +284,7 @@ class TestInstanceController(trove_testtools.TestCase):
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
         self.verify_errors(errors[0].context,
-                           ["'' is too short",
+                           ["'' should be non-empty",
                             "'' does not match '^.*[0-9a-zA-Z]+.*$'",
                             "'' is not of type 'integer'"],
                            ["flavorRef", "flavorRef", "flavorRef",
@@ -299,7 +299,7 @@ class TestInstanceController(trove_testtools.TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        self.verify_errors(errors, ["'' is too short"], ["flavorRef"])
+        self.verify_errors(errors, ["'' should be non-empty"], ["flavorRef"])
 
     def _setup_modify_instance_mocks(self):
         instance = Mock()
