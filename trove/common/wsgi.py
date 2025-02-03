@@ -25,7 +25,6 @@ import jsonschema
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_service import service
-from oslo_utils import encodeutils
 import paste.urlmap
 import webob
 import webob.dec
@@ -585,8 +584,7 @@ class FaultWrapper(base_wsgi.Middleware):
                 return resp
             return resp
         except Exception as ex:
-            LOG.exception("Caught error: %s.",
-                          encodeutils.exception_to_unicode(ex))
+            LOG.exception("Caught error: %s.", ex)
             exc = webob.exc.HTTPInternalServerError()
             return Fault(exc)
 
