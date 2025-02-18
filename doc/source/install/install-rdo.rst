@@ -3,12 +3,8 @@
 Install and configure for Red Hat Enterprise Linux and CentOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning::
-
-    This guide is not tested since stable/train.
-
 This section describes how to install and configure the Database service
-for Red Hat Enterprise Linux 7 and CentOS 7.
+for Red Hat Enterprise Linux 9 and CentOS Stream 9.
 
 .. include:: common_prerequisites.txt
 
@@ -19,7 +15,7 @@ Install and configure components
 
    .. code-block:: console
 
-      # yum install openstack-trove python-troveclient
+      # dnf install openstack-trove python3-troveclient
 
 .. include:: common_configure.txt
 
