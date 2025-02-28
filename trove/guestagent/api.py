@@ -335,7 +335,8 @@ class API(object):
         # didn't create a queue on time.
         self._create_guest_queue()
 
-        packages = packages.split()
+        if packages:
+            packages = packages.split()
 
         prepare_args = dict(
             packages=packages, databases=databases, memory_mb=memory_mb,
