@@ -60,3 +60,4 @@ publish-docs/
 
 # Config sample and policy sample
 etc/trove/*.sample
+doc/source/_static/*.sample
