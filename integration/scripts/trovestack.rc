@@ -10,9 +10,6 @@
 # Try REGION_NAME then OS_REGION_NAME then RegionOne (the devstack default)
 REGION_NAME=${REGION_NAME:-${OS_REGION_NAME:-RegionOne}}
 
-# Enable Neutron
-ENABLE_NEUTRON=$(get_bool ENABLE_NEUTRON true)
-
 # Enable Swift
 ENABLE_SWIFT=$(get_bool ENABLE_SWIFT true)
 
