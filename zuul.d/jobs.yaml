@@ -88,6 +88,68 @@
         '/var/log/guest-agent-logs/': 'logs'
 
 - job:
+    name: trove-tempest-snapshot
+    parent: devstack-tempest
+    nodeset: trove-ubuntu-noble
+    timeout: 10800
+    required-projects:
+      - openstack/trove
+      - openstack/trove-tempest-plugin
+      - openstack/tempest
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^\..+
+    vars:
+      tox_envlist: all
+      tempest_concurrency: 1
+      devstack_localrc:
+        TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
+        SYNC_LOG_TO_CONTROLLER: True
+        TROVE_DATASTORE_VERSION: 5.7
+        TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
+        TROVE_MGMT_GATEWAY: "192.168.254.1"
+      devstack_local_conf:
+        post-config:
+          $TROVE_CONF:
+            DEFAULT:
+              swift_api_insecure: True
+              usage_timeout: 1800
+              storage_strategy: cinder
+          $TROVE_GUESTAGENT_CONF:
+            DEFAULT:
+              storage_strategy: cinder
+        test-config:
+          $TEMPEST_CONFIG:
+            database:
+              database_build_timeout: 2400
+              default_datastore_versions: mysql:5.7
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove.git
+      devstack_services:
+        etcd3: false
+        cinder: true
+        c-sch: true
+        c-api: true
+        c-vol: true
+        c-bak: false
+        swift: false
+        tls-proxy: true
+        tempest: true
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.(test_cinder_backup|test_replication)
+      tempest_test_timeout: 3600
+      zuul_copy_output:
+        '/var/log/guest-agent-logs/': 'logs'
+
+- job:
     name: trove-tempest-ubuntu-base
     parent: trove-tempest
     irrelevant-files:
@@ -247,6 +309,34 @@
                 default_datastore_versions: mysql:5.7
 
 - job:
+    name: trove-tempest-cinder-storage-driver-mysql5.7
+    parent:  trove-tempest-snapshot
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^backup/
+      - ^\..+
+      - ^trove/guestagent/datastore/(postgres|mariadb)/.*$
+      - ^trove/guestagent/strategies/replication/(postgresql.*|mariadb.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_VERSION: 5.7
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: mysql:5.7
+
+- job:
     name: trove-tempest-ubuntu-base-mariadb10.4
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
@@ -333,6 +423,36 @@
                 default_datastore_versions: mariadb:10.4
 
 - job:
+    name: trove-tempest-cinder-storage-driver-mariadb10.4
+    parent:  trove-tempest-snapshot
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^backup/
+      - ^\..+
+      - ^trove/guestagent/datastore/(postgres|mysql)/.*$
+      - ^trove/guestagent/strategies/replication/(postgresql.*|mysql.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mariadb
+          TROVE_DATASTORE_VERSION: 10.4
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                enabled_datastores: "mariadb"
+                default_datastore_versions: mariadb:10.4
+
+- job:
     name: trove-tempest-ubuntu-base-postgresql12
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
@@ -415,6 +535,36 @@
           test-config:
             $TEMPEST_CONFIG:
               database:
+                enabled_datastores: "postgresql"
+                default_datastore_versions: postgresql:12
+
+- job:
+    name: trove-tempest-cinder-storage-driver-postgresql12
+    parent:  trove-tempest-snapshot
+    irrelevant-files:
+      - ^.*\.rst$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^etc/.*$
+      - ^releasenotes/.*$
+      - ^test-requirements.txt$
+      - ^tox.ini$
+      - ^LICENSE$
+      - ^contrib/
+      - ^zuul\.d/
+      - ^backup/
+      - ^\..+
+      - ^trove/guestagent/datastore/(mysql|mariadb)/.*$
+      - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: postgresql
+          TROVE_DATASTORE_VERSION: 12
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
                 enabled_datastores: "postgresql"
                 default_datastore_versions: postgresql:12
 
