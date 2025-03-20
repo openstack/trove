@@ -1110,8 +1110,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             if not userdata:
                 userdata = self.prepare_cloud_config(files)
             else:
-                userdata = userdata + self.prepare_cloud_config(files)
-
+                userdata = self.combine_cloudinit_userdata(
+                    self.prepare_cloud_config(files),
+                    userdata)
             files = {}
 
         server = self.nova_client.servers.create(

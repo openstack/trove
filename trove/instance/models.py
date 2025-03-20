@@ -19,6 +19,7 @@ import base64
 import json
 import os.path
 import re
+import yaml
 
 from datetime import datetime
 from datetime import timedelta
@@ -65,6 +66,8 @@ LOG = logging.getLogger(__name__)
 # Invalid states to contact the agent
 AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE", "PROMOTE", "EJECT",
                           "UPGRADE"]
+
+CLOUDINIT_HEADER = "#cloud-config\n"
 
 
 def ip_visible(ip, white_list_regex, black_list_regex):
@@ -969,29 +972,26 @@ class BaseInstance(SimpleInstance):
 
     def prepare_cloud_config(self, files):
         # This method returns None if the files argument is None
-        userdata = None
+        if not files:
+            return ""
 
-        if files:
-            userdata = (
-                "#cloud-config\n"
-                "write_files:\n"
-            )
+        injected_config_owner = CONF.get('injected_config_owner')
+        injected_config_group = CONF.get('injected_config_group')
 
-            injected_config_owner = CONF.get('injected_config_owner')
-            injected_config_group = CONF.get('injected_config_group')
-            for filename, content in files.items():
-                ud = encodeutils.safe_encode(content)
-                body_userdata = (
-                    "- encoding: b64\n"
-                    "  owner: %s:%s\n"
-                    "  path: %s\n"
-                    "  content: %s\n" % (
-                        injected_config_owner, injected_config_group, filename,
-                        encodeutils.safe_decode(base64.b64encode(ud)))
-                )
-                userdata = userdata + body_userdata
+        write_files = []
+        for filename, content in files.items():
+            ud = encodeutils.safe_encode(content)
+            write_files.append({
+                "encoding": "b64",
+                "owner": f"{injected_config_owner}:{injected_config_group}",
+                "path": filename,
+                "content": encodeutils.safe_decode(base64.b64encode(ud))
+            })
 
-        return userdata if userdata else ""
+        cloud_config = {
+            "write_files": write_files
+        }
+        return CLOUDINIT_HEADER + yaml.dump(cloud_config)
 
     @property
     def datastore_registry_ext(self):
@@ -1120,6 +1120,28 @@ class BaseInstance(SimpleInstance):
             with open(cloudinit, "r") as f:
                 userdata = f.read()
         return userdata
+
+    @staticmethod
+    def combine_cloudinit_userdata(cloudinit, userdata):
+        cloudinit = yaml.safe_load(cloudinit)
+        try:
+            # in case the userdata is not a valid yaml
+            userdata = yaml.safe_load(userdata)
+        except yaml.YAMLError as e:
+            LOG.error("Failed to parse userdata: %s. The error was: %s",
+                      userdata,
+                      str(e))
+            return CLOUDINIT_HEADER + yaml.dump(cloudinit)
+        if isinstance(userdata, dict):
+            # in case the userdata contains write_files directive
+            if userdata.get('write_files') and cloudinit.get('write_files'):
+                cloudinit['write_files'].extend(userdata['write_files'])
+                userdata.pop('write_files')
+            cloudinit.update(userdata)
+        else:
+            LOG.error("Userdata is not a valid cloudinit config: %s",
+                      userdata)
+        return CLOUDINIT_HEADER + yaml.dump(cloudinit)
 
 
 class FreshInstance(BaseInstance):

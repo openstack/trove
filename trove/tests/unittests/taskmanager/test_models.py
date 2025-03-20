@@ -256,6 +256,25 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         user_data = self.freshinstancetasks.prepare_cloud_config(files)
         self.assertTrue(user_data.startswith('#cloud-config'))
 
+    def test_create_instance_combine_cloudinit_userdata(self):
+        cloudcfg = """
+        #cloud-config
+        write_files:
+          - path: /etc/myconfig.conf
+            content: This is the content of the file.
+            owner: root:root
+            encoding: b64
+        """
+        userdata = """
+        #cloud-config
+        run_command:
+             - echo "hello world"
+        """
+        cloudinit = self.freshinstancetasks.combine_cloudinit_userdata(
+            cloudcfg, userdata)
+        self.assertTrue(cloudinit.startswith('#cloud-config'))
+        self.assertEqual(cloudinit.count('cloud-config'), 1)
+
     @patch.object(DBInstance, 'get_by')
     def test_create_instance_guestconfig(self, patch_get_by):
         cfg.CONF.set_override('guest_config', self.guestconfig)
