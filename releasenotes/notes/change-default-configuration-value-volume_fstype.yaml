@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Default 'volume_fstype' has been changed from 'ext3' to 'ext4'.

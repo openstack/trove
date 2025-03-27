@@ -219,7 +219,7 @@ common_opts = [
                     'unreachable'),
     cfg.IntOpt('num_tries', default=3,
                help='Number of times to check if a volume exists.'),
-    cfg.StrOpt('volume_fstype', default='ext3',
+    cfg.StrOpt('volume_fstype', default='ext4',
                choices=['ext3', 'ext4', 'xfs'],
                help='File system type used to format a volume.'),
     cfg.StrOpt('cinder_volume_type', default=None,
