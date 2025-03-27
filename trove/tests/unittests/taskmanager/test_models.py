@@ -817,9 +817,17 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         # this is used during the final check of whether the resize successful
         db_instance.server_status = 'HEALTHY'
         self.db_instance = db_instance
+        datastore_version = MagicMock(
+            spec=datastore_models.DatastoreVersion)
+        datastore_version.id = '1'
+        datastore_version.name = '5.7'
+        datastore_version.version = '5.7'
+        datastore_version.datastore_id = 'id-1'
+        datastore_version.manager = 'mysql'
+        datastore_version.datastore_name = 'mysql'
         self.dm_dv_load_by_uuid_patch = patch.object(
             datastore_models.DatastoreVersion, 'load_by_uuid', MagicMock(
-                return_value=datastore_models.DatastoreVersion(db_instance)))
+                return_value=datastore_version))
         self.dm_dv_load_by_uuid_mock = self.dm_dv_load_by_uuid_patch.start()
         self.addCleanup(self.dm_dv_load_by_uuid_patch.stop)
         self.dm_ds_load_patch = patch.object(

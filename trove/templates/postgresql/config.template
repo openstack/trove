@@ -297,7 +297,11 @@ restore_command = 'cp /var/lib/postgresql/data/wal_archive/%f "%p"'		# command t
 
 #max_wal_senders = 10		# max number of walsender processes
 				# (change requires restart)
+{% if datastore.semantic_version.major >= 13 %}
+wal_keep_size = 80 # in MB = wal_keep_segments x wal_keep_size
+{% else %}
 wal_keep_segments = 5		# in logfile segments; 0 disables
+{% endif %}
         # (Trove default)
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
 
