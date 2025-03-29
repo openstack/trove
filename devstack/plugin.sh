@@ -420,7 +420,7 @@ function setup_mgmt_network() {
 
 # start_trove() - Start running processes, including screen
 function start_trove {
-    if [[ ${TROVE_USE_MOD_WSGI}" == TRUE" ]]; then
+    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
         echo "Restarting Apache server ..."
         enable_apache_site trove-api
         restart_apache_server
@@ -435,7 +435,7 @@ function start_trove {
 function stop_trove {
     # Kill the trove screen windows
     local serv
-    if [[ ${TROVE_USE_MOD_WSGI} == "TRUE" ]]; then
+    if [[ "${TROVE_USE_MOD_WSGI}" == "TRUE" ]]; then
         echo "Disabling Trove API in Apache"
         disable_apache_site trove-api
     else
