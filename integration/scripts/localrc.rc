@@ -16,14 +16,7 @@ ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond
 ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
 ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
 ENABLED_SERVICES+=,-n-novnc,-n-xvnc
-if [[ $ENABLE_NEUTRON = true ]]; then
-    ENABLED_SERVICES+=,neutron,q-svc,q-agt,q-dhcp,q-l3,q-meta
-    disable_service n-net
-else
-    PUBLIC_INTERFACE=eth0
-    enable_service n-net
-    disable_service neutron q-svc q-agt q-dhcp q-l3 q-meta
-fi
+ENABLED_SERVICES+=,neutron,q-svc,q-agt,q-dhcp,q-l3,q-meta
 # OSprofiler depends on Ceilometer
 if [[ $ENABLE_CEILOMETER = true ]] || [[ $ENABLE_PROFILER = true ]]; then
     CEILOMETER_BACKEND=gnocchi
@@ -39,10 +32,7 @@ if [[ $ENABLE_MISTRAL = true ]]; then
 fi
 
 # Use Git repositories for client components
-LIBS_FROM_GIT=python-troveclient
-if [[ $ENABLE_NEUTRON = true ]]; then
-    LIBS_FROM_GIT+=,python-neutronclient
-fi
+LIBS_FROM_GIT=python-troveclient,python-neutronclient
 if [[ $ENABLE_MISTRAL = true ]]; then
     LIBS_FROM_GIT+=,python-mistralclient
 fi

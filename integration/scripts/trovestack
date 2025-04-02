@@ -633,25 +633,16 @@ function mod_confs() {
     sed -i "s/%admin_password%/$ADMIN_PASSWORD/g" $TEST_CONF
     sed -i "s/%service_password%/$SERVICE_PASSWORD/g" $TEST_CONF
 
-    # Enable neutron tests if needed
-    sed -i "s/%neutron_enabled%/$ENABLE_NEUTRON/g" $TEST_CONF
-
     # Enable backup related tests if Swift is enabled
     sed -i "s/%swift_enabled%/$ENABLE_SWIFT/g" $TEST_CONF
 
     # If neutron is enabled, the devstack plugin has already set up the shared
     # private network for testing.
-    if [[ $ENABLE_NEUTRON = true ]]; then
-        TROVE_NET_ID=$(openstack $CLOUD_ADMIN_ARG network list | grep " $TROVE_PRIVATE_NETWORK_NAME " | awk '{print $2}')
-        TROVE_SUBNET_ID=$(openstack $CLOUD_ADMIN_ARG subnet list | grep " $TROVE_PRIVATE_SUBNET_NAME " | awk '{print $2}')
-        echo "Using network ${TROVE_PRIVATE_NETWORK_NAME} (${TROVE_NET_ID}): ${TROVE_PRIVATE_SUBNET_NAME} (${TROVE_SUBNET_ID})"
-        sed -i "s,%shared_network%,$TROVE_NET_ID,g" $TEST_CONF
-        sed -i "s,%shared_network_subnet%,$TROVE_SUBNET_ID,g" $TEST_CONF
-    else
-        # do not leave invalid keys in the configuration when using Nova for networking
-        sed -i "/%shared_network%/d" $TEST_CONF
-        sed -i "/%shared_network_subnet%/d" $TEST_CONF
-    fi
+    TROVE_NET_ID=$(openstack $CLOUD_ADMIN_ARG network list | grep " $TROVE_PRIVATE_NETWORK_NAME " | awk '{print $2}')
+    TROVE_SUBNET_ID=$(openstack $CLOUD_ADMIN_ARG subnet list | grep " $TROVE_PRIVATE_SUBNET_NAME " | awk '{print $2}')
+    echo "Using network ${TROVE_PRIVATE_NETWORK_NAME} (${TROVE_NET_ID}): ${TROVE_PRIVATE_SUBNET_NAME} (${TROVE_SUBNET_ID})"
+    sed -i "s,%shared_network%,$TROVE_NET_ID,g" $TEST_CONF
+    sed -i "s,%shared_network_subnet%,$TROVE_SUBNET_ID,g" $TEST_CONF
 
     if [[ "$DATASTORE_TYPE" = "vertica" ]]; then
         # Vertica needs more time than mysql for its boot/start/stop operations.
