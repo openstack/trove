@@ -26,7 +26,7 @@ else
 fi
 # OSprofiler depends on Ceilometer
 if [[ $ENABLE_CEILOMETER = true ]] || [[ $ENABLE_PROFILER = true ]]; then
-    CEILOMETER_BACKEND=mysql
+    CEILOMETER_BACKEND=gnocchi
     CEILOMETER_NOTIFICATION_TOPICS=notifications,profiler
     PROJ_BRANCH=$(get_project_branch CEILOMETER_BRANCH $PROJECT_BRANCH)
     enable_plugin ceilometer ${GIT_OPENSTACK}/ceilometer.git $PROJ_BRANCH
