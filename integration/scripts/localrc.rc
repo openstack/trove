@@ -36,9 +36,6 @@ LIBS_FROM_GIT=python-troveclient,python-neutronclient
 if [[ $ENABLE_MISTRAL = true ]]; then
     LIBS_FROM_GIT+=,python-mistralclient
 fi
-if [[ $ENABLE_CEILOMETER = true ]]; then
-    LIBS_FROM_GIT+=,python-ceilometerclient
-fi
 
 NOVNC_FROM_PACKAGE=false
 SWIFT_HASH=$SWIFT_HASH
