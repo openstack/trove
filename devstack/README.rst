@@ -2,45 +2,7 @@
  Enabling Trove in DevStack
 ===========================
 
-To enable Trove in DevStack, perform the following steps:
-
-::
-
-    Note: The python-troveclient is automatically installed.  If you need to
-    control how the client gets installed, set the TROVECLIENT_REPO,
-    TROVECLIENT_DIR and TROVECLIENT_BRANCH environment variables appropriately.
-
-
-Download DevStack
-=================
-
-.. code-block:: bash
-
-    export DEVSTACK_DIR=~/devstack
-    git clone https://opendev.org/openstack/devstack.git $DEVSTACK_DIR
-
-Enable the Trove plugin
-=======================
-
-Enable the plugin by adding the following section to
-``$DEVSTACK_DIR/local.conf``
-
-.. code-block:: bash
-
-     [[local|localrc]]
-     enable_plugin trove https://opendev.org/openstack/trove
-
-Optionally, a git refspec (branch or tag or commit) may be provided as follows:
-
-.. code-block:: bash
-
-     [[local|localrc]]
-     enable_plugin trove https://opendev.org/openstack/trove <refspec>
-
-Run the DevStack utility
-========================
-
-.. code-block:: bash
-
-     cd $DEVSTACK_DIR
-     ./stack.sh
+Complete and up-to-date instructions on how to deploy DevStack with
+Trove, please refer to the official `OpenStack documentation <https://docs.openstack.org/trove/latest/install/install-devstack.html>`
+It includes detailed steps for configuring DevStack, enabling the
+Trove plugin, and setting up the necessary services.

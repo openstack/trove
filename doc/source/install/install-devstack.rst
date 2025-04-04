@@ -16,14 +16,13 @@ Install Trove in DevStack
 =========================
 
 This page describes how to set up a working development
-environment that can be used in deploying Trove on latest releases
-of Ubuntu.
+environment that can be used in deploying Trove.
 
 Config DevStack with Trove
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Trove can be enabled in devstack by using the plug-in based interface it
-offers.
+Trove can be enabled and installed in DevStack by using the plug-in
+based interface it offers.
 
 .. note::
 
@@ -35,16 +34,16 @@ offers.
    Make sure that you have at least 16 GB of RAM available before deploying
    DevStack with Trove, as it requires significant memory to run properly.
 
-Start by cloning the devstack repository using a non-root user(the default user
-is ``ubuntu``) and change to devstack directory:
+Start by cloning the DevStack repository using a non-root user(the default user
+is ``ubuntu``) and change to DevStack directory:
 
 .. code-block:: console
 
     git clone https://opendev.org/openstack/devstack
     cd devstack/
 
-Create the ``local.conf`` file with the following minimal devstack
-configuration, change the ``HOST_IP`` to your own devstack host IP address:
+Create the ``local.conf`` file with the following minimal DevStack
+configuration, change the ``HOST_IP`` to your own DevStack host IP address:
 
 .. code-block:: ini
 
@@ -56,11 +55,11 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
     enable_plugin trove-dashboard https://opendev.org/openstack/trove-dashboard
 
     LIBS_FROM_GIT+=,python-troveclient
-    DATABASE_PASSWORD=password
     ADMIN_PASSWORD=password
-    SERVICE_PASSWORD=password
-    SERVICE_TOKEN=password
-    RABBIT_PASSWORD=password
+    DATABASE_PASSWORD=$ADMIN_PASSWORD
+    SERVICE_PASSWORD=$ADMIN_PASSWORD
+    SERVICE_TOKEN=$ADMIN_PASSWORD
+    RABBIT_PASSWORD=$ADMIN_PASSWORD
     LOGFILE=$DEST/logs/stack.sh.log
     VERBOSE=True
     LOG_COLOR=False
@@ -75,7 +74,7 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
     # Pre-requisites
     ENABLED_SERVICES=rabbit,mysql,key
 
-    # Nova
+    # Horizon
     enable_service horizon
 
     # Nova
@@ -132,12 +131,13 @@ configuration, change the ``HOST_IP`` to your own devstack host IP address:
     ENABLED_SERVICES+=,swift
     SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
     SWIFT_REPLICAS=1
+    SWIFT_MAX_FILE_SIZE=5368709122
 
 Take a look at the
 `options <https://opendev.org/openstack/trove/src/branch/master/devstack/settings>`_
 you could use to customize the Trove installation.
 
-Running devstack
+Running DevStack
 ~~~~~~~~~~~~~~~~
 
 Run the ``stack.sh`` script:
