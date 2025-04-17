@@ -4,7 +4,7 @@ Install and configure for Ubuntu
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This section describes how to install and configure the Database
-service for Ubuntu 18.04 (LTS).
+service for Ubuntu Ubuntu 22.04 or 24.04 (LTS).
 
 .. include:: common_prerequisites.txt
 
@@ -27,8 +27,8 @@ Install and configure components
 
    .. code-block:: console
 
-      # apt-get update
-      # apt-get install python-trove trove-common trove-api trove-taskmanager trove-conductor
+      # apt update
+      # apt install python-trove trove-common trove-api trove-taskmanager trove-conductor
       # pip3 install python-troveclient
 
 
