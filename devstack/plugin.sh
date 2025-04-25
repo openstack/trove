@@ -643,7 +643,7 @@ function config_nova_keypair {
     fi
 
     echo "Creating Trove management keypair ${TROVE_MGMT_KEYPAIR_NAME}"
-    openstack --os-cloud trove keypair create --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
+    openstack --os-cloud trove keypair create --user trove --public-key ${SSH_DIR}/id_rsa.pub ${TROVE_MGMT_KEYPAIR_NAME}
 
     iniset $TROVE_CONF DEFAULT nova_keypair ${TROVE_MGMT_KEYPAIR_NAME}
 }
