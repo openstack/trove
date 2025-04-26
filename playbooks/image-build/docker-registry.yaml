@@ -37,6 +37,7 @@
         source: pull
       loop:
         - { source: "ubuntu", dest: "ubuntu", tag: "20.04" }
+        - { source: "ubuntu", dest: "ubuntu", tag: "24.04" }
         - { source: "registry", dest: "registry", tag: "2" }
         - { source: "mysql", dest: "mysql", tag: "5.7" }
         - { source: "mysql", dest: "mysql", tag: "8.0" }
@@ -51,12 +52,13 @@
           args:
             DATASTORE: "{{ item.datastore }}"
             DATASTORE_VERSION: "{{ item.version }}"
+            BASE_OS_VERSION: "{{ item.os_version }}"
         name: "quay.io/openstack.trove/{{ item.backup_image }}"
         tag: "{{ item.version }}"
         push: true
         source: build
       loop:
-        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "5.7" }
-        - { datastore: "mysql",  backup_image: "db-backup-mysql",version: "8.0" }
-        - { datastore: "mariadb",  backup_image: "db-backup-mariadb", version: "10.4" }
-        - { datastore: "postgresql",  backup_image: "db-backup-postgresql", version: "12" }
+        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "5.7", os_version: "20.04" }
+        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "8.0", os_version: "20.04" }
+        - { datastore: "mariadb", backup_image: "db-backup-mariadb", version: "10.4", os_version: "20.04" }
+        - { datastore: "postgresql", backup_image: "db-backup-postgresql", version: "12", os_version: "20.04" }

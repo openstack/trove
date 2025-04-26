@@ -1,4 +1,5 @@
-FROM quay.io/openstack.trove/ubuntu:20.04
+ARG BASE_OS_VERSION=20.04
+FROM quay.io/openstack.trove/ubuntu:$BASE_OS_VERSION
 LABEL maintainer="Trove Project (https://storyboard.openstack.org/#!/project/openstack/trove)"
 
 ARG DATASTORE="mysql"
