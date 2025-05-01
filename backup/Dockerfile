@@ -1,5 +1,5 @@
 FROM quay.io/openstack.trove/ubuntu:20.04
-LABEL maintainer="anlin.kong@gmail.com"
+LABEL maintainer="Trove Project (https://storyboard.openstack.org/#!/project/openstack/trove)"
 
 ARG DATASTORE="mysql"
 ARG DATASTORE_VERSION="5.7"
