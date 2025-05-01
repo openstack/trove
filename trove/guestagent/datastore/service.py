@@ -453,7 +453,7 @@ class BaseDbApp(object):
         """
         return image.split('/')[-1].find(':') > 0
 
-    def get_backup_image(self):
+    def get_backup_image(self, ds_version=CONF.datastore_version):
         image = cfg.get_configuration_property('backup_docker_image')
         if not image:
             LOG.error(
@@ -464,10 +464,26 @@ class BaseDbApp(object):
             )
             raise exception.TroveError("Backup image was not defined")
         if not self._image_has_tag(image):
-            ds_version = CONF.datastore_version
             image = (f'{image}:latest' if not ds_version else
                      f'{image}:{ds_version}')
-        return image
+
+        registry = docker_util.get_image_registry(self.docker_client, image)
+        if not registry:
+            # NOTE: When image is not found, we want to attempt finding
+            #       an image with the same major tag, not exact same as for
+            #       datastore. Ie, mariadb 10.11.9 datastore can have backup
+            #       image tagged as 10.11.
+            LOG.warning(f"Image {image} was not found in registry")
+            image_tag = image.split(':')[-1]
+            tag_version = image_tag.split('.')
+            # NOTE: In case we're having a "latest" tag or already reach major
+            #       version with iteration, we exit with error.
+            if len(tag_version) == 1:
+                raise exception.TroveError(
+                    'No backup image found with expected tags')
+            return self.get_backup_image('.'.join(tag_version[:-1]))
+
+        return registry.image_name
 
     def get_backup_strategy(self):
         return cfg.get_configuration_property('backup_strategy')

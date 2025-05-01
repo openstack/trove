@@ -270,6 +270,19 @@ def get_container_logs(client, name='database', tail=50):
     return _decode_output(output)
 
 
+def get_image_registry(client, image):
+    """Fetch image data from registry."""
+    try:
+        registry_data = client.images.get_registry_data(image)
+    except docker.errors.NotFound as e:
+        LOG.warning(f"Image was not found in registry: {str(e)}")
+        registry_data = None
+    except docker.errors.APIError as e:
+        LOG.error(f"APIError occured while trying to fetch image: {str(e)}")
+        raise e
+    return registry_data
+
+
 def prune_images(client):
     """Remove unused images."""
     try:
