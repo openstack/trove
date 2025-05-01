@@ -14,6 +14,7 @@
 from unittest import mock
 
 from trove.common import cfg
+from trove.common import exception
 from trove.guestagent.datastore.mariadb import service
 from trove.guestagent.datastore.mysql import service as mysql_service
 from trove.guestagent.datastore import service as base_service
@@ -30,6 +31,10 @@ class TestService(trove_testtools.TestCase):
         status = mock.MagicMock()
         self.app = service.MariaDBApp(_docker_client, status)
         self.mysql_app = mysql_service.MySqlApp(_docker_client, status)
+
+    def test_get_backup_image_not_defined(self):
+        self.patch_datastore_manager('mariadb')
+        self.assertRaises(exception.TroveError, self.app.get_backup_image)
 
     def test_get_backup_image_with_tag(self):
         self.patch_datastore_manager('mariadb')

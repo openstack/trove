@@ -436,6 +436,14 @@ class BaseDbApp(object):
 
     def get_backup_image(self):
         image = cfg.get_configuration_property('backup_docker_image')
+        if not image:
+            LOG.error(
+                "Image to perform backup was not found in configuration. "
+                "Please, define `backup_docker_image` option in "
+                "corresponding datastore section for trove-guestagent "
+                "configuration file."
+            )
+            raise exception.TroveError("Backup image was not defined")
         if not self._image_has_tag(image):
             ds_version = CONF.datastore_version
             image = (f'{image}:latest' if not ds_version else
@@ -461,7 +469,6 @@ class BaseDbApp(object):
 
         name = 'db_backup'
         backup_id = backup_info["id"]
-        image = self.get_backup_image()
         os_cred = (f"--os-token={context.auth_token} "
                    f"--os-auth-url={CONF.service_credentials.auth_url} "
                    f"--os-tenant-id={context.project_id} "
@@ -510,6 +517,7 @@ class BaseDbApp(object):
 
         # Start to run backup inside a separate docker container
         try:
+            image = self.get_backup_image()
             LOG.info(f'Starting to create backup {backup_id}, '
                      f'command: {command}')
             output, ret = docker_util.run_container(
