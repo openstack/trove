@@ -32,7 +32,6 @@ from trove.common import utils
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'
-SUSE = 'suse'
 
 
 def read_file(path, codec=IdentityCodec(), as_root=False, decode=True):
@@ -352,8 +351,6 @@ class FileMode(object):
 def get_os():
     if os.path.isfile("/etc/redhat-release"):
         return REDHAT
-    elif os.path.isfile("/etc/SuSE-release"):
-        return SUSE
     else:
         return DEBIAN
 

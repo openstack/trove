@@ -14,7 +14,6 @@ database engines.
    install-manual.rst
    install-ubuntu.rst
    install-rdo.rst
-   install-suse.rst
    dashboard.rst
    verify.rst
    next-steps.rst
