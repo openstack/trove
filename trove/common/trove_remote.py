@@ -44,7 +44,7 @@ def trove_client(context, region_name=None):
                            endpoint_region=region,
                            endpoint_type=CONF.trove_endpoint_type)
 
-    client = TroveClient.Client(context.user, context.auth_token,
+    client = TroveClient.Client(context.user_id, context.auth_token,
                                 project_id=context.project_id,
                                 auth_url=CONF.service_credentials.auth_url)
     client.client.auth_token = context.auth_token
