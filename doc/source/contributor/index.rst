@@ -13,4 +13,5 @@ functionality, the following resources are provided.
    design
    functional_test
    testing
+   datastore-configuration-templates
    release-notes
