@@ -30,7 +30,7 @@ class TestTroveClient(trove_testtools.TestCase):
         super(TestTroveClient, self).setUp()
         self.context = context.TroveContext(
             project_id='TENANT-' + str(timeutils.utcnow()),
-            user='USER-' + str(timeutils.utcnow()),
+            user_id='USER-' + str(timeutils.utcnow()),
             auth_token='AUTH_TOKEN-' + str(timeutils.utcnow()))
 
     def test_trove_with_remote_client(self):
