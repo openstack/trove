@@ -58,7 +58,7 @@
         push: true
         source: build
       loop:
-        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "5.7", os_version: "20.04" }
-        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "8.0", os_version: "20.04" }
-        - { datastore: "mariadb", backup_image: "db-backup-mariadb", version: "10.4", os_version: "20.04" }
-        - { datastore: "postgresql", backup_image: "db-backup-postgresql", version: "12", os_version: "20.04" }
+        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "5.7", os_version: "24.04" }
+        - { datastore: "mysql", backup_image: "db-backup-mysql", version: "8.0", os_version: "24.04" }
+        - { datastore: "mariadb", backup_image: "db-backup-mariadb", version: "10.4", os_version: "24.04" }
+        - { datastore: "postgresql", backup_image: "db-backup-postgresql", version: "12", os_version: "24.04" }

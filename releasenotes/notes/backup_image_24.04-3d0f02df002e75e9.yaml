@@ -1,0 +1,4 @@
+---
+other:
+  - |
+    Docker image for database backups has been switched to Ubuntu 24.04 (Noble Numbat).
