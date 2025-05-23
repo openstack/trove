@@ -36,9 +36,9 @@ IPV6_PATTERN_BASE = ('('
                      '([0-9a-fA-F]{1,4}:){1,4}:'
                      '((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}'
                      '(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))')
-IPV6_PATTERN = EPSILON_PATTERN + u'|^' + IPV6_PATTERN_BASE + u'$'
-CIDRV6_PATTERN = EPSILON_PATTERN + u'|^(' + IPV6_PATTERN_BASE + \
-    '(/(1[0-2][0-8]|[1-9]?[0-9]))' + u')$'
+IPV6_PATTERN = EPSILON_PATTERN + '|^' + IPV6_PATTERN_BASE + '$'
+CIDRV6_PATTERN = EPSILON_PATTERN + '|^(' + IPV6_PATTERN_BASE + \
+    '(/(1[0-2][0-8]|[1-9]?[0-9]))' + ')$'
 
 SCHEMA = {
     "PLUGIN_ACTIVATE": {"Implements": ["NetworkDriver"]},
@@ -206,7 +206,7 @@ COMMONS = {
             'example': 'dfe39822-ad5e-40bd-babd-3954113b3687'
         }
     },
-    '$schema': 'http://json-schema.org/draft-04/hyper-schema',
+    '$schema': 'https://json-schema.org/draft-04/hyper-schema',
     'type': 'object',
     'id': 'schemata/commons'
 }
@@ -222,7 +222,7 @@ NETWORK_CREATE_SCHEMA = {
     'title': 'Create network',
     'required': ['NetworkID', 'IPv4Data', 'IPv6Data', 'Options'],
     'definitions': {'commons': {}},
-    '$schema': 'http://json-schema.org/draft-04/hyper-schema',
+    '$schema': 'https://json-schema.org/draft-04/hyper-schema',
     'type': 'object',
     'properties': {
         'NetworkID': {
@@ -296,7 +296,7 @@ NETWORK_JOIN_SCHEMA = {
         }
     },
     'definitions': {'commons': {}},
-    '$schema': 'http://json-schema.org/draft-04/hyper-schema',
+    '$schema': 'https://json-schema.org/draft-04/hyper-schema',
     'type': 'object',
 }
 
