@@ -25,17 +25,19 @@ CONF = cfg.CONF
 
 class MariaBackup(mysql_base.MySQLBaseRunner):
     """Implementation of Backup and Restore using mariabackup."""
+    backup_binary = 'mariabackup'
     restore_cmd = ('mbstream -x -C %(restore_location)s')
-    prepare_cmd = 'mariabackup --prepare --target-dir=%(restore_location)s'
+    prepare_cmd = \
+        f'{backup_binary} --prepare --target-dir=%(restore_location)s'
 
     def __init__(self, *args, **kwargs):
         super(MariaBackup, self).__init__(*args, **kwargs)
-        self.backup_log = '/tmp/mariabackup.log'
+        self.backup_log = f'/tmp/{self.backup_binary}.log'
         self._gzip = True
 
     @property
     def cmd(self):
-        cmd = ('mariabackup --backup --stream=xbstream ' +
+        cmd = (f'{self.backup_binary} --backup --stream=xbstream ' +
                self.user_and_pass)
         return cmd
 
@@ -64,9 +66,15 @@ class MariaBackup(mysql_base.MySQLBaseRunner):
             raise Exception(msg)
 
 
+class MariaDBBackup(MariaBackup):
+    """Implementation of Backup and Restore using mariadb-backup."""
+    backup_binary = 'mariadb-backup'
+
+
 class MariaBackupIncremental(MariaBackup):
     """Incremental backup and restore using mariabackup."""
-    incremental_prep = ('mariabackup --prepare '
+    incremental_prep_binary = MariaBackup.backup_binary
+    incremental_prep = (f'{incremental_prep_binary} --prepare '
                         '--target-dir=%(restore_location)s '
                         '%(incremental_args)s')
 
@@ -81,7 +89,7 @@ class MariaBackupIncremental(MariaBackup):
     @property
     def cmd(self):
         cmd = (
-            'mariabackup --backup --stream=xbstream'
+            f'{self.incremental_prep_binary} --backup --stream=xbstream'
             ' --incremental-lsn=%(lsn)s ' +
             self.user_and_pass
         )
@@ -102,3 +110,8 @@ class MariaBackupIncremental(MariaBackup):
         LOG.info('Running incremental restore')
         self.incremental_restore(self.location, self.checksum)
         return self.restore_content_length
+
+
+class MariaDBBackupIncremental(MariaBackupIncremental):
+    """Incremental backup and restore using mariadb-backup."""
+    incremental_prep_binary = MariaDBBackup.backup_binary
