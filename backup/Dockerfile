@@ -20,11 +20,14 @@ WORKDIR /opt/trove/backup
 RUN ./install.sh --datastore $DATASTORE --datastore-version $DATASTORE_VERSION
 
 RUN apt-get update \
-    && apt-get install $APTOPTS build-essential python3-setuptools python3-all python3-all-dev python3-pip libffi-dev libssl-dev libxml2-dev libxslt1-dev libyaml-dev libpq-dev \
+    && apt-get install $APTOPTS python3 python3-venv \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 --no-cache-dir install -U -r requirements.txt --break-system-packages \
+    && python3 -m venv /opt/trove-backup-venv \
+    && /opt/trove-backup-venv/bin/pip3  --no-cache-dir install -U -r requirements.txt \
     && curl -sSL https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 -o /usr/local/bin/dumb-init \
     && chmod +x /usr/local/bin/dumb-init
+
+ENV PATH=/opt/trove-backup-venv/bin:$PATH
 
 ENTRYPOINT ["dumb-init", "--single-child", "--"]
