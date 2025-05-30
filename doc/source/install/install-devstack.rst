@@ -34,13 +34,45 @@ based interface it offers.
    Make sure that you have at least 16 GB of RAM available before deploying
    DevStack with Trove, as it requires significant memory to run properly.
 
-Start by cloning the DevStack repository using a non-root user(the default user
+DevStack should be run as a non-root user with sudo enabled
+(standard logins to cloud images such as "ubuntu" or "cloud-user"
+are usually fine).
+
+Clone the DevStack repository using a stack user (the default user
 is ``ubuntu``) and change to DevStack directory:
 
 .. code-block:: console
 
     git clone https://opendev.org/openstack/devstack
     cd devstack/
+
+.. note::
+
+   You can create the stack user by running the ``create-stack-user.sh``
+   script located in the ``devstack/tools`` directory:
+
+If you are not using a cloud image, create a separate `stack` user
+to run DevStack with
+
+.. code-block:: console
+
+   $ sudo useradd -s /bin/bash -d /opt/stack -m stack
+
+Ensure home directory for the ``stack`` user has executable permission for all,
+as RHEL based distros create it with ``700`` and Ubuntu 21.04+ with ``750``
+which can cause issues during deployment.
+
+.. code-block:: console
+
+    $ sudo chmod +x /opt/stack
+
+Since this user will be making many changes to your system, it should
+have sudo privileges:
+
+.. code-block:: console
+
+    $ echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack
+    $ sudo -u stack -i
 
 Create the ``local.conf`` file with the following minimal DevStack
 configuration, change the ``HOST_IP`` to your own DevStack host IP address:
