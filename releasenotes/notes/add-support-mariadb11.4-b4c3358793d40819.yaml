@@ -1,4 +1,4 @@
 ---
 features:
   - |
-    Add support of mariadb11.4 & 11.8 and remove the support of mariadb10.4
+    Add support of MariaDB 11.4 & 11.8 and remove the support of MariaDB 10.4.
