@@ -16,6 +16,7 @@
 from datetime import datetime
 from datetime import timedelta
 from datetime import tzinfo
+from oslo_utils import timeutils
 
 
 class zulutime(tzinfo):
@@ -37,10 +38,10 @@ def utcnow_aware():
 
 
 def utcnow():
-    """A wrapper around datetime.datetime.utcnow(). We're doing this
+    """A wrapper around timeutils.utcnow(). We're doing this
        because it is mock'ed in some places.
     """
-    return datetime.utcnow()
+    return timeutils.utcnow()
 
 
 def isotime(tm=None, subsecond=False):
