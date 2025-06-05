@@ -814,14 +814,16 @@ class BaseMySqlApp(service.BaseDbApp):
 
         replication_user = None
         with mysql_util.SqlClient(self.get_engine()) as client:
-            result = client.execute(text('SHOW SLAVE STATUS'))
-            replication_user = result.first()._mapping['Master_User']
-            client.execute(text('STOP SLAVE'))
-            client.execute(text('RESET SLAVE ALL'))
-            self.wait_for_slave_status('OFF', client, 180)
-            if not for_failover:
-                client.execute(text('DROP USER IF EXISTS ' + replication_user))
-
+            result = client.execute(
+                text('SHOW SLAVE STATUS')).mappings().first()
+            if result:
+                replication_user = result['Master_User']
+                client.execute(text('STOP SLAVE'))
+                client.execute(text('RESET SLAVE ALL'))
+                self.wait_for_slave_status('OFF', client, 180)
+                if not for_failover:
+                    client.execute(
+                        text('DROP USER IF EXISTS ' + replication_user))
         return {
             'replication_user': replication_user
         }
