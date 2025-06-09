@@ -357,7 +357,7 @@ class SetPassword(object):
         self.host = host or '%'
         self.new_password = new_password or ''
         self.ds = ds or 'mysql'
-        self.ds_version = ds_version or '5.7'
+        self.ds_version = ds_version or '8.0'
 
     def __repr__(self):
         return str(self)

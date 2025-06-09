@@ -31,6 +31,10 @@ if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then
     cp ${SCRIPTDIR}/guest-log-collection.timer /etc/systemd/system/guest-log-collection.timer
 fi
 
+# Install trove-image-loader script and service
+install -D -g root -o root -m 0755 ${SCRIPTDIR}/50-trove-image-loader /usr/local/sbin/trove-image-loader
+install -D -g root -o root -m 0644 ${SCRIPTDIR}/trove-image-loader.service /etc/systemd/system/trove-image-loader.service
+
 # Install docker network plugin
 ln -s ${GUEST_VENV}/bin/trove-docker-plugin /usr/local/bin/trove-docker-plugin || true
 install -D -g root -o root -m 0644 ${SCRIPTDIR}/docker-hostnic.socket /lib/systemd/system/docker-hostnic.socket

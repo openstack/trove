@@ -3,7 +3,7 @@ FROM quay.io/openstack.trove/ubuntu:$BASE_OS_VERSION
 LABEL maintainer="Trove Project (https://storyboard.openstack.org/#!/project/openstack/trove)"
 
 ARG DATASTORE="mysql"
-ARG DATASTORE_VERSION="5.7"
+ARG DATASTORE_VERSION="8.0"
 ARG APTOPTS="-y -qq --no-install-recommends --allow-unauthenticated"
 
 RUN export DEBIAN_FRONTEND="noninteractive" \

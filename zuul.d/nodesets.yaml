@@ -14,16 +14,6 @@
       - name: primary
         label: ubuntu-noble
 
-- nodeset:
-    name: trove-ubuntu-jammy
-    nodes:
-      - name: controller
-        label: nested-virt-ubuntu-jammy
-    groups:
-      - name: tempest
-        nodes:
-          - controller
-
 - secret:
     name: trove_quay_io_creds
     data:

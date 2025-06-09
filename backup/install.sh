@@ -27,12 +27,7 @@ OPT_DATASTORE=""
 OPT_DATASTORE_VERSION=""
 
 if [ $# -eq 1 ]; then
-	# TODO(hiwkby) We should avoid hardcoding of datastore versions but
-	# for compatibility, we must accept the hardcoded version string.
-	if [ "$1" = "mysql5.7" ]; then
-		OPT_DATASTORE="mysql"
-		OPT_DATASTORE_VERSION="5.7"
-	elif [ "$1" = "mysql8.0" ]; then
+	if   [ "$1" = "mysql" ]; then
 		OPT_DATASTORE="mysql"
 		OPT_DATASTORE_VERSION="8.0"
 	elif [ "$1" = "mariadb" ]; then
@@ -70,24 +65,12 @@ else
 fi
 
 if [ "${OPT_DATASTORE}" = "mysql" ]; then
-	if [ "${OPT_DATASTORE_VERSION}" = "5.7" ]; then
-		curl -sSL https://repo.percona.com/apt/percona-release_latest.${OS_RELEASE_CODENAME}_all.deb -o percona-release.deb
-		dpkg -i percona-release.deb
-		percona-release enable-only tools release
-		apt-get update
-		apt-get install ${APTOPTS} percona-xtrabackup-24
-		rm -f percona-release.deb
-	elif [ "${OPT_DATASTORE_VERSION}" = "8.0" ]; then
-		curl -sSL https://repo.percona.com/apt/percona-release_latest.${OS_RELEASE_CODENAME}_all.deb -o percona-release.deb
-		dpkg -i percona-release.deb
-		percona-release enable-only tools release
-		apt-get update
-		apt-get install ${APTOPTS} percona-xtrabackup-80
-		rm -f percona-release.deb
-	else
-		echo "datastore ${OPT_DATASTORE} with ${OPT_DATASTORE_VERSION} not supported"
-		exit 1
-	fi
+	curl -sSL https://repo.percona.com/apt/percona-release_latest.${OS_RELEASE_CODENAME}_all.deb -o percona-release.deb
+	dpkg -i percona-release.deb
+	percona-release enable-only tools release
+	apt-get update
+	apt-get install ${APTOPTS} percona-xtrabackup-80
+	rm -f percona-release.deb
 elif [ "${OPT_DATASTORE}" = "mariadb" ]; then
 	# See the url below about the supported version.
 	# https://mariadb.com/docs/xpand/ref/repo/cli/mariadb_repo_setup/mariadb-server-version/

@@ -9,6 +9,7 @@ build-essential:
 cloud-guest-utils:
 cloud-init:
 cron:
+crudini:
 dbus:
 dkms:
 dmeventd:

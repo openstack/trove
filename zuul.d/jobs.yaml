@@ -47,7 +47,7 @@
       devstack_localrc:
         TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
         SYNC_LOG_TO_CONTROLLER: True
-        TROVE_DATASTORE_VERSION: 5.7
+        TROVE_DATASTORE_VERSION: 8.0
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
         SWIFT_LOOPBACK_DISK_SIZE: 15G
         TROVE_MGMT_GATEWAY: "192.168.254.1"
@@ -56,7 +56,7 @@
           $TROVE_CONF:
             DEFAULT:
               swift_api_insecure: True
-              usage_timeout: 1800
+              usage_timeout: 2400
             network:
               network_isolation: True
         test-config:
@@ -65,7 +65,7 @@
               tempest_roles: ResellerAdmin
             database:
               database_build_timeout: 2400
-              default_datastore_versions: mysql:5.7
+              default_datastore_versions: mysql:8.0
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
@@ -114,7 +114,7 @@
       devstack_localrc:
         TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
         SYNC_LOG_TO_CONTROLLER: True
-        TROVE_DATASTORE_VERSION: 5.7
+        TROVE_DATASTORE_VERSION: 8.0
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
         TROVE_MGMT_GATEWAY: "192.168.254.1"
       devstack_local_conf:
@@ -122,7 +122,7 @@
           $TROVE_CONF:
             DEFAULT:
               swift_api_insecure: True
-              usage_timeout: 1800
+              usage_timeout: 2400
               storage_strategy: cinder
           $TROVE_GUESTAGENT_CONF:
             DEFAULT:
@@ -131,7 +131,7 @@
           $TEMPEST_CONFIG:
             database:
               database_build_timeout: 2400
-              default_datastore_versions: mysql:5.7
+              default_datastore_versions: mysql:8.0
       devstack_plugins:
         trove: https://opendev.org/openstack/trove.git
       devstack_services:
@@ -218,7 +218,7 @@
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_replication
 
 - job:
-    name: trove-tempest-ubuntu-base-mysql5.7
+    name: trove-tempest-ubuntu-base-mysql8.0
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
       - ^.*\.rst$
@@ -237,24 +237,16 @@
       - ^trove/guestagent/datastore/(postgres|mariadb)/.*$
     vars:
         devstack_localrc:
-          TROVE_DATASTORE_VERSION: 5.7
+          TROVE_DATASTORE_VERSION: 8.0
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
-                default_datastore_versions: mysql:5.7
-
-# TODO(gmann): As per the 2025.1 testing runtime, we need to run at least
-# one job on jammy. This job can be removed as per the future testing
-# runtime (whenever we start testing Ubuntu 26.04 as default version).
-- job:
-    name: trove-tempest-ubuntu-base-mysql5.7-jammy
-    description: This is integrated job testing on Ubuntu jammy(22.04)
-    parent: trove-tempest-ubuntu-base-mysql5.7
-    nodeset: trove-ubuntu-jammy
+                default_datastore_versions: mysql:8.0
 
 - job:
-    name: trove-tempest-ubuntu-backup-mysql5.7
+    name: trove-tempest-ubuntu-backup-mysql8.0
     parent: trove-tempest-ubuntu-backup
     irrelevant-files:
       - ^.*\.rst$
@@ -272,16 +264,17 @@
       - ^trove/guestagent/datastore/(postgres|mariadb)/.*$
     vars:
         devstack_localrc:
-          TROVE_DATASTORE_VERSION: 5.7
+          TROVE_DATASTORE_VERSION: 8.0
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 backup_wait_timeout: 1200
-                default_datastore_versions: mysql:5.7
+                default_datastore_versions: mysql:8.0
 
 - job:
-    name: trove-tempest-ubuntu-replication-mysql5.7
+    name: trove-tempest-ubuntu-replication-mysql8.0
     parent: trove-tempest-ubuntu-replication
     irrelevant-files:
       - ^.*\.rst$
@@ -300,16 +293,17 @@
       - ^trove/guestagent/strategies/replication/(postgresql.*|mariadb.*)\.py$
     vars:
         devstack_localrc:
-          TROVE_DATASTORE_VERSION: 5.7
+          TROVE_DATASTORE_VERSION: 8.0
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 backup_wait_timeout: 1200
-                default_datastore_versions: mysql:5.7
+                default_datastore_versions: mysql:8.0
 
 - job:
-    name: trove-tempest-cinder-storage-driver-mysql5.7
+    name: trove-tempest-cinder-storage-driver-mysql8.0
     parent:  trove-tempest-snapshot
     irrelevant-files:
       - ^.*\.rst$
@@ -328,13 +322,13 @@
       - ^trove/guestagent/strategies/replication/(postgresql.*|mariadb.*)\.py$
     vars:
         devstack_localrc:
-          TROVE_DATASTORE_VERSION: 5.7
+          TROVE_DATASTORE_VERSION: 8.0
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 backup_wait_timeout: 1200
-                default_datastore_versions: mysql:5.7
+                default_datastore_versions: mysql:8.0
 
 - job:
     name: trove-tempest-ubuntu-base-mariadb10.4
@@ -583,7 +577,7 @@
     nodeset: trove-ubuntu-noble-single
     timeout: 3600
     description: |
-      Build Ubuntu jammy based image only on ubuntu distro.
+      Build Ubuntu noble based image only on ubuntu distro.
     required-projects:
       - openstack/diskimage-builder
       - openstack/trove
@@ -591,35 +585,35 @@
       - ^integration/(scripts|tests)/
     vars:
       guest_os: ubuntu
-      guest_os_release: jammy
+      guest_os_release: noble
       guest_username: ubuntu
       branch: master
       dev_mode: false
       image_suffix: ""
 
 - job:
-    name: publish-trove-guest-image-ubuntu-jammy
+    name: publish-trove-guest-image-ubuntu-noble
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu jammy based Trove guest image to
+      Build and publish Ubuntu noble based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: jammy
+      guest_os_release: noble
       guest_username: ubuntu
       branch: master
       dev_mode: false
       image_suffix: ""
 
 - job:
-    name: publish-trove-guest-image-ubuntu-jammy-dev
+    name: publish-trove-guest-image-ubuntu-noble-dev
     parent: publish-trove-guest-image
     description: |
-      Build and publish Ubuntu jammy based Trove guest image to
+      Build and publish Ubuntu noble based Trove guest image to
       tarballs.openstack.org.
     vars:
       guest_os: ubuntu
-      guest_os_release: jammy
+      guest_os_release: noble
       guest_username: ubuntu
       branch: master
       dev_mode: true
