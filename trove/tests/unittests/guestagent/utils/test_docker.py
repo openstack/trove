@@ -13,6 +13,8 @@
 import json
 from unittest import mock
 
+import docker
+
 from trove.guestagent.utils import docker as docker_utils
 from trove.tests.unittests import trove_testtools
 
@@ -137,3 +139,23 @@ class TestDockerUtils(trove_testtools.TestCase):
         mock_client().pull.assert_called_once()
         mock_client().create_container.assert_called_once()
         mock_client().start.assert_called_once()
+
+    @mock.patch("docker.DockerClient")
+    def test_get_health_status(self, mock_client):
+        mock_container = mock.MagicMock()
+        mock_container.health = "healthy"
+        mock_client.containers.get.return_value = mock_container
+
+        health_status = docker_utils.get_container_health(mock_client,
+                                                          "test_container")
+        self.assertEqual(health_status, "healthy")
+        mock_client.containers.get.assert_called_once_with("test_container")
+
+    @mock.patch("docker.DockerClient")
+    def test_get_health_status_not_found(self, mock_client):
+        mock_client.containers.get.side_effect = docker.errors.NotFound(
+            "Container not found")
+        health_status = docker_utils.get_container_health(mock_client,
+                                                          "test_container")
+        self.assertEqual(health_status, "not running")
+        mock_client.containers.get.assert_called_once_with("test_container")

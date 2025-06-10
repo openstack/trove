@@ -18,12 +18,13 @@
             voting: false
         - trove-tempest-cinder-storage-driver-mysql8.0:
             voting: false
-        - trove-tempest-ubuntu-base-mariadb10.4
-        - trove-tempest-ubuntu-backup-mariadb10.4:
+        - trove-tempest-ubuntu-base-mariadb11.4:
             voting: false
-        - trove-tempest-ubuntu-replication-mariadb10.4:
+        - trove-tempest-ubuntu-backup-mariadb11.4:
             voting: false
-        - trove-tempest-cinder-storage-driver-mariadb10.4:
+        - trove-tempest-ubuntu-replication-mariadb11.4:
+            voting: false
+        - trove-tempest-cinder-storage-driver-mariadb11.4:
             voting: false
         - trove-tempest-ubuntu-base-postgresql12
         - trove-tempest-ubuntu-backup-postgresql12:
@@ -41,7 +42,7 @@
     gate:
       jobs:
         - trove-tempest-ubuntu-base-mysql8.0
-        - trove-tempest-ubuntu-base-mariadb10.4
+        - trove-tempest-ubuntu-base-mariadb11.4
         - trove-tempest-ubuntu-base-postgresql12
     experimental:
       jobs:

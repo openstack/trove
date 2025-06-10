@@ -135,7 +135,7 @@ class MysqlReplicationBase(base.Replication):
         except Exception as ex:
             LOG.error('Failed to read last master GTID, error: %s', str(ex))
             raise exception.UnableToDetermineLastMasterGTID(
-                {'binlog_file': INFO_FILE})
+                {'binlog_file': INFO_FILE}) from ex
 
     @abc.abstractmethod
     def connect_to_master(self, service, master_info):

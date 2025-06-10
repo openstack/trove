@@ -342,6 +342,7 @@ class BaseDbStatus(object):
 
 class BaseDbApp(object):
     CFG_CODEC = stream_codecs.IniCodec()
+    HEALTHCHECK = None
 
     def __init__(self, status, docker_client):
         self.status = status

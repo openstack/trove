@@ -95,6 +95,8 @@ def _create_container_with_low_level_api(image: str, param: dict) -> None:
     networking_config = client.create_networking_config(
         {param.get("network"):
             client.create_endpoint_config(**network_config_kwargs)})
+    healthcheck = param.get("healthcheck", None)
+
     # NOTE(wuchunyang): the low-level api doesn't support RUN interface,
     # so we need pull image first, then start the container
     LOG.debug("Pulling docker images: %s", image)
@@ -111,6 +113,7 @@ def _create_container_with_low_level_api(image: str, param: dict) -> None:
                                         environment=param.get("environment"),
                                         command=param.get("command"),
                                         host_config=host_config,
+                                        healthcheck=healthcheck,
                                         networking_config=networking_config)
     LOG.debug("Starting container: %s", param.get("name"))
     client.start(container=container)
@@ -119,7 +122,8 @@ def _create_container_with_low_level_api(image: str, param: dict) -> None:
 def start_container(client, image, name="database",
                     restart_policy="unless-stopped",
                     volumes={}, ports={}, user="", network_mode="host",
-                    environment={}, command=""):
+                    environment={}, command="", healthcheck=None,
+                    privileged=False):
     """Start a docker container.
 
     :param client: docker client obj.
@@ -134,6 +138,7 @@ def start_container(client, image, name="database",
     :param network_mode: One of bridge, none, host
     :param environment: Environment variables
     :param command:
+    :param privileged: docker privileged
     :return:
     """
     try:
@@ -151,12 +156,13 @@ def start_container(client, image, name="database",
         f"command: {command}")
     kwargs = dict(name=name,
                   restart_policy={"Name": restart_policy},
-                  privileged=False,
+                  privileged=privileged,
                   detach=True,
                   volumes=volumes,
                   ports=ports,
                   user=user,
                   environment=environment,
+                  healthcheck=healthcheck,
                   command=command)
     if network_mode == constants.DOCKER_HOST_NIC_MODE:
         create_network(client, constants.DOCKER_NETWORK_NAME)
@@ -214,6 +220,17 @@ def get_container_status(client, name="database"):
         # One of created, restarting, running, removing, paused, exited, or
         # dead
         return container.status
+    except docker.errors.NotFound:
+        return "not running"
+    except Exception:
+        return "unknown"
+
+
+def get_container_health(client: docker.DockerClient, name="database") -> str:
+    try:
+        container = client.containers.get(name)
+        # One of staring, healthy, unhealthy, unknown
+        return container.health
     except docker.errors.NotFound:
         return "not running"
     except Exception:

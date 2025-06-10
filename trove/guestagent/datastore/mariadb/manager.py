@@ -13,15 +13,17 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 from oslo_log import log as logging
+from oslo_utils.excutils import save_and_reraise_exception
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common import utils
 from trove.guestagent.common import operating_system
+from trove.guestagent.utils import docker as docker_utils
 
 
 from trove.guestagent.datastore.mariadb import service
 from trove.guestagent.datastore.mysql_common import manager
-from trove.guestagent.datastore.mysql_common import service as mysql_service
 
 
 CONF = cfg.CONF
@@ -30,7 +32,7 @@ LOG = logging.getLogger(__name__)
 
 class Manager(manager.MySqlManager):
     def __init__(self):
-        status = mysql_service.BaseMySqlAppStatus(self.docker_client)
+        status = service.MariadbAppStatus(self.docker_client)
         app = service.MariaDBApp(status, self.docker_client)
         adm = service.MariaDBAdmin(app)
 
@@ -77,3 +79,49 @@ class Manager(manager.MySqlManager):
             LOG.error("Run pre_create_backup failed, error: %s" % str(e))
             raise exception.BackupCreationError(str(e))
         return status
+
+    def reset_password_for_restore(self, ds_version=None,
+                                   data_dir='/var/lib/mysql/data'):
+        """Reset the root password after restore the db data.
+
+        uses --skip-grant-tables to temporarily disable auth and
+        directly reset the root password via SQL.
+        """
+        LOG.info('Starting to reset password for restore')
+
+        try:
+            root_pass = self.app.get_auth_password(file="root.cnf")
+        except exception.UnprocessableEntity:
+            root_pass = utils.generate_random_password()
+            self.app.save_password('root', root_pass)
+
+        command = (
+            f'--skip-grant-tables '
+            f'--datadir={data_dir} '
+        )
+        reset_sql = (
+            "FLUSH PRIVILEGES; "
+            "ALTER USER 'root'@'localhost' IDENTIFIED BY '{}';"
+        ).format(root_pass)
+        reset_command = ["mariadb", "-u", "root", "-e", reset_sql]
+
+        # Start the database container process.
+        try:
+            self.app.start_db(ds_version=ds_version, command=command)
+            docker_utils.run_command(self.app.docker_client, reset_command)
+        except Exception as err:
+            with save_and_reraise_exception():
+                LOG.error('Failed to reset password for restore, error: %s',
+                          str(err))
+        finally:
+            try:
+                LOG.debug(
+                    'The init container log: %s',
+                    docker_utils.get_container_logs(self.app.docker_client)
+                )
+                docker_utils.remove_container(self.app.docker_client)
+            except Exception as err:
+                LOG.error('Failed to remove container. error: %s',
+                          str(err))
+                pass
+        LOG.info('Finished to reset password for restore')

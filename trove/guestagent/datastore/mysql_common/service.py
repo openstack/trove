@@ -438,6 +438,8 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
 
 class BaseMySqlApp(service.BaseDbApp):
     _configuration_manager = None
+    _extra_envs = {}
+    _previledged = False
 
     @property
     def configuration_manager(self):
@@ -623,6 +625,12 @@ class BaseMySqlApp(service.BaseDbApp):
         else:
             network_mode = constants.DOCKER_BRIDGE_MODE
 
+        environment = {
+            "MYSQL_ROOT_PASSWORD": root_pass,
+            "MYSQL_INITDB_SKIP_TZINFO": 1}
+        if self._extra_envs:
+            environment.update(self._extra_envs)
+
         try:
             docker_util.start_container(
                 self.docker_client,
@@ -631,11 +639,10 @@ class BaseMySqlApp(service.BaseDbApp):
                 network_mode=network_mode,
                 ports=ports,
                 user=user,
-                environment={
-                    "MYSQL_ROOT_PASSWORD": root_pass,
-                    "MYSQL_INITDB_SKIP_TZINFO": 1,
-                },
-                command=command
+                environment=environment,
+                healthcheck=self.HEALTHCHECK,
+                command=command,
+                privileged=self._previledged
             )
 
             # Save root password
