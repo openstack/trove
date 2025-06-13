@@ -709,7 +709,7 @@ class BaseMySqlApp(service.BaseDbApp):
         volumes = {'/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}}
 
         command = (
-            f'/usr/bin/python3 main.py --nobackup '
+            f'python3 main.py --nobackup '
             f'--storage-driver={storage_driver} --driver={backup_driver} '
             f'--os-token={user_token} --os-auth-url={auth_url} '
             f'--os-tenant-id={user_tenant} --os-region-name={region_name} '

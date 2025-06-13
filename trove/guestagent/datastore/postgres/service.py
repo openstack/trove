@@ -281,7 +281,7 @@ class PgSqlApp(service.BaseDbApp):
                    f"--os-region-name={CONF.service_credentials.region_name}")
 
         command = (
-            f'/usr/bin/python3 main.py --nobackup '
+            f'python3 main.py --nobackup '
             f'--storage-driver={storage_driver} --driver={backup_driver} '
             f'{os_cred} '
             f'--restore-from={backup_info["location"]} '

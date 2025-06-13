@@ -484,7 +484,7 @@ class BaseDbApp(object):
                         f'--swift-container={swift_container}')
 
         command = (
-            f'/usr/bin/python3 main.py --backup --backup-id={backup_id} '
+            f'python3 main.py --backup --backup-id={backup_id} '
             f'--storage-driver={storage_driver} --driver={backup_driver} '
             f'{os_cred} '
             f'{db_userinfo} '
