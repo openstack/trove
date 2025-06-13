@@ -153,6 +153,7 @@ def start_container(client, image, name="database",
         f"Creating docker container, image: {image}, "
         f"volumes: {volumes}, ports: {ports}, user: {user}, "
         f"network_mode: {network_mode}, environment: {environment}, "
+        f"health_check: {healthcheck}, "
         f"command: {command}")
     kwargs = dict(name=name,
                   restart_policy={"Name": restart_policy},

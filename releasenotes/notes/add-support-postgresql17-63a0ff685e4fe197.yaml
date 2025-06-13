@@ -1,0 +1,5 @@
+---
+features:
+  - Add the support of PostgreSQL 16 & 17
+deprecations:
+  - Remove the support of PostgreSQL 12

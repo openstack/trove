@@ -26,12 +26,13 @@
             voting: false
         - trove-tempest-cinder-storage-driver-mariadb11.4:
             voting: false
-        - trove-tempest-ubuntu-base-postgresql12
-        - trove-tempest-ubuntu-backup-postgresql12:
+        - trove-tempest-ubuntu-base-postgresql17:
             voting: false
-        - trove-tempest-ubuntu-replication-postgresql12:
+        - trove-tempest-ubuntu-backup-postgresql17:
             voting: false
-        - trove-tempest-cinder-storage-driver-postgresql12:
+        - trove-tempest-ubuntu-replication-postgresql17:
+            voting: false
+        - trove-tempest-cinder-storage-driver-postgresql17:
             voting: false
         - openstack-tox-cover:
             voting: true
@@ -43,7 +44,7 @@
       jobs:
         - trove-tempest-ubuntu-base-mysql8.0
         - trove-tempest-ubuntu-base-mariadb11.4
-        - trove-tempest-ubuntu-base-postgresql12
+        - trove-tempest-ubuntu-base-postgresql17
     experimental:
       jobs:
         - trove-tempest-ipv6-only

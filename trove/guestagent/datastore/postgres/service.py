@@ -48,7 +48,7 @@ class PgSqlAppStatus(service.BaseDbStatus):
     def __init__(self, docker_client):
         super(PgSqlAppStatus, self).__init__(docker_client)
 
-    def get_actual_db_status(self):
+    def _get_container_status(self):
         """Check database service status."""
         status = docker_util.get_container_status(self.docker_client)
         if status == "running":
@@ -74,9 +74,37 @@ class PgSqlAppStatus(service.BaseDbStatus):
         else:
             return service_status.ServiceStatuses.UNKNOWN
 
+    def get_actual_db_status(self):
+        health = docker_util.get_container_health(self.docker_client)
+        LOG.debug('container health status: %s', health)
+        if health == "healthy":
+            return service_status.ServiceStatuses.HEALTHY
+        elif health == "starting":
+            return service_status.ServiceStatuses.RUNNING
+        elif health == "unhealthy":
+            # In case the container was stopped
+            status = docker_util.get_container_status(self.docker_client)
+            if status == "exited":
+                return service_status.ServiceStatuses.SHUTDOWN
+            else:
+                return service_status.ServiceStatuses.CRASHED
+
+        # if the health status is one of unkown or None, let's check
+        # container status. this is for the compatibility with the
+        # old datastores.
+        return self._get_container_status()
+
 
 class PgSqlApp(service.BaseDbApp):
     _configuration_manager = None
+
+    HEALTHCHECK = {
+        "test": ["CMD", "pg_isready", "-U", "postgres"],
+        "start_period": 10 * 1000000000,  # 10 seconds in nanoseconds
+        "interval": 10 * 1000000000,
+        "timeout": 5 * 1000000000,
+        "retries": 3
+    }
 
     @property
     def configuration_manager(self):
@@ -221,6 +249,7 @@ class PgSqlApp(service.BaseDbApp):
                     "POSTGRES_PASSWORD": postgres_pass,
                     "PGDATA": self.datadir,
                 },
+                healthcheck=self.HEALTHCHECK,
                 command=command
             )
 
