@@ -19,10 +19,10 @@ import inspect
 import os
 import shlex
 import shutil
+import subprocess
 import urllib.parse as urlparse
 import uuid
 
-from eventlet.timeout import Timeout
 import jinja2
 from oslo_concurrency import processutils
 from oslo_log import log as logging
@@ -239,12 +239,11 @@ def get_id_from_href(href):
 
 
 def execute_with_timeout(*args, **kwargs):
-    time = kwargs.pop('timeout', CONF.command_process_timeout)
+    timeout = kwargs.pop('timeout', CONF.command_process_timeout)
     log_output_on_error = kwargs.pop('log_output_on_error', False)
 
-    timeout = Timeout(time)
     try:
-        return execute(*args, **kwargs)
+        return execute(*args, timeout=timeout, **kwargs)
     except exception.ProcessExecutionError as e:
         if log_output_on_error:
             LOG.error(
@@ -255,24 +254,21 @@ def execute_with_timeout(*args, **kwargs):
                  'exit_code': e.exit_code, 'stderr': e.stderr,
                  'stdout': e.stdout})
         raise
-    except Timeout as t:
-        if t is not timeout:
-            LOG.error("Got a timeout but not the one expected.")
-            raise
-        else:
-            log_fmt = ("Time out after waiting "
-                       "%(time)s seconds when running proc: %(args)s"
-                       " %(kwargs)s.")
-            exc_fmt = _("Time out after waiting "
-                        "%(time)s seconds when running proc: %(args)s"
-                        " %(kwargs)s.")
-            msg_content = {
-                'time': time, 'args': args,
-                'kwargs': kwargs}
-            LOG.error(log_fmt, msg_content)
-            raise exception.ProcessExecutionError(exc_fmt % msg_content)
-    finally:
-        timeout.cancel()
+    except subprocess.TimeoutExpired:
+        log_fmt = ("Time out after waiting "
+                   "%(timeout)s seconds when running proc: %(args)s"
+                   " %(kwargs)s.")
+        exc_fmt = _("Time out after waiting "
+                    "%(timeout)s seconds when running proc: %(args)s"
+                    " %(kwargs)s.")
+        msg_content = {
+            'timeout': timeout, 'args': args,
+            'kwargs': kwargs}
+        LOG.error(log_fmt, msg_content)
+        raise exception.ProcessExecutionError(exc_fmt % msg_content)
+    except Exception:
+        LOG.error("Exception other than ProcessExecutionError")
+        raise
 
 
 def correct_id_with_req(id, request):

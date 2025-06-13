@@ -368,7 +368,6 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
     @patch('trove.taskmanager.models.BuiltInstanceTasks')
     @patch('trove.taskmanager.models.EndNotification')
     @patch('trove.taskmanager.models.StartNotification')
-    @patch('trove.taskmanager.models.Timeout')
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(DBInstance, 'find_all')
     def _assert_rolling_upgrade_cluster(self,
@@ -376,7 +375,6 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
                                         ordering,
                                         mock_find_all,
                                         mock_reset_task,
-                                        mock_timeout,
                                         mock_start,
                                         mock_end,
                                         mock_instance_task,

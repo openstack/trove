@@ -17,8 +17,6 @@ import json
 import time
 import traceback
 
-from eventlet import greenthread
-from eventlet.timeout import Timeout
 from oslo_log import log as logging
 from oslo_utils import timeutils as otimeutils
 
@@ -349,13 +347,18 @@ class ClusterTasks(Cluster):
                     instance.update_db(task_status=InstanceTasks.REBOOTING)
                     instance.restart()
 
-        timeout = Timeout(CONF.cluster_usage_timeout)
         cluster_notification = context.notification
         request_info = cluster_notification.serialize(context)
+        watch = otimeutils.StopWatch(duration=CONF.cluster_usage_timeout)
+        watch.start()
         try:
             node_db_inst = DBInstance.find_all(cluster_id=cluster_id,
                                                deleted=False).all()
             for index, db_inst in enumerate(node_db_inst):
+                if watch.expired():
+                    LOG.error("Timeout for restarting cluster %s.",
+                              cluster_id)
+                    raise PollTimeOut
                 if index > 0:
                     LOG.debug(
                         "Waiting (%ds) for restarted nodes to rejoin the "
@@ -363,17 +366,14 @@ class ClusterTasks(Cluster):
                     time.sleep(delay_sec)
                 instance = BuiltInstanceTasks.load(context, db_inst.id)
                 _restart_cluster_instance(instance)
-        except Timeout as t:
-            if t is not timeout:
-                raise  # not my timeout
+        except PollTimeOut:
             LOG.exception("Timeout for restarting cluster.")
             raise
         except Exception:
-            LOG.exception("Error restarting cluster.", cluster_id)
+            LOG.exception("Error restarting cluster %s.", cluster_id)
             raise
         finally:
             context.notification = cluster_notification
-            timeout.cancel()
             self.reset_task()
 
         LOG.debug("End rolling restart for id: %s.", cluster_id)
@@ -395,9 +395,10 @@ class ClusterTasks(Cluster):
                         task_status=InstanceTasks.UPGRADING)
                     instance.upgrade(datastore_version)
 
-        timeout = Timeout(CONF.cluster_usage_timeout)
         cluster_notification = context.notification
         request_info = cluster_notification.serialize(context)
+        watch = otimeutils.StopWatch(duration=CONF.cluster_usage_timeout)
+        watch.start()
         try:
             instances = []
             for db_inst in DBInstance.find_all(cluster_id=cluster_id,
@@ -410,12 +411,14 @@ class ClusterTasks(Cluster):
                 instances.sort(key=ordering_function)
 
             for instance in instances:
+                if watch.expired():
+                    LOG.error("Timeout for upgrading cluster %s.",
+                              cluster_id)
+                    raise PollTimeOut
                 _upgrade_cluster_instance(instance)
 
             self.reset_task()
-        except Timeout as t:
-            if t is not timeout:
-                raise  # not my timeout
+        except PollTimeOut:
             LOG.exception("Timeout for upgrading cluster.")
             self.update_statuses_on_failure(
                 cluster_id, status=InstanceTasks.UPGRADING_ERROR)
@@ -425,7 +428,6 @@ class ClusterTasks(Cluster):
                 cluster_id, status=InstanceTasks.UPGRADING_ERROR)
         finally:
             context.notification = cluster_notification
-            timeout.cancel()
 
         LOG.debug("End upgrade_cluster for id: %s.", cluster_id)
 
@@ -1155,8 +1157,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("trove dns support = %s", dns_support)
 
         if dns_support:
-            LOG.debug("%(gt)s: Creating dns entry for instance: %(id)s",
-                      {'gt': greenthread.getcurrent(), 'id': self.id})
+            LOG.debug("Creating dns entry for instance: %(id)s",
+                      {'id': self.id})
             dns_client = create_dns_client(self.context)
 
             def get_server():
@@ -1190,8 +1192,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.debug("Successfully created DNS entry for instance: %s",
                       self.id)
         else:
-            LOG.debug("%(gt)s: DNS not enabled for instance: %(id)s",
-                      {'gt': greenthread.getcurrent(), 'id': self.id})
+            LOG.debug("DNS not enabled for instance: %(id)s",
+                      {'id': self.id})
 
     def _create_secgroup(self, datastore_manager, allowed_cidrs):
         name = "%s-%s" % (CONF.trove_security_group_name_prefix, self.id)
@@ -2016,10 +2018,9 @@ class ResizeVolumeAction(object):
         self.instance.restart()
 
     def execute(self):
-        LOG.debug("%(gt)s: Resizing instance %(id)s volume for server "
+        LOG.debug("Resizing instance %(id)s volume for server "
                   "%(server_id)s from %(old_volume_size)s to "
-                  "%(new_size)r GB", {'gt': greenthread.getcurrent(),
-                                      'id': self.instance.id,
+                  "%(new_size)r GB", {'id': self.instance.id,
                                       'server_id': self.instance.server.id,
                                       'old_volume_size': self.old_size,
                                       'new_size': self.new_size})

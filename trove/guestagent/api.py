@@ -17,7 +17,6 @@
 Handles all request to the Platform or Guest VM
 """
 
-from eventlet import Timeout
 from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_messaging.rpc.client import RemoteError
@@ -101,11 +100,12 @@ class API(object):
         except RemoteError as r:
             LOG.exception("Error calling %s", method_name)
             raise exception.GuestError(original_message=r.value)
+        except messaging.MessagingTimeout:
+            LOG.exception("Timeout calling %s", method_name)
+            raise exception.GuestTimeout()
         except Exception as e:
             LOG.exception("Error calling %s", method_name)
             raise exception.GuestError(original_message=str(e))
-        except Timeout:
-            raise exception.GuestTimeout()
 
     def _cast(self, method_name, version, **kwargs):
         LOG.debug("Calling %s asynchronously", method_name)
