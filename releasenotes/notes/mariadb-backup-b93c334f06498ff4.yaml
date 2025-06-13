@@ -1,6 +1,0 @@
----
-fixes:
-  - |
-    For MariaDB datastore of versions equal or higher then 10.4,
-    `mariadb-backup` binary will be executed instead of `mariabackup`
-    when performing backup or restore process.

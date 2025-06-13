@@ -31,10 +31,7 @@ driver_mapping = {
     'innobackupex': 'backup.drivers.innobackupex.InnoBackupEx',
     'innobackupex_inc': 'backup.drivers.innobackupex.InnoBackupExIncremental',
     'mariabackup': 'backup.drivers.mariabackup.MariaBackup',
-    'mariadb_backup': 'backup.drivers.mariabackup.MariaDBBackup',
     'mariabackup_inc': 'backup.drivers.mariabackup.MariaBackupIncremental',
-    'mariadb_backup_inc':
-        'backup.drivers.mariabackup.MariaDBBackupIncremental',
     'pg_basebackup': 'backup.drivers.postgres.PgBasebackup',
     'pg_basebackup_inc': 'backup.drivers.postgres.PgBasebackupIncremental',
     'xtrabackup': 'backup.drivers.xtrabackup.XtraBackup',
@@ -83,47 +80,6 @@ class TestMariaBackup(unittest.TestCase):
         self.assertEqual(runner.check_restore_process(), True)
 
 
-class TestMariaDBBackup(unittest.TestCase):
-    def setUp(self):
-        self.runner_cls = importutils.import_class(
-            driver_mapping['mariadb_backup'])
-        self.params = {}
-
-        # assertions
-        self.assertIsNotNone(self.runner_cls)
-
-    def tearDown(self):
-        pass
-
-    def test_instance(self):
-        '''Check instance'''
-        # call the method
-        runner = self.runner_cls(**self.params)
-
-        # assertions
-        self.assertIsNotNone(runner)
-
-    def test_cmd(self):
-        '''Check cmd property'''
-        # call the method
-        runner = self.runner_cls(**self.params)
-
-        # assertions
-        cmd = ("mariadb-backup --backup --stream=xbstream {}".format(
-            runner.user_and_pass))
-        self.assertEqual(runner.cmd, cmd)
-
-    def test_check_restore_process(self):
-        '''Check manifest'''
-        runner = self.runner_cls(**self.params)
-        runner.process = MagicMock()
-        returncode = PropertyMock(return_value=0)
-        type(runner.process).returncode = returncode
-
-        # call the method
-        self.assertEqual(runner.check_restore_process(), True)
-
-
 class TestMariaBackupIncremental(unittest.TestCase):
     def setUp(self):
         self.runner_cls = importutils.import_class(
@@ -145,57 +101,6 @@ class TestMariaBackupIncremental(unittest.TestCase):
         # assertions
         cmd = (
             'mariabackup --backup --stream=xbstream'
-            ' --incremental-lsn=%(lsn)s ' +
-            runner.user_and_pass
-        )
-        self.assertEqual(runner.cmd, cmd)
-
-    def test_get_metadata(self):
-        # prepare the test
-        runner = self.runner_cls(**self.params)
-        runner.get_metadata = MagicMock(return_value=self.metadata)
-
-        # call the method
-        ret = runner.get_metadata()
-
-        # assertions
-        self.assertEqual(ret, self.metadata)
-
-    def test_run_restore(self):
-        # prepare the test
-        runner = self.runner_cls(**self.params)
-        length = 10
-        runner.incremental_restore = MagicMock(return_value=length)
-        runner.restore_content_length = length
-
-        # call the method
-        ret = runner.run_restore()
-
-        # assertions
-        self.assertEqual(ret, length)
-
-
-class TestMariaDBBackupIncremental(unittest.TestCase):
-    def setUp(self):
-        self.runner_cls = importutils.import_class(
-            driver_mapping['mariadb_backup_inc'])
-        self.params = {
-            'lsn': '1234567890',
-            'incremental_dir': './'
-        }
-        self.metadata = {}
-
-    def tearDown(self):
-        pass
-
-    def test_cmd(self):
-        '''Check cmd property'''
-        # call the method
-        runner = self.runner_cls(**self.params)
-
-        # assertions
-        cmd = (
-            'mariadb-backup --backup --stream=xbstream'
             ' --incremental-lsn=%(lsn)s ' +
             runner.user_and_pass
         )

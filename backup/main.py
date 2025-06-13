@@ -19,7 +19,6 @@ import sys
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
-from semantic_version import Version
 
 topdir = os.path.normpath(
     os.path.join(os.path.abspath(sys.argv[0]), os.pardir, os.pardir))
@@ -38,13 +37,7 @@ cli_opts = [
     cfg.StrOpt(
         'driver',
         default='innobackupex',
-        choices=[
-            'innobackupex',
-            'mariabackup',
-            'mariadb_backup',
-            'pg_basebackup',
-            'xtrabackup'
-        ]
+        choices=['innobackupex', 'mariabackup', 'pg_basebackup', 'xtrabackup']
     ),
     cfg.BoolOpt('backup'),
     cfg.StrOpt(
@@ -79,10 +72,7 @@ driver_mapping = {
     'innobackupex': 'backup.drivers.innobackupex.InnoBackupEx',
     'innobackupex_inc': 'backup.drivers.innobackupex.InnoBackupExIncremental',
     'mariabackup': 'backup.drivers.mariabackup.MariaBackup',
-    'mariadb_backup': 'backup.drivers.mariabackup.MariaDBBackup',
     'mariabackup_inc': 'backup.drivers.mariabackup.MariaBackupIncremental',
-    'mariadb_backup_inc':
-        'backup.drivers.mariabackup.MariaDBBackupIncremental',
     'pg_basebackup': 'backup.drivers.postgres.PgBasebackup',
     'pg_basebackup_inc': 'backup.drivers.postgres.PgBasebackupIncremental',
     'xtrabackup': 'backup.drivers.xtrabackup.XtraBackup',
@@ -158,19 +148,13 @@ def main():
     CONF(sys.argv[1:], project='trove-backup')
     logging.setup(CONF, 'trove-backup')
 
-    driver = CONF.driver
-    if driver == "mariabackup":
-        ds_version = CONF.swift_extra_metadata.get('datastore_version', '0.0')
-        if Version.coerce(ds_version) >= Version.coerce("10.4"):
-            driver = "mariadb_backup"
-
-    runner_cls = importutils.import_class(driver_mapping[driver])
+    runner_cls = importutils.import_class(driver_mapping[CONF.driver])
     storage = importutils.import_class(storage_mapping[CONF.storage_driver])()
 
     if CONF.backup:
         if CONF.incremental:
             runner_cls = importutils.import_class(
-                driver_mapping['%s_inc' % driver])
+                driver_mapping['%s_inc' % CONF.driver])
 
         LOG.info('Starting backup database to %s, backup ID %s',
                  CONF.storage_driver, CONF.backup_id)
@@ -179,7 +163,7 @@ def main():
         if storage.is_incremental_backup(CONF.restore_from):
             LOG.debug('Restore from incremental backup')
             runner_cls = importutils.import_class(
-                driver_mapping['%s_inc' % driver])
+                driver_mapping['%s_inc' % CONF.driver])
 
         LOG.info('Starting restore database from %s, location: %s',
                  CONF.storage_driver, CONF.restore_from)
