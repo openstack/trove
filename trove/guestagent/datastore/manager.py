@@ -494,9 +494,8 @@ class Manager(periodic_task.PeriodicTasks):
                     exposed_logs = CONF.get(self.manager).get(
                         'guest_log_exposed_logs')
                 except oslo_cfg.NoSuchOptError:
-                    exposed_logs = ''
+                    exposed_logs = []
                 LOG.debug("Available log defs: %s", ",".join(gl_defs.keys()))
-                exposed_logs = exposed_logs.lower().replace(',', ' ').split()
                 LOG.debug("Exposing log defs: %s", ",".join(exposed_logs))
                 expose_all = 'all' in exposed_logs
 

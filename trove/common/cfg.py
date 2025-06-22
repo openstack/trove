@@ -608,8 +608,9 @@ mysql_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
-    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=['general', 'slow_query'],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.',
@@ -694,8 +695,9 @@ percona_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
-    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=['general', 'slow_query'],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.',
@@ -780,8 +782,9 @@ pxc_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.pxc.service.PxcRootController',
                help='Root controller implementation for pxc.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=['general', 'slow_query'],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.',
@@ -853,8 +856,9 @@ redis_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.redis.service.RedisRootController',
                help='Root controller implementation for redis.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=[],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.')
 ]
@@ -903,8 +907,9 @@ cassandra_opts = [
     cfg.ListOpt('ignore_dbs', default=['system', 'system_auth',
                                        'system_traces'],
                 help='Databases to exclude when listing databases.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='system',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=['system'],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.StrOpt('system_log_level',
                choices=['ALL', 'TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'],
                default='INFO',
@@ -994,8 +999,9 @@ couchbase_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for couchbase.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=[],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=24, min=6, max=24,
                help='Character length of generated passwords.')
 ]
@@ -1079,8 +1085,9 @@ mongodb_opts = [
                default='trove.extensions.mongodb.service.'
                        'MongoDBRootController',
                help='Root controller implementation for mongodb.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=[],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.')
 ]
@@ -1162,8 +1169,9 @@ postgresql_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for postgresql.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='general',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=['general'],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=0,
                help="The time in milliseconds that a statement must take in "
                     "in order to be logged in the 'general' log.  A value of "
@@ -1218,8 +1226,9 @@ couchdb_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for couchdb.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=[],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
                 help='Users to exclude when listing users.',
                 deprecated_name='ignore_users',
@@ -1298,8 +1307,9 @@ vertica_opts = [
                default='trove.extensions.vertica.service.'
                        'VerticaRootController',
                help='Root controller implementation for Vertica.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=[],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('min_ksafety', default=0,
                help='Minimum k-safety setting permitted for vertica clusters'),
     cfg.IntOpt('default_password_length', default=36,
@@ -1349,8 +1359,9 @@ db2_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for db2.'),
-    cfg.StrOpt('guest_log_exposed_logs', default='',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=[],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.')
 ]
@@ -1414,8 +1425,9 @@ mariadb_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
-    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
-               help='List of Guest Logs to expose for publishing.'),
+    cfg.ListOpt('guest_log_exposed_logs', default=['general', 'slow_query'],
+                item_type=types.String(ignore_case=True),
+                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.',
