@@ -75,3 +75,15 @@ def no_translate_logs(logical_line, filename, noqa):
     msg = "T105: Log message shouldn't be translated."
     if _translated_log.match(logical_line):
         yield (0, msg)
+
+
+@core.flake8ext
+def no_log_warn(logical_line):
+    """Disallow 'LOG.warn('
+
+    https://bugs.launchpad.net/tempest/+bug/1508442
+
+    T106
+    """
+    if logical_line.startswith('LOG.warn('):
+        yield (0, 'T106 Use LOG.warning() rather than LOG.warn()')
