@@ -75,18 +75,3 @@ def no_translate_logs(logical_line, filename, noqa):
     msg = "T105: Log message shouldn't be translated."
     if _translated_log.match(logical_line):
         yield (0, msg)
-
-
-asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
-
-
-@core.flake8ext
-def assert_raises_regexp(logical_line):
-    """Check for usage of deprecated assertRaisesRegexp
-
-    N335
-    """
-    res = asse_raises_regexp.search(logical_line)
-    if res:
-        yield (0, "N335: assertRaisesRegex must be used instead "
-                  "of assertRaisesRegexp")

@@ -10,10 +10,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import pycodestyle
-import textwrap
-from unittest import mock
-
 from trove.hacking import checks as tc
 from trove.tests.unittests import trove_testtools
 
@@ -74,40 +70,3 @@ class HackingTestCase(trove_testtools.TestCase):
         f = tc.check_raised_localized_exceptions
         self.assertLinePasses(f, "raise KeyError('Error text')",
                               'neutron_lib/tests/unit/mytest.py')
-
-    # We are patching pycodestyle so that only the check under test is actually
-    # installed.
-    @mock.patch('pycodestyle._checks',
-                {'physical_line': {}, 'logical_line': {}, 'tree': {}})
-    def _run_check(self, code, checker, filename=None):
-        pycodestyle.register_check(checker)
-
-        lines = textwrap.dedent(code).strip().splitlines(True)
-
-        checker = pycodestyle.Checker(filename=filename, lines=lines)
-        # NOTE(sdague): the standard reporter has printing to stdout
-        # as a normal part of check_all, which bleeds through to the
-        # test output stream in an unhelpful way. This blocks that printing.
-        with mock.patch('pycodestyle.StandardReport.get_file_results'):
-            checker.check_all()
-        checker.report._deferred_print.sort()
-        return checker.report._deferred_print
-
-    def _assert_has_errors(self, code, checker, expected_errors=None,
-                           filename=None):
-        actual_errors = [e[:3] for e in
-                         self._run_check(code, checker, filename)]
-        self.assertEqual(expected_errors or [], actual_errors)
-
-    def _assert_has_no_errors(self, code, checker, filename=None):
-        self._assert_has_errors(code, checker, filename=filename)
-
-    def test_oslo_assert_raises_regexp(self):
-        code = """
-               self.assertRaisesRegexp(ValueError,
-                                       "invalid literal for.*XYZ'$",
-                                       int,
-                                       'XYZ')
-               """
-        self._assert_has_errors(code, tc.assert_raises_regexp,
-                                expected_errors=[(1, 0, "N335")])
