@@ -28,12 +28,26 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-class MySqlAppStatus(service.BaseMySqlAppStatus):
-    def __init__(self, docker_client):
-        super(MySqlAppStatus, self).__init__(docker_client)
-
-
 class MySqlApp(service.BaseMySqlApp):
+
+    HEALTHCHECK = {
+        "test": ["CMD", "mysqladmin", "ping", "-h",
+                 "127.0.0.1", "-u", "root",
+                 "--password=$MYSQL_ROOT_PASSWORD"],
+        "start_period": 10 * 1000000000,  # 10 seconds in nanoseconds
+        "interval": 10 * 1000000000,
+        "timeout": 5 * 1000000000,
+        "retries": 3
+    }
+
+    def _is_mysql84(self):
+        mysql_84 = semantic_version.Version('8.4.0')
+        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
+        if cur_ver >= mysql_84:
+            return True
+        else:
+            return False
+
     def __init__(self, status, docker_client):
         super(MySqlApp, self).__init__(status, docker_client)
 
@@ -44,11 +58,19 @@ class MySqlApp(service.BaseMySqlApp):
 
     def _get_slave_status(self):
         with mysql_util.SqlClient(self.get_engine()) as client:
-            return client.execute(text('SHOW SLAVE STATUS')).first()
+            if self._is_mysql84():
+                return client.execute(text('SHOW REPLICA STATUS')).first()
+            else:
+                return client.execute(text('SHOW SLAVE STATUS')).first()
 
     def _get_master_UUID(self):
         slave_status = self._get_slave_status()
-        return slave_status and slave_status._mapping['Master_UUID'] or None
+        if self._is_mysql84():
+            return slave_status and slave_status._mapping['Source_UUID'] \
+                or None
+        else:
+            return slave_status and slave_status._mapping['Master_UUID'] \
+                or None
 
     def get_latest_txn_id(self):
         return self._get_gtid_executed()
@@ -65,9 +87,19 @@ class MySqlApp(service.BaseMySqlApp):
         return master_UUID, int(last_txn_id)
 
     def wait_for_txn(self, txn):
+        if self._is_mysql84():
+            _sql = "SELECT WAIT_FOR_EXECUTED_GTID_SET('%s')" % txn
+        else:
+            _sql = "SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')" % txn
         with mysql_util.SqlClient(self.get_engine()) as client:
-            client.execute(
-                text("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')" % txn))
+            client.execute(text(_sql))
+
+    def stop_master(self):
+        LOG.info("Stopping replication master.")
+        if not self._is_mysql84():
+            return super().stop_master()
+        with mysql_util.SqlClient(self.get_engine()) as client:
+            client.execute(text("RESET BINARY LOGS AND GTIDS"))
 
     def get_backup_image(self):
         """Get the actual container image based on datastore version.
@@ -93,22 +125,16 @@ class MySqlApp(service.BaseMySqlApp):
         innobackupex was removed in Percona XtraBackup 8.0, use xtrabackup
         instead.
         """
-        strategy = cfg.get_configuration_property('backup_strategy')
-
-        mysql_8 = semantic_version.Version('8.0.0')
-        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
-        if cur_ver >= mysql_8:
-            strategy = 'xtrabackup'
-
-        return strategy
+        return 'xtrabackup'
 
     def reset_data_for_restore_snapshot(self, data_dir):
-        """This function try remove slave status in database"""
-        mysql_8 = semantic_version.Version('8.0.0')
-        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
-        command = "mysqld --skip-slave-start=ON --datadir=%s" % data_dir
-        if cur_ver >= mysql_8:
+        """This function try remove replica status in database"""
+        # '--skip-replica-start' was introduced in mysql 8.0.26 and the
+        # '--skip-slave-start' not be removed yet for mysql 8.0.x
+        if self._is_mysql84:
             command = "mysqld --skip-replica-start=ON --datadir=%s" % data_dir
+        else:
+            command = "mysqld --skip-slave-start=ON --datadir=%s" % data_dir
 
         extra_volumes = {
             "/etc/mysql": {"bind": "/etc/mysql", "mode": "rw"},
@@ -132,6 +158,34 @@ class MySqlApp(service.BaseMySqlApp):
                 docker_util.remove_container(self.docker_client)
             except Exception as err:
                 LOG.error('Failed to remove container. error: %s', str(err))
+
+    def start_slave(self):
+        LOG.info("Starting slave replication.")
+        if not self._is_mysql84():
+            return super().start_slave()
+        with mysql_util.SqlClient(self.get_engine()) as client:
+            client.execute(text('START REPLICA'))
+            self.wait_for_slave_status("ON", client, 180)
+
+    def stop_slave(self, for_failover):
+        LOG.info("Stopping slave replication.")
+        if not self._is_mysql84():
+            return super().stop_slave(for_failover)
+        replication_user = None
+        with mysql_util.SqlClient(self.get_engine()) as client:
+            result = client.execute(
+                text('SHOW REPLICA STATUS')).mappings().first()
+            if result:
+                replication_user = result['Source_User']
+                client.execute(text('STOP REPLICA'))
+                client.execute(text('RESET REPLICA ALL'))
+            self.wait_for_slave_status('OFF', client, 180)
+            if not for_failover and replication_user:
+                client.execute(
+                    text('DROP USER IF EXISTS ' + replication_user))
+        return {
+            'replication_user': replication_user
+        }
 
 
 class MySqlRootAccess(service.BaseMySqlRootAccess):

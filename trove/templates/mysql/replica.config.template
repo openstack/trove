@@ -2,7 +2,12 @@
 log_bin = /var/lib/mysql/data/mysql-bin.log
 binlog_format = MIXED
 relay_log = /var/lib/mysql/data/mysql-relay-bin.log
+{% if datastore.semantic_version.major < 8 %}
 relay_log_info_repository = TABLE
+{% endif %}
+{% if datastore.semantic_version.major == 8 and datastore.semantic_version.minor < 4 %}
+relay_log_info_repository = TABLE
+{% endif %}
 relay_log_recovery = 1
 relay_log_purge = 1
 log_slave_updates = ON

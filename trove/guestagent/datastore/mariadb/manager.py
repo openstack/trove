@@ -19,6 +19,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common import operating_system
+from trove.guestagent.datastore import service as base_service
 from trove.guestagent.utils import docker as docker_utils
 
 
@@ -32,7 +33,7 @@ LOG = logging.getLogger(__name__)
 
 class Manager(manager.MySqlManager):
     def __init__(self):
-        status = service.MariadbAppStatus(self.docker_client)
+        status = base_service.BaseDbStatus(self.docker_client)
         app = service.MariaDBApp(status, self.docker_client)
         adm = service.MariaDBAdmin(app)
 

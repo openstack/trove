@@ -24,63 +24,10 @@ from trove.common import utils
 from trove.guestagent.datastore.mysql_common import service as mysql_service
 from trove.guestagent.utils import docker as docker_util
 from trove.guestagent.utils import mysql as mysql_util
-from trove.instance import service_status
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-
-
-class MariadbAppStatus(mysql_service.BaseMySqlAppStatus):
-
-    def _get_container_status(self):
-        status = docker_util.get_container_status(self.docker_client)
-        if status == "running":
-            root_pass = mysql_util.BaseDbApp.get_auth_password(file="root.cnf")
-            cmd = 'mysql -uroot -p%s -e "select 1;"' % root_pass
-            try:
-                docker_util.run_command(self.docker_client, cmd)
-                return service_status.ServiceStatuses.HEALTHY
-            except Exception as exc:
-                LOG.warning('Failed to run docker command, error: %s',
-                            str(exc))
-                container_log = docker_util.get_container_logs(
-                    self.docker_client, tail='all')
-                LOG.debug('container log: \n%s', '\n'.join(container_log))
-                return service_status.ServiceStatuses.RUNNING
-        elif status == "not running":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "restarting":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "paused":
-            return service_status.ServiceStatuses.PAUSED
-        elif status == "exited":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "dead":
-            return service_status.ServiceStatuses.CRASHED
-        else:
-            return service_status.ServiceStatuses.UNKNOWN
-
-    def get_actual_db_status(self):
-        """Check database service status."""
-        health = docker_util.get_container_health(self.docker_client)
-        LOG.debug('container health status: %s', health)
-        if health == "healthy":
-            return service_status.ServiceStatuses.HEALTHY
-        elif health == "starting":
-            return service_status.ServiceStatuses.RUNNING
-        elif health == "unhealthy":
-            # In case the container was stopped
-            status = docker_util.get_container_status(self.docker_client)
-            if status == "exited":
-                return service_status.ServiceStatuses.SHUTDOWN
-            else:
-                return service_status.ServiceStatuses.CRASHED
-
-        # if the health status is one of unkown or None, let's check
-        # container status .this is for the compatibility with the
-        # old datastores.
-        return self._get_container_status()
 
 
 class MariaDBApp(mysql_service.BaseMySqlApp):

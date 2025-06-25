@@ -26,6 +26,7 @@ from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
 from trove.guestagent.datastore.postgres import service
+from trove.guestagent.datastore import service as base_service
 from trove.guestagent import guest_log
 
 LOG = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class PostgresManager(manager.Manager):
     def __init__(self):
         super(PostgresManager, self).__init__('postgres')
 
-        self.status = service.PgSqlAppStatus(self.docker_client)
+        self.status = base_service.BaseDbStatus(self.docker_client)
         self.app = service.PgSqlApp(self.status, self.docker_client)
         self.adm = service.PgSqlAdmin(service.SUPER_USER_NAME)
 
