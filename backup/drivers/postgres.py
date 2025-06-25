@@ -228,13 +228,30 @@ class PgBasebackupIncremental(PgBasebackup):
             raise Exception("Cannot find parent backup WAL file.")
 
         with psql_util.PostgresConnection('postgres') as conn:
-            self.start_segment = conn.query(
-                f"SELECT pg_start_backup('{self.filename}', false, false)"
-            )[0][0]
+            # Get PostgreSQL version
+            version = conn.query("SHOW server_version;")[0][0]
+            major_version = int(version.split('.')[0])
+
+            if major_version < 15:
+                self.start_segment = conn.query(
+                    f"SELECT pg_start_backup('{self.filename}', false, false)"
+                )[0][0]
+            else:
+                # pg_backup_start only takes label and fast parameters
+                self.start_segment = conn.query(
+                    f"SELECT pg_backup_start('{self.filename}', false)"
+                )[0][0]
+
             self.start_wal_file = conn.query(
                 f"SELECT pg_walfile_name('{self.start_segment}')")[0][0]
-            self.stop_segment = conn.query(
-                "SELECT * FROM pg_stop_backup(false, true)")[0][0]
+
+            if major_version < 15:
+                self.stop_segment = conn.query(
+                    "SELECT * FROM pg_stop_backup(false, true)")[0][0]
+            else:
+                # pg_backup_stop only takes wait_for_archive parameter
+                self.stop_segment = conn.query(
+                    "SELECT * FROM pg_backup_stop(true)")[0][0]
 
         # We have to hack this because self.command is
         # initialized in the base class before we get here, which is
