@@ -16,6 +16,7 @@ import semantic_version
 from sqlalchemy.sql.expression import text
 
 from oslo_log import log as logging
+from oslo_utils.excutils import save_and_reraise_exception
 from trove.common import cfg
 from trove.common import constants
 from trove.guestagent.datastore.mysql_common import service
@@ -120,8 +121,9 @@ class MySqlApp(service.BaseMySqlApp):
             self.start_db(ds_version=CONF.datastore_version, command=command,
                           extra_volumes=extra_volumes)
             self.stop_slave(for_failover=False)
-        except Exception as e:
-            LOG.error("Failed to start db to restore snapshot: %s", str(e))
+        except Exception as err:
+            with save_and_reraise_exception():
+                LOG.error("Failed to remove slave status: %s", str(err))
         finally:
             try:
                 LOG.debug(
