@@ -36,13 +36,11 @@
         force_tag: true
         source: pull
       loop:
-        - { source: "ubuntu", dest: "ubuntu", tag: "20.04" }
         - { source: "ubuntu", dest: "ubuntu", tag: "24.04" }
         - { source: "registry", dest: "registry", tag: "2" }
-        - { source: "mysql", dest: "mysql", tag: "5.7" }
-        - { source: "mysql", dest: "mysql", tag: "8.0" }
-        - { source: "mariadb", dest: "mariadb", tag: "10.4" }
-        - { source: "postgres", dest: "postgres", tag: "12" }
+        - { source: "mysql", dest: "mysql", tag: "8.4" }
+        - { source: "mariadb", dest: "mariadb", tag: "11.4" }
+        - { source: "postgres", dest: "postgres", tag: "17" }
 
     - name: build and push trove backup images
       become: true
