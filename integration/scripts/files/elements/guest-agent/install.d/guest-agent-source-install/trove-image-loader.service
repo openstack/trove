@@ -8,3 +8,6 @@ Type=oneshot
 User=root
 Group=root
 ExecStart=/usr/local/sbin/trove-image-loader
+
+[Install]
+WantedBy=multi-user.target

@@ -9,10 +9,18 @@ backup_image=$(crudini --get /etc/trove/conf.d/trove-guestagent.conf "$datastore
 echo "datastore_image=$datastore_image"
 echo "backup_image=$backup_image"
 
-if [ -n "$datastore_image" ]; then
-  docker pull "${datastore_image}:${datastore_version}"
+if docker image inspect "${datastore_image}:${datastore_version}" >/dev/null 2>&1; then
+  echo "Image already exists, skip loading."
+else
+  if [ -n "$datastore_image" ]; then
+    docker pull "${datastore_image}:${datastore_version}"
+  fi
 fi
 
-if [ -n "$backup_image" ]; then
-  docker pull "${backup_image}:${datastore_version}"
+if docker image inspect "${backup_image}:${datastore_version}" >/dev/null 2>&1; then
+    echo "Image already exists, skip loading."
+else
+  if [ -n "$backup_image" ]; then
+    docker pull "${backup_image}:${datastore_version}"
+  fi
 fi
