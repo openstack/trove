@@ -36,11 +36,6 @@ ListOfPortsType = types.Range(1, 65535)
 
 LOG = logging.getLogger(__name__)
 UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
-HEAT_REMOVAL_DEPRECATION_WARNING = _('Support for heat templates in Trove is '
-                                     'scheduled for removal. You will no '
-                                     'longer be able to provide a heat '
-                                     'template to Trove for the provisioning '
-                                     'of resources.')
 
 path_opts = [
     cfg.StrOpt('pybasedir',
