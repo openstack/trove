@@ -1,0 +1,6 @@
+---
+other:
+  - |
+    A ``mariabackup`` binary has been replaced with ``mariadb-backup`` in
+    the backup script for MariaDB. This might be not compatible with MariaDB
+    versions before 10.4

@@ -24,18 +24,18 @@ CONF = cfg.CONF
 
 
 class MariaBackup(mysql_base.MySQLBaseRunner):
-    """Implementation of Backup and Restore using mariabackup."""
+    """Implementation of Backup and Restore using mariadb-backup."""
     restore_cmd = ('mbstream -x -C %(restore_location)s')
-    prepare_cmd = 'mariabackup --prepare --target-dir=%(restore_location)s'
+    prepare_cmd = 'mariadb-backup --prepare --target-dir=%(restore_location)s'
 
     def __init__(self, *args, **kwargs):
         super(MariaBackup, self).__init__(*args, **kwargs)
-        self.backup_log = '/tmp/mariabackup.log'
+        self.backup_log = '/tmp/mariadb-backup.log'
         self._gzip = True
 
     @property
     def cmd(self):
-        cmd = ('mariabackup --backup --stream=xbstream ' +
+        cmd = ('mariadb-backup --backup --stream=xbstream ' +
                self.user_and_pass)
         return cmd
 
@@ -65,8 +65,8 @@ class MariaBackup(mysql_base.MySQLBaseRunner):
 
 
 class MariaBackupIncremental(MariaBackup):
-    """Incremental backup and restore using mariabackup."""
-    incremental_prep = ('mariabackup --prepare '
+    """Incremental backup and restore using mariadb-backup."""
+    incremental_prep = ('mariadb-backup --prepare '
                         '--target-dir=%(restore_location)s '
                         '%(incremental_args)s')
 
@@ -81,7 +81,7 @@ class MariaBackupIncremental(MariaBackup):
     @property
     def cmd(self):
         cmd = (
-            'mariabackup --backup --stream=xbstream'
+            'mariadb-backup --backup --stream=xbstream'
             ' --incremental-lsn=%(lsn)s ' +
             self.user_and_pass
         )

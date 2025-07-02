@@ -65,7 +65,7 @@ class TestMariaBackup(unittest.TestCase):
         runner = self.runner_cls(**self.params)
 
         # assertions
-        cmd = ("mariabackup --backup --stream=xbstream {}".format(
+        cmd = ("mariadb-backup --backup --stream=xbstream {}".format(
             runner.user_and_pass))
         self.assertEqual(runner.cmd, cmd)
 
@@ -100,7 +100,7 @@ class TestMariaBackupIncremental(unittest.TestCase):
 
         # assertions
         cmd = (
-            'mariabackup --backup --stream=xbstream'
+            'mariadb-backup --backup --stream=xbstream'
             ' --incremental-lsn=%(lsn)s ' +
             runner.user_and_pass
         )
