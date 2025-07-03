@@ -76,7 +76,7 @@ class StreamReader(object):
         self.filename = filename
         self.max_file_size = max_file_size
         # Will be incremented to 0 in _start_new_segment
-        self.file_number = -1
+        self.file_number = 0
         # True if the entire original stream is exhausted
         self.end_of_file = False
         # tempfile.TemporaryFile for current segment
@@ -87,12 +87,7 @@ class StreamReader(object):
         self._buffer_read_offset = 0
         # True when the current segment is fully read from original stream
         self._segment_fully_buffered = False
-        # These properties store the final checksum and length of the segment
-        # after it has been fully read before starting a new segment
-        self._segment_final_checksum = None
-        self._segment_final_length = 0
-        # Initialize the first segment
-        self._start_new_segment()
+        self._prepare_for_new_segment = True
 
     def _start_new_segment(self):
         # Prepares for a new segment by creating a new buffer and
@@ -101,7 +96,6 @@ class StreamReader(object):
             # Store the final checksum before closing the buffer
             self._current_segment_buffer.close()
 
-        self.file_number += 1
         # Using a temporary file for buffering as segments can be large (2GB)
         self._current_segment_buffer = tempfile.TemporaryFile()
         self._current_segment_checksum = hashlib.md5()
@@ -137,6 +131,10 @@ class StreamReader(object):
         # original stream. This loop will run until the current segment's
         # data is entirely in _current_segment_buffer or the original
         # stream is exhausted.
+        if self._prepare_for_new_segment:
+            self._start_new_segment()
+            self._prepare_for_new_segment = False
+
         if not self._segment_fully_buffered:
             while True:
                 if (self._current_segment_length + chunk_size) > \
@@ -175,22 +173,12 @@ class StreamReader(object):
         if not data and not self.end_of_file:
             LOG.info("StreamReader: Finished serving data for segment %s. "
                      "Preparing for next.", self.segment)
-            # before we start a new_segment, we need to save the
-            # current checksum
-            self._segment_final_checksum = \
-                self._current_segment_checksum.hexdigest()
-            self._segment_final_length = self._current_segment_length
-            self._start_new_segment()
+            self._prepare_for_new_segment = True
+            self.file_number += 1
             return b''
 
         # If we've reached the end of the file, just return empty
         if not data and self.end_of_file:
-            # update final_checksum after all data is read
-            self._segment_final_checksum = \
-                self._current_segment_checksum.hexdigest()
-            self._segment_final_length = self._current_segment_length
-            # Close the buffer after all data is read
-            self._current_segment_buffer.close()
             return b''
 
         return data
@@ -221,14 +209,12 @@ class StreamReader(object):
     @property
     def segment_checksum(self):
         """Returns the checksum of the *current* segment."""
-        return self._segment_final_checksum or \
-            self._current_segment_checksum.hexdigest()
+        return self._current_segment_checksum.hexdigest()
 
     @property
     def segment_length(self):
         """Returns the length of the *current* segment."""
-        return self._segment_final_length or \
-            self._current_segment_checksum.hexdigest()
+        return self._current_segment_length
 
     def release_buffer(self):
         """Manually release the current segment buffer."""
