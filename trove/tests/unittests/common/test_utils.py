@@ -64,8 +64,8 @@ class TestUtils(trove_testtools.TestCase):
                 '/usr/bin/foo', log_output_on_error=True)
 
         utils.LOG.error.assert_called_with(
-            u"Command '%(cmd)s' failed. %(description)s Exit code: "
-            u"%(exit_code)s\nstderr: %(stderr)s\nstdout: %(stdout)s",
+            "Command '%(cmd)s' failed. %(description)s Exit code: "
+            "%(exit_code)s\nstderr: %(stderr)s\nstdout: %(stdout)s",
             {'description': 'test-desc', 'stderr': 'err', 'exit_code': 42,
              'stdout': 'out', 'cmd': 'test'})
 
