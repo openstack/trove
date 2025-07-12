@@ -11,8 +11,7 @@ Admin user needs to create datastore and its versions as required.
 
 A datastore is typically created as a type of database, e.g. the cloud admin
 could create 2 datastores for MySQL and PostgreSQL, separately. For each
-datastore, there could be multiple datastore versions. For example, for MySQL
-database, Trove could support 5.7.29, 5.7.30 or 5.8, etc.
+datastore, there could be multiple datastore versions.
 
 .. note::
 
@@ -27,6 +26,66 @@ by the image tags. The tags are used for filtering as a whole rather than
 separately. Using image tags is more flexible than ID especially when a new
 guest image is uploaded to Glance, Trove can pick up the latest image
 automatically for creating instances.
+
+Datastore support matrix
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The datastore support matrix underneath lists the databases that are currently
+fully tested and verified for compatibility. These are considered stable and
+reliable options. Other datastores not included in the matrix may still function,
+but they haven't undergone full testing.
+
+.. list-table:: Supported Databases by OpenStack Release
+   :widths: 20 4 4 4 4 4 4 4 4 4
+   :header-rows: 1
+
+   * - OpenStack Releases
+     -
+     - PostgreSQL
+     -
+     -
+     - MySQL
+     -
+     -
+     - MariaDB
+     -
+   * -
+     - 12
+     - 16
+     - 17
+     - **5.7**
+     - **8.0**
+     - **8.4**
+     - 10.4
+     - 11.4
+     - 11.8
+   * - 2025.2 Flamingo
+     - ✘
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
+   * - 2025.1 Epoxy
+     - ✔
+     - ✘
+     - ✘
+     - ✔
+     - ✘
+     - ✘
+     - ✔
+     - ✘
+     - ✘
+
+
+.. note::
+
+   Make sure to build the guest image from the same code branch that
+   matches the datastore version you plan to use. When creating a datastore
+   version, always use the guest image built specifically for it.
 
 Create datastore version
 ~~~~~~~~~~~~~~~~~~~~~~~~
