@@ -553,7 +553,7 @@ function cmd_start_deps() {
         sudo losetup -f --show ${VOLUME_BACKING_FILE}
     fi
 
-    if ! egrep -q ${SWIFT_DATA_DIR}/drives/sdb1 /proc/mounts; then
+    if ! grep -E ${SWIFT_DATA_DIR}/drives/sdb1 /proc/mounts; then
         exclaim "Re-mounting Swift Disk Image"
         sudo mount -t xfs -o loop,noatime,nodiratime,nobarrier,logbufs=8  ${SWIFT_DISK_IMAGE} ${SWIFT_DATA_DIR}/drives/sdb1 || true
     fi

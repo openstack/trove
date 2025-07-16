@@ -17,7 +17,7 @@ function git_clone {
     GIT_DEST=$2
     GIT_BRANCH=$3
 
-    if echo $GIT_BRANCH | egrep -q "^refs"; then
+    if echo $GIT_BRANCH | grep -E "^refs"; then
         # If our branch name is a gerrit style refs/changes/...
         if [[ ! -d $GIT_DEST ]]; then
             git_timed clone $GIT_REMOTE $GIT_DEST
