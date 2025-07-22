@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-import tempfile
+import os.path
 
 from oslo_log import log as logging
 
@@ -208,54 +208,29 @@ class MySqlManager(manager.Manager):
             root_pass = utils.generate_random_password()
             self.app.save_password('root', root_pass)
 
-        init_file = tempfile.NamedTemporaryFile(mode='w')
+        init_file = os.path.join(data_dir, "init.sql")
         operating_system.write_file(
-            init_file.name,
-            f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_pass}';"
+            init_file,
+            f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_pass}';",
+            as_root=True
         )
-        err_file = tempfile.NamedTemporaryFile(suffix='.err')
+        # Change ownership so the database service user
+        # can read it in the container
+        operating_system.chown(
+            init_file,
+            user=self.app.database_service_uid,
+            group=self.app.database_service_gid,
+            as_root=True
+        )
 
-        # Get the original file owner and group before changing the owner.
-        from pathlib import Path
-        init_file_path = Path(init_file.name)
-        init_file_owner = init_file_path.owner()
-        init_file_group = init_file_path.group()
-
-        # Allow database service user to access the temporary files.
-        try:
-            for file in [init_file.name, err_file.name]:
-                operating_system.chown(
-                    file,
-                    self.app.database_service_uid,
-                    self.app.database_service_gid,
-                    force=True, as_root=True)
-        except Exception as err:
-            LOG.error('Failed to change file owner, error: %s', str(err))
-            for file in [init_file.name, err_file.name]:
-                LOG.debug('Reverting the %s owner to %s '
-                          'before close it.', file, init_file_owner)
-                operating_system.chown(file, init_file_owner,
-                                       init_file_group, force=True,
-                                       as_root=True)
-            init_file.close()
-            err_file.close()
-            raise err
-
-        # Allow database service user to access the temporary files.
         command = (
-            f'mysqld --init-file={init_file.name} '
-            f'--log-error={err_file.name} '
+            f'mysqld --init-file={init_file} '
             f'--datadir={data_dir} '
         )
-        extra_volumes = {
-            init_file.name: {"bind": init_file.name, "mode": "rw"},
-            err_file.name: {"bind": err_file.name, "mode": "rw"},
-        }
 
         # Start the database container process.
         try:
-            self.app.start_db(ds_version=ds_version, command=command,
-                              extra_volumes=extra_volumes)
+            self.app.start_db(ds_version=ds_version, command=command)
         except Exception as err:
             LOG.error('Failed to reset password for restore, error: %s',
                       str(err))
@@ -267,19 +242,12 @@ class MySqlManager(manager.Manager):
                     docker_util.get_container_logs(self.app.docker_client)
                 )
                 docker_util.remove_container(self.app.docker_client)
+                # Remove init.sql file after password reset
+                operating_system.remove(init_file, force=True, as_root=True)
             except Exception as err:
-                LOG.error('Failed to remove container. error: %s',
+                LOG.error('Failed to remove container or init file. error: %s',
                           str(err))
                 pass
-            for file in [init_file.name, err_file.name]:
-                LOG.debug('Reverting the %s owner to %s '
-                          'before close it.', file, init_file_owner)
-                operating_system.chown(file, init_file_owner,
-                                       init_file_group, force=True,
-                                       as_root=True)
-            init_file.close()
-            err_file.close()
-
         LOG.info('Finished to reset password for restore')
 
     def _validate_slave_for_replication(self, context, replica_info):

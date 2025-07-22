@@ -119,7 +119,25 @@ class BaseDbStatus(object):
         self.set_status(real_status, force=force)
 
     def get_actual_db_status(self):
-        raise NotImplementedError()
+        """Check database service status."""
+        health = docker_util.get_container_health(self.docker_client)
+        LOG.debug('container health status: %s', health)
+        if health == "healthy":
+            return service_status.ServiceStatuses.HEALTHY
+        elif health == "starting":
+            return service_status.ServiceStatuses.RUNNING
+        # when the container is not found, it returns not running
+        elif health == "not running":
+            return service_status.ServiceStatuses.SHUTDOWN
+        elif health == "unhealthy":
+            # In case the container was stopped
+            status = docker_util.get_container_status(self.docker_client)
+            if status == "exited":
+                return service_status.ServiceStatuses.SHUTDOWN
+            else:
+                return service_status.ServiceStatuses.CRASHED
+
+        return service_status.ServiceStatuses.UNKNOWN
 
     @property
     def is_installed(self):

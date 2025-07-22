@@ -44,57 +44,6 @@ HBA_CONFIG_FILE = '/etc/postgresql/pg_hba.conf'
 WAL_ARCHIVE_DIR = '/var/lib/postgresql/data/wal_archive'
 
 
-class PgSqlAppStatus(service.BaseDbStatus):
-    def __init__(self, docker_client):
-        super(PgSqlAppStatus, self).__init__(docker_client)
-
-    def _get_container_status(self):
-        """Check database service status."""
-        status = docker_util.get_container_status(self.docker_client)
-        if status == "running":
-            cmd = "psql -U postgres -c 'select 1;'"
-            try:
-                docker_util.run_command(self.docker_client, cmd)
-                return service_status.ServiceStatuses.HEALTHY
-            except Exception as exc:
-                LOG.warning('Failed to run docker command, error: %s',
-                            str(exc))
-                container_log = docker_util.get_container_logs(
-                    self.docker_client, tail='all')
-                LOG.debug('container log: \n%s', '\n'.join(container_log))
-                return service_status.ServiceStatuses.RUNNING
-        elif status == "not running":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "paused":
-            return service_status.ServiceStatuses.PAUSED
-        elif status == "exited":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "dead":
-            return service_status.ServiceStatuses.CRASHED
-        else:
-            return service_status.ServiceStatuses.UNKNOWN
-
-    def get_actual_db_status(self):
-        health = docker_util.get_container_health(self.docker_client)
-        LOG.debug('container health status: %s', health)
-        if health == "healthy":
-            return service_status.ServiceStatuses.HEALTHY
-        elif health == "starting":
-            return service_status.ServiceStatuses.RUNNING
-        elif health == "unhealthy":
-            # In case the container was stopped
-            status = docker_util.get_container_status(self.docker_client)
-            if status == "exited":
-                return service_status.ServiceStatuses.SHUTDOWN
-            else:
-                return service_status.ServiceStatuses.CRASHED
-
-        # if the health status is one of unkown or None, let's check
-        # container status. this is for the compatibility with the
-        # old datastores.
-        return self._get_container_status()
-
-
 class PgSqlApp(service.BaseDbApp):
     _configuration_manager = None
 

@@ -11,12 +11,12 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - trove-tempest-ubuntu-base-mysql8.0
-        - trove-tempest-ubuntu-backup-mysql8.0:
+        - trove-tempest-ubuntu-base-mysql8.4
+        - trove-tempest-ubuntu-backup-mysql8.4:
             voting: false
-        - trove-tempest-ubuntu-replication-mysql8.0:
+        - trove-tempest-ubuntu-replication-mysql8.4:
             voting: false
-        - trove-tempest-cinder-storage-driver-mysql8.0:
+        - trove-tempest-cinder-storage-driver-mysql8.4:
             voting: false
         - trove-tempest-ubuntu-base-mariadb11.4:
             voting: false
@@ -42,7 +42,7 @@
             voting: true
     gate:
       jobs:
-        - trove-tempest-ubuntu-base-mysql8.0
+        - trove-tempest-ubuntu-base-mysql8.4
         - trove-tempest-ubuntu-base-mariadb11.4
         - trove-tempest-ubuntu-base-postgresql17
     experimental:

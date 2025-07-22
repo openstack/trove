@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Add support of MySQL 8.4, currently, The supported versions
+    are MySQL 8.0 & 8.4

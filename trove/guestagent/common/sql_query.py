@@ -20,7 +20,6 @@ Do not hard-code strings into the guest agent; use this module to build
 them for you.
 
 """
-import semantic_version
 
 
 class Query(object):
@@ -363,20 +362,8 @@ class SetPassword(object):
         return str(self)
 
     def __str__(self):
-        if self.ds == 'mysql':
-            cur_version = semantic_version.Version.coerce(self.ds_version)
-            mysql_575 = semantic_version.Version('5.7.5')
-            if cur_version <= mysql_575:
-                return (f"SET PASSWORD FOR '{self.user}'@'{self.host}' = "
-                        f"PASSWORD('{self.new_password}');")
-
-            return (f"ALTER USER '{self.user}'@'{self.host}' "
-                    f"IDENTIFIED WITH mysql_native_password "
-                    f"BY '{self.new_password}';")
-        elif self.ds == 'mariadb':
-            return (f"ALTER USER '{self.user}'@'{self.host}' IDENTIFIED VIA "
-                    f"mysql_native_password USING "
-                    f"PASSWORD('{self.new_password}');")
+        return (f"ALTER USER '{self.user}'@'{self.host}' "
+                f"IDENTIFIED BY '{self.new_password}';")
 
 
 class DropUser(object):

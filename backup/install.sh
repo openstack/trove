@@ -69,7 +69,14 @@ if [ "${OPT_DATASTORE}" = "mysql" ]; then
 	dpkg -i percona-release.deb
 	percona-release enable-only tools release
 	apt-get update
-	apt-get install ${APTOPTS} percona-xtrabackup-80
+	if [ "${OPT_DATASTORE_VERSION}" = "8.0" ]; then
+		apt-get install ${APTOPTS} percona-xtrabackup-80
+	elif [ "${OPT_DATASTORE_VERSION}" = "8.4" ]; then
+		apt-get install ${APTOPTS} percona-xtrabackup-84
+	else
+		echo "Unsupported MySQL version: ${OPT_DATASTORE_VERSION}"
+		exit 1
+	fi
 	rm -f percona-release.deb
 elif [ "${OPT_DATASTORE}" = "mariadb" ]; then
 	# See the url below about the supported version.

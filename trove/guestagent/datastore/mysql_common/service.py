@@ -62,41 +62,6 @@ BACKUP_LOG = re.compile(r'.*Backup successfully, checksum: (?P<checksum>.*), '
                         r'location: (?P<location>.*)')
 
 
-class BaseMySqlAppStatus(service.BaseDbStatus):
-
-    def __init__(self, docker_client):
-        super(BaseMySqlAppStatus, self).__init__(docker_client)
-
-    def get_actual_db_status(self):
-        """Check database service status."""
-        status = docker_util.get_container_status(self.docker_client)
-        if status == "running":
-            root_pass = service.BaseDbApp.get_auth_password(file="root.cnf")
-            cmd = 'mysql -uroot -p%s -e "select 1;"' % root_pass
-            try:
-                docker_util.run_command(self.docker_client, cmd)
-                return service_status.ServiceStatuses.HEALTHY
-            except Exception as exc:
-                LOG.warning('Failed to run docker command, error: %s',
-                            str(exc))
-                container_log = docker_util.get_container_logs(
-                    self.docker_client, tail='all')
-                LOG.debug('container log: \n%s', '\n'.join(container_log))
-                return service_status.ServiceStatuses.RUNNING
-        elif status == "not running":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "restarting":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "paused":
-            return service_status.ServiceStatuses.PAUSED
-        elif status == "exited":
-            return service_status.ServiceStatuses.SHUTDOWN
-        elif status == "dead":
-            return service_status.ServiceStatuses.CRASHED
-        else:
-            return service_status.ServiceStatuses.UNKNOWN
-
-
 class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
     """Handles administrative tasks on the MySQL database."""
 

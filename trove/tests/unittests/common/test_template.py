@@ -64,8 +64,12 @@ class TemplateTest(trove_testtools.TestCase):
         self.assertGreater(len(server_id), 1)
 
     def test_rendering(self):
-        rendered = self.template.render(flavor=self.flavor_dict,
-                                        server_id=self.server_id)
+        datastore = mock_datastore_version("mysql", "mysql", "mysql", "8.4")
+        datastore.semantic_version = Version("8.4.0")
+        rendered = self.template.render(
+            flavor=self.flavor_dict,
+            server_id=self.server_id,
+            datastore=datastore)
         self.validate_template(rendered,
                                "innodb_buffer_pool_size",
                                self.flavor_dict,

@@ -15,7 +15,12 @@ secure-file-priv = NULL
 tmpdir = /var/tmp
 pid-file = /var/run/mysqld/mysqld.pid
 socket = /var/run/mysqld/mysqld.sock
+{% if datastore.semantic_version.major < 8 %}
 default_authentication_plugin = mysql_native_password
+{% endif %}
+{% if datastore.semantic_version.major == 8 and datastore.semantic_version.minor < 4 %}
+default_authentication_plugin = mysql_native_password
+{% endif %}
 skip-external-locking = 1
 key_buffer_size = {{ (50 * flavor['ram']/512)|int }}M
 max_allowed_packet = {{ (1024 * flavor['ram']/512)|int }}K
