@@ -17,7 +17,6 @@ import os
 import re
 
 from oslo_log import log as logging
-from oslo_utils import encodeutils
 import sqlalchemy
 from sqlalchemy import event
 from sqlalchemy import exc
@@ -210,11 +209,9 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
             user.check_reserved()
         except ValueError as ve:
             LOG.exception("Error Getting user information")
-            err_msg = encodeutils.exception_to_unicode(ve)
-            raise exception.BadRequest(_("Username %(user)s is not valid"
-                                         ": %(reason)s") %
-                                       {'user': username, 'reason': err_msg}
-                                       )
+            raise exception.BadRequest(
+                _("Username %(user)s is not valid: %(reason)s") %
+                {'user': username, 'reason': ve})
         with mysql_util.SqlClient(
                 self.mysql_app.get_engine(), use_flush=True) as client:
             q = sql_query.Query()
