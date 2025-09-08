@@ -49,4 +49,4 @@ Installing API behind mod_wsgi
 
     Debian/Ubuntu:
       sudo a2ensite trove-api
-      sudo service apache2 reload
+      sudo systemctl reload apache2
