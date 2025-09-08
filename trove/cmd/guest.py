@@ -76,9 +76,9 @@ def main():
         try:
             guestagent_utils.disable_user_defined_port()
         except Exception as e:
-            LOG.warn("failed to down the user defined port when "
-                     "network_isolation is set to true due to: %s."
-                     "pass...", str(e))
+            LOG.warning("failed to down the user defined port when "
+                        "network_isolation is set to true due to: %s."
+                        "pass...", str(e))
             pass
 
     # Create user and group for running docker container.

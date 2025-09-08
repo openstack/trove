@@ -70,3 +70,9 @@ class HackingTestCase(trove_testtools.TestCase):
         f = tc.check_raised_localized_exceptions
         self.assertLinePasses(f, "raise KeyError('Error text')",
                               'neutron_lib/tests/unit/mytest.py')
+
+    def test_no_log_warn(self):
+        self.assertEqual(1, len(list(tc.no_log_warn(
+            "LOG.warn(\"LOG.warn is deprecated\")"))))
+        self.assertEqual(0, len(list(tc.no_log_warn(
+            "LOG.warning(\"LOG.warn is deprecated\")"))))
