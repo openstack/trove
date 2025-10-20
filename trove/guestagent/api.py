@@ -61,6 +61,7 @@ class API(object):
         'ussuri': '1.0',
         'victoria': '1.1',
         'epoxy': '1.2',
+        'flamingo': '1.2',
 
         'latest': API_LATEST_VERSION
     }
