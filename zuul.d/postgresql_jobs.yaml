@@ -1,7 +1,7 @@
 # PostgreSQL jobs
 
 - job:
-    name: trove-tempest-ubuntu-base-postgresql17
+    name: trove-tempest-ubuntu-base-postgresql18
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
       - ^.*\.rst$
@@ -21,16 +21,16 @@
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
-          TROVE_DATASTORE_VERSION: 17
+          TROVE_DATASTORE_VERSION: 18
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 enabled_datastores: "postgresql"
-                default_datastore_versions: postgresql:17
+                default_datastore_versions: postgresql:18
 
 - job:
-    name: trove-tempest-ubuntu-backup-postgresql17
+    name: trove-tempest-ubuntu-backup-postgresql18
     parent: trove-tempest-ubuntu-backup
     irrelevant-files:
       - ^.*\.rst$
@@ -49,16 +49,16 @@
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
-          TROVE_DATASTORE_VERSION: 17
+          TROVE_DATASTORE_VERSION: 18
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 enabled_datastores: "postgresql"
-                default_datastore_versions: postgresql:17
+                default_datastore_versions: postgresql:18
 
 - job:
-    name: trove-tempest-ubuntu-replication-postgresql17
+    name: trove-tempest-ubuntu-replication-postgresql18
     parent: trove-tempest-ubuntu-replication
     irrelevant-files:
       - ^.*\.rst$
@@ -78,16 +78,16 @@
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
-          TROVE_DATASTORE_VERSION: 17
+          TROVE_DATASTORE_VERSION: 18
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 enabled_datastores: "postgresql"
-                default_datastore_versions: postgresql:17
+                default_datastore_versions: postgresql:18
 
 - job:
-    name: trove-tempest-cinder-storage-driver-postgresql17
+    name: trove-tempest-cinder-storage-driver-postgresql18
     parent:  trove-tempest-snapshot
     irrelevant-files:
       - ^.*\.rst$
@@ -107,11 +107,11 @@
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
-          TROVE_DATASTORE_VERSION: 17
+          TROVE_DATASTORE_VERSION: 18
         devstack_local_conf:
           test-config:
             $TEMPEST_CONFIG:
               database:
                 backup_wait_timeout: 1200
                 enabled_datastores: "postgresql"
-                default_datastore_versions: postgresql:17
+                default_datastore_versions: postgresql:18
