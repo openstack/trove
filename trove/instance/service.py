@@ -378,7 +378,8 @@ class InstanceController(wsgi.Controller):
             if locality:
                 msg = 'Cannot specify locality when creating replicas.'
                 raise exception.BadRequest(message=msg)
-            backup_model.verify_swift_auth_token(context)
+            if CONF.storage_strategy in ["swift"]:
+                backup_model.verify_swift_auth_token(context)
         else:
             if replica_count and replica_count > 1:
                 msg = (f"Replica count only valid when creating replicas. "

@@ -262,6 +262,7 @@ class BackupDeleteTest(trove_testtools.TestCase):
     def test_delete_backup_swift_token_invalid(self):
         backup = MagicMock()
         backup.is_running = False
+        backup.storage_driver = "swift"
         with patch.object(models.Backup, 'get_by_id', return_value=backup):
             with patch.object(models.Backup, 'verify_swift_auth_token',
                               side_effect=exception.SwiftAuthError):
