@@ -343,7 +343,8 @@ class Backup(object):
             if backup.is_running:
                 msg = _("Backup %s cannot be deleted because it is running.")
                 raise exception.UnprocessableEntity(msg % backup_id)
-            cls.verify_swift_auth_token(context)
+            if backup.storage_driver == "swift":
+                cls.verify_swift_auth_token(context)
             api.API(context).delete_backup(backup_id)
 
         return run_with_quotas(context.project_id,
