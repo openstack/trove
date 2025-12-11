@@ -310,12 +310,18 @@ class TestInstanceController(trove_testtools.TestCase):
         instance.update_access = Mock()
         return instance
 
+    def _setup_modify_instance_replica_mocks(self):
+        replica = Mock()
+        replica.attach_configuration = Mock()
+        replica.detach_configuration = Mock()
+        return replica
+
     def test_modify_instance_with_empty_args(self):
         instance = self._setup_modify_instance_mocks()
         args = {}
 
         self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
+                                         instance, [], **args)
 
         self.assertEqual(0, instance.detach_replica.call_count)
         self.assertEqual(0, instance.detach_configuration.call_count)
@@ -328,7 +334,7 @@ class TestInstanceController(trove_testtools.TestCase):
         args['detach_replica'] = False
 
         self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
+                                         instance, [], **args)
 
         self.assertEqual(0, instance.detach_replica.call_count)
 
@@ -338,7 +344,7 @@ class TestInstanceController(trove_testtools.TestCase):
         args['detach_replica'] = True
 
         self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
+                                         instance, [], **args)
 
         self.assertEqual(1, instance.detach_replica.call_count)
 
@@ -348,7 +354,7 @@ class TestInstanceController(trove_testtools.TestCase):
         args['configuration_id'] = 'some_id'
 
         self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
+                                         instance, [], **args)
 
         self.assertEqual(1, instance.attach_configuration.call_count)
 
@@ -358,9 +364,57 @@ class TestInstanceController(trove_testtools.TestCase):
         args['configuration_id'] = None
 
         self.controller._modify_instance(self.context, self.req,
-                                         instance, **args)
+                                         instance, [], **args)
 
         self.assertEqual(1, instance.detach_configuration.call_count)
+
+    def test_modify_instance_with_replica_configuration_id_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        replica = self._setup_modify_instance_replica_mocks()
+        instance.configuration = None
+        replica.configuration = None
+        args = {}
+        args['configuration_id'] = 'some_id'
+
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, [replica], **args)
+
+        self.assertEqual(1, instance.attach_configuration.call_count)
+        self.assertEqual(1, replica.attach_configuration.call_count)
+
+    def test_modify_instance_with_replica_None_configuration_id_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        replica = self._setup_modify_instance_replica_mocks()
+        instance.configuration = Mock()
+        replica.configuration = Mock()
+        instance.configuration.id = '1'
+        replica.configuration.id = '1'
+
+        args = {}
+        args['configuration_id'] = None
+
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, [replica], **args)
+
+        self.assertEqual(1, instance.detach_configuration.call_count)
+        self.assertEqual(1, replica.detach_configuration.call_count)
+
+    def test_modify_instance_with_altered_replica_None_conf_id_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        replica = self._setup_modify_instance_replica_mocks()
+        instance.configuration = Mock()
+        replica.configuration = Mock()
+        instance.configuration.id = '1'
+        replica.configuration.id = '2'
+
+        args = {}
+        args['configuration_id'] = None
+
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, [replica], **args)
+
+        self.assertEqual(1, instance.detach_configuration.call_count)
+        self.assertEqual(0, replica.detach_configuration.call_count)
 
     def test_update_api_invalid_field(self):
         body = {

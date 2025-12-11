@@ -326,6 +326,16 @@ Attach configuration group
 
 Attach a configuration group for an instance.
 
+Configuration settings applied to a master instance are automatically
+propagated to its replicas. This propagation only affects replicas
+that do not already have an overriding configuration association.
+
+Requirement: Certain critical configuration parameters must be identical
+across both the master and all replica nodes. Mismatched configurations
+for these parameters will result in replication failure.
+Refer to your specific database documentation to identify which options
+require identical values.
+
 Normal response codes: 202
 
 Request

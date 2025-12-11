@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Removed the legacy PostgreSQL `max_connections` workaround that persisted
+    the setting in `postgresql.auto.conf`, allowing standard Trove configuration
+    management to modify it. Rebuild now removes existing legacy
+    `max_connections` entries from `postgresql.auto.conf`, while preserving
+    support for custom configuration on individual replicas.

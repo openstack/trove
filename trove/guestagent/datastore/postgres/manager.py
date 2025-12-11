@@ -349,6 +349,21 @@ class PostgresManager(manager.Manager):
             self.app.configuration_manager.apply_system_override(
                 {'hba_file': service.HBA_CONFIG_FILE})
 
+            # Explicitly remove 'max_connections' from postgresql.auto.conf.
+            # This prevents the setting from overriding user-defined
+            # configuration groups and fixes misconfigurations in existing
+            # deployments.
+            auto_conf = f"{self.app.datadir}/{PG_FILE_AUTOCONF}"
+            if operating_system.exists(auto_conf, as_root=True):
+                auto_conf_content = operating_system.read_file(
+                    auto_conf, as_root=True)
+                if "max_connections" in auto_conf_content:
+                    auto_conf_content = re.sub(
+                        r'^.*max_connections\s*=.*\n?', '',
+                        auto_conf_content, flags=re.MULTILINE)
+                    operating_system.write_file(
+                        auto_conf, auto_conf_content, as_root=True)
+
             # Start database service.
             command = f"postgres -c config_file={service.CONFIG_FILE}"
             self.app.start_db(ds_version=ds_version, command=command)
@@ -382,17 +397,6 @@ class PostgresManager(manager.Manager):
                 self.app.adm.pquery(cmd)
             else:
                 self.app.adm.psql("CHECKPOINT;")
-
-            # Advoid:
-            # https://www.postgresql.org/message-id/
-            # 20220203094727.w3ca3sukfu5xu7hk%40jrouhaud
-            autoconf_file = (f"{self.app.datadir}/"
-                             f"{PG_FILE_AUTOCONF}")
-            cmd = "SHOW max_connections;"
-            result = self.app.adm.query(cmd)[0][0]
-            max_connections = f'max_connections={result}'
-            operating_system.write_file(autoconf_file,
-                                        max_connections, as_root=True)
 
         _start_backup()
 

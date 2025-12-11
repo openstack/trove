@@ -416,11 +416,17 @@ class InstanceController(wsgi.Controller):
         if not slave_of_id and locality is None:
             locality = CONF.default_locality
 
+        configuration = self._configuration_parse(context, body)
+
         if slave_of_id:
             try:
                 replica_source = models.DBInstance.find_by(
                     context, id=slave_of_id, deleted=False)
                 flavor_id = replica_source.flavor_id
+                # Use configuration from master, if present and
+                # configuration for replica is not provided by user
+                if not configuration and replica_source.configuration_id:
+                    configuration = replica_source.configuration_id
             except exception.ModelNotFoundError:
                 LOG.error(f"Cannot create a replica of {slave_of_id} as that "
                           f"instance could not be found.")
@@ -457,7 +463,6 @@ class InstanceController(wsgi.Controller):
         if slave_of_id and (databases or users):
             raise exception.ReplicaCreateWithUsersDatabasesError()
 
-        configuration = self._configuration_parse(context, body)
         modules = body['instance'].get('modules')
 
         # The following operations have their own API calls.
@@ -525,7 +530,7 @@ class InstanceController(wsgi.Controller):
                 return configuration_id
             return None
 
-    def _modify_instance(self, context, req, instance, **kwargs):
+    def _modify_instance(self, context, req, instance, replicas, **kwargs):
         if 'detach_replica' in kwargs and kwargs['detach_replica']:
             context.notification = notification.DBaaSInstanceDetach(
                 context, request=req)
@@ -533,6 +538,11 @@ class InstanceController(wsgi.Controller):
                 instance.detach_replica()
 
         if 'configuration_id' in kwargs:
+            # Validate that all replicas are in the correct state before
+            # attaching/detaching configuration to/from the master
+            for replica in replicas:
+                replica._validate_can_perform_assign()
+
             if kwargs['configuration_id']:
                 context.notification = (
                     notification.DBaaSInstanceAttachConfiguration(context,
@@ -541,12 +551,37 @@ class InstanceController(wsgi.Controller):
                 with StartNotification(context, instance_id=instance.id,
                                        configuration_id=configuration_id):
                     instance.attach_configuration(configuration_id)
+
+                # For some databases (e.g. postgresql) some of configuration
+                # parameters should be equal for master and replica.
+                # So we should apply configuration to each replica too.
+                for replica in replicas:
+                    # Set replica's conf only if it doesn't have conf yet
+                    if not replica.configuration:
+                        with StartNotification(
+                                context, instance_id=replica.id,
+                                configuration_id=configuration_id):
+                            replica.attach_configuration(configuration_id)
             else:
+                original_configuration = instance.configuration
+
                 context.notification = (
                     notification.DBaaSInstanceDetachConfiguration(context,
                                                                   request=req))
                 with StartNotification(context, instance_id=instance.id):
                     instance.detach_configuration()
+
+                for replica in replicas:
+                    # Detach replica's configuration if it's in sync with
+                    # the master configuration
+                    if replica.configuration and \
+                       replica.configuration.id == original_configuration.id:
+                        LOG.info(
+                            'detach configuration for replica %s',
+                            replica.id)
+                        with StartNotification(
+                                context, instance_id=replica.id):
+                            replica.detach_configuration()
 
         if 'datastore_version' in kwargs:
             datastore_version = ds_models.DatastoreVersion.load(
@@ -611,7 +646,14 @@ class InstanceController(wsgi.Controller):
         if 'datastore_version' in body['instance']:
             args['datastore_version'] = body['instance']['datastore_version']
 
-        self._modify_instance(context, req, instance, **args)
+        replicas = []
+        for dbinfo in instance.slaves:
+            replica = models.Instance.load(
+                context, dbinfo.id, needs_server=True)
+            self.authorize_instance_action(context, 'update', replica)
+            replicas.append(replica)
+
+        self._modify_instance(context, req, instance, replicas, **args)
         return wsgi.Result(None, 202)
 
     def edit(self, req, id, body, tenant_id):
