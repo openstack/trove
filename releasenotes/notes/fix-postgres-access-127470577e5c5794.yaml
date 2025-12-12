@@ -1,0 +1,15 @@
+---
+
+fixes:
+  - |
+    Fix PostgreSQL guest agent issues for password changes and access control.
+
+    - Fix AttributeError when changing user passwords due to improper
+      deserialization in PgSqlAdmin.change_passwords method.
+    - Update grant_access and revoke_access methods to handle PostgreSQL
+      changes:
+
+      * Explicitly grant/revoke schema (public) access for PostgreSQL 14+
+      * Revoke CONNECT privilege from PUBLIC to ensure proper revocation
+      * Ensure connection is made to specific database for grant/revoke
+        operations in PostgreSQL 16+
