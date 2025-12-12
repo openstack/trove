@@ -425,14 +425,38 @@ class PgSqlAdmin(object):
         The databases parameter is a list of strings representing the names of
         the databases to grant permission on.
         """
+
         for database in databases:
-            LOG.info(f"Granting user {username} access to database {database}")
-            self.psql(
-                query.AccessQuery.grant(
-                    user=username,
-                    database=database,
+            # We should be sure that database which we try to connect
+            # is exists.
+            if not self._database_exists(database):
+                raise exception.DatabaseNotFound(database=database)
+
+            # Starting from PostgreSQL 16 schemas are separate for
+            # each database. So we should connect to a certain
+            # database in order to grant permissions for it.
+            self.use_database(database)
+            try:
+                LOG.info(f"Granting user {username} access to "
+                         f"database {database}")
+                self.psql(
+                    query.AccessQuery.grant(
+                        user=username,
+                        database=database,
+                    )
                 )
-            )
+                # Starting from PostgreSQL 14 you should explicitly set
+                # access to the schema too.
+                LOG.info(f"Granting user {username} access to schema public")
+                self.psql(
+                    query.AccessQuery.grant_schema(
+                        user=username,
+                        schema='public',
+                    )
+                )
+            finally:
+                # Restore connection back to the superuser db
+                self.use_database(SUPER_USER_NAME)
 
     def revoke_access(self, username, hostname, database):
         """Revoke a user's permission to use a given database.
@@ -441,13 +465,44 @@ class PgSqlAdmin(object):
         The database parameter is a string representing the name of the
         database.
         """
-        LOG.info(f"Revoking user ({username}) access to database {database}")
-        self.psql(
-            query.AccessQuery.revoke(
-                user=username,
-                database=database,
+        # Starting from PostgreSQL 16 schemas are separate for
+        # each database. So we should connect to a certain
+        # database in order to revoke permissions from it.
+
+        # We should be sure that database which we try to connect
+        # is exists.
+        if not self._database_exists(database):
+            raise exception.DatabaseNotFound(database=database)
+
+        self.use_database(database)
+
+        try:
+            LOG.info(f"Revoking user ({username}) access to "
+                     f"database {database}")
+            self.psql(
+                query.AccessQuery.revoke(
+                    user=username,
+                    database=database,
+                )
             )
-        )
+            # By default Postgresql gives access to connect to all users.
+            # So we should revoke connect access from PUBLIC to confirm
+            # that revoke_access command actually will remove
+            # access to the database from user.
+            self.psql(
+                query.AccessQuery.revoke_public(database=database)
+            )
+
+            LOG.info(f"Revoking user {username} access to schema public")
+            self.psql(
+                query.AccessQuery.revoke_schema(
+                    user=username,
+                    schema='public',
+                )
+            )
+        finally:
+            # Restore connection back to the superuser db
+            self.use_database(SUPER_USER_NAME)
 
     def list_access(self, username, hostname):
         """List database for which the given user as access.
@@ -479,6 +534,11 @@ class PgSqlAdmin(object):
             )
         )
 
+    def use_database(self, database):
+        self.connection = PostgresConnection(SUPER_USER_NAME,
+                                             port=self.connection.port,
+                                             database=database)
+
     def delete_database(self, database):
         """Delete the specified database.
         """
@@ -498,6 +558,12 @@ class PgSqlAdmin(object):
         return guestagent_utils.serialize_list(
             self._get_databases(),
             limit=limit, marker=marker, include_marker=include_marker)
+
+    def _database_exists(self, database_name):
+        results = self.query(
+            f"SELECT 1 FROM pg_database WHERE datname = '{database_name}'"
+        )
+        return bool(results)
 
     def _get_databases(self):
         """Return all non-system Postgres databases on the instance."""
@@ -642,8 +708,12 @@ class PgSqlAdmin(object):
         The users parameter is a list of serialized Postgres users.
         """
         for user in users:
+            user_dict = {
+                '_name': user['name'],
+                '_host': user['host'],
+                '_password': user['password']}
             self.alter_user(
-                models.PostgreSQLUser.deserialize(user))
+                models.PostgreSQLUser.deserialize(user_dict, False))
 
     def alter_user(self, user, encrypt_password=None, *options):
         """Change the password and options of an existing users.
@@ -749,7 +819,7 @@ class PgSqlAdmin(object):
 class PostgresConnection(object):
     def __init__(self, user, password=None,
                  host=constants.POSTGRESQL_HOST_SOCKET_PATH,
-                 port=5432):
+                 port=5432, database=None):
         """Utility class to communicate with PostgreSQL.
 
         Connect with socket rather than IP or localhost address to avoid
@@ -763,9 +833,14 @@ class PostgresConnection(object):
         self.password = password
         self.host = host
         self.port = port
+        if database:
+            self.database = database
+        else:
+            self.database = user
 
         self.connect_str = (f"user='{self.user}' password='{self.password}' "
-                            f"host='{self.host}' port='{self.port}'")
+                            f"host='{self.host}' port='{self.port}' "
+                            f"dbname='{self.database}'")
 
         self._pconn = None
 
