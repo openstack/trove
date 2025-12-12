@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes incorrect root status reporting.
+    `root show` could report `"is_root_enabled": True` after root was disabled; the status now reflects the actual instance state while preserving `root_enabled_history` logic.
