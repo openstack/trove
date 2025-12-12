@@ -66,6 +66,9 @@ class Root(object):
         # user hasn't been enabled.
         try:
             root_history = RootHistory.load(context, instance_id)
+            if root_history and root_history.deleted_at and \
+               root_history.deleted_at > root_history.created:
+                return False
         except exception.NotFound:
             return False
         if not root_history:
@@ -101,6 +104,10 @@ class Root(object):
                         enabled_datastore=['mysql', 'mariadb', 'postgresql'])
         create_guest_client(context, instance_id).disable_root()
 
+        root_history = RootHistory.load(context, instance_id)
+        if root_history:
+            root_history.delete()
+
 
 class ClusterRoot(Root):
 
@@ -134,6 +141,10 @@ class RootHistory(object):
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
 
+    def delete(self):
+        self.deleted_at = timeutils.utcnow()
+        return get_db_api().save(self)
+
     @classmethod
     def load(cls, context, instance_id):
         history = get_db_api().find_by(cls, id=instance_id)
@@ -143,7 +154,9 @@ class RootHistory(object):
     def create(cls, context, instance_id):
         history = cls.load(context, instance_id)
         if history is not None:
-            return history
+            if not history.deleted_at or \
+               history.deleted_at < history.created:
+                return history
         history = RootHistory(instance_id, context.user_id)
         return history.save()
 
