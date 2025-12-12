@@ -1254,6 +1254,14 @@ class RootReportTest(trove_testtools.TestCase):
             self.assertEqual(history.user, report.user)
             self.assertEqual(history.id, report.id)
 
+    def test_report_root_delete(self):
+        context = Mock()
+        context.user_id = utils.generate_uuid()
+        report = common_models.RootHistory.create(
+            context, utils.generate_uuid())
+        report.delete()
+        self.assertIsNotNone(report.deleted_at)
+
 
 class ClusterRootTest(trove_testtools.TestCase):
 
