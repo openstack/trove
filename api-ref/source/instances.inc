@@ -316,14 +316,12 @@ Response Example
 
 
 
-Attach/Detach configuration group
+Attach configuration group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
-Attach or detach a configuration group for an instance. When you pass in only
-an instance ID and omit the configuration ID, this operation detaches any
-configuration group that was attached to the instance.
+Attach a configuration group for an instance.
 
 Normal response codes: 202
 
@@ -340,6 +338,39 @@ Request Example
 ---------------
 
 .. literalinclude:: samples/instance-put-attach-config-group-request.json
+   :language: javascript
+
+
+
+
+Detach configuration group
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
+
+Detach a configuration group from an instance. When you pass in only
+an instance ID and omit the configuration ID or explicitly set
+``"configuration_id": null``, this operation detaches any configuration group
+that was attached to the instance.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - instanceId: instanceId
+   - configuration: configuration_detach
+
+Request Examples
+----------------
+
+.. literalinclude:: samples/instance-put-detach-config-group-request.json
+   :language: javascript
+
+.. literalinclude:: samples/instance-put-detach-config-group-request-2.json
    :language: javascript
 
 

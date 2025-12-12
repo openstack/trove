@@ -420,3 +420,85 @@ class TestInstanceController(trove_testtools.TestCase):
         ins_mock.update_db.assert_called_once_with(name='new_name')
         ins_mock.update_access.assert_called_once_with(
             body['instance']['access'])
+
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_update_does_not_touch_conf_on_name_or_access(self, load_mock):
+        body = {
+            'instance': {
+                'name': 'new_name',
+                'access': {'is_public': True, 'allowed_cidrs': []},
+            }
+        }
+
+        ins = MagicMock()
+        ins.slaves = []
+        load_mock.return_value = ins
+
+        self.controller.update(MagicMock(), 'fake_id', body, 'tenant')
+
+        ins.update_db.assert_called_once_with(name='new_name')
+        ins.update_access.assert_called_once_with(body['instance']['access'])
+        ins.attach_configuration.assert_not_called()
+        ins.detach_configuration.assert_not_called()
+
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_update_detach_configuration(self, load_mock):
+        body = {
+            'instance': {
+                'configuration': None
+            }
+        }
+
+        ins = MagicMock()
+        ins.slaves = []
+        cfg = MagicMock()
+        cfg.id = 'old_cfg'
+        ins.configuration = cfg
+
+        load_mock.return_value = ins
+
+        self.controller.update(MagicMock(), 'fake_id', body, 'tenant')
+
+        ins.detach_configuration.assert_called_once()
+        ins.attach_configuration.assert_not_called()
+
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_update_detach_configuration_with_empty_instance(self, load_mock):
+        body = {
+            'instance': {}
+        }
+
+        ins = MagicMock()
+        ins.slaves = []
+        cfg = MagicMock()
+        cfg.id = 'old_cfg'
+        ins.configuration = cfg
+
+        load_mock.return_value = ins
+
+        self.controller.update(MagicMock(), 'fake_id', body, 'tenant')
+
+        ins.detach_configuration.assert_called_once()
+        ins.attach_configuration.assert_not_called()
+
+    @mock.patch('trove.instance.models.Instance.load')
+    @mock.patch(
+        'trove.instance.service.InstanceController._configuration_parse')
+    def test_update_attach_configuration(self, parse_mock, load_mock):
+        body = {
+            'instance': {
+                'configuration': 'fake_config_id'
+            }
+        }
+
+        parse_mock.return_value = 'fake_config_id'
+
+        ins = MagicMock()
+        ins.slaves = []
+        ins.configuration = None
+        load_mock.return_value = ins
+
+        self.controller.update(MagicMock(), 'fake_id', body, 'tenant')
+
+        ins.attach_configuration.assert_called_once_with('fake_config_id')
+        ins.detach_configuration.assert_not_called()
