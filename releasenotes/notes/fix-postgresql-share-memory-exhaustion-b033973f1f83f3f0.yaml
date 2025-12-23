@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Fixes potential PostgreSQL shared memory exhaustion in mid-size deployments.
