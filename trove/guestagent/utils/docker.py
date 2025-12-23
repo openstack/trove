@@ -82,6 +82,8 @@ def _create_container_with_low_level_api(image: str, param: dict) -> None:
         host_config_kwargs["privileged"] = param.get("privileged")
     if param.get("volumes"):
         host_config_kwargs["binds"] = param.get("volumes")
+    if param.get("ipc_mode"):
+        host_config_kwargs["ipc_mode"] = param.get("ipc_mode")
     host_config = client.create_host_config(**host_config_kwargs)
 
     network_config_kwargs = dict()
@@ -162,6 +164,7 @@ def start_container(client, image, name="database",
                   volumes=volumes,
                   ports=ports,
                   user=user,
+                  ipc_mode="host",
                   environment=environment,
                   healthcheck=healthcheck,
                   command=command)
