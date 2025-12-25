@@ -295,6 +295,11 @@ class PostgresManager(manager.Manager):
             self.app.set_data_dir(self.app.datadir)
             self.app.update_overrides(config_overrides)
 
+            # force to create pg_hba.conf on rebuild
+            self.app.apply_access_rules()
+            self.app.configuration_manager.apply_system_override(
+                {'hba_file': service.HBA_CONFIG_FILE})
+
             # Start database service.
             command = f"postgres -c config_file={service.CONFIG_FILE}"
             self.app.start_db(ds_version=ds_version, command=command)
