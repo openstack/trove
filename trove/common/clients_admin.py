@@ -46,7 +46,10 @@ def get_keystone_session():
             user_domain_name=CONF.service_credentials.user_domain_name,
             project_domain_name=CONF.service_credentials.project_domain_name,
             auth_url=CONF.service_credentials.auth_url)
-        _SESSION = session.Session(auth=auth)
+        insecure = getattr(CONF.keystone_authtoken, 'insecure', False)
+        cafile = getattr(CONF.keystone_authtoken, 'cafile', None)
+        verify = False if insecure else (cafile or True)
+        _SESSION = session.Session(auth=auth, verify=verify)
 
     return _SESSION
 
