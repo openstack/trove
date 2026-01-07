@@ -15,27 +15,27 @@
         label: ubuntu-noble
 
 - secret:
-    name: trove_quay_io_creds
+    name: trove_quay_io_creds_2026_jan
     data:
       username: !encrypted/pkcs1-oaep
-        - RikBORnOJ0l12Tb4KmXm7HM1P12ig8WsNy8ANfpMBY4AnrsETdw/RfQ35pyTimisu6dkl
-          L25+6049BOQYT3qHYCtf5nMj7AT9/KtNWTT93fFnj2YvbH8wNJAsCYqCodxa2YKg+rAN3
-          xF00+7NDKU3wdl7eXC946ypwBmVZTC8U+chEINNlV0iyHQK1Jv9peifl+HfPbMZtB9Xrb
-          /3tLcAqSZkWkjx/u1tW0FYCUUyTHpPeTkoSV6Xjd/iMp2IINkp8aDszTAl6nFnre+Cqxi
-          vWjOb9Phfb8j3U6L84Z83BgTAgZX3L+J/lgFLPCVMc2R3WMfHuYs7pYNTxFRCTlPpjQpu
-          +sg22Fg4QxWaicppdxDSIPQphFALDq7HQxIWcLokpT1U0mY4D64bmeawhCzNYuZ+Hasp2
-          94vLPkGwrlVZkIeqLh1+y5HViCNmxlPJd64koT2cGLTw7YtQpWUguB3/0j2xMC/qtnQhw
-          dSx4rDEWYiQTBYtlA8YTC8PXHInUxeHcgAC0NJWI56jpfhfke963XwHRt+wqKEQV83zG2
-          bSzfp26x6/PUSaUfXG+2DSINe42tBpUfpd4qTEmt60PIdiQEFrm5FMPlQP3we6iHHP4XB
-          XephdzL+rkkazuetM2osK6XYTfaddF6k6ZlnbX5zPqDyA+mhMndP6uezx4uJws=
+        - CTVBMlrz4cal7rwge0ZMNKAqX/HyKIuUwByGxH15O5ScHi6NaRXSysbhLlctJsoDnnaqd
+          V6QUgA2LBH23cxSXvz/hnu7jc5Adz/gPA2cSMneLJGj95bSVCFBV5p59x33kdTt9a0pbp
+          QK/RZ34J2BDDrbOk53pax96X+8ddGACx8l3JlomzgrVqbjGE/AiUUK3fzQa/RCqkQb8qT
+          fy7PIOtySi+YXzAWcJf8r7wpovH/Fhufaouo54gEOYCQCWp5w+ZyElNur6yFfGuWVThW4
+          bxUF1/iJ+WmQz0F/QUpvNX9hWyCg/nfx5pb44l7E+zEg4m6/wGvfEAxxB6vjKv1C2ZHUp
+          9H78dNMcYkxZqzsi6G+gI+tkolnb+Hm3UfoSk7xWuLkLu1bEb+G50m/cgIcOjd1j/omWR
+          YzjypO+V6hnA8wsrlk3uXo93TK2LFAJZ6Sitqw5TW9N9pBbr+tyPyJQ0BsEVqYvFYb+Ky
+          Vm2r0A+iV9J1uuyyW6315ZefN1H6TaE5/vwLNq7FTxkYUhsZoRHjssyOinaZ4bTJm4mGn
+          tTy5Vc5Xp4WXDR7f1at2GK2zlAyj3sQhuyMHjvR5EQIyIV8ZKaPMMOpJ8xL8JMhYmVoe6
+          RORfILr6o+gq1n90o526LLdgANFumkg4w8hWENsy0IwKNjOBCCRkfnBWjrMvfQ=
       password: !encrypted/pkcs1-oaep
-        - 5BdlzdWHAxMjZOFZx4vNqru66lB31Yr3q04v0iq2APWXBHMegDjDz8aMmAYlWNlf5kxN8
-          399DV/PKZ8mFS3kCrgKZntMIZV3TrVlGxr5aoFQJc+uUEXtJ+qnahD9PqeCQu1nnniHtW
-          579YkGNR+1iG/ijbQigu3/ty9rvx+r/B3zpAynJ+nBdvtToFuKV8JlCsLZDtV/FRaskGi
-          iKMmvjh0BozYR/nDdka8LZFrpvehawkKZ/ToOisiGeSFIgkOfH7av4tp8DCou/0pSPZHb
-          30VZYTtTRtw4bIxFS1jwm+JsEzBKMuKxi9KKhqlvRm0lTmizLT4ZEwVyyAtwiB4vJZ6Ax
-          FaWyyjXle6i0TCqjuTM2HSguLwCF8NgDd4yVtdUNC7Eg9vaJ3YbK57v/ul7r83O2Dtb5B
-          OiFeu8BMp/g2lCkkM3O6OZ+Eie4SDLlvfU0BGwi+y6P2BhCZU4jaHLBsuxs+gdyTGyjKQ
-          XIIDStaglQJFV7UG5AIsOCgtvSlP6cu/VpHE3/CIu5dKDA/65zZcbqKH+j6y4+aynIgQ5
-          CfmqR7FHDj9LCgQSWM+36CNhYxWvanQLR4d2L7X9si6K4DxHr2VGb0GqEtkeTkCAYwpXZ
-          UzKVxd2dqOrnlvy4qMdXBvGOT1fdjjq7QN9Ou4W+L2C793owTiix9lK7Ev1pBs=
+        - RrWT+dvS+v3lg9B/Uc7M1kOK7uEUT65GejrD63OeI1BAf5LnRjHT2S6coyVUhYJ8BxE7l
+          ZPHD2bFqWOU4/959c7kfxOZLumWocfrzRh2ptevVEVzQ1OCD0uZZglSIe2YdVSDUV/QL0
+          JZGiReTPvBlf3rrhPl1DVwQ4kT9QQMeWMdtizWiVls10dTsT71MS6+bS74NSyZzusLFB8
+          ciou3oXN5CbaDFywPvbGu/VUASVjNOJ4v7ABgTkPUO0gHekRQAv9CdF9CBc9xykNA125m
+          SNuDhzcAMGGXvnzS7yeuc1VrTYOQWbrEYPDD1kTpo7KOB0Jw8QwruR9Oi1yVHA8g6ZJYV
+          0gnkNDd79cgNEA/OSomDHssl9mM0ZObeA0eZZQ2Fx9dFku2COeLg2ohcOsXyAoDfJXhnU
+          rmWrMVonAsvfmbCTm2al54zgQ2y9Hjp6pVjZTt8MnJBdywCfxEYJQqgeH8Scj1305JPF0
+          mW7/pIuAlbPpHpJuv5q3jYB9C5lHrZR2+HkumxbgNOotEflDjITi6RthU/O2zaoDVxId7
+          CXcwOdBnldDG690JGhOcX6MTVTHM4WnkfBy2rPaPVZN4/E+KjKxZZmYnaJL8T5z0vQUoU
+          mrA16MtIwL7c1qu+0UjFg2ny0qO/SHbGNnpkd4EnNKl7V5yqm/Rq5m0lBcVuKE=

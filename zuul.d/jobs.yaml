@@ -142,6 +142,10 @@
         c-vol: true
         c-bak: false
         swift: false
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
         tls-proxy: true
         tempest: true
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.(test_cinder_backup|test_replication)
@@ -284,4 +288,4 @@
     required-projects:
       - openstack/trove
     secrets:
-      - trove_quay_io_creds
+      - trove_quay_io_creds_2026_jan
