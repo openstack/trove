@@ -1314,10 +1314,12 @@ class Instance(BuiltInstance):
                 target_size = flavor.ephemeral  # ephemeral_Storage
 
         if backup_id:
-            Backup.verify_swift_auth_token(context)
+            backup_info = Backup.get_by_id(context, backup_id)
+
+            if backup_info.storage_driver == 'swift':
+                Backup.verify_swift_auth_token(context)
 
             call_args['backup_id'] = backup_id
-            backup_info = Backup.get_by_id(context, backup_id)
             if not backup_info.is_done_successfuly:
                 raise exception.BackupNotCompleteError(
                     backup_id=backup_id, state=backup_info.state)
