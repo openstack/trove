@@ -27,7 +27,8 @@
     timeout: 10800
     required-projects: &base_required_projects
       - openstack/trove
-      - openstack/trove-tempest-plugin
+      - name: openstack/trove-tempest-plugin
+        override-checkout: 2.4.0
       - openstack/tempest
     irrelevant-files:
       - ^.*\.rst$
@@ -51,6 +52,13 @@
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
         SWIFT_LOOPBACK_DISK_SIZE: 15G
         TROVE_MGMT_GATEWAY: "192.168.254.1"
+        # TROVE_ENABLE_LOCAL_REGISTRY: false
+        # TROVE_DATABASE_IMAGE_MYSQL: "quay.io/openstack.trove/mysql"
+        # TROVE_DATABASE_IMAGE_MARIADB: "quay.io/openstack.trove/mariadb"
+        # TROVE_DATABASE_IMAGE_POSTGRES: "quay.io/openstack.trove/postgres"
+        # TROVE_DATABASE_BACKUP_IMAGE_MYSQL: "quay.io/openstack.trove/db-backup-mysql"
+        # TROVE_DATABASE_BACKUP_IMAGE_MARIADB: "quay.io/openstack.trove/db-backup-mariadb"
+        # TROVE_DATABASE_BACKUP_IMAGE_POSTGRES: "quay.io/openstack.trove/db-backup-postgresql"
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
