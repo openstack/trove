@@ -42,6 +42,14 @@ class TestConfigurationsController(trove_testtools.TestCase):
         cls.ds_version = ds_models.DatastoreVersion.load(
             cls.ds, ds_version_name, version='5.7.29')
 
+        ds_version_name_disabled = cls.random_name(
+            'version', prefix='TestConfigurationsController')
+        ds_models.update_datastore_version(
+            cls.ds_name, ds_version_name_disabled, 'mysql', '',
+            ['trove'], '', 0, version='5.7.29')
+        cls.ds_version_disabled = ds_models.DatastoreVersion.load(
+            cls.ds, ds_version_name_disabled, version='5.7.29')
+
         cls.tenant_id = cls.random_uuid()
         cls.config = config_models.Configuration.create(
             cls.random_name('configuration'),
@@ -130,3 +138,39 @@ class TestConfigurationsController(trove_testtools.TestCase):
         instances = result.data(None)['instances']
         self.assertEqual(1, len(instances))
         self.assertEqual({'id': instance.id, 'name': ins_name}, instances[0])
+
+    @mock.patch('trove.configuration.service.StartNotification')
+    @mock.patch('trove.configuration.service.EndNotification')
+    def test_create_config_for_disabled_ds_version(
+            self, end_notification_mock, start_notification_mock):
+        start_notification_mock.return_value.__enter__.return_value = None
+        start_notification_mock.return_value.__exit__.return_value = None
+        end_notification_mock.return_value.__enter__.return_value = None
+        end_notification_mock.return_value.__exit__.return_value = None
+
+        req_mock = mock.MagicMock(
+            environ={
+                wsgi.CONTEXT_KEY: mock.MagicMock(
+                    project_id=self.tenant_id,
+                    limit=None,
+                    marker=None
+                )
+            }
+        )
+
+        body = {
+            'configuration': {
+                'name': 'Test',
+                'datastore': {
+                    'type': self.ds_name,
+                    'version': self.ds_version_disabled.id
+                },
+                'values': {}
+            }
+        }
+
+        # Create configuration op shouldn't raise DatastoreVersionInactive
+        result = self.controller.create(req_mock, body, self.tenant_id)
+        self.assertEqual(200, result.status)
+        configuration = result.data(None)['configuration']
+        self.assertIsNotNone(configuration['id'])
