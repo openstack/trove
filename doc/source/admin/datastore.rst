@@ -36,12 +36,13 @@ reliable options. Other datastores not included in the matrix may still function
 but they haven't undergone full testing.
 
 .. list-table:: Supported Databases by OpenStack Release
-   :widths: 20 4 4 4 4 4 4 4 4 4
-   :header-rows: 1
+   :widths: 20 4 4 4 4 4 4 4 4 4 4
+   :header-rows: 2
 
-   * - OpenStack Releases
-     -
+   * - OpenStack Release
      - PostgreSQL
+     -
+     -
      -
      -
      - MySQL
@@ -53,16 +54,40 @@ but they haven't undergone full testing.
      - 12
      - 16
      - 17
-     - **5.7**
-     - **8.0**
-     - **8.4**
+     - 18
+     - 5.7
+     - 8.0
+     - 8.4
      - 10.4
      - 11.4
      - 11.8
+   * - 2026.2 Hibiscus
+     - ✘
+     - ✔
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
+   * - 2026.1 Gazpacho
+     - ✘
+     - ✔
+     - ✔
+     - ✘
+     - ✘
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
    * - 2025.2 Flamingo
      - ✘
      - ✔
      - ✔
+     - ✘
      - ✘
      - ✔
      - ✔
@@ -73,13 +98,13 @@ but they haven't undergone full testing.
      - ✔
      - ✘
      - ✘
-     - ✔
-     - ✘
      - ✘
      - ✔
      - ✘
      - ✘
-
+     - ✔
+     - ✘
+     - ✘
 
 .. note::
 
