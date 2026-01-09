@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Allow creating configurations for disabled datastore versions.
+    This improves the user experience by not forcing users with instances
+    based on outdated datastore versions to upgrade.

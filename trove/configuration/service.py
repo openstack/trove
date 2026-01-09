@@ -121,7 +121,8 @@ class ConfigurationsController(wsgi.Controller):
 
         datastore_args = body['configuration'].get('datastore', {})
         datastore, datastore_version = (
-            ds_models.get_datastore_version(**datastore_args))
+            ds_models.get_datastore_version(
+                **datastore_args, return_inactive=True))
 
         with StartNotification(context, name=name, datastore=datastore.name,
                                datastore_version=datastore_version.name):
@@ -395,7 +396,7 @@ class ParametersController(wsgi.Controller):
     def index(self, req, tenant_id, datastore, id):
         self.authorize_request(req, 'index')
         ds, ds_version = ds_models.get_datastore_version(
-            type=datastore, version=id)
+            type=datastore, version=id, return_inactive=True)
         rules = models.DatastoreConfigurationParameters.load_parameters(
             ds_version.id)
         return wsgi.Result(views.ConfigurationParametersView(rules).data(),
@@ -404,7 +405,7 @@ class ParametersController(wsgi.Controller):
     def show(self, req, tenant_id, datastore, id, name):
         self.authorize_request(req, 'show')
         ds, ds_version = ds_models.get_datastore_version(
-            type=datastore, version=id)
+            type=datastore, version=id, return_inactive=True)
         rule = models.DatastoreConfigurationParameters.load_parameter_by_name(
             ds_version.id, name)
         return wsgi.Result(views.ConfigurationParameterView(rule).data(), 200)
