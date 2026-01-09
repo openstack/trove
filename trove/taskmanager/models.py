@@ -1480,7 +1480,8 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
         try:
             upgrade_info = self.guest.pre_upgrade()
             upgrade_info = upgrade_info if upgrade_info else {}
-            upgrade_info.update({'datastore_version': datastore_version.name})
+            upgrade_info.update({
+                'datastore_version': datastore_version.version})
             self.guest.upgrade(upgrade_info)
 
             # Wait for db instance healthy

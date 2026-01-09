@@ -1098,7 +1098,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     @patch('trove.taskmanager.models.BuiltInstanceTasks.reset_task_status')
     def test_upgrade(self, mock_resetstatus, mock_check, mock_setstatus):
         dsv = MagicMock()
-        attrs = {'name': 'new_version'}
+        attrs = {'name': 'new_name', 'version': 'new_version'}
         dsv.configure_mock(**attrs)
         mock_check.return_value = True
         self.instance_task._guest.pre_upgrade.return_value = {}
