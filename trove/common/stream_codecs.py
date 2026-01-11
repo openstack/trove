@@ -488,6 +488,8 @@ class KeyValueCodec(StreamCodec):
             return False
         if isinstance(value, bool) or isinstance(value, int):
             return False
+        if isinstance(value, float):
+            return False
         if value.lower() in ['true', 'false']:
             return False
         try:
