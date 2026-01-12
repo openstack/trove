@@ -247,6 +247,12 @@ configuration1:
   in: body
   required: false
   type: object
+configuration_detach:
+  description: |
+    Omit or set ``null`` to detach configuration from instance.
+  in: body
+  required: false
+  type: string
 configuration_id:
   description: |
     The ID of a configuration.

@@ -580,10 +580,13 @@ class InstanceController(wsgi.Controller):
         if detach_replica:
             args['detach_replica'] = detach_replica
 
-        args['configuration_id'] = None
-        configuration_id = self._configuration_parse(context, body)
-        if configuration_id:
+        if 'configuration' in body['instance']:
+            configuration_id = self._configuration_parse(context, body)
             args['configuration_id'] = configuration_id
+
+        # if body['instance'] is empty, set configuration_id to None
+        if not body['instance']:
+            args['configuration_id'] = None
 
         if 'access' in body['instance']:
             args['access'] = body['instance']['access']
