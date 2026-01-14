@@ -1,6 +1,22 @@
 {
   "configuration-parameters": [
     {
+      "name": "archive_command",
+      "restart_required": true,
+      "type": "string"
+    },
+    {
+      "name": "archive_mode",
+      "restart_required": true,
+      "type": "boolean"
+    },
+    {
+      "name": "archive_timeout",
+      "restart_required": false,
+      "min": 0,
+      "type": "integer"
+    },
+    {
       "name": "array_nulls",
       "restart_required": false,
       "type": "boolean"

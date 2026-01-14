@@ -23,6 +23,7 @@ from trove.common import constants
 from trove.common import exception
 from trove.common.notification import EndNotification
 from trove.common import utils
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
 from trove.guestagent.datastore.postgres import service
@@ -32,6 +33,7 @@ from trove.guestagent import guest_log
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 PG_FILE_AUTOCONF = 'postgresql.auto.conf'
+WAL_SAFETY_FACTOR = 5
 
 
 class PostgresManager(manager.Manager):
@@ -46,18 +48,31 @@ class PostgresManager(manager.Manager):
     def configuration_manager(self):
         return self.app.configuration_manager
 
+    def _get_max_wal_size_bytes(self):
+        """Get PostgreSQL max_wal_size as bytes (default 1GB)."""
+        value = self.app.get_config_param('max_wal_size')
+        if value.isdecimal():
+            value = f"{value}MB"
+        normalized = str(value).upper().replace(' ', '').rstrip('B')
+        return int(guestagent_utils.to_bytes(normalized))
+
     def _check_wal_archive_size(self, archive_path, data_path):
         """Check wal archive folder size.
 
-        Return True if the size is greater than half of the data volume size.
+        Return True if the size is greater than configured
+        max_wal_size * WAL_SAFETY_FACTOR
         """
         archive_size = operating_system.get_dir_size(archive_path)
         data_volume_size = operating_system.get_filesystem_size(data_path)
+        max_wal_size = self._get_max_wal_size_bytes()
 
-        if archive_size > (data_volume_size / 2):
-            LOG.info(f"The size({archive_size}) of wal archive folder is "
-                     f"greater than half of the data volume "
-                     f"size({data_volume_size})")
+        if archive_size > max_wal_size * WAL_SAFETY_FACTOR or \
+           archive_size > (data_volume_size / 2):
+            LOG.info(
+                f"The size({archive_size}) of wal archive folder is "
+                f"greater than configured max_wal_size * WAL_SAFETY_FACTOR "
+                f"({max_wal_size} * {WAL_SAFETY_FACTOR}) or greater "
+                f"than half of the data volume")
             return True
 
         return False
@@ -113,6 +128,12 @@ class PostgresManager(manager.Manager):
         spacing=180)
     def clean_wal_archives(self, context):
         """Clean up the wal archives to free up disk space."""
+        archive_command = self.app.get_config_param('archive_command')
+        if "DISABLE_TROVE_WAL_CLEANUP" in archive_command:
+            LOG.debug('wal archiving process is disabled by user '
+                      'with DISABLE_TROVE_WAL_CLEANUP mark')
+            return
+
         archive_path = service.WAL_ARCHIVE_DIR
         data_path = cfg.get_configuration_property('mount_point')
 

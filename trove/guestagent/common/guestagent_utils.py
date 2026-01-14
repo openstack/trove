@@ -115,7 +115,7 @@ def to_bytes(value):
     """Convert numbers with a byte suffix to bytes.
     """
     if isinstance(value, str):
-        pattern = re.compile(r'^(\d+)([K,M,G]{1})$')
+        pattern = re.compile(r'^(\d+)([K,M,G,T]{1})$')
         match = pattern.match(value)
         if match:
             value = match.group(1)
@@ -124,6 +124,7 @@ def to_bytes(value):
                 'K': 1024,
                 'M': 1024 ** 2,
                 'G': 1024 ** 3,
+                'T': 1024 ** 4
             }[suffix]
 
             return int(round(factor * float(value)))
