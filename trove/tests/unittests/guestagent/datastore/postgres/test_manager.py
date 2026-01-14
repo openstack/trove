@@ -14,6 +14,8 @@
 import os
 from unittest import mock
 
+from trove.common import cfg
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.postgres import manager
 from trove.guestagent.datastore.postgres import service
 from trove.tests.unittests import trove_testtools
@@ -24,18 +26,16 @@ class TestPostgresManager(trove_testtools.TestCase):
         super(TestPostgresManager, self).setUp()
         manager.PostgresManager._docker_client = mock.MagicMock()
         self.patch_datastore_manager('postgresql')
+        self.pg_manager = manager.PostgresManager()
+        m = mock.Mock()
+        m.side_effect = lambda *a, **kw: m.call_count == 1
+        self.first_call_true = m
 
     @mock.patch('trove.guestagent.common.operating_system.remove')
     @mock.patch('os.listdir')
-    @mock.patch('trove.guestagent.common.operating_system.get_filesystem_size')
-    @mock.patch('trove.guestagent.common.operating_system.get_dir_size')
     @mock.patch('trove.guestagent.common.operating_system.exists')
-    def test_clean_wal_archives(self, mock_exists, mock_get_dir_size,
-                                mock_get_filesystem_size, mock_listdir,
-                                mock_remove):
+    def test_clean_wal_archives(self, mock_exists, mock_listdir, mock_remove):
         mock_exists.return_value = True
-        mock_get_dir_size.side_effect = [6, 1]
-        mock_get_filesystem_size.return_value = 10
         mock_listdir.return_value = [
             '0000000100000002000000D4',
             '00000001000000000000008D',
@@ -44,9 +44,11 @@ class TestPostgresManager(trove_testtools.TestCase):
             '0000000100000002000000E7'
         ]
 
-        psql_manager = manager.PostgresManager()
-        psql_manager.clean_wal_archives(mock.ANY)
-
+        # prevent infinite recursive call
+        self.pg_manager._check_wal_archive_size = self.first_call_true
+        self.pg_manager.app.get_config_param = mock.Mock()
+        self.pg_manager.app.get_config_param.return_value = ''
+        self.pg_manager.clean_wal_archives(mock.ANY)
         self.assertEqual(1, mock_remove.call_count)
 
         archive_path = service.WAL_ARCHIVE_DIR
@@ -60,17 +62,11 @@ class TestPostgresManager(trove_testtools.TestCase):
 
     @mock.patch('trove.guestagent.common.operating_system.remove')
     @mock.patch('os.listdir')
-    @mock.patch('trove.guestagent.common.operating_system.get_filesystem_size')
-    @mock.patch('trove.guestagent.common.operating_system.get_dir_size')
     @mock.patch('trove.guestagent.common.operating_system.exists')
     def test_clean_wal_archives_no_backups(self, mock_exists,
-                                           mock_get_dir_size,
-                                           mock_get_filesystem_size,
                                            mock_listdir,
                                            mock_remove):
         mock_exists.return_value = True
-        mock_get_dir_size.side_effect = [6, 1]
-        mock_get_filesystem_size.return_value = 10
         mock_listdir.return_value = [
             '0000000100000002000000D4',
             '00000001000000000000008D',
@@ -78,8 +74,11 @@ class TestPostgresManager(trove_testtools.TestCase):
             '0000000100000002000000E7'
         ]
 
-        psql_manager = manager.PostgresManager()
-        psql_manager.clean_wal_archives(mock.ANY)
+        # prevent infinite recursive call
+        self.pg_manager._check_wal_archive_size = self.first_call_true
+        self.pg_manager.app.get_config_param = mock.Mock()
+        self.pg_manager.app.get_config_param.return_value = ''
+        self.pg_manager.clean_wal_archives(mock.ANY)
 
         self.assertEqual(3, mock_remove.call_count)
 
@@ -99,3 +98,72 @@ class TestPostgresManager(trove_testtools.TestCase):
                 as_root=True),
         ]
         self.assertEqual(expected_calls, mock_remove.call_args_list)
+
+    @mock.patch.object(operating_system, 'get_dir_size')
+    @mock.patch.object(operating_system, 'get_filesystem_size')
+    def test_check_wal_archive_size_units(
+        self, mock_get_filesystem_size, mock_get_dir_size
+    ):
+        """Test _check_wal_archive_size with various max_wal_size formats."""
+        cases = [
+            ('200', True),    # interpreted as MB
+            ('200MB', True),
+            ('200M', True),
+            ('1G', False),
+            ('2GB', False),
+            ('2G', False),
+            ('10G', False),
+            ('2T', False),
+        ]
+
+        # fake archive dir size
+        mock_get_dir_size.return_value = 5 * 1024**3  # 5GB
+
+        # fake data dir size
+        mock_get_filesystem_size.return_value = 100 * 1024**3  # 100GB
+
+        self.pg_manager.app.get_config_param = mock.Mock()
+
+        for val, expected_result in cases:
+            with self.subTest(value=val):
+                # Set fake max_wal_size in config
+                self.pg_manager.app.get_config_param.return_value = val
+
+                result = self.pg_manager._check_wal_archive_size(
+                    '/fake/archive', '/fake/data'
+                )
+
+                # since archive size is 5GB, only <1GB max_wal_size config
+                # should trigger True
+                self.assertEqual(
+                    expected_result, result,
+                    ('For %s should be %s', val, expected_result))
+
+    @mock.patch.object(operating_system, 'get_dir_size')
+    @mock.patch.object(operating_system, 'get_filesystem_size')
+    def test_check_wal_archive_bigger_than_half(
+        self, mock_get_filesystem_size, mock_get_dir_size
+    ):
+        # fake archive dir size
+        mock_get_dir_size.return_value = 600 * 1024**2  # 600MB
+
+        # fake data dir size
+        mock_get_filesystem_size.return_value = 1024**3  # 1GB
+
+        self.pg_manager.app.get_config_param = mock.Mock()
+        # Set fake max_wal_size in config
+        self.pg_manager.app.get_config_param.return_value = '1G'
+
+        # archive size is 600MB and data volume is 1GB, check should pass
+        self.assertTrue(self.pg_manager._check_wal_archive_size(
+            '/fake/archive', '/fake/data'
+        ))
+
+    def test_skip_archive_cleanup_on_disable_mark_present(self):
+        self.pg_manager.app.get_config_param = mock.Mock()
+        self.pg_manager.app.get_config_param.return_value = (
+            "echo DISABLE_TROVE_WAL_CLEANUP > /dev/null")
+
+        with mock.patch.object(cfg, 'get_configuration_property') as m:
+            self.pg_manager.clean_wal_archives(mock.ANY)
+            m.assert_not_called()
