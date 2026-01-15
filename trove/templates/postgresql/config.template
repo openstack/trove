@@ -241,10 +241,11 @@ min_wal_size = 80MB
 archive_mode = on		# enables archiving; off, on, or always
 				# (change requires restart)
         # (Trove default)
-archive_command = 'test ! -f /var/lib/postgresql/data/wal_archive/%f && cp %p /var/lib/postgresql/data/wal_archive/%f'		# command to use to archive a logfile segment
+archive_command = 'test ! -f /var/lib/postgresql/data/wal_archive/%f && cp %p /var/lib/postgresql/data/wal_archive/%f.tmp && mv /var/lib/postgresql/data/wal_archive/%f.tmp /var/lib/postgresql/data/wal_archive/%f'
+				# command to use to archive a logfile segment
 				# placeholders: %p = path of file to archive
 				#               %f = file name only
-				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
+				# e.g. 'test ! -f /mnt/server/archivedir/%f cp %p /mnt/server/archivedir/%f.tmp && mv /mnt/server/archivedir/%f.tmp /mnt/server/archivedir/%f'
 				# (Trove default)
 #archive_timeout = 0		# force a logfile segment switch after this
 				# number of seconds; 0 disables
