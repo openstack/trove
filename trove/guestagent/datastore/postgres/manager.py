@@ -331,7 +331,7 @@ class PostgresManager(manager.Manager):
                 else:
                     cmd = "SELECT pg_backup_start('snapshot backup', true)"
 
-                self.app.adm.query(cmd)
+                self.app.adm.pquery(cmd)
             else:
                 self.app.adm.psql("CHECKPOINT;")
 
@@ -371,9 +371,11 @@ class PostgresManager(manager.Manager):
                 else:
                     command = "SELECT pg_backup_stop(true)"
 
-                self.app.adm.query(command)
+                self.app.adm.pquery(command)
             except Exception as e:
                 LOG.error("Run _stop_backup failed, error: %s" % str(e))
+            finally:
+                self.app.adm.close_pconnection()
 
         try:
             mount_point = CONF.get(CONF.datastore_manager).mount_point

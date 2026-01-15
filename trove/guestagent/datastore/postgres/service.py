@@ -728,6 +728,15 @@ class PgSqlAdmin(object):
         """
         return self.connection.query(query)
 
+    def pquery(self, query):
+        """Execute a query in a persistent connection and return the result set
+        Caller MUST close connection after usage.
+        """
+        return self.connection.pquery(query)
+
+    def close_pconnection(self):
+        self.connection.close_pconnection()
+
     @property
     def ignore_users(self):
         return cfg.get_ignored_users()
@@ -758,6 +767,8 @@ class PostgresConnection(object):
         self.connect_str = (f"user='{self.user}' password='{self.password}' "
                             f"host='{self.host}' port='{self.port}'")
 
+        self._pconn = None
+
     def execute(self, statement, identifiers=None, data_values=None):
         """Execute a non-returning statement.
         """
@@ -786,3 +797,27 @@ class PostgresConnection(object):
         if identifiers:
             return statement.format(*identifiers)
         return statement
+
+    def open_pconnection(self, autocommit=True):
+        """
+        Open persistent psycopg2 connection.
+        Caller MUST close it.
+        """
+        if self._pconn is None:
+            conn = psycopg2.connect(self.connect_str)
+            conn.autocommit = autocommit
+            self._pconn = conn
+        return self._pconn
+
+    def close_pconnection(self):
+        if self._pconn:
+            self._pconn.close()
+            self._pconn = None
+
+    def pquery(self, query, autocommit=True):
+        """Execute a query in a persistent connection and return the result set
+        """
+        conn = self.open_pconnection(autocommit=autocommit)
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            return cursor.fetchall()
