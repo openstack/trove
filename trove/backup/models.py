@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Model classes that form the core of snapshots functionality."""
-
 from oslo_log import log as logging
 from requests.exceptions import ConnectionError
 from sqlalchemy import desc
@@ -26,6 +25,7 @@ from trove.common import constants
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import swift
+from trove.common import timeutils
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
@@ -341,8 +341,12 @@ class Backup(object):
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)
             if backup.is_running:
-                msg = _("Backup %s cannot be deleted because it is running.")
-                raise exception.UnprocessableEntity(msg % backup_id)
+                delta = (timeutils.utcnow_aware() - backup.created).days
+                if delta < CONF.running_backups_expires:
+                    msg = _(
+                        "Backup %s cannot be deleted"
+                        " because it is running.")
+                    raise exception.UnprocessableEntity(msg % backup_id)
             if backup.storage_driver == "swift":
                 cls.verify_swift_auth_token(context)
             api.API(context).delete_backup(backup_id)

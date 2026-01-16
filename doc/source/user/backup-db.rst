@@ -389,3 +389,11 @@ One possible reason could be it has been a long time since the parent backup was
 In this case, you have to create full backup instead.
 
 To avoid this issue in the future, you can set up a cron job to create (incremental) backups regularly.
+
+Cleanup of failed backups
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a backup run fails for any reason and it's state is RUNNING, it cannot be
+removed by anyone until ``CONF.running_backups_expires`` days have passed since
+its creation. After that period, the backup may be removed manually by the user
+or administrator.

@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Implements deletion of expired running backups.
+    Allows manual deletion of running backups after `CONF.running_backups_expires` days since creation.

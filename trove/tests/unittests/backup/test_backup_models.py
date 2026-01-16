@@ -255,9 +255,21 @@ class BackupDeleteTest(trove_testtools.TestCase):
     def test_delete_backup_is_running(self):
         backup = MagicMock()
         backup.is_running = True
+        backup.created = datetime.datetime.now(datetime.timezone.utc)
         with patch.object(models.Backup, 'get_by_id', return_value=backup):
             self.assertRaises(exception.UnprocessableEntity,
                               models.Backup.delete, self.context, 'backup_id')
+
+    @patch('trove.taskmanager.api.API')
+    def test_delete_backup_outdated_is_running(self, mock_api):
+        mock_instance = mock_api.return_value
+        backup = MagicMock()
+        backup.is_running = True
+        backup.created = datetime.datetime.now(
+            datetime.timezone.utc) - datetime.timedelta(weeks=1)
+        with patch.object(models.Backup, 'get_by_id', return_value=backup):
+            models.Backup.delete(self.context, 'backup_id')
+            mock_instance.delete_backup.assert_called_once_with('backup_id')
 
     def test_delete_backup_swift_token_invalid(self):
         backup = MagicMock()
