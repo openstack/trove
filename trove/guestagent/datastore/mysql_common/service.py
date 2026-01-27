@@ -559,7 +559,7 @@ class BaseMySqlApp(service.BaseDbApp):
 
         # Create folders for mysql on localhost
         for folder in ['/etc/mysql', constants.MYSQL_HOST_SOCKET_PATH,
-                       '/etc/mysql/mysql.conf.d']:
+                       self.get_extra_conf_dir()]:
             operating_system.ensure_directory(
                 folder, user=self.database_service_uid,
                 group=self.database_service_gid, force=True,
@@ -645,7 +645,7 @@ class BaseMySqlApp(service.BaseDbApp):
 
         # Ensure folders permission for database.
         for folder in ['/etc/mysql', constants.MYSQL_HOST_SOCKET_PATH,
-                       '/etc/mysql/mysql.conf.d']:
+                       self.get_extra_conf_dir()]:
             operating_system.ensure_directory(
                 folder, user=self.database_service_uid,
                 group=self.database_service_gid, force=True,
@@ -850,6 +850,9 @@ class BaseMySqlApp(service.BaseDbApp):
         # Start to run restore inside a separate docker container
         LOG.info('Starting to restore snapshot %s', backup_id)
         self.reset_data_for_restore_snapshot(restore_location)
+
+    def get_extra_conf_dir(self):
+        return '/etc/mysql/mysql.conf.d'
 
 
 class BaseMySqlRootAccess(object):

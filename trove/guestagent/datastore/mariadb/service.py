@@ -105,9 +105,13 @@ class MariaDBApp(mysql_service.BaseMySqlApp):
         # mariadb_backup doesn't need to delete this file
         pass
 
+    def get_extra_conf_dir(self):
+        return '/etc/mysql/mariadb.conf.d'
+
     def reset_data_for_restore_snapshot(self, data_dir):
         """This function try remove slave status in database"""
-        command = "--skip-slave-start=ON --datadir=%s" % data_dir
+        command = ("--defaults-file=/etc/mysql/my.cnf "
+                   " --skip-slave-start=ON --datadir=%s" % data_dir)
 
         extra_volumes = {
             "/etc/mysql": {"bind": "/etc/mysql", "mode": "rw"},
