@@ -316,15 +316,19 @@ class ConfigurationsController(wsgi.Controller):
                 raise exception.UnprocessableEntity(message=msg)
 
             # integer min/max checking
-            if isinstance(v, int) and not isinstance(v, bool):
+            if (isinstance(v, int) or isinstance(v, float)) and\
+               not isinstance(v, bool):
                 if rule.min_size is not None:
                     try:
-                        min_value = int(rule.min_size)
+                        if isinstance(v, int):
+                            min_value = int(rule.min_size)
+                        elif isinstance(v, float):
+                            min_value = float(rule.min_size)
                     except ValueError:
                         raise exception.TroveError(_(
                             "Invalid or unsupported min value defined in the "
                             "configuration-parameters configuration file. "
-                            "Expected integer."))
+                            "Expected %s." % rule.data_type))
                     if v < min_value:
                         output = {"key": k, "min": min_value}
                         message = _(
@@ -335,12 +339,15 @@ class ConfigurationsController(wsgi.Controller):
 
                 if rule.max_size is not None:
                     try:
-                        max_value = int(rule.max_size)
+                        if isinstance(v, int):
+                            max_value = int(rule.max_size)
+                        elif isinstance(v, float):
+                            max_value = float(rule.max_size)
                     except ValueError:
                         raise exception.TroveError(_(
                             "Invalid or unsupported max value defined in the "
                             "configuration-parameters configuration file. "
-                            "Expected integer."))
+                            "Expected %s." % rule.data_type))
                     if v > max_value:
                         output = {"key": k, "max": max_value}
                         message = _(

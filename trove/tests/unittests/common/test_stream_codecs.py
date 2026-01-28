@@ -39,5 +39,40 @@ class TestStreamCodecs(trove_testtools.TestCase):
         for datum in data:
             serialized_data = codec.serialize(datum)
             deserialized_data = codec.deserialize(serialized_data)
-            self. assertEqual(datum, deserialized_data,
-                              "Serialize/Deserialize failed")
+            self.assertEqual(
+                datum,
+                deserialized_data,
+                "Serialize/Deserialize failed"
+            )
+
+    def test_serialize_deserialize_keyvaluecodec(self):
+        data = {
+            "int": 25,
+            "float": 0.1,
+            "string": "logical",
+            "bool": False
+        }
+        codec = stream_codecs.KeyValueCodec()
+        serialized_data = codec.serialize(data)
+        deserialized_data = codec.deserialize(serialized_data)
+        # int and float are strings after deserialization and it's
+        # expected behavior
+        deserialized_data['int'] = int(deserialized_data['int'])
+        deserialized_data['float'] = float(deserialized_data['float'])
+        self.assertEqual(data, deserialized_data)
+
+    def test_serialize_keyvaluecodec_with_value_quoting(self):
+        data = {
+            "int": 25,
+            "float": 0.1,
+            "string": "logical",
+            "bool": False
+        }
+        codec = stream_codecs.KeyValueCodec(value_quoting=True)
+        serialized_data = codec.serialize(data)
+        deserialized_data = codec.deserialize(serialized_data)
+        # int and float are strings after deserialization and it's
+        # expected behavior
+        deserialized_data['int'] = int(deserialized_data['int'])
+        deserialized_data['float'] = float(deserialized_data['float'])
+        self.assertEqual(data, deserialized_data)
