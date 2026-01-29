@@ -811,6 +811,10 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                               {'ip_address': 'fd4a:7bef:d1ed:1::1'}],
                 'id': 'fake-port-id'}]})
 
+    def _poll_until_no_delay(self, *args, **kwargs):
+        kwargs['initial_delay'] = 0
+        return self.real_poll_until(*args, **kwargs)
+
     def setUp(self):
         super(BuiltInstanceTasksTest, self).setUp()
         self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
@@ -933,10 +937,14 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                 'public_ips' in self._testMethodName):
             self._stub_neutron_client()
 
+        self.real_poll_until = utils.poll_until
+
     def tearDown(self):
         super(BuiltInstanceTasksTest, self).tearDown()
 
-    def test_resize_flavor(self):
+    @patch('trove.common.utils.poll_until')
+    def test_resize_flavor(self, mock_poll_until):
+        mock_poll_until.side_effect = self._poll_until_no_delay
         orig_server = self.instance_task.server
         self.instance_task.resize_flavor({'id': 1, 'ram': 512},
                                          self.new_flavor)
@@ -948,8 +956,11 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.assertEqual(2, self.stub_server_mgr.get.call_count)
         self.assertThat(self.db_instance.flavor_id, Is(self.new_flavor['id']))
 
+    @patch('trove.common.utils.poll_until')
     @patch('trove.taskmanager.models.LOG')
-    def test_resize_flavor_resize_failure(self, mock_logging):
+    def test_resize_flavor_resize_failure(self, mock_logging, mock_poll_until):
+        mock_poll_until.side_effect = self._poll_until_no_delay
+
         orig_server = self.instance_task.server
         self.stub_verifying_server.status = 'ERROR'
         with patch.object(self.instance_task._nova_client.servers, 'get',
