@@ -136,6 +136,18 @@ class DatabaseModelBase(models.ModelBase):
         return db_query.find_all(cls, **cls._process_conditions(kwargs))
 
     @classmethod
+    def find_first(cls, filters=None, **conditions):
+        with cls.query() as q:
+            for field, value in conditions.items():
+                q = q.filter(getattr(cls, field) == value)
+
+            if filters:
+                for f in filters:
+                    q = q.filter(f)
+
+            return q.first()
+
+    @classmethod
     def _process_conditions(cls, raw_conditions):
         """Override in inheritors to format/modify any conditions."""
         return raw_conditions

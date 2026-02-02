@@ -24,6 +24,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification
+from trove.common import pagination
 from trove.common import wsgi
 from trove.extensions.common import models as common_models
 from trove.extensions.mgmt.instances import models
@@ -63,15 +64,17 @@ class MgmtInstanceController(InstanceController):
         project_id = req.GET.get('project_id')
 
         try:
-            instances = models.load_mgmt_instances(
+            instances, marker = models.load_mgmt_instances(
                 context, deleted=deleted, include_clustered=include_clustered,
-                project_id=project_id)
+                project_id=project_id, paginated=True)
         except nova_exceptions.ClientException as e:
             LOG.exception(e)
             return wsgi.Result(str(e), 403)
 
-        view_cls = views.MgmtInstancesView
-        return wsgi.Result(view_cls(instances, req=req).data(), 200)
+        view_cls = views.MgmtInstancesView(instances, req=req)
+        paged = pagination.SimplePaginatedDataView(req.url, 'instances',
+                                                   view_cls, marker)
+        return wsgi.Result(paged.data(), 200)
 
     @admin_context
     def show(self, req, tenant_id, id):

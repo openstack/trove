@@ -16,15 +16,19 @@
 import inspect
 import sys
 
+from novaclient import api_versions
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import clients
+from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
 from trove.configuration import models as config_models
 from trove.datastore import models as datastore_models
 from trove.db import get_db_api
+from trove.instance.models import DBInstance
 
 
 CONF = cfg.CONF
@@ -37,9 +41,21 @@ class Commands(object):
 
     def db_sync(self, repo_path=None):
         self.db_api.db_sync(CONF, repo_path=repo_path)
+        self.run_upgrade_tasks()
 
     def db_upgrade(self, version=None, repo_path=None):
         self.db_api.db_upgrade(CONF, version, repo_path=repo_path)
+        self.run_upgrade_tasks()
+
+    def run_upgrade_tasks(self):
+        print('Running required upgrade tasks...')
+        if self._check_nova_tags_exists():
+            print('Nova tags already present, skipping.')
+        else:
+            print('Setting nova tags for existing trove nova instances.')
+            self.set_nova_tags(force=True)
+
+        # Future upgrade tasks goes here.
 
     def db_downgrade(self, version, repo_path=None):
         raise SystemExit(_("Database downgrade is no longer supported."))
@@ -206,6 +222,62 @@ class Commands(object):
                       (datastore_name, datastore_version_name))
         except Exception as e:
             print(e)
+
+    def _get_nova_client(self):
+        admin_context = TroveContext(
+            user_id=CONF.service_credentials.username,
+            project_id=CONF.service_credentials.project_id,
+            user_domain_name=CONF.service_credentials.user_domain_name)
+        return clients.create_nova_client(admin_context)
+
+    def _check_nova_tags_exists(self):
+        self.db_api.configure_db()
+        check_instance = DBInstance.find_first(
+            filters=[DBInstance.compute_instance_id.isnot(None)],
+            deleted=False)
+        if check_instance and check_instance.compute_instance_id:
+            server = self._get_nova_client().servers.get(
+                check_instance.compute_instance_id)
+            if 'trove_instance' in server.tags:
+                return True
+        return False
+
+    def set_nova_tags(self, force=None):
+        if not force and self._check_nova_tags_exists():
+            raise SystemExit(_(
+                "Nova tags are already set. Use \"--force true\" flag if you "
+                "need to run this operation anyway."))
+        """Set tags to nova servers for ALL existing db instances."""
+        self.db_api.configure_db()
+        nova_client = self._get_nova_client()
+
+        if nova_client.api_version < api_versions.APIVersion('2.26'):
+            raise SystemExit(_("Minimal Nova API version 2.26 is required."))
+
+        def _set_server_tags(server, datastore_version):
+            current_tags = server.tags or []
+            trove_tags = [
+                'trove_instance',
+                f'trove_{datastore_version.datastore_name}'] + [
+                f"{key}_{value}" for key, value in server.metadata.items()]
+            tags = list(set(current_tags) | set(trove_tags))
+            nova_client.servers.set_tags(server.id, tags)
+
+        for instance in DBInstance.find_all(deleted=False).all():
+            if instance.compute_instance_id:
+                try:
+                    server = nova_client.servers.get(
+                        instance.compute_instance_id)
+                    dv = datastore_models.DatastoreVersion.load_by_uuid(
+                        instance.datastore_version_id)
+                    _set_server_tags(server, dv)
+
+                    print("Tags were updated for server: %s (instance %s)" %
+                          (server.id, instance.id))
+                except Exception as e:
+                    print('Error occured while setting nova tags for server '
+                          '%s', server.id)
+                    print(e)
 
     def params_of(self, command_name):
         if Commands.has(command_name):
@@ -393,6 +465,16 @@ def main():
             help='The version number of the datastore version, e.g. 5.7.30. '
                  'If not specified, use <datastore_version_name> as default '
                  'value.')
+
+        parser = subparser.add_parser(
+            'set_nova_tags',
+            description='Set required tags for ALL nova servers in service '
+                        'project. Run this when upgrading from versions '
+                        'prior to 2026.2')
+        parser.add_argument(
+            '--force',
+            help='Force setting nova tags, replacing existing tags. The '
+                 'operation is idempotent and will keep existing tags.')
 
     cfg.custom_parser('action', actions)
     cfg.parse_args(sys.argv)

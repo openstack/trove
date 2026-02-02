@@ -14,7 +14,9 @@
 import datetime
 
 from oslo_log import log as logging
+from sqlalchemy import desc
 
+from novaclient import api_versions
 from trove.common import cfg
 from trove.common import clients
 from trove.common import exception
@@ -27,31 +29,73 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
+def _paginate_instances(context, query, model):
+    marker = int(context.marker or 0)
+    limit = int(context.limit or CONF.instances_page_size)
+
+    query = query.order_by(desc(model.updated))
+
+    query = query.limit(limit)
+    query = query.offset(marker)
+
+    if query.count() < limit:
+        next_marker = None
+    else:
+        next_marker = marker + limit
+
+    return query.all(), next_marker
+
+
 def load_mgmt_instances(context, deleted=None, client=None,
-                        include_clustered=None, project_id=None):
+                        include_clustered=None, project_id=None,
+                        paginated=False):
     if not client:
         client = clients.create_nova_client(
             context, CONF.service_credentials.region_name
         )
 
+    with instance_models.DBInstance.query() as query:
+        if deleted is not None:
+            query = query.filter_by(deleted=deleted)
+        if not include_clustered:
+            query = query.filter_by(cluster_id=None)
+        if project_id:
+            query = query.filter_by(tenant_id=project_id)
+
+        if paginated:
+            db_infos, marker = _paginate_instances(
+                context, query, instance_models.DBInstance)
+        else:
+            db_infos = query.all()
+
     search_opts = {'all_tenants': False}
+    if client.api_version >= api_versions.APIVersion('2.26'):
+        # Utilize nova tags feature
+        server_ids = []
+        if project_id:
+            # Filter by project id tag
+            search_opts['tags'] = f'trove_project_id_{project_id}'
+        else:
+            # cherry-picking only by found db instances ids
+            server_ids = [f'trove_instance_id_{i.id}' for i in db_infos]
+
+        if server_ids:
+            search_opts['tags-any'] = ','.join(server_ids)
+
+        if 'tags' not in search_opts and 'tags-any' not in search_opts:
+            # Fallback: return all trove instances, filtered by tag
+            search_opts['tags'] = 'trove_instance'
+
     mgmt_servers = client.servers.list(search_opts=search_opts, limit=-1)
     LOG.info("Found %d servers in Nova",
              len(mgmt_servers if mgmt_servers else []))
 
-    args = {}
-    if deleted is not None:
-        args['deleted'] = deleted
-    if not include_clustered:
-        args['cluster_id'] = None
-    if project_id:
-        args['tenant_id'] = project_id
-
-    db_infos = instance_models.DBInstance.find_all(**args)
-
     instances = MgmtInstances.load_status_from_existing(context, db_infos,
                                                         mgmt_servers)
-    return instances
+    if paginated:
+        return instances, marker
+    else:
+        return instances
 
 
 def load_mgmt_instance(cls, context, id, include_deleted):

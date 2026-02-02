@@ -79,7 +79,7 @@ common_opts = [
                help='Service type to use when searching catalog.'),
     cfg.StrOpt('nova_compute_endpoint_type', default='publicURL',
                help='Service endpoint type to use when searching catalog.'),
-    cfg.StrOpt('nova_client_version', default='2.12',
+    cfg.StrOpt('nova_client_version', default='2.52',
                help="The version of the compute service client."),
     cfg.StrOpt('glance_client_version', default='2',
                help="The version of the image service client."),
@@ -846,6 +846,7 @@ redis_opts = [
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.')
 ]
+
 
 # Cassandra
 cassandra_group = cfg.OptGroup(

@@ -24,6 +24,7 @@ import yaml
 from datetime import datetime
 from datetime import timedelta
 
+from novaclient import api_versions
 from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
@@ -1890,7 +1891,6 @@ class Instances(object):
         if context is None:
             raise TypeError(_("Argument context not defined."))
         client = clients.create_nova_client(context)
-        servers = client.servers.list(limit=-1)
         query_opts = {'tenant_id': context.project_id,
                       'deleted': False}
         if not include_clustered:
@@ -1907,6 +1907,14 @@ class Instances(object):
                                                   limit=limit,
                                                   marker=context.marker)
         next_marker = data_view.next_page_marker
+
+        if client.api_version >= api_versions.APIVersion('2.26'):
+            # Utilize nova tags feature
+            server_ids = [f'trove_instance_id_{i.id}' for i in db_infos]
+            servers = client.servers.list(
+                search_opts={'tags-any': ','.join(server_ids)}, limit=-1)
+        else:
+            servers = client.servers.list(limit=-1)
 
         find_server = create_server_list_matcher(servers)
         for db in db_infos:

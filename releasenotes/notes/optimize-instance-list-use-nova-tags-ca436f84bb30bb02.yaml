@@ -1,0 +1,6 @@
+features:
+  - |
+    Improves instance list method by using Nova tags feature.
+    Tags was introduced in Nova API version 2.26 in 2017. Querying Nova servers
+    by tags allow to check relevant servers only instead of retrieving all of
+    them, preventing possible 504 errors in large clouds.

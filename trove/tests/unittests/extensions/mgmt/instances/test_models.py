@@ -21,6 +21,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 import uuid
 
+from novaclient import api_versions
 from novaclient.client import Client
 from novaclient.v2.flavors import Flavor
 from novaclient.v2.flavors import FlavorManager
@@ -77,6 +78,7 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
     def setUp(self):
         self.context = trove_testtools.TroveTestContext(self)
         self.context.auth_token = 'some_secret_password'
+        self.context.marker = 0
         self.client = MagicMock(spec=Client)
         self.server_mgr = MagicMock(spec=ServerManager)
         self.client.servers = self.server_mgr
@@ -463,3 +465,176 @@ class TestMgmtInstancePing(MockMgmtInstanceTest):
                 self.assertTrue(mgmt_instance.rpc_ping())
 
         self.addCleanup(self.do_cleanup, instance, service_status)
+
+
+class TestMgmtLoadMgmtInstances(trove_testtools.TestCase):
+    def setUp(self):
+        self.context = trove_testtools.TroveTestContext(self)
+        super(TestMgmtLoadMgmtInstances, self).setUp()
+
+    def _mock_db_instances(self, count, project_id='tenant_id_1'):
+        instances = []
+        for i in range(count):
+            inst = DBInstance(
+                InstanceTasks.NONE,
+                name='test_name',
+                id=str(uuid.uuid4()),
+                flavor_id='flavor_1',
+                datastore_version_id='ds_version_1',
+                compute_instance_id='compute_id_1',
+                server_id='server_id_1',
+                tenant_id='tenant_id_1',
+                server_status=srvstatus.ServiceStatuses.
+                BUILDING.api_status,
+                deleted=False)
+            inst.tenant_id = project_id
+            inst.id = f'inst_{i}'
+            instances.append(inst)
+        return instances
+
+    def _mock_nova_client(self, api_version='2.26'):
+        client = MagicMock()
+        client.api_version = api_versions.APIVersion(api_version)
+        client.servers = MagicMock()
+        return client
+
+    def _mock_db_query(self, *, count=0, items=None):
+        q = MagicMock()
+        q.filter_by.return_value = q
+        q.order_by.return_value = q
+        q.limit.return_value = q
+        q.offset.return_value = q
+
+        if items is None:
+            items = []
+
+        q.count.return_value = count
+        q.all.return_value = items
+
+        cm = MagicMock()
+        cm.__enter__.return_value = q
+        cm.__exit__.return_value = None
+        return cm
+
+    @patch('trove.extensions.mgmt.instances.models._paginate_instances')
+    @patch('trove.extensions.mgmt.instances.models.instance_models.'
+           'DBInstance.query')
+    def test_load_mgmt_instances_by_project_tag(
+            self, mock_query, mock_paginate):
+        db_instances = self._mock_db_instances(2, project_id='proj1')
+        mock_paginate.return_value = (db_instances, None)
+        mock_query.return_value = self._mock_db_query()
+
+        nova_client = self._mock_nova_client()
+        nova_client.servers.list.return_value = []
+
+        with patch(
+                ('trove.extensions.mgmt.instances.models.'
+                 'MgmtInstances.load_status_from_existing'),
+                return_value=[]):
+
+            mgmtmodels.load_mgmt_instances(
+                context=self.context,
+                deleted=False,
+                project_id='proj1',
+                client=nova_client,
+                paginated=True
+            )
+
+            _, kwargs = nova_client.servers.list.call_args
+            search_opts = kwargs['search_opts']
+
+            self.assertEqual('trove_project_id_proj1', search_opts['tags'])
+
+    @patch('trove.extensions.mgmt.instances.models._paginate_instances')
+    @patch('trove.extensions.mgmt.instances.models.instance_models'
+           '.DBInstance.query')
+    def test_load_mgmt_instances_by_instance_tags(
+            self, mock_query, mock_paginate):
+
+        db_instances = self._mock_db_instances(3)
+        mock_paginate.return_value = (db_instances, None)
+        mock_query.return_value = self._mock_db_query()
+
+        nova_client = self._mock_nova_client()
+        nova_client.servers.list.return_value = []
+
+        with patch(
+            'trove.extensions.mgmt.instances.models.'
+            'MgmtInstances.load_status_from_existing',
+            return_value=[]
+        ):
+            mgmtmodels.load_mgmt_instances(
+                context=self.context,
+                deleted=False,
+                client=nova_client,
+                paginated=True
+            )
+
+        _, kwargs = nova_client.servers.list.call_args
+        search_opts = kwargs['search_opts']
+
+        expected = ','.join(
+            f'trove_instance_id_{i.id}' for i in db_instances
+        )
+        self.assertEqual(expected, search_opts['tags-any'])
+
+    @patch('trove.extensions.mgmt.instances.models._paginate_instances')
+    @patch('trove.extensions.mgmt.instances.models.instance_models.'
+           'DBInstance.query')
+    def test_load_mgmt_instances_fallback_trove_instance_tag(
+            self, mock_query, mock_paginate):
+        # paginate returns NO db instances
+        mock_paginate.return_value = ([], None)
+        mock_query.return_value = self._mock_db_query(count=0)
+
+        nova_client = self._mock_nova_client()
+        nova_client.servers.list.return_value = []
+
+        with patch(
+            'trove.extensions.mgmt.instances.models.'
+            'MgmtInstances.load_status_from_existing',
+            return_value=[]
+        ):
+            mgmtmodels.load_mgmt_instances(
+                context=self.context,
+                deleted=False,
+                client=nova_client,
+                paginated=True
+            )
+
+        _, kwargs = nova_client.servers.list.call_args
+        search_opts = kwargs['search_opts']
+
+        self.assertEqual('trove_instance', search_opts['tags'])
+
+    @patch('trove.extensions.mgmt.instances.models._paginate_instances')
+    @patch('trove.extensions.mgmt.instances.models.instance_models.'
+           'DBInstance.query')
+    def test_compat_nova_microversion_2_12(self, mock_query, mock_paginate):
+        db_instances = self._mock_db_instances(2)
+        mock_paginate.return_value = (db_instances, None)
+        mock_query.return_value = self._mock_db_query()
+
+        nova_client = MagicMock()
+        nova_client.api_version = api_versions.APIVersion('2.12')
+        nova_client.servers = MagicMock()
+        nova_client.servers.list.return_value = []
+
+        with patch(
+            'trove.extensions.mgmt.instances.models.'
+            'MgmtInstances.load_status_from_existing',
+            return_value=[]
+        ):
+            mgmtmodels.load_mgmt_instances(
+                context=self.context,
+                deleted=False,
+                client=nova_client,
+                paginated=True
+            )
+
+        _, kwargs = nova_client.servers.list.call_args
+        search_opts = kwargs['search_opts']
+
+        self.assertNotIn('tags', search_opts)
+        self.assertNotIn('tags-any', search_opts)

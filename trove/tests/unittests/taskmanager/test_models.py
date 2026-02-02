@@ -95,7 +95,8 @@ class fake_ServerManager(object):
                block_device_mapping_v2=None,
                availability_zone=None,
                nics=None, config_drive=False,
-               scheduler_hints=None, key_name=None, meta=None):
+               scheduler_hints=None, key_name=None, meta=None,
+               tags=None):
         server = fake_Server()
         server.id = "server_id"
         server.name = name
@@ -108,6 +109,7 @@ class fake_ServerManager(object):
         server.nics = nics
         server.key_name = key_name
         server.meta = meta
+        server.tags = tags
         return server
 
 
@@ -353,6 +355,9 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         meta = {'trove_project_id': self.freshinstancetasks.tenant_id,
                 'trove_user_id': 'test_user',
                 'trove_instance_id': self.freshinstancetasks.id}
+        tags = ['trove_instance', 'trove_mysql'] + [
+            f"{key}_{value}" for key, value in meta.items()
+        ]
         mock_servers_create.assert_called_with(
             'fake-name', 'fake-image',
             'fake-flavor', files={},
@@ -364,6 +369,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             scheduler_hints=None,
             key_name=None,
             meta=meta,
+            tags=tags,
         )
 
     @patch.object(taskmanager_models.FreshInstanceTasks, 'hostname',
@@ -385,6 +391,9 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
         meta = {'trove_project_id': self.freshinstancetasks.tenant_id,
                 'trove_user_id': 'test_user',
                 'trove_instance_id': self.freshinstancetasks.id}
+        tags = ['trove_instance', 'trove_mysql'] + [
+            f"{key}_{value}" for key, value in meta.items()
+        ]
 
         userdata = self.freshinstancetasks.prepare_userdata('mysql')
         userdata = userdata + \
@@ -400,6 +409,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             scheduler_hints=None,
             key_name=None,
             meta=meta,
+            tags=tags,
         )
 
     @patch.object(InstanceServiceStatus, 'find_by',

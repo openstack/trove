@@ -13,6 +13,8 @@
 #    limitations under the License.
 from unittest import mock
 
+from novaclient import api_versions
+from trove.common import wsgi
 from trove.datastore import models as ds_models
 from trove.extensions.mgmt.instances import service as ins_service
 from trove.instance import models as ins_models
@@ -50,6 +52,10 @@ class TestMgmtInstanceController(trove_testtools.TestCase):
             status=srvstatus.ServiceStatuses.NEW
         )
 
+        cls.context = mock.MagicMock()
+        cls.context.marker = None
+        cls.context.limit = None
+
         super(TestMgmtInstanceController, cls).setUpClass()
 
     @classmethod
@@ -64,10 +70,13 @@ class TestMgmtInstanceController(trove_testtools.TestCase):
         req.GET = {
             'project_id': self.project_id
         }
+        req.environ = {}
+        req.environ[wsgi.CONTEXT_KEY] = self.context
 
         mock_nova_client = mock.MagicMock()
         mock_nova_client.servers.list.return_value = [
             mock.MagicMock(id=self.server_id)]
+        mock_nova_client.api_version = api_versions.APIVersion('2.26')
         mock_create_client.return_value = mock_nova_client
 
         result = self.controller.index(req, mock.ANY)
@@ -85,3 +94,24 @@ class TestMgmtInstanceController(trove_testtools.TestCase):
         self.assertEqual(200, result.status)
         data = result.data(None)
         self.assertEqual(0, len(data['instances']))
+
+    @mock.patch('trove.common.clients.create_nova_client')
+    def test_index_project_id_compat(self, mock_create_client):
+        req = mock.MagicMock()
+        req.GET = {
+            'project_id': self.project_id,
+        }
+        req.environ = {}
+        req.environ[wsgi.CONTEXT_KEY] = self.context
+
+        mock_nova_client = mock.MagicMock()
+        mock_nova_client.servers.list.return_value = [
+            mock.MagicMock(id=self.server_id)]
+        mock_nova_client.api_version = api_versions.APIVersion('2.12')
+        mock_create_client.return_value = mock_nova_client
+
+        result = self.controller.index(req, mock.ANY)
+
+        self.assertEqual(200, result.status)
+        data = result.data(None)
+        self.assertEqual(1, len(data['instances']))

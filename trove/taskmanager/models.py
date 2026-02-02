@@ -1115,10 +1115,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     userdata)
             files = {}
 
+        tags = ['trove_instance', f'trove_{datastore_manager}'] + [
+            f"{key}_{value}" for key, value in metadata.items()
+        ]
+
         server = self.nova_client.servers.create(
             self.name, image_id, flavor_id, key_name=key_name, nics=nics,
             block_device_mapping_v2=bdmap_v2,
-            files=files, userdata=userdata,
+            files=files, userdata=userdata, tags=tags,
             availability_zone=availability_zone,
             config_drive=config_drive, scheduler_hints=scheduler_hints,
             meta=metadata,
