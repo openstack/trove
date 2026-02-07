@@ -69,10 +69,13 @@ if [ "${OPT_DATASTORE}" = "mysql" ]; then
 	dpkg -i percona-release.deb
 	percona-release enable-only tools release
 	apt-get update
+	mkdir -p /opt
 	if [ "${OPT_DATASTORE_VERSION}" = "8.0" ]; then
 		apt-get install ${APTOPTS} percona-xtrabackup-80
+		dpkg-query -W -f='${Version}\n' percona-xtrabackup-80 > /opt/xtrabackup.version
 	elif [ "${OPT_DATASTORE_VERSION}" = "8.4" ]; then
 		apt-get install ${APTOPTS} percona-xtrabackup-84
+		dpkg-query -W -f='${Version}\n' percona-xtrabackup-84 > /opt/xtrabackup.version
 	else
 		echo "Unsupported MySQL version: ${OPT_DATASTORE_VERSION}"
 		exit 1
