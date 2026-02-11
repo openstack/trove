@@ -37,6 +37,7 @@
         source: pull
       loop:
         - { source: "ubuntu", dest: "ubuntu", tag: "24.04" }
+        - { source: "ubuntu", dest: "ubuntu", tag: "22.04" }
         - { source: "registry", dest: "registry", tag: "2" }
         - { source: "mysql", dest: "mysql", tag: "8.4" }
         - { source: "postgres", dest: "postgres", tag: "17" }
