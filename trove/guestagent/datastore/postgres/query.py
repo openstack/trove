@@ -149,6 +149,21 @@ class AccessQuery(object):
         return f'GRANT ALL ON DATABASE "{database}" TO "{user}"'
 
     @classmethod
+    def grant_schema(cls, user, schema):
+        """Query to grant user access to a schema."""
+        return f'GRANT USAGE, CREATE ON SCHEMA "{schema}" TO "{user}"'
+
+    @classmethod
     def revoke(cls, user, database):
         """Query to revoke user access to a database."""
         return f'REVOKE ALL ON DATABASE "{database}" FROM "{user}"'
+
+    @classmethod
+    def revoke_public(cls, database):
+        """Query to revoke connect to a database from PUBLIC."""
+        return f'REVOKE CONNECT ON DATABASE "{database}" FROM PUBLIC'
+
+    @classmethod
+    def revoke_schema(cls, user, schema):
+        """Query to revoke user access to a schema."""
+        return f'REVOKE ALL ON SCHEMA "{schema}" FROM "{user}"'

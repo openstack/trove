@@ -16,7 +16,7 @@ import psycopg2
 
 class PostgresConnection(object):
     def __init__(self, user, password='', host='/var/run/postgresql',
-                 port=5432):
+                 port=5432, database=None):
         """Utility class to communicate with PostgreSQL.
 
         Connect with socket rather than IP or localhost address to avoid
@@ -30,9 +30,14 @@ class PostgresConnection(object):
         self.password = password
         self.host = host
         self.port = port
+        if database:
+            self.database = database
+        else:
+            self.database = user
 
         self.connect_str = (f"user='{self.user}' password='{self.password}' "
-                            f"host='{self.host}' port='{self.port}'")
+                            f"host='{self.host}' port='{self.port}' "
+                            f"dbname='{self.database}'")
 
     def __enter__(self, autocommit=False):
         self.conn = psycopg2.connect(self.connect_str)
