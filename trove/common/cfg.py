@@ -362,13 +362,6 @@ common_opts = [
                           'Backups created after Victoria are not encrypted '
                           'any more.'
     ),
-    cfg.BoolOpt(
-        'backup_use_snet', default=False,
-        help='Send backup files over snet.',
-        deprecated_for_removal=True,
-        deprecated_since=versionutils.deprecated.VICTORIA,
-        deprecated_reason='This option is not supported any more.'
-    ),
     cfg.IntOpt('backup_chunk_size', default=2 ** 16,
                help='Chunk size (in bytes) to stream to the Swift container. '
                'This should be in multiples of 128 bytes, since this is the '
