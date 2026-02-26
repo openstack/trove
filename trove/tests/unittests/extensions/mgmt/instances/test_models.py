@@ -422,7 +422,7 @@ class TestMgmtInstanceDeleted(MockMgmtInstanceTest):
         #                 db_infos_active.count() +
         #                 db_infos_deleted.count())
 
-        with patch.object(self.context, 'is_admin', return_value=True):
+        with patch.object(type(self.context), 'is_admin', True):
             deleted_instance = db_infos_deleted.all()[0] if len(
                 db_infos_deleted.all()) > 0 else None
             active_instance = db_infos_active.all()[0] if len(
