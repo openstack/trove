@@ -165,7 +165,6 @@ def swift_client(context, region_name=None):
     client = Connection(preauthurl=url,
                         preauthtoken=context.auth_token,
                         tenant_name=context.project_id,
-                        snet=CONF.backup_use_snet,
                         insecure=CONF.swift_api_insecure)
     return client
 
