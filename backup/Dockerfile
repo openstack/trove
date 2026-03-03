@@ -1,4 +1,4 @@
-FROM quay.io/openstack.trove/ubuntu:20.04
+FROM quay.io/openstack.trove/ubuntu:22.04
 LABEL maintainer="anlin.kong@gmail.com"
 
 ARG DATASTORE="mysql"
