@@ -37,6 +37,8 @@ class TestInstanceController(trove_testtools.TestCase):
         ds_models.update_datastore(name=cls.ds_name, default_version=None)
         cls.ds = ds_models.Datastore.load(cls.ds_name)
 
+        ds_version_name_disabled = 'disabled_version'
+
         ds_models.update_datastore_version(
             cls.ds_name, 'test_image_id', 'mysql', cls.random_uuid(), [], '',
             1)
@@ -49,11 +51,16 @@ class TestInstanceController(trove_testtools.TestCase):
         ds_models.update_datastore_version(
             cls.ds_name, 'test_version', 'mysql', '', ['trove'], '', 1,
             version='version 2')
+        ds_models.update_datastore_version(
+            cls.ds_name, ds_version_name_disabled, 'mysql', '',
+            ['trove'], '', 0, version='5.7.29')
 
         cls.ds_version_imageid = ds_models.DatastoreVersion.load(
             cls.ds, 'test_image_id')
         cls.ds_version_imagetags = ds_models.DatastoreVersion.load(
             cls.ds, 'test_image_tags')
+        cls.ds_version_disabled = ds_models.DatastoreVersion.load(
+            cls.ds, ds_version_name_disabled, version='5.7.29')
 
         cls.controller = service.InstanceController()
 
@@ -130,6 +137,25 @@ class TestInstanceController(trove_testtools.TestCase):
 
         self.assertRaises(
             exception.DatastoreVersionsNoUniqueMatch,
+            self.controller.create,
+            mock.MagicMock(), body, mock.ANY
+        )
+
+    def test_create_for_disabled_ds_is_unavailable(self):
+        body = {
+            'instance': {
+                'name': self.random_name(name='instance',
+                                         prefix='TestInstanceController'),
+                'flavorRef': self.random_uuid(),
+                'datastore': {
+                    'type': self.ds_name,
+                    'version': self.ds_version_disabled.id
+                }
+            }
+        }
+
+        self.assertRaises(
+            exception.DatastoreVersionInactive,
             self.controller.create,
             mock.MagicMock(), body, mock.ANY
         )
