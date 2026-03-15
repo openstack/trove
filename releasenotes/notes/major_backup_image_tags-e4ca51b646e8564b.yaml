@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    From now on it is possible to have the same backup image for series of
+    datastore versions. Trove guest-agent will iterate over tagged
+    versions for backup images from more to less specific ones attempting
+    to find an image rather then fail if exact image is not present in the
+    registry. For instance, in case you defined
+    [mariadb]/backup_docker_image: registry/db-backup-mariadb and have only
+    ``10.4`` in the registry, such image will cover whole 10.4 series,
+    including 10.4.1, 10.4.2, 10.4.3, etc.

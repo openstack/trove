@@ -140,6 +140,16 @@ class TestDockerUtils(trove_testtools.TestCase):
         mock_client().create_container.assert_called_once()
         mock_client().start.assert_called_once()
 
+    def test_get_image_registry_exists(self):
+        image_name = "example.domain/repo/mariadb:tag"
+        mock_image_object = mock.Mock()
+        mock_image_object.image_name = image_name
+        self.docker_client.images.get_registry_data.return_value = \
+            mock_image_object
+        registry = docker_utils.get_image_registry(
+            self.docker_client, image_name)
+        self.assertEqual(registry, mock_image_object)
+
     @mock.patch("docker.DockerClient")
     def test_get_health_status(self, mock_client):
         mock_container = mock.MagicMock()

@@ -18,6 +18,7 @@ from trove.common import exception
 from trove.guestagent.datastore.mariadb import service
 from trove.guestagent.datastore.mysql import service as mysql_service
 from trove.guestagent.datastore import service as base_service
+from trove.guestagent.utils import docker as docker_util
 from trove.tests.unittests import trove_testtools
 
 
@@ -36,14 +37,22 @@ class TestService(trove_testtools.TestCase):
         self.patch_datastore_manager('mariadb')
         self.assertRaises(exception.TroveError, self.app.get_backup_image)
 
-    def test_get_backup_image_with_tag(self):
+    @mock.patch.object(docker_util, 'get_image_registry')
+    def test_get_backup_image_with_tag(self, mock_get_image_registry):
+        mock_registry_object = mock.Mock()
+        mock_registry_object.image_name = "example.domain/repo/mariadb:tag"
+        mock_get_image_registry.return_value = mock_registry_object
         self.patch_datastore_manager('mariadb')
         CONF.set_override('backup_docker_image',
                           'example.domain/repo/mariadb:tag', 'mariadb')
         image = self.app.get_backup_image()
         self.assertEqual(CONF.mariadb.backup_docker_image, image)
 
-    def test_get_backup_image_without_tag(self):
+    @mock.patch.object(docker_util, 'get_image_registry')
+    def test_get_backup_image_without_tag(self, mock_get_image_registry):
+        mock_registry_object = mock.Mock()
+        mock_registry_object.image_name = "example.domain/repo/mariadb:10.4"
+        mock_get_image_registry.return_value = mock_registry_object
         self.patch_datastore_manager('mariadb')
         CONF.set_override('backup_docker_image',
                           'example.domain/repo/mariadb', 'mariadb')
@@ -60,7 +69,11 @@ class TestService(trove_testtools.TestCase):
         image = self.mysql_app.get_backup_image()
         self.assertEqual(image, "example.domain/repo/mysql5.7:1.1.0")
 
-    def test_mysql_backup_image_without_tag(self):
+    @mock.patch.object(docker_util, 'get_image_registry')
+    def test_mysql_backup_image_without_tag(self, mock_get_image_registry):
+        mock_registry_object = mock.Mock()
+        mock_registry_object.image_name = "example.domain/repo/mysql:5.7"
+        mock_get_image_registry.return_value = mock_registry_object
         self.patch_datastore_manager('mysql')
         CONF.set_override('backup_docker_image',
                           'example.domain/repo/mysql', 'mysql')
