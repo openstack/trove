@@ -378,6 +378,12 @@ class PgSqlApp(service.BaseDbApp):
             except Exception as e:
                 LOG.warning(e)
 
+    def get_config_param(self, param_name):
+        """Return configuration parameter from database. This may be handy
+        when user may alter this parameter directly by sql command.
+        """
+        return self.adm.query("SHOW %s;" % param_name)[0][0].strip()
+
 
 class PgSqlAdmin(object):
     # Default set of options of an administrative account.
