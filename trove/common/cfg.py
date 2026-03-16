@@ -656,8 +656,6 @@ percona_opts = [
                help='Namespace to load replication strategies from.'),
     cfg.StrOpt('replication_user', default='slave_user',
                help='Userid for replication slave.'),
-    cfg.StrOpt('replication_password', default='NETOU7897NNLOU',
-               help='Password for replication slave user.'),
     cfg.StrOpt('mount_point', default='/var/lib/mysql',
                help="Filesystem path for mounting "
                     "volumes if volume support is enabled."),
