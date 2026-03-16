@@ -106,10 +106,10 @@ class XtraBackupIncremental(XtraBackup):
     # NOTE: Since 8.0.27, xtrabackup enables strict mode by default.
     @property
     def add_incremental_opts(self) -> bool:
-        cmd = ["xtrabackup", "--version"]
-        _, stderr = processutils.execute(*cmd)
-        xbackup_version = semantic_version.Version.coerce(
-            str(stderr).split()[2])
+        with open('/opt/xtrabackup.version', 'r') as file:
+            version = file.read()
+        LOG.info('xtrabackup parsed version: %s', version)
+        xbackup_version = semantic_version.Version.coerce(version)
         strict_mode_version = semantic_version.Version("8.0.27")
         return xbackup_version < strict_mode_version
 
