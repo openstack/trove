@@ -2,6 +2,9 @@
 How to run functional test
 ==========================
 
+History
+-------
+
 For historical reasons, prior to Victoria, Trove was not using Tempest for running functional test. All the functional tests are organized using the Python library `Proboscis <https://pythonhosted.org/proboscis/>`_， which has not been maintained for a long time.
 
 However, Trove team is not going to migrate all the existing functional tests to `trove-tempest-plugin <https://github.com/openstack/trove-tempest-plugin>`_ due to lack of upstream maintainers, new functional tests should go with trove-tempest-plugin, new features shouldn't break the existing functional tests.
@@ -21,10 +24,10 @@ Install DevStack
 
 It's recommended that the DevStack host should support nested virtualization, otherwise errors or timeouts may occur during the testing. Refer to https://docs.openstack.org/devstack/latest/guides/devstack-with-nested-kvm.html for how to check and enable nested virtualization on the host.
 
-See `Install Trove in DevStack <https://docs.openstack.org/trove/latest/install/install-devstack.html>`_ for development environment installation.
+See :ref:`Install Trove in DevStack <install_devstack>` for development environment installation.
 
-Run functional test
--------------------
+Run functional test (outdated)
+------------------------------
 
 Trove uses ``trovestack`` to run functional test. ``trovestack`` is responsible for:
 
@@ -59,30 +62,44 @@ Another example of running tests for MariaDB 10.4.13:
    mariadb-supported-single \
    10.4.13
 
-Run tempest test
-----------------
+Run tempest test in DevStack
+----------------------------
 
 Trove tempest test can be running in the same way as other openstack tempest test. See `Tempest user guide <https://docs.openstack.org/tempest/latest/overview.html#quickstart>`_.
 
-Prepare tempest config for trove-tempest-plugin before running, an example config:
+Devstack installation process will create minimal required changes to ``tempest/etc/tempest.conf``, but you also can modify it as you need. An example config:
 
-.. code-block:: ini
+    .. code-block:: ini
 
-   [auth]
-   tempest_roles = ResellerAdmin
+       [auth]
+       tempest_roles = ResellerAdmin
 
-   [network]
-   public_network_id = 48e5e576-ec48-4597-bfee-658e358f31a9
+       [network]
+       public_network_id = 48e5e576-ec48-4597-bfee-658e358f31a9
 
-   [database]
-   enabled_datastores=mysql
-   default_datastore_versions = mysql:5.7.30
-   pre_upgrade_datastore_versions = mysql:5.7.29
-   flavor_id = 28153197-6690-4485-9dbc-fc24489b0683
-   resize_flavor_id = d2
-   volume_type = lvmdriver-1
-   database_build_timeout = 1800
-   shared_network =
+       [database]
+       enabled_datastores=mysql
+       default_datastore_versions = mysql:5.7.30
+       pre_upgrade_datastore_versions = mysql:5.7.29
+       flavor_id = 28153197-6690-4485-9dbc-fc24489b0683
+       resize_flavor_id = d2
+       volume_type = lvmdriver-1
+       database_build_timeout = 1800
+       shared_network =
+
+You can find all available configuration options `here <https://github.com/openstack/trove-tempest-plugin/blob/master/trove_tempest_plugin/config.py>`_.
+
+To run tempest command, you need prepare your env:
+
+    .. code-block:: console
+
+        source .tox/tempest/bin/activate
+
+Or you can put it in your .bashrc:
+
+    .. code-block:: console
+
+        echo "source /opt/stack/tempest/.tox/tempest/bin/activate" >> /opt/stack/.bashrc
 
 Some example commands:
 

@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Simplifies the DevStack installation process for Trove.
+
+    The setup procedure is updated to produce a working environment
+    out of the box, and the documentation now provides clearer
+    step-by-step installation instructions.

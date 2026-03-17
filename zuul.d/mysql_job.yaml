@@ -19,6 +19,7 @@
       - ^trove/guestagent/datastore/(postgres|mariadb)/.*$
     vars:
         devstack_localrc:
+          TROVE_DATASTORE_TYPE: mysql
           TROVE_DATASTORE_VERSION: 8.4
           TROVE_STATE_CHANGE_WAIT_TIME: 900
         devstack_local_conf:
@@ -46,6 +47,7 @@
       - ^trove/guestagent/datastore/(postgres|mariadb)/.*$
     vars:
         devstack_localrc:
+          TROVE_DATASTORE_TYPE: mysql
           TROVE_DATASTORE_VERSION: 8.4
           TROVE_STATE_CHANGE_WAIT_TIME: 900
         devstack_local_conf:
@@ -75,6 +77,7 @@
       - ^trove/guestagent/strategies/replication/(postgresql.*|mariadb.*)\.py$
     vars:
         devstack_localrc:
+          TROVE_DATASTORE_TYPE: mysql
           TROVE_DATASTORE_VERSION: 8.4
           TROVE_STATE_CHANGE_WAIT_TIME: 900
         devstack_local_conf:
@@ -104,6 +107,7 @@
       - ^trove/guestagent/strategies/replication/(postgresql.*|mariadb.*)\.py$
     vars:
         devstack_localrc:
+          TROVE_DATASTORE_TYPE: mysql
           TROVE_DATASTORE_VERSION: 8.4
         devstack_local_conf:
           test-config:
