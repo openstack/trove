@@ -64,6 +64,7 @@ def get_filesystem_volume_stats(fs_path):
         'block_size': stats.f_bsize,
         'total_blocks': stats.f_blocks,
         'free_blocks': stats.f_bfree,
+        'avail_blocks': stats.f_bavail,
         'total': total_gb,
         'free': free,
         'used': used_gb

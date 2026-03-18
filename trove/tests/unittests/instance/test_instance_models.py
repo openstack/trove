@@ -25,6 +25,7 @@ from trove.datastore import models as datastore_models
 from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import DBInstanceFault
+from trove.instance.models import DetailInstance
 from trove.instance.models import Instance
 from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
@@ -437,3 +438,72 @@ class TestInstanceKeyCaching(trove_testtools.TestCase):
         self.assertEqual(keyfn.call_count, 1)
         self.assertIsNone(keycache[30])
         self.assertEqual(keyfn.call_count, 2)
+
+
+class TestDetailInstance(trove_testtools.TestCase):
+    def setUp(self):
+        super(TestDetailInstance, self).setUp()
+        self.context = trove_testtools.TroveTestContext(self)
+        db_info = DBInstance(
+            InstanceTasks.NONE, name="TestInstance")
+        db_info.id = '1'
+        db_info.datastore_version_id = None
+        db_info.server_status = 'ACTIVE'
+        self.instance = DetailInstance(
+            self.context, db_info, InstanceServiceStatus(
+                ServiceStatuses.HEALTHY))
+        self.instance.context = self.context
+
+        self.backup_running_patcher = patch.object(
+            backup_models.Backup,
+            'running',
+            Mock(return_value=False)
+        )
+        self.backup_running_patcher.start()
+        self.addCleanup(self.backup_running_patcher.stop)
+
+        self.guest_client_patcher = patch(
+            'trove.common.clients.create_guest_client'
+        )
+        self.guest_client_mock = self.guest_client_patcher.start()
+        self.addCleanup(self.guest_client_patcher.stop)
+
+    def tearDown(self):
+        super(TestDetailInstance, self).tearDown()
+
+    def test_load_guest_info_used_percent(self):
+        client = Mock()
+        client.get_volume_info.return_value = {
+            'total_blocks': 249195, 'free_blocks': 229099,
+            'avail_blocks': 211896, 'total': 0.95, 'used': 0.08
+        }
+        self.guest_client_mock.return_value = client
+
+        instance = models.load_guest_info(self.instance, self.context, None)
+        self.assertEqual(instance.volume_used_percent, 8.66)
+
+    def test_load_guest_info_mgr_extra_info(self):
+        client = Mock()
+        client.get_volume_info.return_value = {
+            'used': 0.01,
+            'total': 1,
+            'mgr_extra_info': {'test': 'value'}
+        }
+        self.guest_client_mock.return_value = client
+
+        instance = models.load_guest_info(self.instance, self.context, None)
+        self.assertEqual(instance.mgr_extra_info['test'], 'value')
+
+    def test_load_guest_info_backwards_compat(self):
+        client = Mock()
+        client.get_volume_info.return_value = {
+            'block_size': 4096, 'total_blocks': 249195, 'free_blocks': 229099,
+            'total': 0.95, 'free': 938389504, 'used': 0.08
+        }
+        self.guest_client_mock.return_value = client
+
+        instance = models.load_guest_info(self.instance, self.context, None)
+        self.assertEqual(instance.volume_used, 0.08)
+        self.assertEqual(instance.volume_total, 0.95)
+        self.assertIsNone(instance.volume_used_percent)
+        self.assertIsNone(instance.mgr_extra_info, None)

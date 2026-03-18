@@ -244,6 +244,9 @@ Response Parameters
    - volume: volume
    - volume.size: volume_size
    - volume.used: volume_used
+   - volume.used_percent: volume_used_percent
+   - volume.wal_size: wal_size
+   - volume.wal_archive_size: wal_archive_size
    - hostname: instance_hostname
    - ip: instance_ip_address
    - addresses: instance_ip_addresses

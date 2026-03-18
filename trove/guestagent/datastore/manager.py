@@ -378,7 +378,9 @@ class Manager(periodic_task.PeriodicTasks):
         # TODO(peterstac) - note that fs_path is not used in this method.
         mount_point = CONF.get(self.manager).mount_point
         LOG.debug("Getting file system stats for '%s'", mount_point)
-        return dbaas.get_filesystem_volume_stats(mount_point)
+        stats = dbaas.get_filesystem_volume_stats(mount_point)
+        stats['mgr_extra_info'] = self.get_volume_info()
+        return stats
 
     def mount_volume(self, context, device_path=None, mount_point=None,
                      write_to_fstab=False):
@@ -400,6 +402,11 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(f"Resizing the filesystem at {mount_point}, online: {online}")
         device = volume.VolumeDevice(device_path)
         device.resize_fs(mount_point, online=online)
+
+    def get_volume_info(self):
+        # Method for providing additional volume info, for example
+        # wal/wal_archive size in PostgreSQL.
+        return {}
 
     ###############
     # Configuration

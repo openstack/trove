@@ -412,3 +412,11 @@ class PostgresManager(manager.Manager):
             raise exception.BackupCreationError(str(e))
         _stop_backup()
         return {}
+
+    def get_volume_info(self):
+        wal_dir = f"{self.app.datadir}/pg_wal"
+        wal_archive_dir = service.WAL_ARCHIVE_DIR
+        return {
+            'wal_size': operating_system.get_dir_size(wal_dir, as_root=True),
+            'wal_archive_size': operating_system.get_dir_size(wal_archive_dir)
+        }
