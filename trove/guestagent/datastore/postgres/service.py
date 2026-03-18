@@ -366,6 +366,29 @@ class PgSqlApp(service.BaseDbApp):
             LOG.error(msg)
             raise Exception(msg)
 
+    def upgrade(self, upgrade_info):
+        """Upgrade the database."""
+        new_version = upgrade_info.get('datastore_version')
+
+        guestagent_utils.prevent_major_version_upgrade(
+            CONF.datastore_version,
+            new_version)
+
+        LOG.info('Stopping db container for upgrade')
+        self.stop_db()
+
+        LOG.info('Deleting db container for upgrade')
+        docker_util.remove_container(self.docker_client)
+
+        LOG.info('Remove unused images before starting new db container')
+        docker_util.prune_images(self.docker_client)
+
+        LOG.info('Starting new db container with version %s for upgrade',
+                 new_version)
+        command = f"postgres -c config_file={CONFIG_FILE}"
+        self.start_db(update_db=True, ds_version=new_version,
+                      command=command)
+
     def reset_data_for_restore_snapshot(self, restore_location):
         LOG.info('Run reset_data_for_restore_snapshot work has been defined.')
         files = [
