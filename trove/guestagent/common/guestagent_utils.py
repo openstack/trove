@@ -19,9 +19,11 @@ import os
 import re
 
 from pyroute2 import IPRoute
+from semantic_version import Version
 
 from trove.common import cfg
 from trove.common import constants
+from trove.common import exception
 from trove.common import pagination
 from trove.common import utils
 from trove.guestagent.common import operating_system
@@ -197,3 +199,16 @@ def disable_user_defined_port():
     operating_system.execute_shell_cmd(f"ip link set {ifname} down", [],
                                        shell=True,
                                        as_root=True)
+
+
+# This helper method allows upgrade only between minor versions e.g. from 16.10
+# to 16.11. Attempt to upgrade from 16.10 to 17.1  will throw a TroveError.
+def prevent_major_version_upgrade(cur_ver, new_ver):
+    current = Version.coerce(str(cur_ver))
+    target = Version.coerce(str(new_ver))
+
+    if current.major != target.major:
+        raise exception.TroveError(
+            "Major version upgrade is not allowed: "
+            "%s -> %s" % (cur_ver, new_ver)
+        )

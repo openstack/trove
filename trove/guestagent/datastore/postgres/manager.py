@@ -293,6 +293,12 @@ class PostgresManager(manager.Manager):
             raise exception.TroveError(
                 f"Timeout occurred waiting for wal offset to change to {txn}")
 
+    def upgrade(self, context, upgrade_info):
+        """Upgrade the database."""
+        LOG.info('Starting to upgrade database, upgrade_info: %s',
+                 upgrade_info)
+        self.app.upgrade(upgrade_info)
+
     def rebuild(self, context, ds_version, config_contents=None,
                 config_overrides=None):
         """Restore datastore service after instance rebuild."""
