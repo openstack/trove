@@ -839,8 +839,10 @@ class BaseMySqlApp(service.BaseDbApp):
     def upgrade(self, upgrade_info):
         """Upgrade the database."""
         new_version = upgrade_info.get('datastore_version')
-        if new_version == CONF.datastore_version:
-            return
+
+        guestagent_utils.prevent_major_version_upgrade(
+            CONF.datastore_version,
+            new_version)
 
         LOG.info('Stopping db container for upgrade')
         self.stop_db()
