@@ -1,6 +1,6 @@
 #MySQL jobs
 - job:
-    name: trove-tempest-ubuntu-base-mysql8.4
+    name: trove-tempest-ubuntu-base-mysql
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
       - ^.*\.rst$
@@ -29,7 +29,7 @@
                 default_datastore_versions: mysql:8.4
 
 - job:
-    name: trove-tempest-ubuntu-backup-mysql8.4
+    name: trove-tempest-ubuntu-backup-mysql
     parent: trove-tempest-ubuntu-backup
     irrelevant-files:
       - ^.*\.rst$
@@ -58,7 +58,7 @@
                 default_datastore_versions: mysql:8.4
 
 - job:
-    name: trove-tempest-ubuntu-replication-mysql8.4
+    name: trove-tempest-ubuntu-replication-mysql
     parent: trove-tempest-ubuntu-replication
     irrelevant-files:
       - ^.*\.rst$
@@ -88,7 +88,7 @@
                 default_datastore_versions: mysql:8.4
 
 - job:
-    name: trove-tempest-cinder-storage-driver-mysql8.4
+    name: trove-tempest-cinder-storage-driver-mysql
     parent:  trove-tempest-snapshot
     irrelevant-files:
       - ^.*\.rst$

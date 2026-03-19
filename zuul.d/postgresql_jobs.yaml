@@ -1,7 +1,7 @@
 # PostgreSQL jobs
 
 - job:
-    name: trove-tempest-ubuntu-base-postgresql18
+    name: trove-tempest-ubuntu-base-postgresql
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
       - ^.*\.rst$
@@ -30,7 +30,7 @@
                 default_datastore_versions: postgresql:18
 
 - job:
-    name: trove-tempest-ubuntu-backup-postgresql18
+    name: trove-tempest-ubuntu-backup-postgresql
     parent: trove-tempest-ubuntu-backup
     irrelevant-files:
       - ^.*\.rst$
@@ -58,7 +58,7 @@
                 default_datastore_versions: postgresql:18
 
 - job:
-    name: trove-tempest-ubuntu-replication-postgresql18
+    name: trove-tempest-ubuntu-replication-postgresql
     parent: trove-tempest-ubuntu-replication
     irrelevant-files:
       - ^.*\.rst$
@@ -87,7 +87,7 @@
                 default_datastore_versions: postgresql:18
 
 - job:
-    name: trove-tempest-cinder-storage-driver-postgresql18
+    name: trove-tempest-cinder-storage-driver-postgresql
     parent:  trove-tempest-snapshot
     irrelevant-files:
       - ^.*\.rst$

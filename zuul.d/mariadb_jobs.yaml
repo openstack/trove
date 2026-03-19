@@ -1,6 +1,6 @@
 # mariadb jobs
 - job:
-    name: trove-tempest-ubuntu-base-mariadb11.4
+    name: trove-tempest-ubuntu-base-mariadb
     parent: trove-tempest-ubuntu-base
     irrelevant-files:
       - ^.*\.rst$
@@ -29,7 +29,7 @@
                 default_datastore_versions: mariadb:11.4
 
 - job:
-    name: trove-tempest-ubuntu-backup-mariadb11.4
+    name: trove-tempest-ubuntu-backup-mariadb
     parent: trove-tempest-ubuntu-backup
     irrelevant-files:
       - ^.*\.rst$
@@ -57,7 +57,7 @@
                 default_datastore_versions: mariadb:11.4
 
 - job:
-    name: trove-tempest-ubuntu-replication-mariadb11.4
+    name: trove-tempest-ubuntu-replication-mariadb
     parent: trove-tempest-ubuntu-replication
     irrelevant-files:
       - ^.*\.rst$
@@ -86,7 +86,7 @@
                 default_datastore_versions: mariadb:11.4
 
 - job:
-    name: trove-tempest-cinder-storage-driver-mariadb11.4
+    name: trove-tempest-cinder-storage-driver-mariadb
     parent:  trove-tempest-snapshot
     irrelevant-files:
       - ^.*\.rst$
