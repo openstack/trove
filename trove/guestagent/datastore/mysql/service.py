@@ -131,7 +131,7 @@ class MySqlApp(service.BaseMySqlApp):
         """This function try remove replica status in database"""
         # '--skip-replica-start' was introduced in mysql 8.0.26 and the
         # '--skip-slave-start' not be removed yet for mysql 8.0.x
-        if self._is_mysql84:
+        if self._is_mysql84():
             command = "mysqld --skip-replica-start=ON --datadir=%s" % data_dir
         else:
             command = "mysqld --skip-slave-start=ON --datadir=%s" % data_dir
