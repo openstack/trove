@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    Introduced a new configuration option ``[DEFAULT]/cinder_client_version``
+    with default value set as `3`. This allows operators to supply the
+    intended version of Cinder API to interact with.
+
+fixes:
+  - |
+    Logic for fetching Cinder API version has been fixed, and it no longer
+    relies on the ``[DEFAULT]/cinder_service_type`` value.
+    This allows to have a cinder_service_type defined as ``block-storage``,
+    or any other name which is not versioned.
