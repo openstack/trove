@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# No need for production image builds
+if [ ! -f "/etc/trove/conf.d/guest_info.conf" ]; then
+  echo "Skip image loading"
+  exit 0
+fi
+
 datastore_manager=$(crudini --get /etc/trove/conf.d/guest_info.conf DEFAULT datastore_manager)
 datastore_version=$(crudini --get /etc/trove/conf.d/guest_info.conf DEFAULT datastore_version)
 datastore_image=$(crudini --get /etc/trove/conf.d/trove-guestagent.conf "$datastore_manager" docker_image)
