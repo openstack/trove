@@ -2224,11 +2224,23 @@ class ResizeAction(ResizeActionBase):
         self.new_flavor_id = new_flavor['id']
 
     def _assert_nova_action_was_successful(self):
-        # Do check to make sure the status and flavor id are correct.
-        if str(self.instance.server.flavor['id']) != str(self.new_flavor_id):
-            msg = "Assertion failed! flavor_id=%s and not %s" \
-                  % (self.instance.server.flavor['id'], self.new_flavor_id)
-            raise TroveError(msg)
+        if 'original_name' in self.instance.server.flavor:
+            # Starting from Nova microversion 2.47, id is no longer present
+            # in the flavor object. Check flavor by name instead. This check
+            # is safe due to the fact that flavor name is unique.
+            current_flavor_name = str(
+                self.instance.server.flavor['original_name'])
+            if current_flavor_name != str(self.new_flavor['name']):
+                msg = "Assertion failed! flavor=%s and not %s" \
+                    % (current_flavor_name, self.new_flavor['name'])
+                raise TroveError(msg)
+        else:
+            # Do check to make sure the status and flavor id are correct.
+            current_flavor_id = str(self.instance.server.flavor['id'])
+            if current_flavor_id != str(self.new_flavor_id):
+                msg = "Assertion failed! flavor_id=%s and not %s" \
+                    % (current_flavor_id, self.new_flavor_id)
+                raise TroveError(msg)
 
     def _initiate_nova_action(self):
         LOG.info(f"Resizing Nova server for instance {self.instance.id}")
