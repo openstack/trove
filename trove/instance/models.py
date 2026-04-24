@@ -1046,7 +1046,7 @@ class BaseInstance(SimpleInstance):
     def get_injected_files(self,
                            datastore_manager,
                            datastore_version,
-                           **kwargs):
+                           networks=None):
         injected_config_location = CONF.get('injected_config_location')
         guest_info = CONF.get('guest_info')
 
@@ -1099,14 +1099,43 @@ class BaseInstance(SimpleInstance):
                 f"CONTROLLER={CONF.controller_address}"
             )
 
+        disable_bridge = False
+        if CONF.network.network_isolation:
+            user_port_id = None
+
+            if networks is not None:
+                if len(networks) > 1:
+                    # The user defined port is always the first one.
+                    user_port_id = networks[0]["port-id"]
+            else:
+                user_network_id = None
+                for address in self.addresses or []:
+                    if address.get("type") == "private" and \
+                       address.get("network"):
+                        user_network_id = address["network"]
+                        break
+
+                if user_network_id:
+                    ret = self.neutron_client.list_ports(
+                        name='trove-%s' % self.id,
+                        network_id=user_network_id)
+                    ports = ret.get("ports", [])
+                    if ports:
+                        user_port_id = ports[0]["id"]
+
+            if user_port_id:
+                nic_info = self._get_user_nic_info(user_port_id)
+                LOG.debug("Generate the eth1_config.json file: %s", nic_info)
+                files[constants.ETH1_CONFIG_PATH] = json.dumps(nic_info)
+                disable_bridge = True
+
         # Since Victoria, guest agent uses docker.
         # Configure docker's daemon.json if the directives exist in trove.conf
         docker_daemon_values = {}
 
         # In case that user enables network_isolation with management/bussiness
         # network not set
-        if CONF.network.network_isolation and \
-                kwargs.get("disable_bridge", False):
+        if CONF.network.network_isolation and disable_bridge:
             docker_daemon_values["bridge"] = "none"
             docker_daemon_values["ip-forward"] = False
             docker_daemon_values["iptables"] = False
@@ -1125,6 +1154,31 @@ class BaseInstance(SimpleInstance):
             )
 
         return files
+
+    def _get_user_nic_info(self, port_id):
+        nic_info = dict()
+        port = self.neutron_client.show_port(port_id)
+        fixed_ips = port['port']["fixed_ips"]
+        nic_info["mac_address"] = port['port']["mac_address"]
+        for fixed_ip in fixed_ips:
+            subnet = self.neutron_client.show_subnet(
+                fixed_ip["subnet_id"])['subnet']
+            if subnet.get("ip_version") == 4:
+                nic_info["ipv4_address"] = fixed_ip.get("ip_address")
+                nic_info["ipv4_cidr"] = subnet.get("cidr")
+                nic_info["ipv4_gateway"] = subnet.get("gateway_ip")
+                nic_info["ipv4_host_routes"] = subnet.get("host_routes")
+            # NOTE: only if the ipv6_ra_mode is dhcpv6-stateful,
+            # we need to configure the ip route for container. for slaac
+            # and dhcpv6-stateless mode, the route will be configured
+            # by the nic itself via the RA protocol.
+            elif subnet.get("ip_version") == 6:
+                nic_info["ipv6_address"] = fixed_ip.get("ip_address")
+                nic_info["ipv6_cidr"] = subnet.get("cidr")
+                nic_info["ipv6_host_routes"] = subnet.get("host_routes")
+                if subnet.get("ipv6_ra_mode") == "dhcpv6-stateful":
+                    nic_info["ipv6_gateway"] = subnet.get("gateway_ip")
+        return nic_info
 
     def reset_status(self):
         LOG.info("Resetting the status to ERROR on instance %s.",

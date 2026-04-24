@@ -11,14 +11,17 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import json
 import uuid
 
 from unittest.mock import Mock
 from unittest.mock import patch
+from unittest.mock import PropertyMock
 
 from trove.backup import models as backup_models
 from trove.common import cfg
 from trove.common import clients
+from trove.common import constants
 from trove.common import exception
 from trove.common import neutron
 from trove.datastore import models as datastore_models
@@ -111,6 +114,91 @@ class SimpleInstanceTest(trove_testtools.TestCase):
             self.assertEqual(fault_message, fault.message)
             self.assertEqual(fault_details, fault.details)
             self.assertEqual(fault_date, fault.updated)
+
+
+class BaseInstanceTest(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(BaseInstanceTest, self).setUp()
+        db_info = Mock(
+            id='instance-id', tenant_id='tenant-id',
+            datastore_version_id=None)
+        self.instance = models.BaseInstance(None, db_info, Mock(), None)
+        self.instance.db_info.addresses = [
+            {
+                'address': '192.0.2.10',
+                'type': 'private',
+                'network': 'user-network',
+            },
+            {
+                'address': '198.51.100.10',
+                'type': 'public',
+            },
+        ]
+        self.instance._neutron_client = Mock()
+
+        CONF.set_override('management_networks', ['management-network'])
+        CONF.set_override('network_isolation', True, group='network')
+        self.addCleanup(CONF.clear_override, 'management_networks')
+        self.addCleanup(
+            CONF.clear_override, 'network_isolation', group='network')
+
+    @patch.object(models, 'get_instance_encryption_key', return_value=None)
+    @patch.object(models.BaseInstance, 'datastore_repl_strategy',
+                  new_callable=PropertyMock, return_value='repl-strategy')
+    @patch.object(models.BaseInstance, 'datastore_registry_ext',
+                  new_callable=PropertyMock, return_value='registry-ext')
+    def test_get_injected_files_with_network_isolation(
+            self, mock_registry_ext, mock_repl_strategy,
+            mock_get_encryption_key):
+        self.instance.neutron_client.list_ports.return_value = {
+            'ports': [
+                {'id': 'user-port', 'network_id': 'user-network'},
+            ]
+        }
+        self.instance.neutron_client.show_port.return_value = {
+            'port': {
+                'mac_address': '00:00:00:00:00:01',
+                'fixed_ips': [{
+                    'subnet_id': 'user-subnet',
+                    'ip_address': '192.0.2.10',
+                }],
+            }
+        }
+        self.instance.neutron_client.show_subnet.return_value = {
+            'subnet': {
+                'ip_version': 4,
+                'cidr': '192.0.2.0/24',
+                'gateway_ip': '192.0.2.1',
+                'host_routes': [],
+            }
+        }
+
+        files = self.instance.get_injected_files('mysql', '8.0')
+
+        self.assertEqual(
+            {
+                'mac_address': '00:00:00:00:00:01',
+                'ipv4_address': '192.0.2.10',
+                'ipv4_cidr': '192.0.2.0/24',
+                'ipv4_gateway': '192.0.2.1',
+                'ipv4_host_routes': [],
+            },
+            json.loads(files[constants.ETH1_CONFIG_PATH])
+        )
+        self.assertEqual(
+            {
+                'bridge': 'none',
+                'ip-forward': False,
+                'iptables': False,
+            },
+            json.loads(files['/etc/docker/daemon.json'])
+        )
+        self.instance.neutron_client.list_ports.assert_called_once_with(
+            name='trove-instance-id',
+            network_id='user-network')
+        self.instance.neutron_client.show_port.assert_called_once_with(
+            'user-port')
 
 
 class CreateInstanceTest(trove_testtools.TestCase):

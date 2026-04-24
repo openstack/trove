@@ -79,8 +79,9 @@ common_opts = [
                help='Service type to use when searching catalog.'),
     cfg.StrOpt('nova_compute_endpoint_type', default='publicURL',
                help='Service endpoint type to use when searching catalog.'),
-    cfg.StrOpt('nova_client_version', default='2.52',
-               help="The version of the compute service client."),
+    cfg.StrOpt('nova_client_version', default='2.57',
+               help="The version of the compute service client."
+                    "Look at 'Nova microversions' docs section for more info"),
     cfg.StrOpt('glance_client_version', default='2',
                help="The version of the image service client."),
     cfg.BoolOpt('nova_api_insecure', default=False,

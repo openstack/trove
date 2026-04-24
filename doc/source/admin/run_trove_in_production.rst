@@ -531,3 +531,21 @@ V1 API.
 Refer to `Create and access a database
 <https://docs.openstack.org/trove/latest/user/create-db.html>`_ for detailed
 steps.
+
+
+Nova microversions
+~~~~~~~~~~~~~~~~~~
+The Nova microversion used by Trove is controlled by the `CONF.nova_client_version`
+configuration option.
+
+The minimum required microversion for Trove to function is **2.12**.
+
+The table below lists microversions that enable specific features used by Trove:
+
++---------------------+-------------------------------------------+
+| Nova microversion   | Feature                                   |
++=====================+===========================================+
+| 2.52                | Support for instance tags                 |
++---------------------+-------------------------------------------+
+| 2.57                | Support for updating user data on rebuild |
++---------------------+-------------------------------------------+

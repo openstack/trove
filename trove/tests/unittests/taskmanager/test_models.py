@@ -279,6 +279,9 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
 
     @patch.object(DBInstance, 'get_by')
     def test_create_instance_guestconfig(self, patch_get_by):
+        cfg.CONF.set_override('network_isolation', False, group='network')
+        self.addCleanup(cfg.CONF.clear_override, 'network_isolation',
+                        group='network')
         cfg.CONF.set_override('guest_config', self.guestconfig)
         cfg.CONF.set_override('guest_info', 'guest_info.conf')
         cfg.CONF.set_override('injected_config_location', '/etc/trove/conf.d')
@@ -299,6 +302,9 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
 
     @patch.object(DBInstance, 'get_by')
     def test_create_instance_guestconfig_compat(self, patch_get_by):
+        cfg.CONF.set_override('network_isolation', False, group='network')
+        self.addCleanup(cfg.CONF.clear_override, 'network_isolation',
+                        group='network')
         cfg.CONF.set_override('guest_config', self.guestconfig)
         cfg.CONF.set_override('guest_info', '/etc/guest_info')
         cfg.CONF.set_override('injected_config_location', '/etc')
@@ -473,6 +479,8 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             is_mgmt=False,
             is_public=False
         )
+        mock_get_injected_files.assert_called_once_with(
+            'mysql', None, networks=[{'port-id': 'fake-port-id'}])
         image_id = 'mysql-image-id'
         if cfg.CONF.volume_rootdisk_support:
             mock_create_root_volume.assert_called_with(
@@ -491,7 +499,7 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             8, image_id, 'mysql',
             mock_build_volume_info()['block_device'], None,
             [{'port-id': 'fake-port-id'}],
-            mock_get_injected_files(),
+            mock_get_injected_files.return_value,
             {'group': 'sg-id'}
         )
 
@@ -577,8 +585,14 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
                 {'port-id': 'fake-user-port-id'},
                 {'port-id': 'fake-mgmt-port-id'}
             ],
-            mock_get_injected_files(), {'group': 'sg-id'}
+            mock_get_injected_files.return_value, {'group': 'sg-id'}
         )
+        mock_get_injected_files.assert_called_once_with(
+            'mysql', None,
+            networks=[
+                {'port-id': 'fake-user-port-id'},
+                {'port-id': 'fake-mgmt-port-id'}
+            ])
         create_floatingip_param = {
             "floatingip": {
                 'floating_network_id': 'fake-public-net-id',

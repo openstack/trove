@@ -13,7 +13,7 @@
 #    under the License.
 
 import copy
-import json
+import semantic_version
 import time
 import traceback
 
@@ -573,31 +573,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         )
         return networks
 
-    def _get_user_nic_info(self, port_id):
-        nic_info = dict()
-        port = self.neutron_client.show_port(port_id)
-        fixed_ips = port['port']["fixed_ips"]
-        nic_info["mac_address"] = port['port']["mac_address"]
-        for fixed_ip in fixed_ips:
-            subnet = self.neutron_client.show_subnet(
-                fixed_ip["subnet_id"])['subnet']
-            if subnet.get("ip_version") == 4:
-                nic_info["ipv4_address"] = fixed_ip.get("ip_address")
-                nic_info["ipv4_cidr"] = subnet.get("cidr")
-                nic_info["ipv4_gateway"] = subnet.get("gateway_ip")
-                nic_info["ipv4_host_routes"] = subnet.get("host_routes")
-            # NOTE: only if the ipv6_ra_mode is dhcpv6-stateful,
-            # we need to configure the ip route for container. for slaac
-            # and dhcpv6-stateless mode, the route will be configured
-            # by the nic itself via the RA protocol.
-            elif subnet.get("ip_version") == 6:
-                nic_info["ipv6_address"] = fixed_ip.get("ip_address")
-                nic_info["ipv6_cidr"] = subnet.get("cidr")
-                nic_info["ipv6_host_routes"] = subnet.get("host_routes")
-                if subnet.get("ipv6_ra_mode") == "dhcpv6-stateful":
-                    nic_info["ipv6_gateway"] = subnet.get("gateway_ip")
-        return nic_info
-
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
                         backup_id, availability_zone, root_password, nics,
@@ -618,17 +593,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             datastore_manager, nics, access=access
         )
 
-        if CONF.network.network_isolation and len(nics) > 1:
-            # the user defined port is always the first one.
-            nic_info = self._get_user_nic_info(networks[0]["port-id"])
-            LOG.debug("Generate the eth1_config.json file: %s", nic_info)
-            files = self.get_injected_files(datastore_manager,
-                                            ds_version,
-                                            disable_bridge=True)
-            files[constants.ETH1_CONFIG_PATH] = json.dumps(nic_info)
-        else:
-            files = self.get_injected_files(datastore_manager, ds_version)
-
+        files = self.get_injected_files(datastore_manager,
+                                        ds_version,
+                                        networks=networks)
         backup_info = None
         cinder_snapshot_id = None
         if backup_id is not None:
@@ -2355,13 +2322,37 @@ class RebuildAction(ResizeActionBase, VolumeUnmountActionBase):
             self.instance.datastore.name,
             self.instance.datastore_version.name)
 
-        LOG.info(f"Rebuilding Nova server for instance {self.instance.id}")
-        # Before Nova version 2.57, userdata is not supported when doing
-        # rebuild, have to use injected files instead.
-        self.instance.server.rebuild(
-            self.image_id,
-            files=files,
-        )
+        nova_version = semantic_version.Version.coerce(
+            CONF.nova_client_version)
+        nova_2_57 = semantic_version.Version('2.57.0')
+
+        if nova_version >= nova_2_57:
+            LOG.info(
+                "Rebuilding Nova server for instance %s, refresh userdata",
+                self.instance.id)
+
+            userdata = self.instance.prepare_userdata(
+                self.instance.datastore.name)
+            userdata = self.instance.combine_cloudinit_userdata(
+                self.instance.prepare_cloud_config(files),
+                userdata)
+
+            self.instance.server.rebuild(
+                self.image_id,
+                userdata=userdata,
+            )
+        else:
+            LOG.info(
+                f"Rebuilding Nova server for instance {self.instance.id}")
+            # Before Nova version 2.57, userdata is not supported when doing
+            # rebuild, have to use injected files instead.
+            # Note that existing cloudinit passed in the userdata will
+            # overwrite these files, so some functions will not work properly
+            # with old Nova versions.
+            self.instance.server.rebuild(
+                self.image_id,
+                files=files,
+            )
 
     def _assert_nova_status_is_ok(self):
         pass

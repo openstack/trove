@@ -1,0 +1,9 @@
+---
+upgrade:
+  - |
+    The minimum required Nova microversion has been increased to 2.57.
+fixes:
+  - |
+    Instance rebuilds now apply updated cloud-init configuration when
+    Nova API microversion 2.57 or later is used. Older Nova
+    microversions continue to use the previous rebuild behavior.
