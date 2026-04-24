@@ -30,13 +30,17 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-def _get_user_keystone_session(auth_url, token):
-    auth = v3.Token(auth_url=auth_url, token=token)
+def _get_user_keystone_session(auth_url, token, tenant_id):
+    auth = v3.Token(
+        auth_url=auth_url, token=token,
+        project_domain_name="Default",
+        project_id=tenant_id
+    )
     return session.Session(auth=auth, verify=False)
 
 
-def _get_service_client(auth_url, token, region_name=None):
-    sess = _get_user_keystone_session(auth_url, token)
+def _get_service_client(auth_url, token, tenant_id, region_name=None):
+    sess = _get_user_keystone_session(auth_url, token, tenant_id)
     os_options = None
     if region_name:
         os_options = {
@@ -222,6 +226,7 @@ class StreamReader(object):
 class SwiftStorage(base.Storage):
     def __init__(self):
         self.client = _get_service_client(CONF.os_auth_url, CONF.os_token,
+                                          CONF.os_tenant_id,
                                           region_name=CONF.os_region_name)
 
     def save(self, stream, metadata=None, container='database_backups'):
