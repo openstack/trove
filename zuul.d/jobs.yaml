@@ -45,7 +45,6 @@
       tox_envlist: all
       tempest_concurrency: 1
       devstack_localrc:
-        TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
         SYNC_LOG_TO_CONTROLLER: True
         TROVE_DATASTORE_VERSION: 8.0
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
@@ -82,6 +81,8 @@
         s-proxy: true
         tls-proxy: true
         tempest: true
+      tempest_plugins:
+        - trove-tempest-plugin
       tempest_test_regex: ^trove_tempest_plugin\.tests
       tempest_test_timeout: 3600
       zuul_copy_output:
@@ -112,7 +113,6 @@
       tox_envlist: all
       tempest_concurrency: 1
       devstack_localrc:
-        TEMPEST_PLUGINS: /opt/stack/trove-tempest-plugin
         SYNC_LOG_TO_CONTROLLER: True
         TROVE_DATASTORE_VERSION: 8.0
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
@@ -148,6 +148,8 @@
         s-proxy: false
         tls-proxy: true
         tempest: true
+      tempest_plugins:
+        - trove-tempest-plugin
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.(test_cinder_backup|test_replication)
       tempest_test_timeout: 3600
       zuul_copy_output:
