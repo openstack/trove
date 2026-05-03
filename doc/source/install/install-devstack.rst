@@ -134,7 +134,7 @@ configuration, change the ``HOST_IP`` to your own DevStack host IP address:
     Q_ML2_TENANT_NETWORK_TYPE="geneve"
     enable_service ovn-northd
     enable_service ovn-controller
-    enable_service q-ovn-metadata-agent
+    enable_service q-ovn-agent
 
     # Neutron
     enable_service q-svc
