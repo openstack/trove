@@ -79,6 +79,13 @@ version:
   in: path
   required: false
   type: string
+# variables in query
+ssl_include_cert:
+  description: |
+    If false or not provided, certificate payload is omitted.
+  in: query
+  required: false
+  type: boolean
 # variables in body
 access:
   description: |
@@ -588,6 +595,30 @@ instance_replicas:
   in: body
   required: false
   type: array
+instance_ssl:
+  description: |
+    An ``ssl`` object.
+  in: body
+  required: true
+  type: object
+  properties:
+    status:
+      type: string
+    mode:
+      type: string
+    container_ref:
+      type: string
+    certificate:
+      type: object
+      properties:
+        payload:
+          type: string
+        cn:
+          type: string
+        expire_at:
+          type: string
+        san:
+          type: [string, "null"]
 instance_status:
   description: |
     Status of the instance.
@@ -861,6 +892,94 @@ slave_of:
   in: body
   required: false
   type: string
+ssl_action_disable:
+  description: |
+    Disable installed SSL certificate.
+  in: body
+  required: false
+  type: boolean
+ssl_action_enable:
+  description: |
+    Enable new SSL certificate.
+  in: body
+  required: false
+  type: boolean
+ssl_action_rollback:
+  description: |
+    Rollback to last SSL configuration.
+  in: body
+  required: false
+  type: boolean
+ssl_certificate:
+  description: |
+    Certificate object
+  in: body
+  required: false
+  type: object
+ssl_certificate_cn:
+  description: |
+    CN for the current installed certificate.
+  in: body
+  required: false
+  type: string
+ssl_certificate_expire_at:
+  description: |
+    Expiration timestamp of the current certificate.
+  in: body
+  required: false
+  type: string
+ssl_certificate_payload:
+  description: |
+    Contains public certificate only. Private keys are never exposed.
+    Provided only if `?include_certificate=true` query param is
+    present.
+  in: body
+  required: false
+  type: string
+ssl_certificate_san:
+  description: |
+    Certificate Subject Alternative Names.
+  in: body
+  required: false
+  type: array
+  items:
+    type: string
+ssl_container_ref:
+  description: |
+    Reference to a PKCS#12 container stored in Barbican.
+  in: body
+  required: false
+  type: string
+ssl_mode:
+  description: |
+    Currently enabled SSL/TLS mode:
+      - builtin (default certificates installed by DBMS)
+      - basic
+      - enforced
+      - mtls
+  in: body
+  required: true
+  type: string
+ssl_password_ref:
+  description: |
+    Provide a Barbican reference to the password if the PKCS#12 container is
+    password-protected, with instance project member scope.
+  in: body
+  required: false
+  type: string
+ssl_restart_required:
+  description: |
+    True if configuration changes require database restart to take effect.
+  in: body
+  required: false
+  type: boolean
+ssl_status:
+  description: |
+    "on" if SSL is enabled, "off" if SSL is disabled or misconfigured.
+  in: body
+  required: true
+  type: enum
+  enum: [on, off]
 storage_driver:
   description: |
     The backup strategy

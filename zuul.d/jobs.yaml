@@ -228,6 +228,93 @@
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_replication
 
 - job:
+    name: trove-tempest-ubuntu-ssl-base
+    parent: trove-tempest
+    files:
+      - ^trove/.*ssl.*\.py$
+      - ^trove/instance/.*\.py$
+      - ^trove/guestagent/datastore/manager\.py$
+      - ^trove/guestagent/datastore/service\.py$
+    required-projects:
+      - openstack/trove
+      - openstack/trove-tempest-plugin
+      - openstack/barbican
+      - openstack/barbican-tempest-plugin
+      - openstack/tempest
+    vars:
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove.git
+        barbican: https://opendev.org/openstack/barbican.git
+      devstack_services:
+        etcd3: false
+        cinder: true
+        c-sch: true
+        c-api: true
+        c-vol: true
+        c-bak: false
+        swift: true
+        s-account: true
+        s-container: true
+        s-object: true
+        s-proxy: true
+        tls-proxy: true
+        tempest: true
+        barbican-svc: true
+        barbican-retry: true
+      tempest_plugins:
+        - trove-tempest-plugin
+        - barbican-tempest-plugin
+      devstack_localrc:
+        # Prevent "Secret creation attempt not allowed - please review your user/project privileges"
+        # In Zuul, barbican works correctly only with enforce_new_defaults = True
+        ENFORCE_SCOPE: True
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance_ssl\.(?!.*test_ssl_replication)
+
+- job:
+    name: trove-tempest-ubuntu-ssl-replication
+    parent: trove-tempest
+    files:
+      - ^trove/.*ssl.*\.py$
+      - ^trove/instance/.*\.py$
+      - ^trove/guestagent/datastore/manager\.py$
+      - ^trove/guestagent/datastore/service\.py$
+    required-projects:
+      - openstack/trove
+      - openstack/trove-tempest-plugin
+      - openstack/barbican
+      - openstack/barbican-tempest-plugin
+      - openstack/tempest
+    vars:
+      devstack_plugins:
+        trove: https://opendev.org/openstack/trove.git
+        barbican: https://opendev.org/openstack/barbican.git
+      devstack_services:
+        etcd3: false
+        cinder: true
+        c-sch: true
+        c-api: true
+        c-vol: true
+        c-bak: false
+        swift: true
+        s-account: true
+        s-container: true
+        s-object: true
+        s-proxy: true
+        tls-proxy: true
+        tempest: true
+        barbican-svc: true
+        barbican-retry: true
+      tempest_plugins:
+        - trove-tempest-plugin
+        - barbican-tempest-plugin
+      devstack_localrc:
+        TROVE_BUILD_BACKUP_IMAGES: True
+        # Prevent "Secret creation attempt not allowed - please review your user/project privileges"
+        # In Zuul, barbican works correctly only with enforce_new_defaults = True
+        ENFORCE_SCOPE: True
+      tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance_ssl\..*test_ssl_replication
+
+- job:
     name: publish-trove-guest-image
     parent: publish-openstack-artifacts
     run: playbooks/image-build/run.yaml

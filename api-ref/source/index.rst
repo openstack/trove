@@ -12,6 +12,7 @@
 .. include:: instances.inc
 .. include:: instance-actions.inc
 .. include:: instance-logs.inc
+.. include:: instance-ssl.inc
 .. include:: backups.inc
 .. include:: backup-strategy.inc
 .. include:: configurations.inc

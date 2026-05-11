@@ -19,10 +19,12 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.strategies.cluster import strategy
 
+from barbicanclient import client as BarbicanClient
 from cinderclient.v3 import client as CinderClient
 import glanceclient
 from keystoneauth1.identity import v3
 from keystoneauth1 import session as ka_session
+from keystoneauth1 import token_endpoint
 from keystoneclient.service_catalog import ServiceCatalog
 from neutronclient.v2_0 import client as NeutronClient
 from novaclient.client import Client
@@ -211,6 +213,31 @@ def glance_client(context, region_name=None):
     return glanceclient.Client(
         CONF.glance_client_version, endpoint=endpoint_url,
         session=session
+    )
+
+
+def barbican_client(context, region_name=None):
+    if CONF.barbican_url:
+        endpoint_url = CONF.barbican_url
+    else:
+        region = region_name or CONF.service_credentials.region_name
+        endpoint_url = get_endpoint(
+            context.service_catalog,
+            service_type=CONF.barbican_service_type,
+            endpoint_region=region,
+            endpoint_type=CONF.barbican_endpoint_type
+        )
+
+    auth = token_endpoint.Token(endpoint_url, context.auth_token)
+    session = ka_session.Session(auth=auth)
+
+    return BarbicanClient.Client(
+        'v1',
+        session=session,
+        project_id=context.project_id,
+        service_type=CONF.barbican_service_type,
+        interface=CONF.barbican_endpoint_type,
+        endpoint=endpoint_url
     )
 
 

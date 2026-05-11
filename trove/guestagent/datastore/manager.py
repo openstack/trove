@@ -15,7 +15,9 @@
 #
 
 import abc
+import configparser
 import operator
+import os
 
 import docker
 from oslo_config import cfg as oslo_cfg
@@ -29,6 +31,7 @@ from trove.common.notification import EndNotification
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
+from trove.guestagent.datastore.ssl import SSLManager
 from trove.guestagent import dbaas
 from trove.guestagent import guest_log
 from trove.guestagent.module import driver_manager
@@ -41,7 +44,7 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class Manager(periodic_task.PeriodicTasks):
+class Manager(periodic_task.PeriodicTasks, SSLManager):
     """This is the base class for all datastore managers.  Over time, common
     functionality should be pulled back here from the existing managers.
     """
@@ -912,6 +915,19 @@ class Manager(periodic_task.PeriodicTasks):
             'replica_conf': replica_conf
         }
 
+        ssl_status = self.show_ssl_status()
+        if ssl_status['status'] == 'on' and CONF.ssl_mode and \
+           CONF.ssl_mode != 'None':
+            LOG.info(
+                "SSL is enabled, adding CA and certificates "
+                "to the replication snapshot")
+            replication_snapshot['cert_container'] = {}
+            replication_snapshot['ssl_mode'] = CONF.ssl_mode
+
+            for key, filename in self._get_ssl_files().items():
+                content = operating_system.read_file(filename, as_root=True)
+                replication_snapshot['cert_container'][key] = content
+
         return replication_snapshot
 
     def attach_replica(self, context, snapshot, slave_config, restart=False):
@@ -983,3 +999,25 @@ class Manager(periodic_task.PeriodicTasks):
             LOG.error("Run post_create_backup failed, error: %s" % str(e))
 
         return {}
+
+    def override_guest_info(self, **kwargs):
+        if ('/' in CONF.guest_info):
+            # Set guest_info_file to exactly guest_info from the conf file.
+            # This should be /etc/guest_info for pre-Kilo compatibility.
+            guest_info_file = CONF.guest_info
+        else:
+            guest_info_file = os.path.join(CONF.injected_config_location,
+                                           CONF.guest_info)
+
+        config = configparser.ConfigParser()
+        config.read(guest_info_file)
+
+        LOG.debug('Override guest_info.conf: %s', kwargs)
+
+        config.defaults().update(kwargs)
+
+        with open(guest_info_file, 'w') as f:
+            config.write(f)
+
+        for key, value in kwargs.items():
+            CONF.set_override(key, value)

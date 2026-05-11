@@ -115,3 +115,37 @@
                 backup_wait_timeout: 1200
                 enabled_datastores: "postgresql"
                 default_datastore_versions: postgresql:18
+
+- job:
+    name: trove-tempest-ubuntu-ssl-postgresql
+    parent: trove-tempest-ubuntu-ssl-base
+    files: !inherit
+      - ^trove/guestagent/.*postgresql.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: postgresql
+          TROVE_DATASTORE_VERSION: 18
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                enabled_datastores: "postgresql"
+                default_datastore_versions: postgresql:18
+
+- job:
+    name: trove-tempest-ubuntu-ssl-replication-postgresql
+    parent: trove-tempest-ubuntu-ssl-replication
+    files: !inherit
+      - ^trove/guestagent/.*postgresql.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: postgresql
+          TROVE_DATASTORE_VERSION: 18
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                enabled_datastores: "postgresql"
+                default_datastore_versions: postgresql:18

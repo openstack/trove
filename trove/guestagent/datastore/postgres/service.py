@@ -11,12 +11,12 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-from collections import OrderedDict
 import os
 
 from oslo_log import log as logging
 import psycopg2
 
+from collections import OrderedDict
 from trove.common import cfg
 from trove.common import constants
 from trove.common.db.postgresql import models
@@ -35,6 +35,7 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 SUPER_USER_NAME = "postgres"
+REPLICATION_USER = 'replicator'
 CONFIG_FILE = "/etc/postgresql/postgresql.conf"
 CNF_EXT = 'conf'
 # The same with include_dir config option
@@ -94,7 +95,8 @@ class PgSqlApp(service.BaseDbApp):
         cmd = f"pg_ctl reload -D {self.datadir}"
         docker_util.run_command(self.docker_client, cmd)
 
-    def apply_access_rules(self):
+    def apply_access_rules(self, ssl=False, mtls=False,
+                           replication_user=None):
         """PostgreSQL Client authentication settings
 
         The order of entries is important. The first failure to authenticate
@@ -103,18 +105,34 @@ class PgSqlApp(service.BaseDbApp):
         """
         LOG.debug("Applying client authentication access rules.")
 
+        host_d = 'hostssl' if ssl else 'host'
+        if mtls:
+            auth_method = ['cert', 'clientcert=verify-full']
+        else:
+            auth_method = ['md5']
+
+        host_rules = [
+            ['all', SUPER_USER_NAME, '127.0.0.1/32', 'trust'],
+            ['all', SUPER_USER_NAME, '::1/128', 'trust'],
+            ['all', SUPER_USER_NAME, 'localhost', 'trust'],
+            ['all', SUPER_USER_NAME, '0.0.0.0/0', 'reject'],
+            ['all', SUPER_USER_NAME, '::/0', 'reject'],
+            ['all', 'all', '0.0.0.0/0', *auth_method],
+            ['all', 'all', '::/0', *auth_method],
+        ]
+        if replication_user:
+            host_rules.extend([
+                ['replication', replication_user, '0.0.0.0/0', 'md5'],
+                ['replication', replication_user, '::/0', 'md5'],
+            ])
+
         access_rules = OrderedDict(
             [('local', [['all', SUPER_USER_NAME, None, 'trust'],
                         ['replication', SUPER_USER_NAME, None, 'trust'],
                         ['all', 'all', None, 'md5']]),
-             ('host', [['all', SUPER_USER_NAME, '127.0.0.1/32', 'trust'],
-                       ['all', SUPER_USER_NAME, '::1/128', 'trust'],
-                       ['all', SUPER_USER_NAME, 'localhost', 'trust'],
-                       ['all', SUPER_USER_NAME, '0.0.0.0/0', 'reject'],
-                       ['all', SUPER_USER_NAME, '::/0', 'reject'],
-                       ['all', 'all', '0.0.0.0/0', 'md5'],
-                       ['all', 'all', '::/0', 'md5']])
+             (host_d, host_rules)
              ])
+
         operating_system.write_file(
             HBA_CONFIG_FILE, access_rules,
             stream_codecs.PropertiesCodec(string_mappings={'\t': None}),

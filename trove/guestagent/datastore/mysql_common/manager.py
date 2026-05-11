@@ -24,6 +24,7 @@ from trove.common import configurations
 from trove.common import constants
 from trove.common import exception
 from trove.common.notification import EndNotification
+from trove.common import ssl
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
@@ -272,6 +273,11 @@ class MySqlManager(manager.Manager):
             if 'replication_strategy' in replica_info:
                 self._validate_slave_for_replication(context, replica_info)
 
+            if 'cert_container' in replica_info and \
+               'ssl_mode' in replica_info:
+                self.enable_ssl_certificate(
+                    replica_info['ssl_mode'], replica_info['cert_container'],
+                    is_startup=True)
             self.replication.enable_as_slave(self.app, replica_info,
                                              slave_config)
         except Exception as err:
@@ -322,6 +328,12 @@ class MySqlManager(manager.Manager):
             self.app.configuration_manager.reset_configuration(config_contents)
             self.app.update_overrides(config_overrides)
 
+            if self.ssl_mode_at_least(CONF.ssl_mode, ssl.MODE_BASIC):
+                cert_container = self._read_ssl_files()
+                self.enable_ssl_certificate(
+                    CONF.ssl_mode, cert_container,
+                    apply_overrides=False, is_startup=True)
+
             # Start database service.
             command = self.get_start_db_params(data_dir)
             self.app.start_db(ds_version=ds_version, command=command)
@@ -344,3 +356,98 @@ class MySqlManager(manager.Manager):
             LOG.error("Run post_create_backup failed, error: %s" % str(e))
 
         return {}
+
+    def _get_default_tls_versions(self):
+        raise Exception('not implemented')
+
+    def _get_ssl_files(self):
+        datadir = self.app.get_data_dir()
+        return {
+            "private_key": f"{datadir}/server-key.pem",
+            "certificate": f"{datadir}/server-cert.pem",
+            "ca": f"{datadir}/ca.pem"
+        }
+
+    def _get_enable_ssl_overrides(self):
+        files = self._get_ssl_files()
+        return {
+            'ssl_cert': files['certificate'],
+            'ssl_key': files['private_key'],
+            'ssl_ca': files['ca'],
+            'tls_version': self._get_default_tls_versions()
+        }
+
+    def _get_enable_client_ssl_overrides(self):
+        return {'ssl': 'on'}
+
+    def _enable_ssl_certificate_impl(self, mode, apply_overrides=True):
+        overrides = self._get_enable_ssl_overrides()
+        self.app.update_overrides(overrides)
+
+        client_overrides = self._get_enable_client_ssl_overrides()
+        self.app.update_client_overrides(client_overrides)
+
+        if apply_overrides:
+            self.adm.set_users_access_mode(mode)
+
+        self.status.set_status(
+            service_status.ServiceStatuses.RESTART_REQUIRED)
+
+        # Restart is required
+        return True
+
+    def _get_disable_ssl_overrides(self):
+        return {
+            'ssl_cert': '',
+            'ssl_key': '',
+            'ssl_ca': '',
+            # The only reliable way to disable SSL is to unset tls_version.
+            'tls_version': ''
+        }
+
+    def _get_disable_client_ssl_overrides(self):
+        return {'ssl': 'off'}
+
+    def _disable_ssl_certificate_impl(self, apply_overrides=True):
+        overrides = self._get_disable_ssl_overrides()
+        self.app.update_overrides(overrides)
+
+        client_overrides = self._get_disable_client_ssl_overrides()
+        self.app.update_client_overrides(client_overrides)
+
+        self.status.set_status(
+            service_status.ServiceStatuses.RESTART_REQUIRED)
+
+        # Restart is required
+        return True
+
+    def _get_ssl_cert(self):
+        result = self.app.execute_sql(
+            'SHOW VARIABLES LIKE "ssl_cert"')
+        return result.first()._mapping['Value']
+
+    def _get_tls_version(self):
+        result = self.app.execute_sql(
+            'SHOW VARIABLES LIKE "tls_version"')
+        return result.first()._mapping['Value']
+
+    def show_ssl_status(self):
+        tls_version = self._get_tls_version()
+        ssl_cert = self._get_ssl_cert()
+
+        if tls_version and ssl_cert:
+            if not os.path.isabs(ssl_cert):
+                ssl_cert = os.path.join(
+                    self.app.get_data_dir(),
+                    ssl_cert)
+
+            certificate = operating_system.read_file(
+                ssl_cert,
+                as_root=True)
+
+            return {
+                'status': 'on',
+                'certificate': certificate
+            }
+
+        return {'status': 'off'}

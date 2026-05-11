@@ -1,0 +1,6 @@
+{
+    "ssl": {
+        "status": "off",
+        "restart_required": true
+    }
+}

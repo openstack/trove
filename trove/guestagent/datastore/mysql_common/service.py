@@ -29,6 +29,7 @@ from trove.common import constants
 from trove.common.db.mysql import models
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import ssl
 from trove.common import utils
 from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import ImportOverrideStrategy
@@ -397,6 +398,61 @@ class BaseMySqlAdmin(object, metaclass=abc.ABCMeta):
         user = self._get_user(username, hostname)
         return user.databases
 
+    def set_users_access_mode(self, mode):
+        """Set access mode for all non-system users.
+
+        Modes:
+            - basic: no SSL requirement
+            - enforced: REQUIRE SSL
+            - mtls: REQUIRE X509
+        """
+        if mode not in (ssl.MODE_BASIC,
+                        ssl.MODE_ENFORCED, ssl.MODE_MTLS):
+            raise exception.BadRequest(
+                _("Unknown access mode: %s") % mode
+            )
+
+        LOG.info("Setting users access mode to '%s'", mode)
+
+        with mysql_util.SqlClient(
+                self.mysql_app.get_engine(), use_flush=True) as client:
+
+            # Get all users except system ones
+            q = sql_query.Query()
+            q.columns = ['User', 'Host']
+            q.tables = ['mysql.user']
+            q.where = ["Host != 'localhost'"]
+            t = text(str(q))
+            result = client.execute(t).fetchall()
+
+            for row in result:
+                username = row._mapping['User']
+                host = row._mapping['Host']
+
+                # Skip system users
+                if username in ['root', 'os_admin', 'exporter']:
+                    continue
+                if username.startswith('slave_'):
+                    continue
+
+                try:
+                    user = models.MySQLUser(name=username, host=host)
+                    user.check_reserved()
+                except ValueError:
+                    # skip invalid/reserved users
+                    continue
+
+                # Build ALTER USER statement
+                if mode == ssl.MODE_BASIC:
+                    stmt = f"ALTER USER '{username}'@'{host}' REQUIRE NONE"
+                elif mode == ssl.MODE_ENFORCED:
+                    stmt = f"ALTER USER '{username}'@'{host}' REQUIRE SSL"
+                elif mode == ssl.MODE_MTLS:
+                    stmt = f"ALTER USER '{username}'@'{host}' REQUIRE X509"
+
+                LOG.debug("Altering user access mode: %s", stmt)
+                client.execute(text(stmt))
+
 
 class BaseMySqlApp(service.BaseDbApp):
     _configuration_manager = None
@@ -527,6 +583,11 @@ class BaseMySqlApp(service.BaseDbApp):
         if overrides:
             self.configuration_manager.apply_user_override(
                 {MySQLConfParser.SERVER_CONF_SECTION: overrides})
+
+    def update_client_overrides(self, overrides):
+        if overrides:
+            self.configuration_manager.apply_user_override(
+                {MySQLConfParser.CLIENT_CONF_SECTION: overrides})
 
     def apply_overrides(self, overrides):
         with mysql_util.SqlClient(self.get_engine()) as client:

@@ -45,7 +45,7 @@ class API(object):
 
     # API_LATEST_VERSION should bump the minor number each time
     # a method signature is added or changed
-    API_LATEST_VERSION = '1.2'
+    API_LATEST_VERSION = '1.3'
 
     # API_BASE_VERSION should only change on major version upgrade
     API_BASE_VERSION = '1.0'
@@ -60,6 +60,7 @@ class API(object):
         'ussuri': '1.0',
         'victoria': '1.1',
         'epoxy': '1.2',
+        'hibiscus': '1.3',
 
         'latest': API_LATEST_VERSION
     }
@@ -662,6 +663,41 @@ class API(object):
                           version=version, log_name=log_name,
                           enable=enable, disable=disable,
                           publish=publish, discard=discard)
+
+    def ssl_show(self):
+        LOG.debug("Showing SSL guest status for %s.", self.id)
+        version = '1.3'
+        if not self.client.can_send_version(version):
+            raise exception.GuestError(
+                original_message=("Operation requires guest version %s or "
+                                  "later" % version))
+
+        result = self._call("ssl_show", self.agent_high_timeout,
+                            version=version)
+        return result
+
+    def ssl_action(self, mode, container, enable, disable):
+        LOG.debug("Executing SSL action for %s.", self.id)
+        version = '1.3'
+        if not self.client.can_send_version(version):
+            raise exception.GuestError(
+                original_message=("Operation requires guest version %s or "
+                                  "later" % version))
+
+        return self._call("ssl_action", self.agent_high_timeout,
+                          version=version, mode=mode, container=container,
+                          enable=enable, disable=disable)
+
+    def ssl_rollback(self):
+        LOG.debug("Rolling back SSL configuration for %s.", self.id)
+        version = '1.3'
+        if not self.client.can_send_version(version):
+            raise exception.GuestError(
+                original_message=("Operation requires guest version %s or "
+                                  "later" % version))
+
+        return self._call("ssl_rollback", self.agent_high_timeout,
+                          version=version)
 
     def module_list(self, include_contents):
         LOG.debug("Querying modules on %s (contents: %s).",

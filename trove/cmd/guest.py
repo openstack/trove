@@ -37,6 +37,8 @@ CONF.register_opts([
     openstack_cfg.BoolOpt('network_isolation',
                           help='whether to plug user defined '
                           'port to database container'),
+    openstack_cfg.StrOpt('ssl_mode', default=None,
+                         help='Current SSL enabled mode.'),
     openstack_cfg.StrOpt('replication_strategy',
                          default='trove.guestagent.strategies.replication.'
                          'mysql_gtid.MysqlGTIDReplication',

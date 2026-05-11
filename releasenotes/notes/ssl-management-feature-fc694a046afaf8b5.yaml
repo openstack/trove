@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    SSL/TLS certificate management for securing the client-server channel.
+    The PKCS#12 container and credentials are stored in Barbican.
+    Available modes are basic, enforced, and mTLS. See the documentation for more information.

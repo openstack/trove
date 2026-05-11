@@ -502,3 +502,411 @@ class TestInstanceController(trove_testtools.TestCase):
 
         ins.attach_configuration.assert_called_once_with('fake_config_id')
         ins.detach_configuration.assert_not_called()
+
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_show_calls_guest_agent(self, load_mock, guest_client_mock):
+        ins_mock = MagicMock()
+        ins_mock.tenant_id = 'tenant123'
+        ins_mock.db_info.ssl_mode = 'basic'
+        load_mock.return_value = ins_mock
+
+        guest_mock = MagicMock()
+        guest_client_mock.return_value = guest_mock
+        guest_mock.ssl_show.return_value = {
+            'status': 'on'}
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        result = self.controller.ssl_show(req, 'fake_tenant', 'fake_id')
+
+        load_mock.assert_called_once_with(self.context, 'fake_id')
+        guest_client_mock.assert_called_once_with(self.context, 'fake_id')
+        guest_mock.ssl_show.assert_called_once_with()
+        self.assertEqual({'ssl': {'status': 'on', 'mode': 'basic'}},
+                         result.data('application/json'))
+
+    @mock.patch('trove.common.ssl.TroveSSL.register_consumer')
+    @mock.patch('trove.common.ssl.TroveSSL.get_p12_bundle')
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_action_calls_guest_agent_enable(
+            self, load_mock, guest_client_mock, get_bundle_mock,
+            register_consumer_mock):
+        ins_mock = MagicMock()
+        ins_mock.tenant_id = 'tenant123'
+        ins_mock.db_info = MagicMock()
+        ins_mock.db_info.ssl_ref = None
+        ins_mock.db_info.ssl_mode = None
+        ins_mock.slave_of_id = None
+        ins_mock.slaves = []
+        load_mock.return_value = ins_mock
+
+        guest_mock = MagicMock()
+        guest_client_mock.return_value = guest_mock
+        guest_mock.ssl_action.return_value = {'status': 'disabled'}
+
+        get_bundle_mock.return_value = {
+            'private_key': 'key',
+            'certificate': 'cert',
+            'ca': 'ca'
+        }
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        body = {'ssl': {
+            'enable': True,
+            'container_ref': 'container_ref'}}
+        result = self.controller.ssl_action(req, body,
+                                            'fake_tenant', 'fake_id')
+
+        load_mock.assert_called_once_with(self.context, 'fake_id')
+        guest_client_mock.assert_called_once_with(self.context, 'fake_id')
+        get_bundle_mock.assert_called_once_with('container_ref', None)
+
+        guest_mock.ssl_action.assert_called_once_with(
+            'basic',
+            get_bundle_mock.return_value,
+            True,
+            None
+        )
+        register_consumer_mock.assert_called_once()
+        self.assertEqual({'ssl': {'status': 'disabled'}},
+                         result.data('application/json'))
+
+    @mock.patch.object(InstanceController, 'authorize_instance_action')
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_action_enable_and_disable_raises(
+            self, load_mock, guest_client_mock, authorize_mock):
+        instance = MagicMock()
+        instance.tenant_id = 'tenant123'
+        load_mock.return_value = instance
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        body = {'ssl': {'enable': True, 'disable': True}}
+
+        self.assertRaises(
+            exception.BadRequest,
+            self.controller.ssl_action,
+            req, body, 'fake_tenant', 'fake_id'
+        )
+
+        load_mock.assert_called_once_with(self.context, 'fake_id')
+        guest_client_mock.assert_called_once_with(self.context, 'fake_id')
+        authorize_mock.assert_called_once_with(
+            self.context, 'update', instance)
+
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_action_against_replica_raises(
+            self, load_mock, guest_client_mock):
+        ins_mock = MagicMock()
+        ins_mock.tenant_id = 'tenant123'
+        ins_mock.db_info = MagicMock()
+        ins_mock.db_info.ssl_ref = None
+        ins_mock.db_info.ssl_mode = None
+        ins_mock.slave_of_id = 'tenant234'
+        load_mock.return_value = ins_mock
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        body = {'ssl': {
+            'enable': True,
+            'container_ref': 'container_ref'}}
+
+        self.assertRaises(
+            exception.BadRequest,
+            self.controller.ssl_action,
+            req, body, 'fake_tenant', 'fake_id'
+        )
+
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_show_include_certificate_flag(
+            self, load_mock, guest_client_mock):
+        ins_mock = MagicMock()
+        ins_mock.tenant_id = 'tenant123'
+        ins_mock.db_info.ssl_mode = 'basic'
+        load_mock.return_value = ins_mock
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        test_cases = [
+            {
+                'name': 'parameter is not set',
+                'query': {},
+                'expect_payload': False,
+            },
+            {
+                'name': 'include_certificate=1',
+                'query': {'include_certificate': '1'},
+                'expect_payload': True,
+            },
+            {
+                'name': 'include_certificate=false',
+                'query': {'include_certificate': 'false'},
+                'expect_payload': False,
+            },
+            {
+                'name': 'include_certificate=true',
+                'query': {'include_certificate': 'true'},
+                'expect_payload': True,
+            },
+        ]
+
+        for case in test_cases:
+            guest_mock = MagicMock()
+            guest_client_mock.return_value = guest_mock
+
+            guest_mock.ssl_show.return_value = {
+                'status': 'on',
+                'certificate': {
+                    'name': 'server-cert',
+                    'payload': 'secret-cert-data'
+                }
+            }
+
+            req.GET = case['query']
+
+            result = self.controller.ssl_show(
+                req, 'fake_tenant', 'fake_id')
+
+            expected_certificate = {
+                'name': 'server-cert'
+            }
+
+            if case['expect_payload']:
+                expected_certificate['payload'] = 'secret-cert-data'
+
+            self.assertEqual(
+                {'ssl': {
+                    'status': 'on',
+                    'mode': 'basic',
+                    'certificate': expected_certificate
+                }},
+                result.data('application/json'),
+                case['name']
+            )
+
+    @mock.patch('trove.common.ssl.TroveSSL.remove_consumer')
+    @mock.patch('trove.common.ssl.TroveSSL.register_consumer')
+    @mock.patch('trove.common.ssl.TroveSSL.get_p12_bundle')
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_action_rolls_back_metadata_on_guest_failure(
+            self,
+            load_mock,
+            guest_client_mock,
+            get_bundle_mock,
+            register_consumer_mock,
+            remove_consumer_mock):
+
+        instance = MagicMock()
+        instance.id = 'instance-id'
+        instance.slave_of_id = None
+        instance.slaves = []
+        instance.db_info.ssl_mode = None
+        instance.db_info.ssl_ref = None
+        load_mock.return_value = instance
+
+        guest = MagicMock()
+        guest.ssl_action.side_effect = RuntimeError('guest failure')
+        guest_client_mock.return_value = guest
+
+        get_bundle_mock.return_value = 'fake-container'
+        register_consumer_mock.return_value = None
+        remove_consumer_mock.return_value = None
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        body = {
+            'ssl': {
+                'enable': True,
+                'mode': 'basic',
+                'container_ref': 'container-ref'
+            }
+        }
+
+        # The controller should re-raise the RuntimeError after rollback
+        self.assertRaises(
+            RuntimeError,
+            self.controller.ssl_action,
+            req,
+            body,
+            'tenant-id',
+            'instance-id'
+        )
+
+        # Verify register_consumer was called before the failure
+        register_consumer_mock.assert_called_once_with(
+            'container-ref',
+            'instance',
+            'instance-id'
+        )
+
+        # Verify rollback logic: remove_consumer should be called on failure
+        remove_consumer_mock.assert_called_once_with(
+            'container-ref',
+            'instance',
+            'instance-id'
+        )
+
+        # Verify metadata rollback:
+        # The wrapper should have reset these to None after the guest failure
+        self.assertIsNone(instance.db_info.ssl_mode)
+        self.assertIsNone(instance.db_info.ssl_ref)
+
+        # Verify saves were executed (one for the initial update, one for
+        # rollback)
+        self.assertGreaterEqual(instance.db_info.save.call_count, 2)
+
+    @mock.patch('trove.common.ssl.TroveSSL.register_consumer')
+    @mock.patch('trove.common.ssl.TroveSSL.get_p12_bundle')
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_action_success_applies_metadata_and_calls_guest(
+            self,
+            load_mock,
+            guest_client_mock,
+            get_bundle_mock,
+            register_consumer_mock):
+
+        instance = MagicMock()
+        instance.id = 'instance-id'
+        instance.slave_of_id = None
+        instance.slaves = []
+
+        # Initial DB state (No SSL yet)
+        instance.db_info.ssl_mode = None
+        instance.db_info.ssl_ref = None
+
+        load_mock.return_value = instance
+
+        guest = MagicMock()
+        guest.ssl_action.return_value = {'status': 'enabled'}
+        guest_client_mock.return_value = guest
+
+        get_bundle_mock.return_value = 'fake-container'
+        # register_consumer returns None by default, simulating success
+
+        # --- 4. Execute Test ---
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+
+        body = {
+            'ssl': {
+                'enable': True,
+                'mode': 'basic',
+                'container_ref': 'container-ref'
+            }
+        }
+
+        result = self.controller.ssl_action(
+            req, body, 'tenant-id', 'instance-id'
+        )
+
+        # Verify the Guest Agent was called with data from our get_bundle mock
+        guest.ssl_action.assert_called_once_with(
+            'basic',
+            'fake-container',
+            True,
+            None
+        )
+
+        # Verify the wrapper updated the Database state correctly
+        self.assertEqual('basic', instance.db_info.ssl_mode)
+        self.assertEqual('container-ref', instance.db_info.ssl_ref)
+
+        # Verify Barbican interaction was triggered by the real wrapper
+        register_consumer_mock.assert_called_once_with(
+            'container-ref',
+            'instance',
+            'instance-id'
+        )
+
+        # Ensure the changes were actually persisted to the DB
+        instance.db_info.save.assert_called()
+
+        # Check response structure
+        self.assertEqual(
+            {'ssl': {'status': 'enabled'}},
+            result.data('application/json')
+        )
+
+    @mock.patch('trove.instance.service.ssl.run_ssl_state_transaction')
+    @mock.patch('trove.common.ssl.TroveSSL.get_p12_bundle')
+    @mock.patch('trove.instance.service.clients.create_guest_client')
+    @mock.patch('trove.instance.models.Instance.load')
+    def test_ssl_action_passes_guest_actions_to_transaction(
+            self, load_mock, guest_client_mock, get_bundle_mock,
+            transaction_mock):
+        instance = MagicMock()
+        instance.id = 'instance-id'
+        instance.slave_of_id = None
+        instance.slaves = [MagicMock(id='replica-id')]
+
+        replica = MagicMock()
+        replica.id = 'replica-id'
+        load_mock.side_effect = [instance, replica]
+
+        primary_guest = MagicMock()
+        replica_guest = MagicMock()
+        guest_client_mock.side_effect = [primary_guest, replica_guest]
+        primary_guest.ssl_action.return_value = {'status': 'enabled'}
+        get_bundle_mock.return_value = 'certificate-bundle'
+
+        guest_calls = MagicMock()
+        guest_calls.attach_mock(primary_guest, 'primary')
+        guest_calls.attach_mock(replica_guest, 'replica')
+
+        def run_transaction(ssl_client, instances, mode, container_ref,
+                            enable, disable, execute, rollback):
+            self.assertEqual([instance, replica], instances)
+            self.assertEqual('enforced', mode)
+            self.assertEqual('container-ref', container_ref)
+            self.assertTrue(enable)
+            self.assertIsNone(disable)
+
+            result = execute()
+            rollback()
+            return result
+
+        transaction_mock.side_effect = run_transaction
+
+        req = MagicMock()
+        req.environ = {'trove.context': self.context}
+        body = {
+            'ssl': {
+                'enable': True,
+                'mode': 'enforced',
+                'container_ref': 'container-ref'
+            }
+        }
+
+        result = self.controller.ssl_action(
+            req, body, 'tenant-id', 'instance-id')
+
+        transaction_mock.assert_called_once()
+        self.assertEqual(
+            [
+                mock.call.primary.ssl_action(
+                    'enforced', 'certificate-bundle', True, None),
+                mock.call.replica.ssl_action(
+                    'enforced', 'certificate-bundle', True, None),
+                mock.call.replica.ssl_rollback(),
+                mock.call.primary.ssl_rollback(),
+            ],
+            guest_calls.mock_calls
+        )
+        self.assertEqual(
+            {'ssl': {'status': 'enabled'}},
+            result.data('application/json')
+        )

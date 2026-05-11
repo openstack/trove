@@ -19,3 +19,4 @@ handling complex administrative tasks.
    upgrade-datastore.rst
    set-up-clustering.rst
    upgrade-cluster-datastore.rst
+   ssl/index

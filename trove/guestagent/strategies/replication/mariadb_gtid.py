@@ -104,6 +104,17 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
                 'user': replica_conf['replication_user']['name'],
                 'password': replica_conf['replication_user']['password']
             })
+
+        if 'cert_container' in master_info and \
+           'ssl_mode' in master_info:
+            change_master_cmd = change_master_cmd + (
+                ", MASTER_SSL_VERIFY_SERVER_CERT=1"
+                ", MASTER_SSL=1")
+        else:
+            change_master_cmd = change_master_cmd + (
+                ", MASTER_SSL_VERIFY_SERVER_CERT=0"
+                ", MASTER_SSL=0")
+
         service.execute_sql(change_master_cmd)
 
         service.start_slave()
