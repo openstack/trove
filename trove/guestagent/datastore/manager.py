@@ -361,7 +361,8 @@ class Manager(periodic_task.PeriodicTasks):
 
     def upgrade(self, context, upgrade_info):
         """Upgrade the database."""
-        pass
+        raise exception.DatastoreOperationNotSupported(
+            operation='upgrade', datastore=self.manager)
 
     def post_upgrade(self, context, upgrade_info):
         """Recovers the guest after the image is upgraded using information

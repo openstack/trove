@@ -537,7 +537,6 @@ class InstanceController(wsgi.Controller):
             if datastore_version.name == instance.ds_version.name:
                 LOG.warning(f"Same datastore version {datastore_version.name} "
                             f"for upgrading")
-                return
 
             context.notification = (
                 notification.DBaaSInstanceUpgrade(context, request=req))
