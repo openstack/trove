@@ -16,7 +16,7 @@
       - ^backup/
       - ^\..+
       - ^trove/guestagent/strategies/replication/
-      - ^trove/guestagent/datastore/(mysql.*|mariadb)/.*$
+      - ^trove/guestagent/datastore/(mysql.*|mariadb|valkey|keydb)/.*$
       - ^trove/tests/.*$
     vars:
         devstack_localrc:
@@ -44,7 +44,7 @@
       - ^contrib/
       - ^\..+
       - ^trove/guestagent/strategies/replication/
-      - ^trove/guestagent/datastore/(mysql.*|mariadb)/.*$
+      - ^trove/guestagent/datastore/(mysql.*|mariadb|valkey|keydb)/.*$
       - ^trove/tests/.*$
     vars:
         devstack_localrc:
@@ -72,8 +72,8 @@
       - ^contrib/
       - ^backup/
       - ^\..+
-      - ^trove/guestagent/datastore/(mysql.*|mariadb)/.*$
-      - ^trove/guestagent/strategies/replication/(mariadb.*|mysql.*)\.py$
+      - ^trove/guestagent/datastore/(mysql.*|mariadb|valkey|keydb)/.*$
+      - ^trove/guestagent/strategies/replication/(mariadb.*|mysql.*|valkey.*|keydb.*)\.py$
       - ^trove/tests/.*$
     vars:
         devstack_localrc:
@@ -101,8 +101,8 @@
       - ^contrib/
       - ^backup/
       - ^\..+
-      - ^trove/guestagent/datastore/(mysql|mariadb)/.*$
-      - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*)\.py$
+      - ^trove/guestagent/datastore/(mysql|mariadb|valkey|keydb)/.*$
+      - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*|valkey.*|keydb.*)\.py$
       - ^trove/tests/.*$
     vars:
         devstack_localrc:

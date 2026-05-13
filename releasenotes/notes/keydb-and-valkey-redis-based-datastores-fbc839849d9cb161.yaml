@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    New KeyDB and Valkey, Redis-based datastores.
+    Original legacy "experimental" Redis implementation is untouched.

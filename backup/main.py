@@ -37,7 +37,8 @@ cli_opts = [
     cfg.StrOpt(
         'driver',
         default='innobackupex',
-        choices=['innobackupex', 'mariabackup', 'pg_basebackup', 'xtrabackup']
+        choices=['innobackupex', 'mariabackup', 'pg_basebackup', 'xtrabackup',
+                 'keydbbackup', 'valkeybackup']
     ),
     cfg.BoolOpt('backup'),
     cfg.StrOpt('swift-url'),
@@ -90,7 +91,9 @@ driver_mapping = {
     'pg_basebackup': 'backup.drivers.postgres.PgBasebackup',
     'pg_basebackup_inc': 'backup.drivers.postgres.PgBasebackupIncremental',
     'xtrabackup': 'backup.drivers.xtrabackup.XtraBackup',
-    'xtrabackup_inc': 'backup.drivers.xtrabackup.XtraBackupIncremental'
+    'xtrabackup_inc': 'backup.drivers.xtrabackup.XtraBackupIncremental',
+    'keydbbackup': 'backup.drivers.keydb.KeyDBBackup',
+    'valkeybackup': 'backup.drivers.valkey.ValkeyBackup',
 }
 storage_mapping = {
     'swift': 'backup.storage.swift.SwiftStorage',

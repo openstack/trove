@@ -1,0 +1,102 @@
+# keydb jobs
+- job:
+    name: trove-tempest-ubuntu-base-keydb
+    parent: trove-tempest-ubuntu-base
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(mysql.*|postgres|mariadb|valkey)/.*$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: keydb
+          TROVE_DATASTORE_VERSION: 6.3.3
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                enabled_datastores: "keydb"
+                default_datastore_versions: keydb:6.3.3
+
+- job:
+    name: trove-tempest-ubuntu-backup-keydb
+    parent: trove-tempest-ubuntu-backup
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(mysql.*|postgres|mariadb|valkey)/.*$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: keydb
+          TROVE_DATASTORE_VERSION: 6.3.3
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: keydb:6.3.3
+
+- job:
+    name: trove-tempest-ubuntu-replication-keydb
+    parent: trove-tempest-ubuntu-replication
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(mysql.*|postgres|mariadb|valkey)/.*$
+      - ^trove/guestagent/strategies/replication/(postgresql.*|mysql.*|mariadb.*|valkey.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: keydb
+          TROVE_DATASTORE_VERSION: 6.3.3
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: keydb:6.3.3
+
+- job:
+    name: trove-tempest-cinder-storage-driver-keydb
+    parent:  trove-tempest-snapshot
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(postgres|mariadb|mysql|valkey)/.*$
+      - ^trove/guestagent/strategies/replication/(postgresql.*|mysql.*|mariadb.*|valkey.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: keydb
+          TROVE_DATASTORE_VERSION: 6.3.3
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: keydb:6.3.3
+
+- job:
+    name: trove-tempest-ubuntu-ssl-keydb
+    parent: trove-tempest-ubuntu-ssl-base
+    files: !inherit
+      - ^trove/guestagent/.*keydb.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: keydb
+          TROVE_DATASTORE_VERSION: 6.3.3
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: keydb:6.3.3
+
+- job:
+    name: trove-tempest-ubuntu-ssl-replication-keydb
+    parent: trove-tempest-ubuntu-ssl-replication
+    files: !inherit
+      - ^trove/guestagent/.*keydb.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: keydb
+          TROVE_DATASTORE_VERSION: 6.3.3
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: keydb:6.3.3

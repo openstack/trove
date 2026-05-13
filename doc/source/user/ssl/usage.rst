@@ -124,3 +124,31 @@ The following guidance may help users operating production DBaaS:
 
 These recommendations are based on common production practices and may
 vary depending on organizational security policies.
+
+
+Valkey and KeyDB
+----------------
+
+Valkey and KeyDB support the same SSL modes as other datastores, but the
+listening ports depend on the selected mode:
+
+* ``basic``: plain connections are accepted on port ``6379``, while TLS
+  connections are accepted on port ``6380``.
+* ``enforced``: only TLS connections are accepted on port ``6379``. The
+  plain TCP listener is disabled.
+* ``mtls``: only TLS connections are accepted on port ``6379``, and clients
+  are required to provide a valid TLS certificate.
+
+The following table summarizes the port configuration:
+
++------------+------------+----------+
+| SSL mode   | Plain port | TLS port |
++============+============+==========+
+| ``basic``  | ``6379``   | ``6380`` |
++------------+------------+----------+
+|``enforced``| Disabled   | ``6379`` |
++------------+------------+----------+
+|  ``mtls``  | Disabled   | ``6379`` |
++------------+------------+----------+
+
+When SSL is disabled, plain connections are accepted on port ``6379``.

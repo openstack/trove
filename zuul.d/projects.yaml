@@ -45,6 +45,26 @@
             voting: false
         - trove-tempest-cinder-storage-driver-postgresql:
             voting: false
+        - trove-tempest-ubuntu-base-keydb
+        - trove-tempest-ubuntu-backup-keydb:
+            voting: false
+        - trove-tempest-ubuntu-ssl-keydb
+        - trove-tempest-ubuntu-ssl-replication-keydb:
+            voting: false
+        - trove-tempest-ubuntu-replication-keydb:
+            voting: false
+        - trove-tempest-cinder-storage-driver-keydb:
+            voting: false
+        - trove-tempest-ubuntu-base-valkey
+        - trove-tempest-ubuntu-backup-valkey:
+            voting: false
+        - trove-tempest-ubuntu-ssl-valkey
+        - trove-tempest-ubuntu-ssl-replication-valkey:
+            voting: false
+        - trove-tempest-ubuntu-replication-valkey:
+            voting: false
+        - trove-tempest-cinder-storage-driver-valkey:
+            voting: false
         - trove-tox-bandit-baseline
         - trove-ubuntu-guest-image-build
     gate:
@@ -52,6 +72,7 @@
         - trove-tempest-ubuntu-base-mysql
         - trove-tempest-ubuntu-base-mariadb
         - trove-tempest-ubuntu-base-postgresql
+        - trove-tempest-ubuntu-base-valkey
     experimental:
       jobs:
         - trove-tempest-ipv6-only

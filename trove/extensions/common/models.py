@@ -30,9 +30,16 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 
+EXTENSIONS_SUPPORTED_DATASTORES = ['mysql', 'mariadb', 'postgresql',
+                                   'keydb', 'valkey']
+
+# List of datastores supporting CRUD operations for databases
+SCHEMA_MANAGEMENT_SUPPORTED_DATASTORES = ['mysql', 'mariadb', 'postgresql']
+SCHEMA_VIEW_SUPPORTED_DATASTORES = EXTENSIONS_SUPPORTED_DATASTORES
+
 
 def load_and_verify(context, instance_id,
-                    enabled_datastore=['mysql', 'mariadb', 'postgresql']):
+                    enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES):
     """Check instance datastore.
 
     Some API operations are only supported for some specific datastores.
@@ -59,7 +66,7 @@ class Root(object):
     @classmethod
     def load(cls, context, instance_id):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         # TODO(pdmars): remove the is_root_enabled call from the guest agent,
         # just check the database for this information.
         # If the root history returns null or raises an exception, the root
@@ -79,7 +86,7 @@ class Root(object):
     def create(cls, context, instance_id, root_password,
                cluster_instances_list=None):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         if root_password:
             root = create_guest_client(context,
                                        instance_id).enable_root_with_password(
@@ -101,7 +108,7 @@ class Root(object):
     @classmethod
     def delete(cls, context, instance_id):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         create_guest_client(context, instance_id).disable_root()
 
         root_history = RootHistory.load(context, instance_id)
@@ -164,7 +171,7 @@ class RootHistory(object):
 def load_via_context(cls, context, instance_id):
     """Creates guest and fetches pagination arguments from the context."""
     load_and_verify(context, instance_id,
-                    enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                    enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
     limit = utils.pagination_limit(context.limit, cls.DEFAULT_LIMIT)
     client = create_guest_client(context, instance_id)
     # The REST API standard dictates that we *NEVER* include the marker.
@@ -190,7 +197,7 @@ class User(object):
     def load(cls, context, instance_id, username, hostname, root_user=False):
         instance = load_and_verify(
             context, instance_id,
-            enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+            enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         validate = guest_models.DatastoreUser(
             name=username, host=hostname,
             datastore_manager=instance.datastore_version.manager)
@@ -212,7 +219,7 @@ class User(object):
     def create(cls, context, instance_id, users, datastore_manager=None):
         # Load InstanceServiceStatus to verify if it's running
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         for user in users:
             user_name = user['_name']
@@ -234,7 +241,7 @@ class User(object):
     @classmethod
     def delete(cls, context, instance_id, user):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
 
         with StartNotification(context, instance_id=instance_id,
                                username=user):
@@ -243,7 +250,7 @@ class User(object):
     @classmethod
     def access(cls, context, instance_id, username, hostname):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         databases = client.list_access(username, hostname)
         dbs = []
@@ -256,21 +263,21 @@ class User(object):
     @classmethod
     def grant(cls, context, instance_id, username, hostname, databases):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         client.grant_access(username, hostname, databases)
 
     @classmethod
     def revoke(cls, context, instance_id, username, hostname, database):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         client.revoke_access(username, hostname, database)
 
     @classmethod
     def change_password(cls, context, instance_id, users):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=EXTENSIONS_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         change_users = []
         for user in users:
@@ -366,8 +373,9 @@ class Schema(object):
 
     @classmethod
     def create(cls, context, instance_id, schemas, datastore_manager=None):
-        load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+        load_and_verify(
+            context, instance_id,
+            enabled_datastore=SCHEMA_MANAGEMENT_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         for schema in schemas:
             schema_name = schema['_name']
@@ -384,8 +392,9 @@ class Schema(object):
 
     @classmethod
     def delete(cls, context, instance_id, schema):
-        load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+        load_and_verify(
+            context, instance_id,
+            enabled_datastore=SCHEMA_MANAGEMENT_SUPPORTED_DATASTORES)
         create_guest_client(context, instance_id).delete_database(schema)
 
 
@@ -420,7 +429,7 @@ class Schemas(object):
     @classmethod
     def find(cls, context, instance_id, schema_id, datastore_manager=None):
         load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+                        enabled_datastore=SCHEMA_VIEW_SUPPORTED_DATASTORES)
         client = create_guest_client(context, instance_id)
         model_schemas, _ = cls.load_with_client(
             client, 1, schema_id, True,

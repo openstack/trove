@@ -13,7 +13,7 @@ usage() {
 	echo "Usage : $(basename $0) [--datastore datastore] [--datastore-version datastore-version]"
 	echo ""
 	echo " Command parameters:"
-	echo "  'datastore' is the datastore. The options are: 'mariadb', 'mysql', 'postgresql'"
+	echo "  'datastore' is the datastore. The options are: 'mariadb', 'mysql', 'postgresql', 'keydb', 'valkey'"
 	echo "  'datastore-version' is the datastore version of the datastore."
 	echo ""
 	exit 1

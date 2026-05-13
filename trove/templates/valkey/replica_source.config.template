@@ -1,0 +1,2 @@
+repl-diskless-sync yes
+repl-diskless-sync-delay 10

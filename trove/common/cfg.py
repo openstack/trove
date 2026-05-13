@@ -420,6 +420,8 @@ common_opts = [
                          'percona': 'fd1723f5-68d2-409c-994f-a4a197892a17',
                          'pxc': '75a628c3-f81b-4ffb-b10a-4087c26bc854',
                          'redis': 'b216ffc5-1947-456c-a4cf-70f94c05f7d0',
+                         'keydb': '660f837d-ae0b-4eae-aa78-8ab80a64b0b8',
+                         'valkey': '6108c745-b3bf-4d70-bdbb-4c31128da66a',
                          'cassandra': '459a230d-4e97-4344-9067-2a54a310b0ed',
                          'couchbase': 'fa62fe68-74d9-4779-a24e-36f19602c415',
                          'mongodb': 'c8c907af-7375-456f-b929-b637ff9209ee',
@@ -861,6 +863,153 @@ redis_opts = [
                help='Character length of generated passwords.')
 ]
 
+
+# KeyDB / Valkey
+def _build_redis_family_datastore_opts(
+    datastore_name,
+    backup_strategy,
+    replication_strategy,
+    replication_namespace,
+    docker_image,
+):
+    group = cfg.OptGroup(
+        datastore_name,
+        title=f'{datastore_name.capitalize()} options',
+        help=f"Oslo option group designed for "
+             f"{datastore_name.capitalize()} datastore",
+    )
+
+    opts = [
+        cfg.StrOpt(
+            'database_service_uname',
+            default='database',
+            help='The name of database service user.',
+        ),
+        cfg.StrOpt(
+            'database_service_uid',
+            help='The UID of database service user.',
+        ),
+        cfg.StrOpt(
+            'database_service_gid',
+            help='The GID of database service user.',
+        ),
+        cfg.BoolOpt(
+            'icmp',
+            default=False,
+            help='Whether to permit ICMP.',
+            deprecated_for_removal=True,
+        ),
+        cfg.ListOpt(
+            'tcp_ports',
+            default=["6379", "6380"],
+            item_type=ListOfPortsType,
+            help='List of TCP ports and/or port ranges to open '
+                 'in the security group (only applicable '
+                 'if trove_security_groups_support is True).',
+        ),
+        cfg.ListOpt(
+            'udp_ports',
+            default=[],
+            item_type=ListOfPortsType,
+            help='List of UDP ports and/or port ranges to open '
+                 'in the security group (only applicable '
+                 'if trove_security_groups_support is True).',
+        ),
+        cfg.StrOpt(
+            'backup_strategy',
+            default=backup_strategy,
+            help='Default strategy to perform backups.',
+            deprecated_name='backup_strategy',
+            deprecated_group='DEFAULT',
+        ),
+        cfg.StrOpt(
+            'replication_strategy',
+            default=replication_strategy,
+            help='Default strategy for replication.',
+        ),
+        cfg.StrOpt(
+            'replication_namespace',
+            default=replication_namespace,
+            help='Namespace to load replication strategies from.',
+        ),
+        cfg.StrOpt(
+            'mount_point',
+            default=('/var/lib/%s' % datastore_name),
+            help='Filesystem path for mounting '
+                 'volumes if volume support is enabled.',
+        ),
+        cfg.BoolOpt(
+            'volume_support',
+            default=True,
+            help='Whether to provision a Cinder volume for datadir.',
+        ),
+        cfg.StrOpt(
+            'device_path',
+            default='/dev/vdb',
+            help='Device path for volume if volume support is enabled.',
+        ),
+        cfg.StrOpt(
+            'root_controller',
+            default='trove.extensions.common.service.DefaultRootController',
+            help='Root controller implementation for redis.'
+        ),
+        cfg.ListOpt(
+            'ignore_users',
+            default=['os_admin', 'default', 'replicator']
+        ),
+        cfg.StrOpt(
+            'guest_log_exposed_logs',
+            default='',
+            help='List of Guest Logs to expose for publishing.',
+        ),
+        cfg.IntOpt(
+            'default_password_length',
+            default=36,
+            help='Character length of generated passwords.',
+        ),
+        cfg.ListOpt(
+            'user_acl_categories',
+            default=["+@read", "+@write", "+@keyspace", "+@connection"],
+            help='ACL groups list applied for non-root users'
+        ),
+        cfg.StrOpt(
+            'docker_image',
+            default=docker_image,
+            help='Database docker image.',
+        ),
+        cfg.StrOpt(
+            'backup_docker_image',
+            sample_default=(
+                'your-registry/your-repo/db-backup-'
+                f'{datastore_name}'
+            ),
+            help='The docker image used for backup and restore.',
+        ),
+    ]
+
+    return group, opts
+
+
+keydb_group, keydb_opts = _build_redis_family_datastore_opts(
+    datastore_name='keydb',
+    backup_strategy='keydbbackup',
+    replication_strategy='KeyDBSyncReplication',
+    replication_namespace=(
+        'trove.guestagent.strategies.replication.keydb'
+    ),
+    docker_image='eqalpha/keydb',
+)
+
+
+valkey_group, valkey_opts = _build_redis_family_datastore_opts(
+    datastore_name='valkey',
+    backup_strategy='valkeybackup',
+    replication_strategy='ValKeySyncReplication',
+    replication_namespace=(
+        'trove.guestagent.strategies.replication.valkey'
+    ),
+    docker_image='valkey/valkey',
+)
 
 # Cassandra
 cassandra_group = cfg.OptGroup(
@@ -1623,6 +1772,8 @@ CONF.register_group(mysql_group)
 CONF.register_group(percona_group)
 CONF.register_group(pxc_group)
 CONF.register_group(redis_group)
+CONF.register_group(keydb_group)
+CONF.register_group(valkey_group)
 CONF.register_group(cassandra_group)
 CONF.register_group(couchbase_group)
 CONF.register_group(mongodb_group)
@@ -1639,6 +1790,8 @@ CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
 CONF.register_opts(pxc_opts, pxc_group)
 CONF.register_opts(redis_opts, redis_group)
+CONF.register_opts(keydb_opts, keydb_group)
+CONF.register_opts(valkey_opts, valkey_group)
 CONF.register_opts(cassandra_opts, cassandra_group)
 CONF.register_opts(couchbase_opts, couchbase_group)
 CONF.register_opts(mongodb_opts, mongodb_group)

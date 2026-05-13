@@ -36,7 +36,7 @@ reliable options. Other datastores not included in the matrix may still function
 but they haven't undergone full testing.
 
 .. list-table:: Supported Databases by OpenStack Release
-   :widths: 20 4 4 4 4 4 4 4 4 4 4
+   :widths: 20 4 4 4 4 4 4 4 4 4 4 4 4
    :header-rows: 2
 
    * - OpenStack Release
@@ -50,6 +50,8 @@ but they haven't undergone full testing.
      -
      - MariaDB
      -
+     - KeyDB
+     - Valkey
    * -
      - 12
      - 16
@@ -61,6 +63,8 @@ but they haven't undergone full testing.
      - 10.4
      - 11.4
      - 11.8
+     - 6.3.3
+     - 9
    * - 2026.2 Hibiscus
      - ✘
      - ✔
@@ -70,6 +74,8 @@ but they haven't undergone full testing.
      - ✔
      - ✔
      - ✘
+     - ✔
+     - ✔
      - ✔
      - ✔
    * - 2026.1 Gazpacho
@@ -83,6 +89,8 @@ but they haven't undergone full testing.
      - ✘
      - ✔
      - ✔
+     - ✘
+     - ✘
    * - 2025.2 Flamingo
      - ✘
      - ✔
@@ -94,6 +102,8 @@ but they haven't undergone full testing.
      - ✘
      - ✔
      - ✔
+     - ✘
+     - ✘
    * - 2025.1 Epoxy
      - ✔
      - ✘
@@ -103,6 +113,8 @@ but they haven't undergone full testing.
      - ✘
      - ✘
      - ✔
+     - ✘
+     - ✘
      - ✘
      - ✘
 
