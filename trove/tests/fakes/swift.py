@@ -103,10 +103,11 @@ class FakeSwiftConnection(object):
     def head_object(self, container, name):
         LOG.debug("fake put_container(%(container)s, %(name)s)",
                   {'container': container, 'name': name})
-        checksum = md5()
+        checksum = md5(usedforsecurity=False)
         if self.manifest_name == name:
             for object_name in sorted(self.container_objects):
-                object_checksum = md5(self.container_objects[object_name])
+                object_checksum = md5(
+                    self.container_objects[object_name], usedforsecurity=False)
                 # The manifest file etag for a HEAD or GET is the checksum of
                 # the concatenated checksums.
                 checksum.update(object_checksum.hexdigest().encode())
@@ -167,7 +168,7 @@ class FakeSwiftConnection(object):
             raise socket.error(111, 'ECONNREFUSED')
         headers = kwargs.get('headers', {})
         query_string = kwargs.get('query_string', '')
-        object_checksum = md5()
+        object_checksum = md5(usedforsecurity=False)
         if query_string == self.MANIFEST_QUERY_STRING_PUT:
             # the manifest prefix format is <container>/<prefix> where
             # container is where the object segments are in and prefix is the
