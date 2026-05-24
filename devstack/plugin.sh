@@ -284,13 +284,8 @@ function configure_trove {
     iniset $TROVE_CONF DEFAULT controller_address ${SERVICE_HOST}
 
     configure_keystone_authtoken_middleware $TROVE_CONF trove
-    iniset $TROVE_CONF service_credentials username trove
-    iniset $TROVE_CONF service_credentials user_domain_name Default
-    iniset $TROVE_CONF service_credentials project_domain_name Default
-    iniset $TROVE_CONF service_credentials password $SERVICE_PASSWORD
-    iniset $TROVE_CONF service_credentials project_name $SERVICE_PROJECT_NAME
+    configure_keystoneauth $TROVE_CONF trove service_credentials
     iniset $TROVE_CONF service_credentials region_name $REGION_NAME
-    iniset $TROVE_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
 
     iniset $TROVE_CONF database connection `database_connection_url trove`
 
@@ -332,13 +327,8 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_file trove-guestagent.log
     iniset $TROVE_GUESTAGENT_CONF DEFAULT swift_api_insecure false
 
-    iniset $TROVE_GUESTAGENT_CONF service_credentials username trove
-    iniset $TROVE_GUESTAGENT_CONF service_credentials user_domain_name Default
-    iniset $TROVE_GUESTAGENT_CONF service_credentials project_domain_name Default
-    iniset $TROVE_GUESTAGENT_CONF service_credentials password $SERVICE_PASSWORD
-    iniset $TROVE_GUESTAGENT_CONF service_credentials project_name $SERVICE_PROJECT_NAME
+    configure_keystoneauth $TROVE_GUESTAGENT_CONF trove service_credentials
     iniset $TROVE_GUESTAGENT_CONF service_credentials region_name $REGION_NAME
-    iniset $TROVE_GUESTAGENT_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
 
     configure_docker_images
 
