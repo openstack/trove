@@ -81,7 +81,7 @@ class StreamReader(object):
         self.end_of_file = False
         # tempfile.TemporaryFile for current segment
         self._current_segment_buffer = None
-        self._current_segment_checksum = hashlib.md5()
+        self._current_segment_checksum = hashlib.md5(usedforsecurity=False)
         self._current_segment_length = 0
         # Current read position within _current_segment_buffer
         self._buffer_read_offset = 0
@@ -98,7 +98,7 @@ class StreamReader(object):
 
         # Using a temporary file for buffering as segments can be large (2GB)
         self._current_segment_buffer = tempfile.TemporaryFile()
-        self._current_segment_checksum = hashlib.md5()
+        self._current_segment_checksum = hashlib.md5(usedforsecurity=False)
         self._current_segment_length = 0
         # Reset read pointer for the new buffer
         self._buffer_read_offset = 0
@@ -254,7 +254,7 @@ class SwiftStorage(base.Storage):
                 raise
 
         # Swift Checksum is the checksum of the concatenated segment checksums
-        swift_checksum = hashlib.md5()
+        swift_checksum = hashlib.md5(usedforsecurity=False)
         # Wrap the output of the backup process to segment it for swift
         stream_reader = StreamReader(stream, container, filename,
                                      2 * (1024 ** 3))

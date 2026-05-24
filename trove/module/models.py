@@ -250,10 +250,9 @@ class Module(object):
     # be stored in a text field in the Trove database.
     @staticmethod
     def process_contents(contents):
-        md5 = contents
-        if isinstance(md5, str):
-            md5 = md5.encode('utf-8')
-        md5 = hashlib.md5(md5).hexdigest()
+        if isinstance(contents, str):
+            contents = contents.encode('utf-8')
+        md5 = hashlib.md5(contents, usedforsecurity=False).hexdigest()
         encrypted_contents = crypto_utils.encrypt_data(
             contents, Modules.ENCRYPT_KEY)
         return md5, crypto_utils.encode_data(encrypted_contents)
