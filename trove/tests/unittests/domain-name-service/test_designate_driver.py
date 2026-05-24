@@ -86,7 +86,8 @@ class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
         driver.DNS_DOMAIN_ID = '00000000-0000-0000-0000-000000000000'
         driver.DNS_DOMAIN_NAME = 'trove.com'
         driver.DNS_TTL = 3600
-        hashed_id = hashlib.md5(instance_id.encode()).digest()
+        hashed_id = hashlib.md5(
+            instance_id.encode(), usedforsecurity=False).digest()
         hashed_id = base64.b32encode(hashed_id)
         hashed_id = hashed_id.decode('ascii')
         hashed_id_concat = hashed_id[:11].lower()
@@ -105,7 +106,8 @@ class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
         driver.DNS_DOMAIN_ID = '00000000-0000-0000-0000-000000000000'
         driver.DNS_DOMAIN_NAME = 'trove.com.'
         driver.DNS_TTL = 3600
-        hashed_id = hashlib.md5(instance_id.encode()).digest()
+        hashed_id = hashlib.md5(
+            instance_id.encode(), usedforsecurity=False).digest()
         hashed_id = base64.b32encode(hashed_id)
         hashed_id = hashed_id.decode('ascii')
         hashed_id_concat = hashed_id[:11].lower()
