@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Trove now uses blkid instead of dumpe2fs to detect existing ext2/3/4
+    filesystems and automatically attempts to repair recoverable filesystem
+    inconsistencies before mounting a data volume.

@@ -95,21 +95,38 @@ class FSExt(FSBase):
     def check_format(self, device_path):
         try:
             stdout, stderr = utils.execute(
-                "dumpe2fs", device_path, run_as_root=True, root_helper="sudo")
-            if 'has_journal' not in stdout:
+                "blkid", "-o", "value", "-s", "TYPE",
+                device_path, run_as_root=True, root_helper="sudo")
+        except exception.ProcessExecutionError as pe:
+            # blkid exit code 2 means no filesystem signature found
+            if pe.exit_code == 2:
                 msg = _("Volume '%s' does not appear to be formatted.") % (
                     device_path)
                 raise exception.GuestError(original_message=msg)
+
+            LOG.exception(
+                "Failed to check filesystem on '%s': %s",
+                device_path,
+                pe.stderr)
+            raise
+
+        # Attempt automatic repair of recoverable filesystem issues.
+        try:
+            utils.execute(
+                "e2fsck", "-p", device_path, run_as_root=True,
+                root_helper="sudo")
         except exception.ProcessExecutionError as pe:
-            if 'Wrong magic number' in pe.stderr:
-                volume_fstype = self.fstype
-                log_fmt = "'Device '%(dev)s' did not seem to be '%(type)s'."
-                exc_fmt = _("'Device '%(dev)s' did not seem to be '%(type)s'.")
-                log_and_raise(log_fmt, exc_fmt, {'dev': device_path,
-                                                 'type': volume_fstype})
-            log_fmt = "Volume '%s' was not formatted."
-            exc_fmt = _("Volume '%s' was not formatted.")
-            log_and_raise(log_fmt, exc_fmt, device_path)
+            # Exit code 1 means filesystem errors corrected
+            # Exit code 2 means system should be rebooted. Safe here because
+            # filesystem is not yet mounted for service workload.
+            # Exit code 3 means both 1 and 2
+            if pe.exit_code in (1, 2, 3):
+                LOG.warning(
+                    "Filesystem issues detected and repaired on '%s': %s",
+                    device_path,
+                    pe.stderr)
+            else:
+                raise
 
     def resize(self, device_path, online=False):
         if not online:
