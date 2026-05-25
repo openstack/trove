@@ -98,11 +98,9 @@ def cinder_client_trove_admin(context, region_name=None):
         LOG.debug('Re-use admin cinder client')
         return ADMIN_CINDER_CLIENT
 
-    version = CONF.cinder_service_type.split('v')[-1] or '3'
-
     ks_session = get_keystone_session()
     ADMIN_CINDER_CLIENT = CinderClient.Client(
-        version,
+        CONF.cinder_client_version,
         session=ks_session,
         service_type=CONF.cinder_service_type,
         region_name=region_name or CONF.service_credentials.region_name,
