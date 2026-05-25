@@ -317,16 +317,17 @@ function install_trove {
 
 # install_trove_dashboard() - Collect source and prepare
 function install_trove_dashboard {
-    git_clone $TROVE_DASHBOARD_REPO $TROVE_DASHBOARD_DIR $TROVE_DASHBOARD_BRANCH
-    setup_develop $TROVE_DASHBOARD_DIR
+    git_clone_by_name "trove-dashboard"
+    setup_dev_lib "trove-dashboard"
+
     cp $TROVE_DASHBOARD_DIR/trove_dashboard/enabled/_17*database*.py $HORIZON_DIR/openstack_dashboard/local/enabled
 }
 
 # install_python_troveclient() - Collect source and prepare
 function install_python_troveclient {
     if use_library_from_git "python-troveclient"; then
-        git_clone $TROVE_CLIENT_REPO $TROVE_CLIENT_DIR $TROVE_CLIENT_BRANCH
-        setup_develop $TROVE_CLIENT_DIR
+        git_clone_by_name "python-troveclient"
+        setup_dev_lib "python-troveclient"
     fi
 }
 
