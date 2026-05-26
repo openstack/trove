@@ -838,7 +838,9 @@ if is_service_enabled trove; then
 
         # NOTE(mangust404) reinstallation process sets group to gid=992.
         # We need to set it back to kvm, otherwise nova-compute will break.
-        [ "$(stat -c '%G' /dev/kvm)" != "kvm" ] && sudo chgrp kvm /dev/kvm
+        if [[ -f /dev/kvm ]]; then
+            [ "$(stat -c '%G' /dev/kvm)" != "kvm" ] && sudo chgrp kvm /dev/kvm
+        fi
     elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
         echo_summary "Configuring Tempest for Trove"
         configure_tempest_for_trove
