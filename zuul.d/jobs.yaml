@@ -190,6 +190,9 @@
     description: This is integrated job testing on Ubuntu jammy(22.04)
     parent: trove-tempest-ubuntu-base-mysql5.7
     nodeset: trove-ubuntu-jammy
+    vars:
+      devstack_localrc:
+        TEMPEST_VENV_UPPER_CONSTRAINTS: '/opt/stack/requirements/upper-constraints.txt'
 
 - job:
     name: trove-tempest-ubuntu-backup-mysql5.7
@@ -485,4 +488,4 @@
     required-projects:
       - openstack/trove
     secrets:
-      - trove_quay_io_creds
+      - trove_quay_io_creds_2026_jan

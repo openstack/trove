@@ -22,8 +22,8 @@
       become: true
       docker_login:
         registry: quay.io
-        username: "{{ trove_quay_io_creds.username | trim }}"
-        password: "{{ trove_quay_io_creds.password | trim }}"
+        username: "{{ trove_quay_io_creds_2026_jan.username | trim }}"
+        password: "{{ trove_quay_io_creds_2026_jan.password | trim }}"
 
     # sync images to quay.io to avoid docker pull rate limit.
     - name: retag and push images
