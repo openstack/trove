@@ -836,10 +836,12 @@ if is_service_enabled trove; then
         # download trove code from trove-guestagent.
         sudo chown -R $STACK_USER:$STACK_USER "$DEST/trove"
 
-        # NOTE(mangust404) reinstallation process sets group to gid=992.
-        # We need to set it back to kvm, otherwise nova-compute will break.
-        if [[ -f /dev/kvm ]]; then
-            [ "$(stat -c '%G' /dev/kvm)" != "kvm" ] && sudo chgrp kvm /dev/kvm
+        # NOTE(mangust404): In some cases, the KVM group ID differs from the
+        # default value (992). We must set the group to "kvm" regardless of its
+        # numeric ID; otherwise, nova-compute will fail.
+        if [[ -e /dev/kvm ]] && [[ "$(stat -c '%G' /dev/kvm)" != "kvm" ]]; then
+            echo "Set group to kvm for /dev/kvm device"
+            sudo chgrp kvm /dev/kvm
         fi
     elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
         echo_summary "Configuring Tempest for Trove"
