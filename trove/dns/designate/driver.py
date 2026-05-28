@@ -107,7 +107,7 @@ class DesignateInstanceEntryFactory(driver.DnsInstanceEntryFactory):
         zone = DesignateDnsZone(id=DNS_DOMAIN_ID, name=DNS_DOMAIN_NAME)
         # Constructing the hostname by hashing the instance ID.
         name = encodeutils.to_utf8(instance_id)
-        name = hashlib.md5(name).digest()
+        name = hashlib.md5(name, usedforsecurity=False).digest()
         name = base64.b32encode(name)[:11].lower()
         name = name.decode('ascii')
         hostname = ("%s.%s" % (name, zone.name))

@@ -291,7 +291,8 @@ class GuestLog(object):
 
     def _update_log_header_digest(self, log_file):
         with open(log_file, 'rb') as log:
-            self._header_digest = hashlib.md5(log.readline()).hexdigest()
+            self._header_digest = hashlib.md5(
+                log.readline(), usedforsecurity=False).hexdigest()
 
     def _get_headers(self):
         return {'X-Delete-After': str(CONF.guest_log_expiry)}
