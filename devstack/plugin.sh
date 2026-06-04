@@ -486,7 +486,7 @@ function configure_tempest_for_trove {
     fi
 
     echo "Enable trove-tempest-plugin"
-    $TEMPEST_DIR/.tox/tempest/bin/pip install -e $DEST/trove-tempest-plugin
+    pip_install $DEST/trove-tempest-plugin
 
     echo "Adding [database] section to tempest.conf"
     if [[ -n "$TROVE_DATASTORE_TYPE" ]]; then
