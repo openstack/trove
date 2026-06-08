@@ -69,9 +69,9 @@ function create_trove_accounts {
             "database" "Trove Service")
         get_or_create_endpoint $trove_service \
             "$REGION_NAME" \
-            "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
-            "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
-            "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s"
+            "${SERVICE_PROTOCOL}://${SERVICE_HOST}/database/v1.0/\$(tenant_id)s" \
+            "${SERVICE_PROTOCOL}://${SERVICE_HOST}/database/v1.0/\$(tenant_id)s" \
+            "${SERVICE_PROTOCOL}://${SERVICE_HOST}/database/v1.0/\$(tenant_id)s"
     fi
 }
 
@@ -83,6 +83,8 @@ function create_trove_accounts {
 function cleanup_trove {
     # Clean up dirs
     rm -fr $TROVE_CONF_DIR/*
+
+    remove_uwsgi_config "$TROVE_UWSGI_CONF" "trove"
 
     if is_service_enabled horizon; then
         cleanup_trove_dashboard
@@ -251,7 +253,6 @@ function configure_trove {
 
     iniset $TROVE_CONF DEFAULT control_exchange trove
     iniset $TROVE_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$RABBIT_HOST:$AMQP_PORT/
-    iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
     iniset $TROVE_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
     if [[ -n "$TROVE_DATASTORE_TYPE" ]]; then
         iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
@@ -274,6 +275,8 @@ function configure_trove {
     iniset $TROVE_CONF pxc tcp_ports 3306,4444,4567,4568
     iniset $TROVE_CONF redis tcp_ports 6379,16379
     iniset $TROVE_CONF vertica tcp_ports 5433,5434,5444,5450,4803
+
+    write_uwsgi_config "$TROVE_UWSGI_CONF" "$TROVE_UWSGI" "/database" "" "trove"
 
     ################################################################ trove guest agent conf
     setup_trove_logging $TROVE_GUESTAGENT_CONF
@@ -406,7 +409,7 @@ function setup_mgmt_network() {
 
 # start_trove() - Start running processes, including screen
 function start_trove {
-    run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF"
+    run_process tr-api "$(which uwsgi) --ini $TROVE_UWSGI_CONF"
     run_process tr-tmgr "$TROVE_BIN_DIR/trove-taskmanager --config-file=$TROVE_CONF"
     run_process tr-cond "$TROVE_BIN_DIR/trove-conductor --config-file=$TROVE_CONF"
 }
