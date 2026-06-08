@@ -8,13 +8,13 @@ TROVE_BRANCH=${TROVE_BRANCH:-master}
 # Default is set to False
 TROVE_ENABLE_LOCAL_REGISTRY=${TROVE_ENABLE_LOCAL_REGISTRY:-False}
 
-TROVE_CLIENT_DIR=${TROVE_CLIENT_DIR:-${TROVECLIENT_DIR:-${DEST}/python-troveclient}}
-TROVE_CLIENT_REPO=${TROVE_CLIENT_REPO:-${TROVECLIENT_REPO:-${GIT_BASE}/openstack/python-troveclient.git}}
-TROVE_CLIENT_BRANCH=${TROVE_CLIENT_BRANCH:-${TROVECLIENT_BRANCH:-master}}
+GITDIR["python-troveclient"]=${TROVE_CLIENT_DIR:-${DEST}/python-troveclient}
+GITREPO["python-troveclient"]=${TROVE_CLIENT_REPO:-${GIT_BASE}/openstack/python-troveclient.git}
+GITBRANCH["python-troveclient"]=${TROVE_CLIENT_BRANCH:-master}
 
-TROVE_DASHBOARD_DIR=${TROVE_DASHBOARD_DIR:-${DEST}/trove-dashboard}
-TROVE_DASHBOARD_REPO=${TROVE_DASHBOARD_REPO:-${GIT_BASE}/openstack/trove-dashboard.git}
-TROVE_DASHBOARD_BRANCH=${TROVE_DASHBOARD_BRANCH:-master}
+GITDIR["trove-dashboard"]=${TROVE_DASHBOARD_DIR:-${DEST}/trove-dashboard}
+GITREPO["trove-dashboard"]=${TROVE_DASHBOARD_REPO:-${GIT_BASE}/openstack/trove-dashboard.git}
+GITBRANCH["trove-dashboard"]=${TROVE_DASHBOARD_BRANCH:-master}
 
 # Set up configuration directory and files
 TROVE_CONF_DIR=${TROVE_CONF_DIR:-/etc/trove}
