@@ -37,6 +37,7 @@ driver_mapping = {
     'xtrabackup': 'backup.drivers.xtrabackup.XtraBackup',
     'xtrabackup_inc': 'backup.drivers.xtrabackup.XtraBackupIncremental'
 }
+DEFAULTS_FILE = '/etc/mysql/my.cnf'
 
 
 class TestMariaBackup(unittest.TestCase):
@@ -65,8 +66,9 @@ class TestMariaBackup(unittest.TestCase):
         runner = self.runner_cls(**self.params)
 
         # assertions
-        cmd = ("mariadb-backup --backup --stream=xbstream {}".format(
-            runner.user_and_pass))
+        cmd = (f"mariadb-backup --defaults-file={DEFAULTS_FILE} "
+               "--backup --stream=xbstream {}".format(
+                   runner.user_and_pass))
         self.assertEqual(runner.cmd, cmd)
 
     def test_check_restore_process(self):
@@ -100,8 +102,8 @@ class TestMariaBackupIncremental(unittest.TestCase):
 
         # assertions
         cmd = (
-            'mariadb-backup --backup --stream=xbstream'
-            ' --incremental-lsn=%(lsn)s ' +
+            f'mariadb-backup --defaults-file={DEFAULTS_FILE} '
+            '--backup --stream=xbstream --incremental-lsn=%(lsn)s ' +
             runner.user_and_pass
         )
         self.assertEqual(runner.cmd, cmd)

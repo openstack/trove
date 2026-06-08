@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes MariaDB when datastore use official MariaDB dockerhub images.
+    MariaDB starting from version 10.7 use different default path to configuration file.

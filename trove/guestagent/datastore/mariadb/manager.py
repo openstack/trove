@@ -29,6 +29,7 @@ from trove.guestagent.datastore.mysql_common import manager
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
+DEFAULTS_FILE = '/etc/mysql/my.cnf'
 
 
 class Manager(manager.MySqlManager):
@@ -45,7 +46,8 @@ class Manager(manager.MySqlManager):
         Cinder volume initialization(after formatted) may leave a lost+found
         folder.
         """
-        return (f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
+        return (f'--defaults-file={DEFAULTS_FILE} '
+                f'--ignore-db-dir=lost+found --ignore-db-dir=conf.d '
                 f'--datadir={data_dir}')
 
     def pre_create_backup(self, context, **kwargs):
@@ -92,11 +94,13 @@ class Manager(manager.MySqlManager):
 
         try:
             root_pass = self.app.get_auth_password(file="root.cnf")
-        except exception.UnprocessableEntity:
+        except exception.UnprocessableEntity as e:
+            LOG.debug('Creating new password for root due to err: %s', e)
             root_pass = utils.generate_random_password()
             self.app.save_password('root', root_pass)
 
         command = (
+            f'--defaults-file={DEFAULTS_FILE} '
             f'--skip-grant-tables '
             f'--datadir={data_dir} '
         )
@@ -104,12 +108,25 @@ class Manager(manager.MySqlManager):
             "FLUSH PRIVILEGES; "
             "ALTER USER 'root'@'localhost' IDENTIFIED BY '{}';"
         ).format(root_pass)
-        reset_command = ["mariadb", "-u", "root", "-e", reset_sql]
+        reset_command = ["mariadb", f"--defaults-file={DEFAULTS_FILE}",
+                         "-u", "root", "-e", reset_sql]
 
+        # Some mariadb images entrypoints doesn't consider --defaults-file
+        # startup option while executing mariadb-upgrade command, so we
+        # need to be sure that our my.cnf will be used.
+        extra_volumes = {
+            "/etc/mysql/my.cnf": {
+                "bind": "/etc/my.cnf",
+                "mode": "rw"
+            }
+        }
         # Start the database container process.
         try:
-            self.app.start_db(ds_version=ds_version, command=command)
-            docker_utils.run_command(self.app.docker_client, reset_command)
+            self.app.start_db(ds_version=ds_version, command=command,
+                              extra_volumes=extra_volumes)
+            out = docker_utils.run_command(
+                self.app.docker_client, reset_command)
+            LOG.debug('Reset command output: %s', out)
         except Exception as err:
             with save_and_reraise_exception():
                 LOG.error('Failed to reset password for restore, error: %s',

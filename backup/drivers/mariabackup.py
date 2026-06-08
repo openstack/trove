@@ -21,12 +21,14 @@ from backup.drivers import mysql_base
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+DEFAULTS_FILE = '/etc/mysql/my.cnf'
 
 
 class MariaBackup(mysql_base.MySQLBaseRunner):
     """Implementation of Backup and Restore using mariadb-backup."""
     restore_cmd = ('mbstream -x -C %(restore_location)s')
-    prepare_cmd = 'mariadb-backup --prepare --target-dir=%(restore_location)s'
+    prepare_cmd = (f'mariadb-backup --defaults-file={DEFAULTS_FILE} '
+                   '--prepare --target-dir=%(restore_location)s')
 
     def __init__(self, *args, **kwargs):
         super(MariaBackup, self).__init__(*args, **kwargs)
@@ -35,8 +37,8 @@ class MariaBackup(mysql_base.MySQLBaseRunner):
 
     @property
     def cmd(self):
-        cmd = ('mariadb-backup --backup --stream=xbstream ' +
-               self.user_and_pass)
+        cmd = (f'mariadb-backup --defaults-file={DEFAULTS_FILE} '
+               '--backup --stream=xbstream ' + self.user_and_pass)
         return cmd
 
     def check_restore_process(self):
@@ -66,8 +68,8 @@ class MariaBackup(mysql_base.MySQLBaseRunner):
 
 class MariaBackupIncremental(MariaBackup):
     """Incremental backup and restore using mariadb-backup."""
-    incremental_prep = ('mariadb-backup --prepare '
-                        '--target-dir=%(restore_location)s '
+    incremental_prep = (f'mariadb-backup --defaults-file={DEFAULTS_FILE} '
+                        '--prepare --target-dir=%(restore_location)s '
                         '%(incremental_args)s')
 
     def __init__(self, *args, **kwargs):
@@ -81,8 +83,8 @@ class MariaBackupIncremental(MariaBackup):
     @property
     def cmd(self):
         cmd = (
-            'mariadb-backup --backup --stream=xbstream'
-            ' --incremental-lsn=%(lsn)s ' +
+            f'mariadb-backup --defaults-file={DEFAULTS_FILE} '
+            '--backup --stream=xbstream --incremental-lsn=%(lsn)s ' +
             self.user_and_pass
         )
         LOG.info('cmd:{}'.format(cmd))
