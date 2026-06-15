@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This file should be designed for a safe include in both
+# trovestack and devstack/plugin.sh environments.
+
+# Colors that can be used in 'exclaim'
+COLOR_RED='\033[0;31m'
+COLOR_GREEN='\033[0;32m'
+COLOR_BLUE='\033[0;34m'
+COLOR_NONE='\033[0m'
+
+function exclaim () {
+    echo "*******************************************************************************"
+    echo -e "$@"
+    echo "*******************************************************************************"
+}
