@@ -35,9 +35,8 @@ html_theme_options = {
     "sidebar_mode": "toc",
 }
 openstackdocs_repo_name = 'openstack/trove'
-openstack_auto_name = False
 openstackdocs_bug_project = 'trove'
-openstackdocs_bug_tag = ''
+openstackdocs_bug_tag = 'docs'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

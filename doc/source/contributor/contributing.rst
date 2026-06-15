@@ -14,7 +14,7 @@ Below will cover the more project specific information you need to get started
 with Trove.
 
 Communication
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
 .. This would be a good place to put the channel you chat in as a project; when/
    where your meeting is, the tags you prepend to your ML threads, etc.
 
@@ -24,7 +24,7 @@ Communication
   reviewers and their timezones, the situation may change in the future.
 
 Contacting the Core Team
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 .. This section should list the core team, their irc nicks, emails, timezones etc. If
    all this info is maintained elsewhere (i.e. a wiki), you can link to that instead of
    enumerating everyone here.
@@ -46,15 +46,13 @@ New Feature Planning
 #. If a spec is need, a patch needs to be submitted to `trove-specs repo
    <https://opendev.org/openstack/trove-specs>`_ before the code being
    reviewed.
-#. Code implementation and review
+#. Code implementation and review.
 
 Task Tracking
-~~~~~~~~~~~~~~
-.. This section is about where you track tasks- launchpad? storyboard? is there more
-   than one launchpad project? what's the name of the project group in storyboard?
+~~~~~~~~~~~~~
 
-We track our tasks in `Storyboard
-<https://storyboard.openstack.org/#!/project/openstack/trove>`_
+We track our tasks in `Trove Launchpad
+<https://launchpad.net/trove>`_
 
 If you're looking for some smaller, easier work item to pick up and get started
 on, search for the 'low-hanging-fruit' tag.
@@ -65,7 +63,7 @@ Reporting a Bug
    your project.
 
 You found an issue and want to make sure we are aware of it? You can do so
-on `Storyboard <https://storyboard.openstack.org/#!/project/openstack/trove>`_.
+on `Trove Bugs Launchpad <https://bugs.launchpad.net/trove>`_.
 
 Getting Your Patch Merged
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -79,7 +77,7 @@ one +2 before ``Workflow +1``.
 Project Team Lead Duties
 ------------------------
 .. this section is where you can put PTL specific duties not already listed in
-   the common PTL guide (linked below)  or if you already have them written
+   the common PTL guide (linked below) or if you already have them written
    up elsewhere, you can link to that doc here.
 
 All common PTL duties are enumerated here in the `PTL guide
