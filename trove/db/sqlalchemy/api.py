@@ -181,7 +181,7 @@ def _migrate_legacy_database(config):
         query = text("SELECT version FROM migrate_version")
         with engine.connect() as connection:
             result = connection.execute(query)
-        cur_version = result.first().values()[0]
+        cur_version = result.scalar()
         LOG.info("current version is %s", cur_version)
         if cur_version == 48:
             alembic_command.stamp(config, ALEMBIC_INIT_VERSION)

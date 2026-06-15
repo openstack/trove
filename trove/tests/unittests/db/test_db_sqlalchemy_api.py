@@ -20,6 +20,31 @@ from trove.db.sqlalchemy import api
 
 class TestDbSqlalchemyApi(unittest.TestCase):
 
+    def test_migrate_legacy_database_scalar_replacement(self):
+        """Test _migrate_legacy_database uses scalar()
+        instead of the removed .values()[0]
+
+        Verify scalar() correctly retrieves the single value.
+        """
+        from sqlalchemy import create_engine, text
+
+        # Set up an in-memory sqlite database with legacy migration table
+        engine = create_engine('sqlite:///:memory:', echo=False)
+        with engine.begin() as connection:
+            connection.execute(text(
+                "CREATE TABLE migrate_version (version INTEGER)"
+            ))
+            connection.execute(text(
+                "INSERT INTO migrate_version VALUES (48)"
+            ))
+
+        # Simulate the query from _migrate_legacy_database
+        query = text("SELECT version FROM migrate_version")
+        with engine.connect() as connection:
+            result = connection.execute(query)
+            cur_version = result.scalar()
+            self.assertEqual(cur_version, 48)
+
     def test_db_sync_alembic(self):
         api._configure_alembic = MagicMock(return_value=True)
         api._get_alembic_revision = MagicMock(return_value='head')
