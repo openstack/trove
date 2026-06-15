@@ -204,6 +204,7 @@ write_files:
   - path: /etc/trove/controller.conf
     content: |
       CONTROLLER=${SERVICE_HOST}
+      DB_BACKUP_IMAGE=${TROVE_BUILD_BACKUP_IMAGES}
 ${ETC_HOSTS_APPEND}
 EOF
 
@@ -548,6 +549,13 @@ function create_registry_container {
             sudo docker pull quay.io/openstack.trove/${quay_img} &&
             sudo docker tag quay.io/openstack.trove/${quay_img} 127.0.0.1:$REGISTRY_PORT/trove-datastores/${img} &&
             sudo docker push 127.0.0.1:$REGISTRY_PORT/trove-datastores/${img}
+
+            if [[ "$TROVE_BUILD_BACKUP_IMAGES" == "False" ]]; then
+                echo "Skip building backup image. We don't need it"
+                continue
+            fi
+
+            echo "Build backup image"
 
             pushd $DEST/trove/backup
             # build backup image

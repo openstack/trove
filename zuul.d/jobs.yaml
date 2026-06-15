@@ -50,6 +50,10 @@
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
         SWIFT_LOOPBACK_DISK_SIZE: 15G
         TROVE_MGMT_GATEWAY: "192.168.254.1"
+        TROVE_ENABLE_LOCAL_REGISTRY: True
+        # Don't build backup image by default for resources economy.
+        # This flag will be overriden by jobs which requires backup image.
+        TROVE_BUILD_BACKUP_IMAGES: False
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -199,7 +203,7 @@
       - ^trove/guestagent/strategies/replication/
     vars:
       devstack_localrc:
-        TROVE_ENABLE_LOCAL_REGISTRY: True
+        TROVE_BUILD_BACKUP_IMAGES: True
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_backup
 
 - job:
@@ -220,7 +224,7 @@
       - ^\..+
     vars:
       devstack_localrc:
-        TROVE_ENABLE_LOCAL_REGISTRY: True
+        TROVE_BUILD_BACKUP_IMAGES: True
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_replication
 
 - job:

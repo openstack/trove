@@ -82,6 +82,9 @@ CELLSV2_SETUP=singleconductor
 TROVE_ENABLE_IMAGE_BUILD=${TROVE_ENABLE_IMAGE_BUILD:-"true"}
 TROVE_NON_DEV_IMAGE_URL=${TROVE_NON_DEV_IMAGE_URL:-""}
 
+# Build backup docker image by default
+TROVE_BUILD_BACKUP_IMAGES=${TROVE_BUILD_BACKUP_IMAGES:-"True"}
+
 # Customized database container images
 if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ] ; then
     TROVE_DATABASE_IMAGE_MYSQL=${TROVE_DATABASE_IMAGE_MYSQL:-"$TROVE_HOST_GATEWAY:4000/trove-datastores/mysql"}
