@@ -116,6 +116,7 @@ class MySqlManager(manager.Manager):
         with EndNotification(context):
             # Set /var/run/mysqld to allow localhost access.
             volumes_mapping = {
+                '/etc/mysql': {'bind': '/etc/mysql', 'mode': 'ro'},
                 '/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'},
                 constants.MYSQL_HOST_SOCKET_PATH: {"bind": "/var/run/mysqld",
                                                    "mode": "ro"},
