@@ -288,10 +288,7 @@ function configure_trove {
     iniset $TROVE_GUESTAGENT_CONF DEFAULT ignore_users os_admin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_dir /var/log/trove/
     iniset $TROVE_GUESTAGENT_CONF DEFAULT log_file trove-guestagent.log
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT swift_api_insecure false
-
-    configure_keystoneauth $TROVE_GUESTAGENT_CONF trove service_credentials
-    iniset $TROVE_GUESTAGENT_CONF service_credentials region_name $REGION_NAME
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT swift_api_insecure true
 
     configure_docker_images
 
