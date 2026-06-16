@@ -643,6 +643,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             }
             if backup.storage_driver in ["cinder"]:
                 cinder_snapshot_id = backup.location.split("/")[-1]
+            if backup.storage_driver == 'swift':
+                swift = clients.swift_client(self.context)
+                backup_info['swift_url'] = swift.url
 
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         volume_info = self._create_server_volume(
@@ -749,6 +752,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 'datastore': master.datastore.name,
                 'datastore_version': master.datastore_version.name,
             })
+            if snapshot_driver == 'swift':
+                swift = clients.swift_client(context)
+                snapshot_info.update({'swift_url': swift.url})
+
             snapshot = master.get_replication_snapshot(
                 snapshot_info, flavor=master.flavor_id)
             snapshot.update({
@@ -1288,6 +1295,9 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
         if storage_driver in ["cinder"]:
             SnapshotTasks(self, backup_info)._create_snapshot()
         else:
+            if storage_driver == 'swift':
+                swift = clients.swift_client(self.context)
+                backup_info['swift_url'] = swift.url
             self.guest.create_backup(backup_info)
 
     def backup_required_for_replication(self):

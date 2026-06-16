@@ -245,6 +245,10 @@ class PgSqlApp(service.BaseDbApp):
         storage_driver = backup_info.get('storage_driver', 'swift')
         backup_driver = self.get_backup_strategy()
         image = self.get_backup_image()
+        swift_url = backup_info.get('swift_url')
+        if not swift_url:
+            raise exception.TroveError(
+                "Missing swift_url in backup metadata.")
         name = 'db_restore'
         volumes = {
             '/var/lib/postgresql/data': {
@@ -254,9 +258,9 @@ class PgSqlApp(service.BaseDbApp):
         }
 
         os_cred = (f"--os-token={context.auth_token} "
-                   f"--os-auth-url={CONF.service_credentials.auth_url} "
-                   f"--os-tenant-id={context.project_id} "
-                   f"--os-region-name={CONF.service_credentials.region_name}")
+                   f"--swift-url={swift_url} ")
+        if CONF.swift_api_insecure:
+            os_cred = (f"{os_cred} --swift-api-insecure")
 
         command = (
             f'python3 main.py --nobackup '
