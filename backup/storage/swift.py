@@ -30,6 +30,8 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
+# Remains for backward-compatibility with old guestagents
+# This method will be removed after 2026.2 release cycle.
 def _get_user_keystone_session(auth_url, token, tenant_id):
     auth = v3.Token(
         auth_url=auth_url, token=token,
@@ -39,7 +41,10 @@ def _get_user_keystone_session(auth_url, token, tenant_id):
     return session.Session(auth=auth, verify=False)
 
 
-def _get_service_client(auth_url, token, tenant_id, region_name=None):
+# Remains for backward-compatibility with old guestagents
+# This method will be removed after 2026.2 release cycle.
+def _get_service_client(auth_url, token, tenant_id,
+                        region_name=None, insecure=False):
     sess = _get_user_keystone_session(auth_url, token, tenant_id)
     os_options = None
     if region_name:
@@ -48,7 +53,7 @@ def _get_service_client(auth_url, token, tenant_id, region_name=None):
         }
     return swiftclient.Connection(session=sess,
                                   os_options=os_options,
-                                  insecure=True)
+                                  insecure=insecure)
 
 
 def _set_attr(original):
@@ -225,9 +230,24 @@ class StreamReader(object):
 
 class SwiftStorage(base.Storage):
     def __init__(self):
-        self.client = _get_service_client(CONF.os_auth_url, CONF.os_token,
-                                          CONF.os_tenant_id,
-                                          region_name=CONF.os_region_name)
+        if not CONF.swift_url:
+            # Backward compatibility with old guest agents
+            # This code will be removed after 2026.2 release cycle.
+            self.client = _get_service_client(
+                CONF.os_auth_url, CONF.os_token,
+                CONF.os_tenant_id,
+                region_name=CONF.os_region_name,
+                insecure=CONF.swift_api_insecure)
+            LOG.warning(
+                'Using deprecated Keystone token re-scoping flow for Swift '
+                'access. Support will be removed after the 2026.2 release.')
+            return
+
+        self.client = swiftclient.Connection(
+            preauthurl=CONF.swift_url,
+            preauthtoken=CONF.os_token,
+            insecure=CONF.swift_api_insecure
+        )
 
     def save(self, stream, metadata=None, container='database_backups'):
         """Persist data from the stream to swift.

@@ -40,6 +40,8 @@ cli_opts = [
         choices=['innobackupex', 'mariabackup', 'pg_basebackup', 'xtrabackup']
     ),
     cfg.BoolOpt('backup'),
+    cfg.StrOpt('swift-url'),
+    cfg.BoolOpt('swift-api-insecure'),
     cfg.StrOpt(
         'backup-encryption-key',
         help='This is only for backward compatibility. The backups '
@@ -51,9 +53,21 @@ cli_opts = [
     cfg.StrOpt('db-host'),
     cfg.StrOpt('db-datadir'),
     cfg.StrOpt('os-token'),
-    cfg.StrOpt('os-auth-url'),
-    cfg.StrOpt('os-region-name'),
-    cfg.StrOpt('os-tenant-id'),
+    cfg.StrOpt('os-auth-url',
+               deprecated_for_removal=True,
+               deprecated_reason='Backup container use pre-auth Swift client '
+                                 'token instead of token rescope. '
+                                 'Will be deprecated in 2026.2'),
+    cfg.StrOpt('os-region-name',
+               deprecated_for_removal=True,
+               deprecated_reason='Backup container use pre-auth Swift client '
+                                 'token instead of token rescope. '
+                                 'Will be deprecated in 2026.2'),
+    cfg.StrOpt('os-tenant-id',
+               deprecated_for_removal=True,
+               deprecated_reason='Backup container use pre-auth Swift client '
+                                 'token instead of token rescope. '
+                                 'Will be deprecated in 2026.2'),
     cfg.StrOpt('swift-container', default='database_backups'),
     cfg.DictOpt('swift-extra-metadata'),
     cfg.StrOpt('restore-from'),

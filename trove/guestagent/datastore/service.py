@@ -493,6 +493,10 @@ class BaseDbApp(object):
         storage_driver = backup_info.get(
             'storage_driver', CONF.storage_strategy)
         backup_driver = self.get_backup_strategy()
+        swift_url = backup_info.get('swift_url')
+        if not swift_url:
+            raise exception.TroveError(
+                "Missing swift_url in backup metadata.")
         incremental = ''
         backup_type = 'full'
         if backup_info.get('parent'):
@@ -505,9 +509,9 @@ class BaseDbApp(object):
         name = 'db_backup'
         backup_id = backup_info["id"]
         os_cred = (f"--os-token={context.auth_token} "
-                   f"--os-auth-url={CONF.service_credentials.auth_url} "
-                   f"--os-tenant-id={context.project_id} "
-                   f"--os-region-name={CONF.service_credentials.region_name}")
+                   f"--swift-url={swift_url} ")
+        if CONF.swift_api_insecure:
+            os_cred = (f"{os_cred} --swift-api-insecure")
 
         db_userinfo = ''
         if need_dbuser:

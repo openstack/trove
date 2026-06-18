@@ -670,9 +670,10 @@ class BaseMySqlApp(service.BaseDbApp):
         storage_driver = backup_info.get('storage_driver', 'swift')
         backup_driver = self.get_backup_strategy()
         user_token = context.auth_token
-        auth_url = CONF.service_credentials.auth_url
-        region_name = CONF.service_credentials.region_name
-        user_tenant = context.project_id
+        swift_url = backup_info.get('swift_url')
+        if not swift_url:
+            raise exception.TroveError(
+                "Missing swift_url in backup metadata.")
         image = self.get_backup_image()
         name = 'db_restore'
         volumes = {'/var/lib/mysql': {'bind': '/var/lib/mysql', 'mode': 'rw'}}
@@ -680,11 +681,13 @@ class BaseMySqlApp(service.BaseDbApp):
         command = (
             f'python3 main.py --nobackup '
             f'--storage-driver={storage_driver} --driver={backup_driver} '
-            f'--os-token={user_token} --os-auth-url={auth_url} '
-            f'--os-tenant-id={user_tenant} --os-region-name={region_name} '
+            f'--os-token={user_token} --swift-url={swift_url} '
             f'--restore-from={backup_info["location"]} '
             f'--restore-checksum={backup_info["checksum"]}'
         )
+        if CONF.swift_api_insecure:
+            command = (f"{command} --swift-api-insecure")
+
         if CONF.backup_aes_cbc_key:
             command = (f"{command} "
                        f"--backup-encryption-key={CONF.backup_aes_cbc_key}")

@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    Use pre-auth Swift client and remove Keystone re-auth.
+    Stop using Keystone sessions and token re-scoping in backup and restore
+    flows.
+  - |
+    Backup container's swift client now respects swift_api_insecure config
+    option in trove-guestagent.conf, instead of relying on hardcoded insecure=True.
