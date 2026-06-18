@@ -24,6 +24,9 @@ ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove /var/log
 # Take care of the changes in requirements.txt
 ExecStartPre=/bin/bash -c "sudo /opt/guest-agent-venv/bin/pip install -r /home/GUEST_USERNAME/trove/requirements.txt -c /opt/upper-constraints.txt"
 
+# Activating docker-hostnic socket will activate docker-hostnic service
+ExecStartPre=/bin/sh -c 'curl -s --unix-socket /run/docker/plugins/docker-hostnic.sock http://localhost/Plugin.Activate'
+
 # Start guest-agent.service in virtual environment
 ExecStart=/bin/bash -c "/opt/guest-agent-venv/bin/python /home/GUEST_USERNAME/trove/contrib/trove-guestagent --config-dir=/etc/trove/conf.d"
 

@@ -10,6 +10,9 @@ KillMode=mixed
 Restart=always
 
 ExecStartPre=/bin/bash -c "sudo chown -R GUEST_USERNAME:root /etc/trove /var/log/trove/"
+# Activating docker-hostnic socket will activate docker-hostnic service
+ExecStartPre=/bin/sh -c 'curl -s -o /dev/null --unix-socket /run/docker/plugins/docker-hostnic.sock http://localhost/Plugin.Activate'
+
 ExecStart=/usr/local/bin/guest-agent --config-dir=/etc/trove/conf.d
 
 [Install]
