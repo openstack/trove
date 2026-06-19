@@ -1512,35 +1512,75 @@ service_credentials_opts = [
     cfg.URIOpt('auth_url', default='https://0.0.0.0/identity/v3',
                deprecated_name='trove_auth_url',
                deprecated_group='DEFAULT',
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2',
                help='Keystone authentication URL.'),
     cfg.StrOpt('username', default='',
                help="Trove service user name.",
                deprecated_name='nova_proxy_admin_user',
-               deprecated_group='DEFAULT'),
+               deprecated_group='DEFAULT',
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
     cfg.StrOpt('password', default='', secret=True,
                help="Trove service user password.",
                deprecated_name='nova_proxy_admin_pass',
-               deprecated_group='DEFAULT'),
+               deprecated_group='DEFAULT',
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
     cfg.StrOpt('project_id', default='',
                deprecated_name='nova_proxy_admin_tenant_id',
                deprecated_group='DEFAULT',
-               help="Trove service project ID."),
+               help="Trove service project ID.",
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
     cfg.StrOpt('project_name', default='',
                deprecated_name='nova_proxy_admin_tenant_name',
                deprecated_group='DEFAULT',
-               help="Trove service project name."),
+               help="Trove service project name.",
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
     cfg.StrOpt('user_domain_name', default='Default',
                deprecated_name='nova_proxy_admin_user_domain_name',
                deprecated_group='DEFAULT',
-               help="Keystone domain name of the Trove service user."),
+               help="Keystone domain name of the Trove service user.",
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
     cfg.StrOpt('project_domain_name', default='Default',
                deprecated_name='nova_proxy_admin_project_domain_name',
                deprecated_group='DEFAULT',
-               help="Keystone domain name of the Trove service project."),
+               help="Keystone domain name of the Trove service project.",
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
     cfg.StrOpt('region_name', default='RegionOne',
                deprecated_name='os_region_name',
                deprecated_group='DEFAULT',
-               help="Keystone region name of the Trove service project."),
+               help="Keystone region name of the Trove service project.",
+               deprecated_for_removal=True,
+               deprecated_reason='Guest agent no longer requires service '
+                                 'credentials in trove-guestagent.conf. Note '
+                                 'that credentials are still required in '
+                                 'trove.conf. Will be deprecated in 2026.2'),
 ]
 
 guest_agent_group = cfg.OptGroup(
