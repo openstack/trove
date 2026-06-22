@@ -26,7 +26,7 @@ fi
 if docker image inspect "${backup_image}:${datastore_version}" >/dev/null 2>&1; then
     echo "Image already exists, skip loading."
 else
-  if [ -n "$backup_image" ]; then
+  if [[ -n "$backup_image" && "$DB_BACKUP_IMAGE" == "True" ]]; then
     docker pull "${backup_image}:${datastore_version}"
   fi
 fi
