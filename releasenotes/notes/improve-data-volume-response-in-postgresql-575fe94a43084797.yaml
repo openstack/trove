@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Introduce additional fields "wal_size" and "wal_archive_size" for
+    PostgreSQL datastore.
+fixes:
+  - |
+    Show real used percentage of the data volume based on f_bavail

@@ -999,3 +999,26 @@ volume_used:
   in: body
   required: false
   type: float
+volume_used_percent:
+  description: |
+    The real used space of the volume, in percent. This value considers
+    real available disk space after GB -> GiB conversion and unavailable
+    blocks reserved by system. Please note that after reaching 100%,
+    most databases will crash or become readonly.
+  in: body
+  required: false
+  type: string
+wal_archive_size:
+  description: |
+    The used space of the WAL archive folder, in bytes.
+    PostgreSQL manager only.
+  in: body
+  required: false
+  type: integer
+wal_size:
+  description: |
+    The used space of the WAL folder, in bytes.
+    PostgreSQL manager only.
+  in: body
+  required: false
+  type: integer

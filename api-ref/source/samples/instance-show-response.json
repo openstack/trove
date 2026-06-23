@@ -42,7 +42,8 @@
         "updated": "2019-12-23T20:58:45",
         "volume": {
             "size": 1,
-            "used": 0.12
+            "used": 0.12,
+            "used_percent": 13.33
         }
     }
 }

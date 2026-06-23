@@ -528,6 +528,8 @@ class DetailInstance(SimpleInstance):
                                              datastore_status)
         self._volume_used = None
         self._volume_total = None
+        self._volume_used_percent = None
+        self._mgr_extra_info = None
 
     @property
     def volume_used(self):
@@ -544,6 +546,22 @@ class DetailInstance(SimpleInstance):
     @volume_total.setter
     def volume_total(self, value):
         self._volume_total = value
+
+    @property
+    def volume_used_percent(self):
+        return self._volume_used_percent
+
+    @volume_used_percent.setter
+    def volume_used_percent(self, value):
+        self._volume_used_percent = value
+
+    @property
+    def mgr_extra_info(self):
+        return self._mgr_extra_info
+
+    @mgr_extra_info.setter
+    def mgr_extra_info(self, value):
+        self._mgr_extra_info = value
 
 
 def get_db_info(context, id, cluster_id=None, include_deleted=False):
@@ -656,6 +674,15 @@ def load_guest_info(instance, context, id):
             volume_info = guest.get_volume_info()
             instance.volume_used = volume_info['used']
             instance.volume_total = volume_info['total']
+            required_keys = {'avail_blocks', 'free_blocks', 'total_blocks'}
+            if all(key in volume_info for key in required_keys):
+                tb = volume_info['total_blocks']
+                fb = volume_info['free_blocks']
+                ab = volume_info['avail_blocks']
+                used_percent = round(100 * (tb - fb) / (tb - fb + ab), 2)
+                instance.volume_used_percent = used_percent
+            if 'mgr_extra_info' in volume_info:
+                instance.mgr_extra_info = volume_info['mgr_extra_info']
         except Exception as e:
             LOG.exception(e)
     return instance

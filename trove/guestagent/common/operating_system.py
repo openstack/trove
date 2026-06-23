@@ -904,11 +904,19 @@ def remove_dir_contents(folder):
     execute_shell_cmd(f'rm -rf {path}', [], shell=True, as_root=True)
 
 
-def get_dir_size(path):
-    """Get the directory size in bytes."""
-    root_directory = Path(path)
-    return sum(f.stat().st_size for f in root_directory.glob('**/*')
-               if f.is_file())
+def get_dir_size(path, as_root=False):
+    if as_root:
+        if exists(path, is_directory=True, as_root=True):
+            output = execute_shell_cmd(
+                'du', [('s', True)], path, as_root=True).strip()
+            if output:
+                return int(output.split()[0])
+        return None
+    else:
+        """Get the directory size in bytes."""
+        root_directory = Path(path)
+        return sum(f.stat().st_size for f in root_directory.glob('**/*')
+                   if f.is_file())
 
 
 def get_filesystem_size(path):

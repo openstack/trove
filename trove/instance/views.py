@@ -148,6 +148,12 @@ class InstanceDetailView(InstanceView):
             used = self.instance.volume_used
             if self.instance.volume_support:
                 result['instance']['volume']['used'] = used
+                if self.instance.volume_used_percent:
+                    result['instance']['volume']['used_percent'] = (
+                        float(self.instance.volume_used_percent))
+                if self.instance.mgr_extra_info:
+                    result['instance']['volume'].update(
+                        self.instance.mgr_extra_info)
             else:
                 # either ephemeral or root partition
                 result['instance']['local_storage'] = {'used': used}
