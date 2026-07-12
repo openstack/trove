@@ -326,8 +326,8 @@ class MySqlManager(manager.Manager):
             command = self.get_start_db_params(data_dir)
             self.app.start_db(ds_version=ds_version, command=command)
         except Exception as e:
-            LOG.error(f"Failed to restore database service after rebuild, "
-                      f"error: {str(e)}")
+            LOG.error("Failed to restore database service after rebuild, "
+                      "error: %s", e)
             self.prepare_error = True
             raise
         finally:
@@ -341,6 +341,6 @@ class MySqlManager(manager.Manager):
             mount_point = CONF.get(CONF.datastore_manager).mount_point
             operating_system.fsunfreeze(mount_point)
         except Exception as e:
-            LOG.error("Run post_create_backup failed, error: %s" % str(e))
+            LOG.error("Run post_create_backup failed, error: %s", e)
 
         return {}

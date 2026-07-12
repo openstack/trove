@@ -341,10 +341,10 @@ class VolumeMountPoint(object):
         if not operating_system.exists(self.mount_point, is_directory=True,
                                        as_root=True):
             operating_system.ensure_directory(self.mount_point, as_root=True)
-        LOG.debug("Mounting volume. Device path:{0}, mount_point:{1}, "
-                  "volume_type:{2}, mount options:{3}".format(
-                      self.device_path, self.mount_point, self.volume_fstype,
-                      self.mount_options))
+        LOG.debug("Mounting volume. Device path:%s, mount_point:%s, "
+                  "volume_type:%s, mount options:%s",
+                  self.device_path, self.mount_point, self.volume_fstype,
+                  self.mount_options)
         try:
             utils.execute("mount", "-t", self.volume_fstype,
                           "-o", self.mount_options,

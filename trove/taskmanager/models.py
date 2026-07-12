@@ -1722,13 +1722,13 @@ class SnapshotTasks(object):
             self.instance.guest.post_create_backup()
             LOG.info("Completed backup %s.", self.backup_id)
         except GuestError as err:
-            LOG.error("Failed to create backup %s: %s" % (self.backup_id, err))
+            LOG.error("Failed to create backup %s: %s", self.backup_id, err)
             backup_state.update({
                 'success': False,
                 'state': BackupState.FAILED,
             })
         except Exception as e:
-            LOG.error("Failed to create backup %s: %s" % (self.backup_id, e))
+            LOG.error("Failed to create backup %s: %s", self.backup_id, e)
             backup_state.update({
                 'success': False,
                 'state': BackupState.FAILED,

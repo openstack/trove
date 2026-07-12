@@ -152,8 +152,8 @@ class PgBasebackup(base.BaseRunner):
          """
         def _metadata_found():
             backup_file = self.get_backup_file()
-            LOG.info("backup_file: %s" % [backup_file])
-            LOG.info("Doing backup Postgres in read-only mode: %s" %
+            LOG.info("backup_file: %s", [backup_file])
+            LOG.info("Doing backup Postgres in read-only mode: %s",
                      self.is_read_only)
             if not backup_file and self.is_read_only:
                 return True

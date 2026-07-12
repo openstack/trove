@@ -62,10 +62,10 @@ class TenantBasedAuth(object):
         match_for_tenant = self.tenant_scoped_url.match(request.path_info)
         if (match_for_tenant and
                 tenant_id == match_for_tenant.group('tenant_id')):
-            LOG.debug(strutils.mask_password(
-                ("Authorized tenant '%(tenant_id)s' request: "
-                 "%(request)s") %
-                {'tenant_id': tenant_id, 'request': req_to_text(request)}))
+            LOG.debug(
+                "Authorized tenant '%(tenant_id)s' request: %(request)s",
+                {'tenant_id': tenant_id,
+                 'request': strutils.mask_password(req_to_text(request))})
             return True
 
         log_fmt = "User with tenant id %s cannot access this resource."

@@ -149,7 +149,7 @@ class Manager(periodic_task.PeriodicTasks):
     def report_root(self, context, instance_id, user=None):
         if user is not None:
             LOG.debug("calling report_root with a username: %s, "
-                      "is deprecated now!" % user)
+                      "is deprecated now!", user)
         common_models.RootHistory.create(context, instance_id)
 
     def notify_end(self, context, serialized_notification, notification_args):

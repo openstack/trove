@@ -79,7 +79,7 @@ class Manager(manager.MySqlManager):
             operating_system.sync(mount_point)
             operating_system.fsfreeze(mount_point)
         except Exception as e:
-            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+            LOG.error("Run pre_create_backup failed, error: %s", e)
             raise exception.BackupCreationError(str(e))
         return status
 
@@ -139,7 +139,6 @@ class Manager(manager.MySqlManager):
                 )
                 docker_utils.remove_container(self.app.docker_client)
             except Exception as err:
-                LOG.error('Failed to remove container. error: %s',
-                          str(err))
+                LOG.error('Failed to remove container. error: %s', err)
                 pass
         LOG.info('Finished to reset password for restore')

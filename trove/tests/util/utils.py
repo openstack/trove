@@ -47,7 +47,7 @@ def retry(expected_exception_cls, retries=3, delay_fun=lambda n: 3 * n):
                     delay = delay_fun(retries - remaining_attempts)
                     LOG.exception(
                         "Retrying in %(delay)d seconds "
-                        "(remaining attempts: %(remaining)d)..." %
+                        "(remaining attempts: %(remaining)d)...",
                         {'delay': delay, 'remaining': remaining_attempts})
                     time.sleep(delay)
             return f(*args, **kwargs)

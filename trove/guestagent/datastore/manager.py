@@ -967,7 +967,7 @@ class Manager(periodic_task.PeriodicTasks):
             # Freeze FS
             operating_system.fsfreeze(mount_point)
         except Exception as e:
-            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+            LOG.error("Run pre_create_backup failed, error: %s", e)
 
         return {}
 
@@ -980,6 +980,6 @@ class Manager(periodic_task.PeriodicTasks):
             mount_point = CONF.get(CONF.datastore_manager).mount_point
             operating_system.fsunfreeze(mount_point)
         except Exception as e:
-            LOG.error("Run post_create_backup failed, error: %s" % str(e))
+            LOG.error("Run post_create_backup failed, error: %s", e)
 
         return {}

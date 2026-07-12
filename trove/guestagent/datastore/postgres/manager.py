@@ -332,8 +332,8 @@ class PostgresManager(manager.Manager):
             command = f"postgres -c config_file={service.CONFIG_FILE}"
             self.app.start_db(ds_version=ds_version, command=command)
         except Exception as e:
-            LOG.error(f"Failed to restore database service after rebuild, "
-                      f"error: {str(e)}")
+            LOG.error("Failed to restore database service after rebuild, "
+                      "error: %s", e)
             self.prepare_error = True
             raise
         finally:
@@ -380,7 +380,7 @@ class PostgresManager(manager.Manager):
             operating_system.sync(mount_point)
             operating_system.fsfreeze(mount_point)
         except Exception as e:
-            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+            LOG.error("Run pre_create_backup failed, error: %s", e)
             raise exception.BackupCreationError(str(e))
         return {}
 
@@ -400,7 +400,7 @@ class PostgresManager(manager.Manager):
 
                 self.app.adm.pquery(command)
             except Exception as e:
-                LOG.error("Run _stop_backup failed, error: %s" % str(e))
+                LOG.error("Run _stop_backup failed, error: %s", e)
             finally:
                 self.app.adm.close_pconnection()
 
@@ -408,7 +408,7 @@ class PostgresManager(manager.Manager):
             mount_point = CONF.get(CONF.datastore_manager).mount_point
             operating_system.fsunfreeze(mount_point)
         except Exception as e:
-            LOG.warning('Failed to run post_create_backup %s' % e)
+            LOG.warning('Failed to run post_create_backup %s', e)
             raise exception.BackupCreationError(str(e))
         _stop_backup()
         return {}

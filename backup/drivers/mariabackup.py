@@ -87,7 +87,7 @@ class MariaBackupIncremental(MariaBackup):
             '--backup --stream=xbstream --incremental-lsn=%(lsn)s ' +
             self.user_and_pass
         )
-        LOG.info('cmd:{}'.format(cmd))
+        LOG.debug('cmd: %s', cmd)
         return cmd
 
     def get_metadata(self):

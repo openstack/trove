@@ -61,7 +61,7 @@ class Manager(manager.MySqlManager):
             operating_system.sync(mount_point)
             operating_system.fsfreeze(mount_point)
         except Exception as e:
-            LOG.error("Run pre_create_backup failed, error: %s" % str(e))
+            LOG.error("Run pre_create_backup failed, error: %s", e)
             raise exception.BackupCreationError(str(e))
 
         return status

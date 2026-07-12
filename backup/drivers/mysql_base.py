@@ -137,7 +137,7 @@ class MySQLBaseRunner(base.BaseRunner):
             LOG.info("Restoring back to full backup.")
             command = self.restore_command
 
-        LOG.debug("command:{}".format(command))
+        LOG.debug("command: %s", command)
 
         self.restore_content_length += self.unpack(location, checksum, command)
         self.incremental_prepare(incremental_dir)
