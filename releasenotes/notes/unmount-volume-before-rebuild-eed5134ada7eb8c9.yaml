@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Trove now unmounts the data volume before rebuilding an instance to reduce the
+    risk of data corruption.

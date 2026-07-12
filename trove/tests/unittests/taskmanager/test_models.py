@@ -786,6 +786,25 @@ class ResizeVolumeTest(trove_testtools.TestCase):
         self.instance.reset_mock()
 
 
+class RebuildActionTest(trove_testtools.TestCase):
+
+    def test_execute_unmounts_volume(self):
+        instance = Mock()
+        instance.db_info.task_status = InstanceTasks.NONE
+        action = taskmanager_models.RebuildAction(instance, 'image-id')
+
+        with (
+            patch.object(action, '_unmount_volume') as unmount_volume,
+            patch.object(action, '_wait_for_nova_action'),
+            patch.object(action, '_assert_nova_action_was_successful'),
+            patch.object(action, '_assert_processes_are_ok'),
+            patch.object(action, '_record_action_success'),
+        ):
+            action.execute()
+
+        unmount_volume.assert_called_once_with()
+
+
 class BuiltInstanceTasksTest(trove_testtools.TestCase):
 
     def get_inst_service_status(self, status_id, statuses):
