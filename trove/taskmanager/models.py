@@ -1795,14 +1795,7 @@ class ModuleTasks(object):
                  {'num': reapply_count, 'skip': skipped_count})
 
 
-class ResizeVolumeAction(object):
-    """Performs volume resize action."""
-
-    def __init__(self, instance, old_size, new_size):
-        self.instance = instance
-        self.old_size = int(old_size)
-        self.new_size = int(new_size)
-
+class VolumeUnmountActionBase(object):
     def get_mount_point(self):
         mount_point = CONF.get(
             self.instance.datastore_version.manager).mount_point
@@ -1810,6 +1803,27 @@ class ResizeVolumeAction(object):
 
     def get_device_path(self):
         return self.instance.device_path
+
+    @try_recover
+    def _unmount_volume(self):
+        LOG.debug("Unmounting the volume on instance %(id)s", {
+            'id': self.instance.id})
+        mount_point = self.get_mount_point()
+        device_path = self.get_device_path()
+        self.instance.guest.unmount_volume(device_path=device_path,
+                                           mount_point=mount_point)
+        LOG.debug("Successfully unmounted the volume %(vol_id)s for "
+                  "instance %(id)s", {'vol_id': self.instance.volume_id,
+                                      'id': self.instance.id})
+
+
+class ResizeVolumeAction(VolumeUnmountActionBase):
+    """Performs volume resize action."""
+
+    def __init__(self, instance, old_size, new_size):
+        self.instance = instance
+        self.old_size = int(old_size)
+        self.new_size = int(new_size)
 
     def _fail(self, orig_func):
         LOG.error("%(func)s encountered an error when "
@@ -1852,18 +1866,6 @@ class ResizeVolumeAction(object):
     def _stop_db(self):
         LOG.debug("Instance %s calling stop_db.", self.instance.id)
         self.instance.guest.stop_db()
-
-    @try_recover
-    def _unmount_volume(self):
-        LOG.debug("Unmounting the volume on instance %(id)s", {
-            'id': self.instance.id})
-        mount_point = self.get_mount_point()
-        device_path = self.get_device_path()
-        self.instance.guest.unmount_volume(device_path=device_path,
-                                           mount_point=mount_point)
-        LOG.debug("Successfully unmounted the volume %(vol_id)s for "
-                  "instance %(id)s", {'vol_id': self.instance.volume_id,
-                                      'id': self.instance.id})
 
     @try_recover
     def _detach_volume(self):
@@ -2307,7 +2309,7 @@ class MigrateAction(ResizeActionBase):
         self.instance.guest.restart()
 
 
-class RebuildAction(ResizeActionBase):
+class RebuildAction(ResizeActionBase, VolumeUnmountActionBase):
 
     def __init__(self, instance, image_id):
         """The action to perform rebuild.
@@ -2321,6 +2323,19 @@ class RebuildAction(ResizeActionBase):
         self.wait_status = ['ACTIVE']
 
     def _initiate_nova_action(self):
+        # Unmount the data volume before the Nova rebuild to reduce the risk
+        # of filesystem corruption. The database container has already been
+        # stopped by ResizeActionBase.
+        try:
+            self._unmount_volume()
+        except (exception.GuestError, exception.GuestTimeout) as e:
+            if self.ignore_stop_error:
+                LOG.warning(
+                    "Failed to unmount volume for %s, error: %s",
+                    self.instance.id, str(e))
+            else:
+                raise
+
         files = self.instance.get_injected_files(
             self.instance.datastore.name,
             self.instance.datastore_version.name)
