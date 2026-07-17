@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds management API endpoints to load and remove datastore version
+    configuration parameters.

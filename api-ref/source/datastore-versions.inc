@@ -412,6 +412,61 @@ Request
 
 
 
+Set datastore version configuration parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  PATCH /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/update_all
+
+Admin only API. Create or update the configuration parameters supplied
+for the specified datastore version. Existing parameters omitted from
+the request remain unchanged.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+   - configuration-parameters: configuration-parameters
+   - configuration-parameters.name: configuration_parameter_name
+   - configuration-parameters.restart_required: configuration_parameter_restart_required
+   - configuration-parameters.type: configuration_parameter_type
+   - configuration-parameters.max: configuration_parameter_max
+   - configuration-parameters.min: configuration_parameter_min
+
+Request Example
+---------------
+
+.. literalinclude:: samples/datastore-version-parameter-patch-request.json
+   :language: javascript
+
+
+
+
+Delete datastore version configuration parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/delete_all
+
+Admin only API. Delete all the config parameters associated with
+the specified datastore version ID.
+
+Normal response codes: 204
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+
+
+
+
 List datastore version flavor associations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

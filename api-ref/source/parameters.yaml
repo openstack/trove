@@ -262,6 +262,18 @@ configuration:
   in: body
   required: true
   type: string
+configuration-parameter:
+  description: |
+    The ``configuration-parameter`` object.
+  in: body
+  required: true
+  type: object
+configuration-parameters:
+  description: |
+    The list of the configuration parameters.
+  in: body
+  required: true
+  type: array
 configuration1:
   description: |
     A ``configuration`` object.
@@ -301,6 +313,37 @@ configuration_links:
 configuration_name:
   description: |
     The name of a configuration.
+  in: body
+  required: true
+  type: string
+configuration_parameter_max:
+  description: |
+    The optional maximum allowed value for a numeric configuration parameter.
+  in: body
+  required: false
+  type: number
+configuration_parameter_min:
+  description: |
+    The optional minimum allowed value for a numeric configuration parameter.
+  in: body
+  required: false
+  type: number
+configuration_parameter_name:
+  description: |
+    The name of the configuration parameter.
+  in: body
+  required: true
+  type: string
+configuration_parameter_restart_required:
+  description: |
+    Whether instance restart is required after changing the parameter value.
+  in: body
+  required: true
+  type: boolean
+configuration_parameter_type:
+  description: |
+    The data type of the configuration parameter. Allowed values are
+    ``boolean``, ``float``, ``integer``, ``list``, and ``string``.
   in: body
   required: true
   type: string

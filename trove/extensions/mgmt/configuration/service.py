@@ -133,3 +133,30 @@ class ConfigurationsParameterController(wsgi.Controller):
             raise exception.BadRequest(_("Parameter %s does not exist in the "
                                          "database.") % id)
         return wsgi.Result(None, 204)
+
+    @admin_context
+    def update_all(self, req, body, tenant_id, version_id):
+        """Updates all configuration parameters."""
+        configuration_parameters = body['configuration-parameters']
+        datastore_version = ds_models.DatastoreVersion.load_by_uuid(version_id)
+        for param in configuration_parameters:
+            config_models.create_or_update_datastore_configuration_parameter(
+                param['name'],
+                datastore_version.id,
+                param['restart_required'],
+                param['type'],
+                param.get('max'),
+                param.get('min'),
+            )
+        return wsgi.Result(None, 202)
+
+    @admin_context
+    def delete_all(self, req, tenant_id, version_id):
+        """Delete all configuration parameters."""
+        datastore_version = ds_models.DatastoreVersion.load_by_uuid(version_id)
+        configuration_parameters = (
+            config_models.DatastoreConfigurationParameters.load_parameters(
+                datastore_version.id))
+        for param in configuration_parameters:
+            param.delete()
+        return wsgi.Result(None, 204)
