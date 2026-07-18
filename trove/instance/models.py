@@ -957,7 +957,7 @@ class BaseInstance(SimpleInstance):
         try:
             del_fault = DBInstanceFault.find_by(instance_id=self.id)
             del_fault.deleted = True
-            del_fault.deleted_at = datetime.utcnow()
+            del_fault.deleted_at = timeutils.utcnow()
             del_fault.save()
         except exception.ModelNotFoundError:
             pass
