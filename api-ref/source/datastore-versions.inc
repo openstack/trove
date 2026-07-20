@@ -499,3 +499,93 @@ Request
    - project_id: project_id
    - datastore_version_id: datastore_version_id
    - flavor_id: flavor_id
+
+
+
+List datastore version volume type associations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  GET /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/volume-types
+
+Admin only API. List volume type associations for a datastore version.
+
+Normal response codes: 200
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+
+Response Parameters
+-------------------
+
+.. rest_parameters:: parameters.yaml
+
+   - volume_type_ids: volume_type_ids_response
+
+Response Example
+----------------
+
+.. literalinclude:: samples/datastore-version-mgmt-volume-types-list-response.json
+   :language: javascript
+
+
+
+Add datastore version volume type associations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  POST /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/volume-types
+
+Admin only API. Add one or more volume type associations to a datastore
+version. Existing volume type associations are preserved.
+
+The request must contain a non-empty list of unique, non-empty volume type
+IDs. The API does not verify that the specified IDs correspond to existing
+volume types in Cinder.
+
+Volume type IDs are processed in the order in which they are specified. If a
+volume type is already associated with the datastore version, the request
+returns a ``400 Bad Request`` response. Associations added before the existing
+association was encountered are preserved, and the remaining IDs are not
+processed.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+   - volume_type_ids: volume_type_ids
+
+Request Example
+---------------
+
+.. literalinclude:: samples/datastore-version-mgmt-volume-types-request.json
+   :language: javascript
+
+
+
+
+Delete a datastore version volume type association
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/volume-types/{volume_type_id}
+
+Admin only API. Delete a volume type association from a datastore version.
+
+Normal response codes: 204
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+   - volume_type_id: volume_type_id

@@ -1037,3 +1037,20 @@ mgmt_datastore_version_flavor = {
         }
     }
 }
+
+mgmt_datastore_version_volume_type = {
+    "create": {
+        "name": "mgmt_datastore_version_volume_type:create",
+        "type": "object",
+        "required": ["volume_type_ids"],
+        "additionalProperties": False,
+        "properties": {
+            "volume_type_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": True,
+                "items": non_empty_string
+            }
+        }
+    }
+}

@@ -26,7 +26,8 @@ from trove.configuration import models as config_models
 from trove.datastore import models
 from trove.extensions.mgmt.datastores.service import (
     DatastoreVersionController,
-    DatastoreVersionFlavorController)
+    DatastoreVersionFlavorController,
+    DatastoreVersionVolumeTypeController)
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
@@ -51,6 +52,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
             cls.ds, 'test_vr2', version=cls.ds_version_number)
         cls.version_controller = DatastoreVersionController()
         cls.flavor_controller = DatastoreVersionFlavorController()
+        cls.volume_type_controller = (DatastoreVersionVolumeTypeController())
 
         super(TestDatastoreVersionController, cls).setUpClass()
 
@@ -522,3 +524,118 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         mock_load_datastore_version.assert_called_once_with('version-id')
         mock_delete_flavor.assert_called_once_with(
             'datastore-version-id', 'flavor-1')
+
+    def test_create_volume_types_schema(self):
+        body = {
+            'volume_type_ids': ['1', '2']
+        }
+
+        schema = self.volume_type_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertTrue(validator.is_valid(body))
+
+    def test_create_volume_types_schema_empty_list(self):
+        body = {
+            'volume_type_ids': []
+        }
+
+        schema = self.volume_type_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertFalse(validator.is_valid(body))
+
+    def test_create_volume_types_schema_invalid_volume_type_ids(self):
+        body = {
+            'volume_type_ids': ['1', '', None]
+        }
+
+        schema = self.volume_type_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertFalse(validator.is_valid(body))
+
+    def test_create_volume_types_schema_missing_volume_type_ids(self):
+        body = {}
+
+        schema = self.volume_type_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertFalse(validator.is_valid(body))
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'list_datastore_version_volume_type_associations')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_list_volume_types(
+            self, mock_load_datastore_version, mock_list_volume_types):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+        mock_list_volume_types.return_value = [
+            MagicMock(value='type-1'), MagicMock(value='type-2')]
+
+        result = self.volume_type_controller.index(
+            self._admin_req(), mock.ANY, 'version-id')
+
+        self.assertEqual(200, result.status)
+        self.assertEqual(
+            {'volume_type_ids': ['type-1', 'type-2']}, result.data(None))
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_list_volume_types.assert_called_once_with(
+            'datastore-version-id')
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'add_datastore_version_volume_type_association')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_create_volume_types(
+            self, mock_load_datastore_version, mock_add_volume_types):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+        body = {
+            'volume_type_ids': ['type-1', 'type-2']
+        }
+
+        result = self.volume_type_controller.create(
+            self._admin_req(), body, mock.ANY, 'version-id')
+
+        self.assertEqual(202, result.status)
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_add_volume_types.assert_called_once_with(
+            'datastore-version-id', ['type-1', 'type-2'])
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'add_datastore_version_volume_type_association')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_create_volume_types_existing_association(
+            self, mock_load_datastore_version, mock_add_volume_type):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+        mock_add_volume_type.side_effect = (
+            exception.DatastoreVolumeTypeAssociationAlreadyExists(
+                datastore_version_id='datastore-version-id', id='type-1'))
+        body = {
+            'volume_type_ids': ['type-1', 'type-2']
+        }
+
+        self.assertRaises(
+            exception.DatastoreVolumeTypeAssociationAlreadyExists,
+            self.volume_type_controller.create,
+            self._admin_req(), body, mock.ANY, 'version-id')
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_add_volume_type.assert_called_once_with(
+            'datastore-version-id', ['type-1', 'type-2'])
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'delete_datastore_version_volume_type_association')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_delete_volume_type(
+            self, mock_load_datastore_version, mock_delete_volume_type):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+
+        result = self.volume_type_controller.delete(
+            self._admin_req(), mock.ANY, 'version-id', 'type-1')
+
+        self.assertEqual(204, result.status)
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_delete_volume_type.assert_called_once_with(
+            'datastore-version-id', 'type-1')

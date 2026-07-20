@@ -18,7 +18,8 @@ from trove.extensions.mgmt.clusters.service import MgmtClusterController
 from trove.extensions.mgmt.configuration import service as conf_service
 from trove.extensions.mgmt.datastores.service import (
     DatastoreVersionController,
-    DatastoreVersionFlavorController)
+    DatastoreVersionFlavorController,
+    DatastoreVersionVolumeTypeController)
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.extensions.mgmt.quota.service import QuotaController
 from trove.extensions.mgmt.upgrade.service import UpgradeController
@@ -90,5 +91,12 @@ class Mgmt(extensions.ExtensionDescriptor):
             DatastoreVersionFlavorController(),
             member_actions={})
         resources.append(datastore_flavors)
+
+        datastore_volume_types = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/datastore-versions/'
+            '{version_id}/volume-types',
+            DatastoreVersionVolumeTypeController(),
+            member_actions={})
+        resources.append(datastore_volume_types)
 
         return resources
