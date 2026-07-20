@@ -21,9 +21,12 @@ import jsonschema
 
 from trove.common import clients
 from trove.common import exception
+from trove.common import wsgi
 from trove.configuration import models as config_models
 from trove.datastore import models
-from trove.extensions.mgmt.datastores.service import DatastoreVersionController
+from trove.extensions.mgmt.datastores.service import (
+    DatastoreVersionController,
+    DatastoreVersionFlavorController)
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
@@ -47,6 +50,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         cls.ds_version2 = models.DatastoreVersion.load(
             cls.ds, 'test_vr2', version=cls.ds_version_number)
         cls.version_controller = DatastoreVersionController()
+        cls.flavor_controller = DatastoreVersionFlavorController()
 
         super(TestDatastoreVersionController, cls).setUpClass()
 
@@ -55,6 +59,13 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         util.cleanup_db()
 
         super(TestDatastoreVersionController, cls).tearDownClass()
+
+    def _admin_req(self):
+        req = MagicMock()
+        req.environ = {
+            wsgi.CONTEXT_KEY: MagicMock(is_admin=True)
+        }
+        return req
 
     def test_create_schema(self):
         image_id = self.random_uuid()
@@ -396,3 +407,118 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
 
         data = output.data(None)
         self.assertEqual(tags, data['version']['image_tags'])
+
+    def test_create_flavors_schema(self):
+        body = {
+            'flavor_ids': ['1', '2']
+        }
+
+        schema = self.flavor_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertTrue(validator.is_valid(body))
+
+    def test_create_flavors_schema_empty_list(self):
+        body = {
+            'flavor_ids': []
+        }
+
+        schema = self.flavor_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertFalse(validator.is_valid(body))
+
+    def test_create_flavors_schema_invalid_flavor_ids(self):
+        body = {
+            'flavor_ids': ['1', '', None]
+        }
+
+        schema = self.flavor_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertFalse(validator.is_valid(body))
+
+    def test_create_flavors_schema_missing_flavor_ids(self):
+        body = {}
+
+        schema = self.flavor_controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+
+        self.assertFalse(validator.is_valid(body))
+
+    @mock.patch('trove.datastore.models.DBDatastoreVersionMetadata.find_all')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_list_flavors(
+            self, mock_load_datastore_version, mock_find_all):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+        mock_find_all.return_value = [
+            MagicMock(value='flavor-1'), MagicMock(value='flavor-2')]
+
+        result = self.flavor_controller.index(
+            self._admin_req(), mock.ANY, 'version-id')
+
+        self.assertEqual(200, result.status)
+        self.assertEqual(
+            {'flavor_ids': ['flavor-1', 'flavor-2']}, result.data(None))
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_find_all.assert_called_once_with(
+            datastore_version_id='datastore-version-id',
+            key='flavor', deleted=False)
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'add_datastore_version_flavor_association')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_create_flavors(
+            self, mock_load_datastore_version, mock_add_flavors):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+        body = {
+            'flavor_ids': ['flavor-1', 'flavor-2']
+        }
+
+        result = self.flavor_controller.create(
+            self._admin_req(), body, mock.ANY, 'version-id')
+
+        self.assertEqual(202, result.status)
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_add_flavors.assert_called_once_with(
+            'datastore-version-id', ['flavor-1', 'flavor-2'])
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'add_datastore_version_flavor_association')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_create_flavors_existing_association(
+            self, mock_load_datastore_version, mock_add_flavor):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+        mock_add_flavor.side_effect = (
+            exception.DatastoreFlavorAssociationAlreadyExists(
+                datastore_version_id='datastore-version-id', id='flavor-1'))
+        body = {
+            'flavor_ids': ['flavor-1', 'flavor-2']
+        }
+
+        self.assertRaises(
+            exception.DatastoreFlavorAssociationAlreadyExists,
+            self.flavor_controller.create,
+            self._admin_req(), body, mock.ANY, 'version-id')
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_add_flavor.assert_called_once_with(
+            'datastore-version-id', ['flavor-1', 'flavor-2'])
+
+    @mock.patch('trove.datastore.models.DatastoreVersionMetadata.'
+                'delete_datastore_version_flavor_association')
+    @mock.patch('trove.datastore.models.DatastoreVersion.load_by_uuid')
+    def test_delete_flavor(
+            self, mock_load_datastore_version, mock_delete_flavor):
+        datastore_version = MagicMock(id='datastore-version-id')
+        mock_load_datastore_version.return_value = datastore_version
+
+        result = self.flavor_controller.delete(
+            self._admin_req(), mock.ANY, 'version-id', 'flavor-1')
+
+        self.assertEqual(204, result.status)
+        mock_load_datastore_version.assert_called_once_with('version-id')
+        mock_delete_flavor.assert_called_once_with(
+            'datastore-version-id', 'flavor-1')

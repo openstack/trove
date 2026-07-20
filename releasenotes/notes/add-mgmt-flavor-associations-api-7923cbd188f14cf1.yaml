@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds management API endpoints to list, add, and delete flavor
+    associations for datastore versions.
