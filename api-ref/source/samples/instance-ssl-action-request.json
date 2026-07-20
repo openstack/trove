@@ -1,0 +1,8 @@
+{
+    "ssl": {
+        "enable": true,
+        "mode": "basic",
+        "container_ref": "https://barbican.example.kz/v1/secrets/2b4edf0-586b-49c4-a183-716a66d86f4e1",
+        "password_ref": "https://barbican.example.kz/v1/secrets/3927c462-60eb-4f1f-b64c-5a6835778371"
+    }
+}

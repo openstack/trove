@@ -115,3 +115,37 @@
               database:
                 backup_wait_timeout: 1200
                 default_datastore_versions: mysql:8.4
+
+- job:
+    name: trove-tempest-ubuntu-ssl-mysql
+    parent: trove-tempest-ubuntu-ssl-base
+    files: !inherit
+      - ^trove/guestagent/.*mysql.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mysql
+          TROVE_DATASTORE_VERSION: 8.4
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: mysql:8.4
+
+- job:
+    name: trove-tempest-ubuntu-ssl-replication-mysql
+    parent: trove-tempest-ubuntu-ssl-replication
+    files: !inherit
+      - ^trove/guestagent/.*mysql.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mysql
+          TROVE_DATASTORE_VERSION: 8.4
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: mysql:8.4

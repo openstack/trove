@@ -21,6 +21,7 @@ from trove.common import cfg
 from trove.common import constants
 from trove.common.db.postgresql import models
 from trove.common import exception
+from trove.common import ssl
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
@@ -29,7 +30,7 @@ from trove.guestagent.strategies.replication import base
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-REPL_USER = 'replicator'
+REPL_USER = pg_service.REPLICATION_USER
 
 
 class PostgresqlReplicationStreaming(base.Replication):
@@ -90,32 +91,17 @@ class PostgresqlReplicationStreaming(base.Replication):
         return repl_user_info
 
     def enable_as_master(self, service, master_config):
-        """Primary postgredql settings.
+        """Primary postgresql settings.
 
         For a server to be a master in postgres, we need to enable
         the replication user in pg_hba.conf
         """
         self._get_or_create_replication_user(service)
 
-        hba_entry = f"host replication {REPL_USER} 0.0.0.0/0 md5\n"
-        tmp_hba = '/tmp/pg_hba'
-        operating_system.copy(pg_service.HBA_CONFIG_FILE, tmp_hba,
-                              force=True, as_root=True)
-        operating_system.chmod(tmp_hba, FileMode.SET_ALL_RWX(),
-                               as_root=True)
-        with open(tmp_hba, 'a+') as hba_file:
-            hba_file.write(hba_entry)
-
-        operating_system.copy(tmp_hba, pg_service.HBA_CONFIG_FILE,
-                              force=True, as_root=True)
-        operating_system.chown(pg_service.HBA_CONFIG_FILE,
-                               user=service.database_service_uid,
-                               group=service.database_service_gid,
-                               as_root=True)
-        operating_system.chmod(pg_service.HBA_CONFIG_FILE,
-                               FileMode.SET_USR_RWX(),
-                               as_root=True)
-        operating_system.remove(tmp_hba, as_root=True)
+        service.apply_access_rules(
+            ssl=CONF.ssl_mode in (ssl.MODE_ENFORCED, ssl.MODE_MTLS),
+            mtls=CONF.ssl_mode == ssl.MODE_MTLS,
+            replication_user=REPL_USER)
         LOG.debug(f"{pg_service.HBA_CONFIG_FILE} changed")
 
         service.restart()

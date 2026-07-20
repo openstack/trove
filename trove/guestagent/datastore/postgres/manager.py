@@ -22,6 +22,7 @@ from trove.common import cfg
 from trove.common import constants
 from trove.common import exception
 from trove.common.notification import EndNotification
+from trove.common import ssl
 from trove.common import utils
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
@@ -47,6 +48,13 @@ class PostgresManager(manager.Manager):
     @property
     def configuration_manager(self):
         return self.app.configuration_manager
+
+    def _apply_access_rules(self, mode=None):
+        mode = mode or CONF.ssl_mode
+
+        self.app.apply_access_rules(
+            ssl=self.ssl_mode_at_least(mode, ssl.MODE_ENFORCED),
+            mtls=self.ssl_mode_at_least(mode, ssl.MODE_MTLS))
 
     def _get_max_wal_size_bytes(self):
         """Get PostgreSQL max_wal_size as bytes (default 1GB)."""
@@ -160,7 +168,7 @@ class PostgresManager(manager.Manager):
         self.app.update_overrides(overrides)
 
         # Prepare pg_hba.conf
-        self.app.apply_access_rules()
+        self._apply_access_rules()
         self.configuration_manager.apply_system_override(
             {'hba_file': service.HBA_CONFIG_FILE})
 
@@ -255,6 +263,11 @@ class PostgresManager(manager.Manager):
         """Set up the standby server."""
         self.replication.enable_as_slave(self.app, replica_info, None)
 
+        if 'cert_container' in replica_info:
+            self.enable_ssl_certificate(
+                replica_info['ssl_mode'], replica_info['cert_container'],
+                apply_overrides=False, is_startup=True)
+
         # For the previous primary, don't start db service in order to run
         # pg_rewind command next.
         if restart:
@@ -323,8 +336,15 @@ class PostgresManager(manager.Manager):
             self.app.set_data_dir(self.app.datadir)
             self.app.update_overrides(config_overrides)
 
+            # Enable SSL, if necessary
+            if self.ssl_mode_at_least(CONF.ssl_mode, ssl.MODE_BASIC):
+                cert_container = self._read_ssl_files()
+                self.enable_ssl_certificate(
+                    CONF.ssl_mode, cert_container,
+                    apply_overrides=False, is_startup=True)
+
             # force to create pg_hba.conf on rebuild
-            self.app.apply_access_rules()
+            self._apply_access_rules()
             self.app.configuration_manager.apply_system_override(
                 {'hba_file': service.HBA_CONFIG_FILE})
 
@@ -419,4 +439,66 @@ class PostgresManager(manager.Manager):
         return {
             'wal_size': operating_system.get_dir_size(wal_dir, as_root=True),
             'wal_archive_size': operating_system.get_dir_size(wal_archive_dir)
+        }
+
+    def _get_ssl_files(self):
+        return {
+            'private_key': f"{self.app.datadir}/server.key",
+            'certificate': f"{self.app.datadir}/server.crt",
+            'ca': f"{self.app.datadir}/ca.crt"
+        }
+
+    # SSL modes (configured via pg_hba.conf):
+    # basic    - SSL enabled, client cert not required, md5 auth
+    # enforced - SSL required (hostssl), md5 auth still used
+    # mtls     - SSL required, client cert required (verify-full),
+    #            authentication via certificate (CN must match user)
+    def _enable_ssl_certificate_impl(self, mode, apply_overrides=True):
+        LOG.debug('Enable SSL mode: %s', mode)
+
+        self._apply_access_rules(mode)
+
+        overrides = {
+            'ssl': 'on',
+            'ssl_ca_file': 'ca.crt',
+            'ssl_cert_file': 'server.crt',
+            'ssl_key_file': 'server.key'
+        }
+
+        self.app.update_overrides(overrides)
+        if apply_overrides:
+            self.app.apply_overrides(overrides)
+
+        # PostgreSQL reloads SSL configuration without restart.
+        return False
+
+    def _disable_ssl_certificate_impl(self, apply_overrides=True):
+        LOG.debug('Disable SSL')
+
+        self._apply_access_rules(None)
+
+        overrides = {
+            'ssl': 'off'
+        }
+
+        self.app.update_overrides(overrides)
+        if apply_overrides:
+            self.app.apply_overrides(overrides)
+
+        # PostgreSQL reloads SSL configuration without restart.
+        return False
+
+    def show_ssl_status(self):
+        status = self.app.adm.query('SHOW ssl')[0][0]
+
+        if status != 'on':
+            return {'status': status}
+
+        certificate = operating_system.read_file(
+            self._get_ssl_files()['certificate'],
+            as_root=True)
+
+        return {
+            'status': status,
+            'certificate': certificate
         }

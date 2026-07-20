@@ -31,6 +31,7 @@ from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import pagination
 from trove.common import policy
+from trove.common import ssl
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as ds_models
@@ -280,7 +281,24 @@ class InstanceController(wsgi.Controller):
                         instance_module['module_id'])
                     module_models.InstanceModule.delete(
                         context, instance_module)
+            try:
+                if instance.db_info['ssl_mode'] and \
+                   instance.db_info['ssl_mode'] != 'None':
+                    # (mangust404) The problem here that to correctly remove
+                    # consumer, the context should be a project's owner.
+                    # Barbican doesn't allow to manage secrets/consumers
+                    # even for admins.
+                    # If you run instance delettion as admin, secret consumers
+                    # cannot be updated.
+                    ssl_client = ssl.TroveSSL(context)
+                    ssl_client.disable_instance_ssl(instance)
+            except Exception as e:
+                LOG.warning(
+                    "Unable to remove consumer for key %s on %s deletion: %s",
+                    instance.db_info['ssl_ref'], instance.id, e,
+                    exc_info=True)
             instance.delete()
+
         return wsgi.Result(None, 202)
 
     def _check_nic(self, context, nic):
@@ -496,6 +514,12 @@ class InstanceController(wsgi.Controller):
                                           region_name=region_name,
                                           access=access)
 
+        if slave_of_id and replica_source.ssl_mode and \
+           replica_source.ssl_mode != 'None':
+            ssl_client = ssl.TroveSSL(context)
+            ssl_client.enable_instance_ssl(
+                instance, replica_source.ssl_mode, replica_source.ssl_ref)
+
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)
 
@@ -661,6 +685,135 @@ class InstanceController(wsgi.Controller):
         guest_log = client.guest_log_action(log_name, enable, disable,
                                             publish, discard)
         return wsgi.Result({'log': guest_log}, 200)
+
+    def ssl_show(self, req, tenant_id, id):
+        """Show information about SSL for an instance."""
+        LOG.debug("Showing SSL status for tenant %s", tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+        self.authorize_instance_action(context, 'show', instance)
+        client = clients.create_guest_client(context, id)
+        ssl_info = client.ssl_show()
+        if instance.db_info.ssl_mode and \
+           instance.db_info.ssl_mode != 'None':
+            ssl_info['mode'] = instance.db_info.ssl_mode
+        else:
+            ssl_info['mode'] = ssl.MODE_BUILTIN
+        include_cert = strutils.bool_from_string(
+            req.GET.get('include_certificate'))
+        if not include_cert and 'certificate' in ssl_info and \
+           'payload' in ssl_info['certificate']:
+            del ssl_info['certificate']['payload']
+        return wsgi.Result({'ssl': ssl_info}, 200)
+
+    def ssl_action(self, req, body, tenant_id, id):
+        LOG.info("SSL action for tenant %s", tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+
+        instance.validate_can_perform_action()
+        self.authorize_instance_action(context, 'update', instance)
+
+        client = clients.create_guest_client(context, id)
+
+        container_ref = body['ssl'].get('container_ref', None)
+        password_ref = body['ssl'].get('password_ref', None)
+        enable = body['ssl'].get('enable', None)
+        if enable and not container_ref:
+            raise exception.BadRequest(
+                "You should provide container_ref for enabling ssl.")
+        disable = body['ssl'].get('disable', None)
+        rollback = body['ssl'].get('rollback', None)
+
+        actions = [enable, disable, rollback]
+        if sum(1 for op in actions if op) > 1:
+            raise exception.BadRequest(
+                "Cannot do several operations at once.")
+
+        # Rolling back for replica is allowed, to cover edge cases
+        if rollback:
+            LOG.debug(
+                "Rolling back SSL configuration for tenant %s", tenant_id)
+            result = client.ssl_rollback()
+            # Write real guest mode into database
+            if 'mode' in result:
+                instance.db_info.ssl_mode = result['mode']
+                instance.db_info.save()
+            return wsgi.Result({'ssl': result}, 200)
+
+        if instance.slave_of_id:
+            raise exception.BadRequest(
+                "Unable to modify ssl on the replica. "
+                "Please perform the action on the primary instead.")
+
+        mode = body['ssl'].get('mode', ssl.MODE_BASIC)
+        if mode not in (ssl.MODE_BASIC,
+                        ssl.MODE_ENFORCED, ssl.MODE_MTLS):
+            raise exception.BadRequest(
+                "Unknown SSL mode. Available options are: "
+                "%s, %s, %s" % (
+                    ssl.MODE_BASIC, ssl.MODE_ENFORCED, ssl.MODE_MTLS))
+
+        container = None
+        ssl_client = ssl.TroveSSL(context)
+
+        if container_ref:
+            # Get certificate container from Barbican.
+            container = ssl_client.get_p12_bundle(container_ref, password_ref)
+
+        replicas = []
+        replica_clients = {}
+
+        for dbinfo in instance.slaves:
+            replica = models.Instance.load(
+                context, dbinfo.id, needs_server=True)
+
+            replica.validate_can_perform_action()
+            self.authorize_instance_action(
+                context, 'update', replica)
+
+            replicas.append(replica)
+            replica_clients[replica.id] = (
+                clients.create_guest_client(context, replica.id))
+
+        instances = [instance] + replicas
+        completed = []
+
+        # Define the actual task to be passed into transaction wrapper
+        def _execute_guest_ssl_actions():
+            ssl_info = client.ssl_action(mode, container, enable, disable)
+            completed.append(client)
+            for replica in replicas:
+                replica_clients[replica.id].ssl_action(
+                    mode, container, enable, disable)
+                completed.append(replica_clients[replica.id])
+            return ssl_info
+
+        # Define the rollback task to be passed into transaction wrapper
+        def _rollback_guest_ssl_actions():
+            error = None
+            for guest in reversed(completed):
+                try:
+                    guest.ssl_rollback()
+                except Exception as exc:
+                    LOG.exception(
+                        "Failed to rollback guest SSL configuration: %s",
+                        exc)
+                    if error is None:
+                        error = exc
+            if error:
+                raise error
+
+        ssl_info = ssl.run_ssl_state_transaction(
+            ssl_client, instances, mode, container_ref, enable, disable,
+            _execute_guest_ssl_actions, _rollback_guest_ssl_actions)
+
+        return wsgi.Result({'ssl': ssl_info}, 200)
 
     def module_list(self, req, tenant_id, id):
         """Return information about modules on an instance."""

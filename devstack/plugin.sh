@@ -433,6 +433,13 @@ function configure_tempest_for_trove {
     echo "Enable trove-tempest-plugin"
     pip_install $DEST/trove-tempest-plugin
 
+    if [ -d "$DEST/barbican-tempest-plugin" ]; then
+        # This command has a meaning only for developers DevStack installtion.
+        # In Zuul jobs, this plugin installed by tempest_plugins: section in jobs.yaml.
+        echo "Enable barbican-tempest-plugin"
+        pip_install -e $DEST/barbican-tempest-plugin
+    fi
+
     echo "Adding [database] section to tempest.conf"
     if [[ -n "$TROVE_DATASTORE_TYPE" ]]; then
         iniset $TEMPEST_CONFIG database enabled_datastores $TROVE_DATASTORE_TYPE

@@ -21,6 +21,7 @@ python-designateclient>=2.7.0 # Apache-2.0
 python-neutronclient>=6.7.0 # Apache-2.0
 python-glanceclient>=2.8.0 # Apache-2.0
 python-troveclient>=2.2.0 # Apache-2.0
+python-barbicanclient>=7.0.0 # Apache-2.0
 jsonschema>=3.2.0 # MIT
 Jinja2>=2.10 # BSD License (3 clause)
 pexpect!=3.3,>=3.1 # ISC License
@@ -46,6 +47,7 @@ docker>=4.2.0 # Apache-2.0
 psycopg2-binary>=2.6.2 # LGPL/ZPL
 semantic-version>=2.7.0 # BSD
 oslo.cache>=1.26.0 # Apache-2.0
+pyOpenSSL>=24.2.1 # Apache-2.0
 
 # for trove network driver
 Flask>=2.2.3 # BSD

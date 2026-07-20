@@ -15,6 +15,7 @@
 from oslo_log import log as logging
 from oslo_utils.excutils import save_and_reraise_exception
 
+import semantic_version
 from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
@@ -142,3 +143,31 @@ class Manager(manager.MySqlManager):
                 LOG.error('Failed to remove container. error: %s', err)
                 pass
         LOG.info('Finished to reset password for restore')
+
+    def _get_default_tls_versions(self):
+        mariadb_10_4_6 = semantic_version.Version('10.4.6')
+        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
+
+        if cur_ver <= mariadb_10_4_6:
+            return 'TLSv1.2'
+        else:
+            return 'TLSv1.2,TLSv1.3'
+
+    def _get_disable_ssl_overrides(self):
+        return {
+            # Change of ssl_cert to empty value leads to error in MariaDB
+            # startup process
+            'ssl': 'false',
+            # The only reliable way to disable SSL is to unset tls_version.
+            'tls_version': ''
+        }
+
+    def _get_enable_ssl_overrides(self):
+        files = self._get_ssl_files()
+        return {
+            'ssl_cert': files['certificate'],
+            'ssl_key': files['private_key'],
+            'ssl_ca': files['ca'],
+            'ssl': 'on',
+            'tls_version': self._get_default_tls_versions()
+        }

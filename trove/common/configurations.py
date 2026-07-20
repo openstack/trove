@@ -30,6 +30,7 @@ class RedisConfParser(object):
 class MySQLConfParser(object):
 
     SERVER_CONF_SECTION = 'mysqld'
+    CLIENT_CONF_SECTION = 'client'
     CODEC = stream_codecs.IniCodec(
         default_value='1', comment_markers=('#', ';', '!'))
 

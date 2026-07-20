@@ -114,3 +114,37 @@
                 backup_wait_timeout: 1200
                 enabled_datastores: "mariadb"
                 default_datastore_versions: mariadb:11.4
+
+- job:
+    name: trove-tempest-ubuntu-ssl-mariadb
+    parent: trove-tempest-ubuntu-ssl-base
+    files: !inherit
+      - ^trove/guestagent/.*mariadb.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mariadb
+          TROVE_DATASTORE_VERSION: 11.4
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                enabled_datastores: "mariadb"
+                default_datastore_versions: mariadb:11.4
+
+- job:
+    name: trove-tempest-ubuntu-ssl-replication-mariadb
+    parent: trove-tempest-ubuntu-ssl-replication
+    files: !inherit
+      - ^trove/guestagent/.*mariadb.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: mariadb
+          TROVE_DATASTORE_VERSION: 11.4
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                enabled_datastores: "mariadb"
+                default_datastore_versions: mariadb:11.4

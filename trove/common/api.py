@@ -129,6 +129,14 @@ class API(wsgi.Router):
                        controller=instance_resource,
                        action="guest_log_action",
                        conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/instances/{id}/ssl",
+                       controller=instance_resource,
+                       action="ssl_show",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/instances/{id}/ssl",
+                       controller=instance_resource,
+                       action="ssl_action",
+                       conditions={'method': ['POST']})
         mapper.connect("/{tenant_id}/instances/{id}/modules",
                        controller=instance_resource,
                        action="module_list",

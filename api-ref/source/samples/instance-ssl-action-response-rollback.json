@@ -1,0 +1,7 @@
+{
+    "ssl": {
+        "status": "on",
+        "mode": "basic",
+        "restart_required": true
+    }
+}

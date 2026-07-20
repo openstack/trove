@@ -1,0 +1,11 @@
+{
+    "ssl": {
+        "status": "on",
+        "mode": "basic",
+        "certificate": {
+            "cn": "self-signed certificate",
+            "expire_at": "2027-02-10T09:06:25.000000",
+            "san": null
+        }
+    }
+}

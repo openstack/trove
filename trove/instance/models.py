@@ -1067,9 +1067,10 @@ class BaseInstance(SimpleInstance):
                 "tenant_id=%s\n"
                 "datastore_registry_ext=%s\n"
                 "replication_strategy=%s\n"
+                "ssl_mode=%s\n"
                 % (self.id, datastore_manager, datastore_version,
                    self.tenant_id, self.datastore_registry_ext,
-                   self.datastore_repl_strategy)
+                   self.datastore_repl_strategy, self.db_info.ssl_mode)
             )
         }
 
@@ -1316,7 +1317,8 @@ class Instance(BuiltInstance):
                availability_zone=None, nics=None,
                configuration_id=None, slave_of_id=None, cluster_config=None,
                replica_count=None, volume_type=None, modules=None,
-               locality=None, region_name=None, access=None):
+               locality=None, region_name=None, access=None,
+               ssl_mode=None, ssl_ref=None):
         nova_client = clients.create_nova_client(context)
         cinder_client = clients.create_cinder_client(context)
         datastore_cfg = CONF.get(datastore_version.manager)
@@ -1450,6 +1452,8 @@ class Instance(BuiltInstance):
                     context,
                     instance_id=slave_of_id))
             replica_source_instance.validate_can_perform_action()
+            ssl_mode = replica_source_instance.db_info.ssl_mode
+            ssl_ref = replica_source_instance.db_info.ssl_ref
 
         multi_replica = slave_of_id and replica_count and replica_count > 1
         instance_count = replica_count if multi_replica else 1
@@ -1499,7 +1503,8 @@ class Instance(BuiltInstance):
                     configuration_id=configuration_id,
                     slave_of_id=slave_of_id, cluster_id=cluster_id,
                     shard_id=shard_id, type=instance_type,
-                    region_id=region_name, access=access)
+                    region_id=region_name, access=access,
+                    ssl_mode=ssl_mode, ssl_ref=ssl_ref)
                 instance_id = db_info.id
                 instance_name = name
                 LOG.debug(f"Creating new instance {instance_id}")
@@ -2080,7 +2085,8 @@ class DBInstance(dbmodels.DatabaseModelBase):
                     'volume_size', 'tenant_id', 'server_status',
                     'deleted', 'deleted_at', 'datastore_version_id',
                     'configuration_id', 'slave_of_id', 'cluster_id',
-                    'shard_id', 'type', 'region_id', 'encrypted_key', 'access']
+                    'shard_id', 'type', 'region_id', 'encrypted_key', 'access',
+                    'ssl_mode', 'ssl_ref']
     _table_name = 'instances'
 
     def __init__(self, task_status, **kwargs):

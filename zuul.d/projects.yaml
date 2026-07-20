@@ -20,17 +20,26 @@
             voting: false
         - trove-tempest-ubuntu-replication-mysql:
             voting: false
-        - trove-tempest-cinder-storage-driver-mysql:
+        - trove-tempest-ubuntu-ssl-mysql
+        - trove-tempest-ubuntu-ssl-replication-mysql:
             voting: false
+        - trove-tempest-cinder-storage-driver-mysql:
+           voting: false
         - trove-tempest-ubuntu-base-mariadb
         - trove-tempest-ubuntu-backup-mariadb:
             voting: false
         - trove-tempest-ubuntu-replication-mariadb:
             voting: false
+        - trove-tempest-ubuntu-ssl-mariadb
+        - trove-tempest-ubuntu-ssl-replication-mariadb:
+            voting: false
         - trove-tempest-cinder-storage-driver-mariadb:
             voting: false
         - trove-tempest-ubuntu-base-postgresql
         - trove-tempest-ubuntu-backup-postgresql:
+            voting: false
+        - trove-tempest-ubuntu-ssl-postgresql
+        - trove-tempest-ubuntu-ssl-replication-postgresql:
             voting: false
         - trove-tempest-ubuntu-replication-postgresql:
             voting: false

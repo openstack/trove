@@ -14,6 +14,7 @@
 
 from oslo_log import log as logging
 
+import semantic_version
 from trove.common import cfg
 from trove.common import exception
 from trove.guestagent.common import operating_system
@@ -65,3 +66,71 @@ class Manager(manager.MySqlManager):
             raise exception.BackupCreationError(str(e))
 
         return status
+
+    def _get_default_tls_versions(self):
+        # NOTE(mangust404): to operate correctly, your datastore version
+        # should contain patch version number. Datastore name like "5.7"
+        # wouldn't be able to use TLSv1.3
+        mysql_5_7_0 = semantic_version.Version('5.7.0')
+        mysql_5_7_27 = semantic_version.Version('5.7.27')
+
+        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
+
+        if cur_ver < mysql_5_7_0:
+            # For MySQL 5.6 there is no TLS support
+            raise exception.BadRequest(
+                'No support of TLS for MySQL prior to 5.7')
+        elif cur_ver <= mysql_5_7_27:
+            return 'TLSv1,TLSv1.1,TLSv1.2'
+        elif cur_ver > mysql_5_7_27:
+            return 'TLSv1.2,TLSv1.3'
+
+    def _get_enable_client_ssl_overrides(self):
+        mysql_8 = semantic_version.Version('8.0.0')
+        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
+        if cur_ver >= mysql_8:
+            return {'ssl-mode': 'REQUIRED'}
+        else:
+            return {'ssl': 'on'}
+
+    def _get_disable_client_ssl_overrides(self):
+        mysql_8 = semantic_version.Version('8.0.0')
+        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
+        if cur_ver >= mysql_8:
+            return {'ssl-mode': 'DISABLED'}
+        else:
+            return {'ssl': 'off'}
+
+    def disable_ssl_certificate(self):
+        cur_ver = semantic_version.Version.coerce(CONF.datastore_version)
+        mysql_8_0 = semantic_version.Version('8.0.0')
+
+        if cur_ver >= mysql_8_0:
+            # Starting from MySQL 8.0 there is no reliable way to disable
+            # SSL/TLS completely because caching_sha2_password depends on it
+            raise exception.TroveError("Not supported for MySQL 8.0 and above")
+
+        return super(Manager, self).disable_ssl_certificate()
+
+    def _get_enable_ssl_overrides(self):
+        files = self._get_ssl_files()
+        overrides = {
+            'ssl_cert': files['certificate'],
+            'ssl_key': files['private_key'],
+            'ssl_ca': files['ca'],
+            'tls_version': self._get_default_tls_versions(),
+            'require_secure_transport': 'ON'
+        }
+        return overrides
+
+    def _get_disable_ssl_overrides(self):
+        overrides = {
+            'ssl_cert': '',
+            'ssl_key': '',
+            'ssl_ca': '',
+            # The only reliable way to disable SSL is to unset tls_version.
+            'tls_version': '',
+            'require_secure_transport': 'OFF'
+        }
+
+        return overrides
