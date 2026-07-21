@@ -104,7 +104,7 @@ configuration:
 
     # barbican service & tempest plugin
     enable_plugin barbican https://opendev.org/openstack/barbican
-    enable_plugin barbican-tempest-plugin https://git.openstack.org/openstack/barbican-tempest-plugin
+    enable_plugin barbican-tempest-plugin https://opendev.org/openstack/barbican-tempest-plugin
 
     # required for not interrupting install process
     SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
@@ -149,7 +149,7 @@ using commands:
 
 .. code-block:: console
 
-    ./unstack.sh ; ./cleanup.sh
+    ./clean.sh
 
 And then run ``./stack.sh`` again.
 
