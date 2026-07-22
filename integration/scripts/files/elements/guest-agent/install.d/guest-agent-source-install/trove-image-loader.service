@@ -5,6 +5,8 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
+EnvironmentFile=/etc/trove/controller.conf
+ExecStartPre=/usr/local/sbin/fix-default-route
 User=root
 Group=root
 EnvironmentFile=/etc/trove/controller.conf

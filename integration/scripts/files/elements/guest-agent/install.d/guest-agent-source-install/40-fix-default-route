@@ -1,0 +1,64 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+
+set -euo pipefail
+
+# We should prevent situations when the system has two default routes.
+# Setups with more than one default route may suffer from intermittent connectivity,
+# DNS resolution failures and produce false test results.
+# This script should run in DEV environment and Zuul tests only.
+
+# Nothing to do if TROVE_MGMT_GATEWAY is not defined or equals to "none"
+echo "Management gateway: ${TROVE_MGMT_GATEWAY:-<unset>}"
+[ -z "${TROVE_MGMT_GATEWAY:-}" ] || [ "$TROVE_MGMT_GATEWAY" = "none" ] && exit 0
+
+GUEST_AGENT_CONF=/etc/trove/conf.d/trove-guestagent.conf
+
+# Extra default route should be disabled only if network isolation is
+# enabled. Note that network isolation is enabled by default if it
+# isn't set to false in the trove-guestagent.conf.
+network_isolation=$(crudini --get \
+    "$GUEST_AGENT_CONF" network network_isolation 2>/dev/null || echo true)
+echo "Network isolation=${network_isolation}"
+[[ "$network_isolation" == "true" ]] || exit 0
+
+# Collect all default routes
+mapfile -t default_routes < <(ip -4 route show default)
+
+# Check whether the trove-mgmt default route exists
+mgmt_found=false
+gateway_regex=${TROVE_MGMT_GATEWAY//./\\.}
+for route in "${default_routes[@]}"; do
+    if [[ "$route" =~ ^default\ via\ ${gateway_regex}\ .*dev\ ([^[:space:]]+) ]]; then
+        mgmt_found=true
+        mgmt_iface="${BASH_REMATCH[1]}"
+        break
+    fi
+done
+
+# If trove-mgmt route is absent, do nothing
+"$mgmt_found" || exit 0
+
+echo "Management interface: ${mgmt_iface}"
+
+# Disable interfaces associated with other default routes
+for route in "${default_routes[@]}"; do
+    if [[ "$route" =~ ^default\ .*dev\ ([^[:space:]]+) ]]; then
+        iface="${BASH_REMATCH[1]}"
+
+        # Skip the interface using TROVE_MGMT_GATEWAY
+        if [[ "$iface" != "$mgmt_iface" ]]; then
+            echo "Disabling interface ${iface} (extra default route detected)"
+            # Disable the interface entirely because we need to get a single
+            # default route, which is provided by trove-mgmt network. Also
+            # guest-agent in network isolation mode will remove this interface
+            # anyway immediately after startup.
+            # Trove-mgmt interfaice becomes the only default route and would
+            # provide an access to the Internet.
+            ip link set dev "$iface" down
+        fi
+    fi
+done

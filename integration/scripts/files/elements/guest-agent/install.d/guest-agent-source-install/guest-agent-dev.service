@@ -1,6 +1,7 @@
 [Unit]
 Description=OpenStack Trove Guest Agent Service for Development
-After=syslog.target network.target
+After=syslog.target network.target trove-image-loader.service
+Requires=trove-image-loader.service
 
 [Install]
 WantedBy=multi-user.target
