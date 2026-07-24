@@ -278,7 +278,7 @@ def get_image_registry(client, image):
         LOG.warning(f"Image was not found in registry: {str(e)}")
         registry_data = None
     except docker.errors.APIError as e:
-        LOG.error(f"APIError occured while trying to fetch image: {str(e)}")
+        LOG.error(f"APIError occurred while trying to fetch image: {str(e)}")
         raise e
     return registry_data
 

@@ -275,7 +275,7 @@ class Commands(object):
                     print("Tags were updated for server: %s (instance %s)" %
                           (server.id, instance.id))
                 except Exception as e:
-                    print('Error occured while setting nova tags for server '
+                    print('Error occurred while setting nova tags for server '
                           '%s', server.id)
                     print(e)
 
