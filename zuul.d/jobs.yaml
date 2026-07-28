@@ -39,7 +39,6 @@
       - ^tox.ini$
       - ^LICENSE$
       - ^contrib/
-      - ^zuul\.d/
       - ^\..+
     vars: &base_vars
       tox_envlist: all
@@ -111,7 +110,6 @@
       - ^tox.ini$
       - ^LICENSE$
       - ^contrib/
-      - ^zuul\.d/
       - ^\..+
     vars:
       tox_envlist: all
@@ -172,7 +170,6 @@
       - ^tox.ini$
       - ^LICENSE$
       - ^contrib/
-      - ^zuul\.d/
       - ^backup/
       - ^\..+
       - ^trove/guestagent/strategies/replication/
@@ -198,7 +195,6 @@
       - ^tox.ini$
       - ^LICENSE$
       - ^contrib/
-      - ^zuul\.d/
       - ^\..+
       - ^trove/guestagent/strategies/replication/
     vars:
@@ -219,7 +215,6 @@
       - ^tox.ini$
       - ^LICENSE$
       - ^contrib/
-      - ^zuul\.d/
       - ^backup/
       - ^\..+
     vars:
