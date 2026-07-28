@@ -17,6 +17,7 @@
       - ^\..+
       - ^trove/guestagent/strategies/replication/
       - ^trove/guestagent/datastore/(mysql.*|mariadb)/.*$
+      - ^trove/tests/.*$
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
@@ -44,6 +45,7 @@
       - ^\..+
       - ^trove/guestagent/strategies/replication/
       - ^trove/guestagent/datastore/(mysql.*|mariadb)/.*$
+      - ^trove/tests/.*$
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
@@ -72,6 +74,7 @@
       - ^\..+
       - ^trove/guestagent/datastore/(mysql.*|mariadb)/.*$
       - ^trove/guestagent/strategies/replication/(mariadb.*|mysql.*)\.py$
+      - ^trove/tests/.*$
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql
@@ -100,6 +103,7 @@
       - ^\..+
       - ^trove/guestagent/datastore/(mysql|mariadb)/.*$
       - ^trove/guestagent/strategies/replication/(mysql.*|mariadb.*)\.py$
+      - ^trove/tests/.*$
     vars:
         devstack_localrc:
           TROVE_DATASTORE_TYPE: postgresql

@@ -17,8 +17,7 @@
       - ^setup.cfg$
       - ^tools/.*$
       - ^trove/hacking/.*$
-      - ^trove/tests/scenario/.*$
-      - ^trove/tests/unittests/.*$
+      - ^trove/tests/.*$
 
 - job:
     name: trove-tempest
@@ -40,6 +39,7 @@
       - ^LICENSE$
       - ^contrib/
       - ^\..+
+      - ^trove/tests/.*$
     vars: &base_vars
       tox_envlist: all
       tempest_concurrency: 1
@@ -111,6 +111,7 @@
       - ^LICENSE$
       - ^contrib/
       - ^\..+
+      - ^trove/tests/.*$
     vars:
       tox_envlist: all
       tempest_concurrency: 1
@@ -173,6 +174,7 @@
       - ^backup/
       - ^\..+
       - ^trove/guestagent/strategies/replication/
+      - ^trove/tests/.*$
     vars:
       devstack_services:
         swift: false
@@ -197,6 +199,7 @@
       - ^contrib/
       - ^\..+
       - ^trove/guestagent/strategies/replication/
+      - ^trove/tests/.*$
     vars:
       devstack_localrc:
         TROVE_BUILD_BACKUP_IMAGES: True
@@ -217,6 +220,7 @@
       - ^contrib/
       - ^backup/
       - ^\..+
+      - ^trove/tests/.*$
     vars:
       devstack_localrc:
         TROVE_BUILD_BACKUP_IMAGES: True
