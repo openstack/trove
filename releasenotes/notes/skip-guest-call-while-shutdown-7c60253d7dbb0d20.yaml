@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Showing an instance that is being deleted (or whose Nova server is shut
+    down) no longer sends a ``get_filesystem_stats`` RPC to the guest agent.
+    Previously the API would block for the full ``agent_call_low_timeout``
+    waiting for a reply from an agent that is no longer running, making the
+    request slow and logging a spurious guest timeout traceback.
