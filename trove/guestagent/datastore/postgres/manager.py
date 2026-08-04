@@ -202,7 +202,7 @@ class PostgresManager(manager.Manager):
         LOG.info("Finished reloading database config.")
 
     def get_datastore_log_defs(self):
-        owner = cfg.get_configuration_property('database_service_uid')
+        owner = self.app.database_service_uid
         datastore_dir = self.app.get_data_dir()
         long_query_time = CONF.get(self.manager).get(
             'guest_log_long_query_time')

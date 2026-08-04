@@ -128,7 +128,7 @@ class MySqlManager(manager.Manager):
                                    need_dbuser=True)
 
     def get_datastore_log_defs(self):
-        owner = cfg.get_configuration_property('database_service_uid')
+        owner = self.app.database_service_uid
         datastore_dir = self.app.get_data_dir()
         server_section = configurations.MySQLConfParser.SERVER_CONF_SECTION
         long_query_time = CONF.get(self.manager).get(

@@ -167,3 +167,24 @@ class TestPostgresManager(trove_testtools.TestCase):
         with mock.patch.object(cfg, 'get_configuration_property') as m:
             self.pg_manager.clean_wal_archives(mock.ANY)
             m.assert_not_called()
+
+    def test_get_datastore_log_defs_owner_fallback(self):
+        """The log file owner should fall back to the DEFAULT group value
+        when 'database_service_uid' is not set in the datastore group.
+        """
+        self.pg_manager.app.get_data_dir = mock.Mock(
+            return_value='/var/lib/postgresql/data')
+        self.pg_manager.build_log_file_name = mock.Mock(
+            return_value='/var/lib/postgresql/data/postgres-general.log')
+
+        log_defs = self.pg_manager.get_datastore_log_defs()
+
+        expected_owner = cfg.CONF.database_service_uid
+        self.assertIsNotNone(expected_owner)
+        self.pg_manager.build_log_file_name.assert_called_once_with(
+            self.pg_manager.GUEST_LOG_DEFS_GENERAL_LABEL, expected_owner,
+            datastore_dir='/var/lib/postgresql/data')
+        general_def = log_defs[self.pg_manager.GUEST_LOG_DEFS_GENERAL_LABEL]
+        self.assertEqual(
+            expected_owner,
+            general_def[self.pg_manager.GUEST_LOG_USER_LABEL])

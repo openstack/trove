@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    Fixed guest log operations (e.g. listing logs) failing with "Please
+    specify owner or group, or both." for MySQL/MariaDB and PostgreSQL
+    instances when ``database_service_uid`` is not set in the
+    datastore-specific configuration group. The log file owner now falls
+    back to the ``database_service_uid`` value from the ``DEFAULT`` group,
+    consistent with how the ownership of other database files is resolved.
