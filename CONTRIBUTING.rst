@@ -19,9 +19,9 @@ the workflow documented at:
 
 (Pull requests submitted through GitHub will be ignored.)
 
-Bugs should be filed on Storyboard now, not GitHub:
+Bugs should be filed on Launchpad now, not GitHub:
 
-   https://storyboard.openstack.org/#!/project/openstack/trove
+   https://bugs.launchpad.net/trove
 
 We welcome all types of contributions, from blueprint designs to
 documentation to testing to deployment scripts. The best way to get
@@ -171,17 +171,14 @@ process.
    there is no available volunteer who will step up to take over the
    patch set.
 
-Storyboard Bugs
----------------
+Launchpad Bugs
+--------------
 
-Bugs should be filed on Storyboard at:
+Bugs should be filed on Launchpad at:
 
-    https://storyboard.openstack.org/#!/project/openstack/trove
+    https://bugs.launchpad.net/trove
 
-All changes that address a Storyboard bug should include the bug in the
-Commit Message using the Story and Task.
-
-It is not required that a Storyboard bug be filed for every change.
+It is not required that a Launchpad bug be filed for every change.
 
 Release Notes
 -------------
@@ -192,7 +189,7 @@ that are submitted as part of a change will be included in the release
 notes. The failure to add a release note for a user visible change
 should be identified in review, and corrected.
 
-If a Storyboard bug is being fixed, the release note should list the
+If a Launchpad bug is being fixed, the release note should list the
 story and task number.
 
 For help using reno, the release notes tool, see:
@@ -258,12 +255,11 @@ following on your development system and ensure that they pass.
 .. code-block:: bash
 
     $ tox -e pep8
-    $ tox -e py39
+    $ tox -e py311
     $ tox -e pylint
 
 If you are unable to get these to pass locally, it is a waste of the
 CI resources to push up a change for review.
-
 
 Testing
 =======
@@ -293,11 +289,11 @@ To run all tests and PEP8, run tox, like so:
 
     $ tox
 
-To run just the tests for Python 3.9, run:
+To run just the tests for Python 3.11, run:
 
 .. code-block:: bash
 
-    $ tox -epy39
+    $ tox -epy311
 
 To run just PEP8, run:
 
@@ -328,4 +324,3 @@ Is there something missing?
 
 Do not hesitate to chat and clear your doubts about Trove in
 IRC: #openstack-trove on OFTC.
-

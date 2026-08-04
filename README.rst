@@ -4,8 +4,6 @@ Trove
 
 .. image:: https://governance.openstack.org/tc/badges/trove.svg
 
-.. Change things from this point on
-
 Trove is Database as a Service for OpenStack.
 
 Getting Started
@@ -25,7 +23,7 @@ CONTRIBUTING.rst_ and HACKING.rst_
 * `Developer Docs <https://docs.openstack.org/trove/latest/>`_
 
 You can raise bugs here:
-`Bug Tracker <https://storyboard.openstack.org/#!/project/openstack/trove>`_
+`Bug Tracker <https://bugs.launchpad.net/trove>`_
 
 The plan for trove can be found at
 `Trove Specs <https://specs.openstack.org/openstack/trove-specs/>`_

@@ -27,23 +27,20 @@ For an in-depth look at the project's design and structure, see the
    contributor/index
    reference/index
 
-
 * Source Code Repositories
 
   - `Trove`_
   - `Trove Client`_
 
 * `Trove API Documentation`_ on docs.openstack.org
-* `Trove storyboard`_ on storyboard.openstack.org
-
+* `Trove launchpad`_ on launchpad.net
 
 Search Trove Documentation
 ==========================
 
 * :ref:`search`
 
-
 .. _Trove: https://opendev.org/openstack/trove
 .. _Trove Client: https://opendev.org/openstack/python-troveclient
 .. _Trove API Documentation: https://docs.openstack.org/api-ref/database/
-.. _Trove storyboard: https://storyboard.openstack.org/#!/project/openstack/trove
+.. _Trove launchpad: https://launchpad.net/trove

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -44,9 +43,8 @@ extensions = [
 
 # openstackdocstheme options
 openstackdocs_repo_name = 'openstack/trove'
-openstack_auto_name = False
 openstackdocs_bug_project = 'trove'
-openstackdocs_bug_tag = ''
+openstackdocs_bug_tag = 'docs'
 html_theme = 'openstackdocs'
 
 # Add any paths that contain templates here, relative to this directory.

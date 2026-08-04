@@ -38,8 +38,7 @@ extensions = ['sphinx.ext.todo',
 # openstackdocstheme options
 openstackdocs_repo_name = 'openstack/trove'
 openstackdocs_bug_project = 'trove'
-openstack_auto_name = False
-openstackdocs_bug_tag = ''
+openstackdocs_bug_tag = 'docs'
 html_theme = 'openstackdocs'
 
 # sphinxcontrib.apidoc options

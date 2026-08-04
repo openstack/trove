@@ -91,8 +91,13 @@ Template
        Implements [some feature].
        [Can be described using multiple sentences if necessary.]
        [Limitations worth mentioning can be included as well.]
-       `Stroy [Story id] <https://storyboard.openstack.org/#!/story/[Story id]>`__
+       `Blueprint [blueprint id] <https://blueprints.launchpad.net/trove/+spec/[blueprint id]>`__
 
+.. note::
+
+  The blueprint can be mentioned even if the change implements it only
+  partially. This can be emphasised by preceding the ``Blueprint`` word by
+  ``Partial``. See the example below.
 
 Example
 +++++++
@@ -104,6 +109,13 @@ the scaffolded file:
 
    tox -e venv -- reno new --from-template releasenotes/templates/feature.yml blueprint-letsencrypt-https
 
+.. note::
+
+  Since we don't require blueprints for simple features, it is allowed to
+  make up a blueprint-id-friendly string (like in the example here) ad-hoc
+  for the proposed feature. Please then skip the ``blueprint-`` prefix to
+  avoid confusion.
+
 And then fill it out with the following content:
 
 .. code-block:: yaml
@@ -114,8 +126,14 @@ And then fill it out with the following content:
        Implements support for hassle-free integration with Let's Encrypt.
        The support is limited to operators in the underworld.
        For more details check the TLS docs of Trove.
-       `Stroy xxx <https://storyboard.openstack.org/#!/story/xxx>`__
+       `Partial Blueprint letsencrypt-https <https://blueprints.launchpad.net/trove/+spec/EXAMPLE>`__
 
+.. note::
+
+  The example above shows how to introduce a limitation. The limitation may be
+  lifted in the same release cycle and it is OK to mention it nonetheless.
+  Release notes can be edited later as long as they have not been shipped in
+  an existing release or release candidate.
 
 Fixes
 -----
@@ -132,7 +150,7 @@ Template
        Fixes [some bug].
        [Can be described using multiple sentences if necessary.]
        [Possibly also giving the previous behaviour description.]
-       `Stroy [Story id] <https://storyboard.openstack.org/#!/story/[Story id]>`__
+       `LP#[bug number] <https://launchpad.net/bugs/[bug number]>`__
 
 Example
 +++++++
@@ -150,5 +168,5 @@ And then fill it out with the following content:
    ---
    fixes:
      - |
-       Fixes ``create-datastore`` action doesn't work for the mysql datastore.
-       `LP#xxx <https://storyboard.openstack.org/#!/story/xxx>`__
+       Fixes ``deploy-containers`` action missing for the Masakari role.
+       `LP#1889611 <https://launchpad.net/bugs/1889611>`__

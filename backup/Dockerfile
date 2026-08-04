@@ -1,6 +1,6 @@
 ARG BASE_OS_VERSION=24.04
 FROM quay.io/openstack.trove/ubuntu:$BASE_OS_VERSION
-LABEL maintainer="Trove Project (https://storyboard.openstack.org/#!/project/openstack/trove)"
+LABEL maintainer="Trove Project (https://launchpad.net/trove)"
 
 ARG DATASTORE="mysql"
 ARG DATASTORE_VERSION="8.4"
