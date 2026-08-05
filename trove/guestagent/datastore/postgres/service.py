@@ -103,13 +103,15 @@ class PgSqlApp(service.BaseDbApp):
         """
         LOG.debug("Applying client authentication access rules.")
 
+        # We intentionally don't use hostnames here because it will
+        # invoke reverse DNS lookup, which in some cases may slow down
+        # the establishing of new connections
         access_rules = OrderedDict(
             [('local', [['all', SUPER_USER_NAME, None, 'trust'],
                         ['replication', SUPER_USER_NAME, None, 'trust'],
                         ['all', 'all', None, 'md5']]),
              ('host', [['all', SUPER_USER_NAME, '127.0.0.1/32', 'trust'],
                        ['all', SUPER_USER_NAME, '::1/128', 'trust'],
-                       ['all', SUPER_USER_NAME, 'localhost', 'trust'],
                        ['all', SUPER_USER_NAME, '0.0.0.0/0', 'reject'],
                        ['all', SUPER_USER_NAME, '::/0', 'reject'],
                        ['all', 'all', '0.0.0.0/0', 'md5'],
