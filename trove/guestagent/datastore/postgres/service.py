@@ -111,10 +111,12 @@ class PgSqlApp(service.BaseDbApp):
         else:
             auth_method = ['md5']
 
+        # We intentionally don't use hostnames here because it will
+        # invoke reverse DNS lookup, which in some cases may slow down
+        # the establishing of new connections
         host_rules = [
             ['all', SUPER_USER_NAME, '127.0.0.1/32', 'trust'],
             ['all', SUPER_USER_NAME, '::1/128', 'trust'],
-            ['all', SUPER_USER_NAME, 'localhost', 'trust'],
             ['all', SUPER_USER_NAME, '0.0.0.0/0', 'reject'],
             ['all', SUPER_USER_NAME, '::/0', 'reject'],
             ['all', 'all', '0.0.0.0/0', *auth_method],
