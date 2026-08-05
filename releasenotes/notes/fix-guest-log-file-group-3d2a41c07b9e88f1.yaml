@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Guest log files and directories are now owned by
+    ``database_service_uid:database_service_gid`` instead of using the uid
+    for both the owner and the group. This makes a difference for custom
+    Docker images where the database service gid differs from the uid.

@@ -11,7 +11,10 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+from unittest import mock
+
 from trove.common import ssl
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager as base_manager
 from trove.tests.unittests import trove_testtools
 
@@ -38,3 +41,23 @@ class TestManager(trove_testtools.TestCase):
             ssl.MODE_BASIC, 'invalid'))
         self.assertFalse(self.manager.ssl_mode_at_least(
             None, ssl.MODE_BASIC))
+
+    @mock.patch.object(operating_system, 'chmod')
+    @mock.patch.object(operating_system, 'chown')
+    @mock.patch.object(operating_system, 'exists', return_value=True)
+    def test_validate_log_file_owner_and_group(
+            self, mock_exists, mock_chown, mock_chmod):
+        self.manager.validate_log_file('/fake/test.log', '1001', group='1002')
+
+        mock_chown.assert_called_once_with(
+            '/fake/test.log', user='1001', group='1002', as_root=True)
+
+    @mock.patch.object(operating_system, 'chmod')
+    @mock.patch.object(operating_system, 'chown')
+    @mock.patch.object(operating_system, 'exists', return_value=True)
+    def test_validate_log_file_group_defaults_to_owner(
+            self, mock_exists, mock_chown, mock_chmod):
+        self.manager.validate_log_file('/fake/test.log', '1001')
+
+        mock_chown.assert_called_once_with(
+            '/fake/test.log', user='1001', group='1001', as_root=True)

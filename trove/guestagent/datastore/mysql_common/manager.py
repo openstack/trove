@@ -129,16 +129,18 @@ class MySqlManager(manager.Manager):
 
     def get_datastore_log_defs(self):
         owner = self.app.database_service_uid
+        group = self.app.database_service_gid
         datastore_dir = self.app.get_data_dir()
         server_section = configurations.MySQLConfParser.SERVER_CONF_SECTION
         long_query_time = CONF.get(self.manager).get(
             'guest_log_long_query_time') / 1000
         general_log_file = self.build_log_file_name(
-            self.GUEST_LOG_DEFS_GENERAL_LABEL, owner,
+            self.GUEST_LOG_DEFS_GENERAL_LABEL, owner, group=group,
             datastore_dir=datastore_dir)
-        error_log_file = self.validate_log_file('/var/log/mysqld.log', owner)
+        error_log_file = self.validate_log_file('/var/log/mysqld.log', owner,
+                                                group=group)
         slow_query_log_file = self.build_log_file_name(
-            self.GUEST_LOG_DEFS_SLOW_QUERY_LABEL, owner,
+            self.GUEST_LOG_DEFS_SLOW_QUERY_LABEL, owner, group=group,
             datastore_dir=datastore_dir)
         return {
             self.GUEST_LOG_DEFS_GENERAL_LABEL: {

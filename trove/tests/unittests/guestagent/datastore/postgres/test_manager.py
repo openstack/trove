@@ -183,7 +183,7 @@ class TestPostgresManager(trove_testtools.TestCase):
         self.assertIsNotNone(expected_owner)
         self.pg_manager.build_log_file_name.assert_called_once_with(
             self.pg_manager.GUEST_LOG_DEFS_GENERAL_LABEL, expected_owner,
-            datastore_dir='/var/lib/postgresql/data')
+            group=expected_owner, datastore_dir='/var/lib/postgresql/data')
         general_def = log_defs[self.pg_manager.GUEST_LOG_DEFS_GENERAL_LABEL]
         self.assertEqual(
             expected_owner,

@@ -43,10 +43,36 @@ class TestMySqlManager(trove_testtools.TestCase):
         self.assertIsNotNone(expected_owner)
         self.mysql_manager.build_log_file_name.assert_any_call(
             self.mysql_manager.GUEST_LOG_DEFS_GENERAL_LABEL, expected_owner,
-            datastore_dir='/var/lib/mysql/data')
+            group=expected_owner, datastore_dir='/var/lib/mysql/data')
         self.mysql_manager.validate_log_file.assert_called_once_with(
-            '/var/log/mysqld.log', expected_owner)
+            '/var/log/mysqld.log', expected_owner, group=expected_owner)
         for log_def in log_defs.values():
             self.assertEqual(
                 expected_owner,
                 log_def[self.mysql_manager.GUEST_LOG_USER_LABEL])
+
+    def test_get_datastore_log_defs_separate_group(self):
+        """A datastore-specific gid different from the uid should be passed
+        through as the group when creating log files.
+        """
+        cfg.CONF.set_override('database_service_uid', '1100', 'mysql')
+        self.addCleanup(
+            cfg.CONF.clear_override, 'database_service_uid', 'mysql')
+        cfg.CONF.set_override('database_service_gid', '1101', 'mysql')
+        self.addCleanup(
+            cfg.CONF.clear_override, 'database_service_gid', 'mysql')
+        self.mysql_manager.app.get_data_dir = mock.Mock(
+            return_value='/var/lib/mysql/data')
+        self.mysql_manager.build_log_file_name = mock.Mock(
+            side_effect=lambda log_name, owner, **kwargs:
+                '/var/lib/mysql/data/mysql-%s.log' % log_name)
+        self.mysql_manager.validate_log_file = mock.Mock(
+            return_value='/var/log/mysqld.log')
+
+        self.mysql_manager.get_datastore_log_defs()
+
+        self.mysql_manager.build_log_file_name.assert_any_call(
+            self.mysql_manager.GUEST_LOG_DEFS_GENERAL_LABEL, '1100',
+            group='1101', datastore_dir='/var/lib/mysql/data')
+        self.mysql_manager.validate_log_file.assert_called_once_with(
+            '/var/log/mysqld.log', '1100', group='1101')
