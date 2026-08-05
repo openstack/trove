@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Reduced PostgreSQL connection latency in some environments by removing
+    the `localhost` pg_hba rule, avoiding reverse DNS lookups.
