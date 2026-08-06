@@ -312,6 +312,8 @@ class PostgresManager(manager.Manager):
         LOG.info('Starting to upgrade database, upgrade_info: %s',
                  upgrade_info)
         self.app.upgrade(upgrade_info)
+        self.override_guest_info(
+            datastore_version=upgrade_info['datastore_version'])
 
     def rebuild(self, context, ds_version, config_contents=None,
                 config_overrides=None):
