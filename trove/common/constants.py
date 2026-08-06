@@ -21,6 +21,9 @@ DOCKER_BRIDGE_MODE = "bridge"
 MYSQL_HOST_SOCKET_PATH = "/var/lib/mysqld"
 POSTGRESQL_HOST_SOCKET_PATH = "/var/lib/postgresql-socket"
 
+VALID_LOCALITIES = (
+    'affinity', 'soft-affinity', 'anti-affinity', 'soft-anti-affinity')
+
 REGISTRY_EXT_DEFAULTS = {
     'mysql':
         'trove.guestagent.datastore.mysql.manager.Manager',

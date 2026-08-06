@@ -240,11 +240,14 @@ class TestClusterController(trove_testtools.TestCase):
         mock_cluster.datastore_version.manager = 'mongodb'
         mock_cluster_create.return_value = mock_cluster
 
-        self.controller.create(req, body, tenant_id)
-        mock_cluster_create.assert_called_with(context, 'products',
-                                               datastore, datastore_version,
-                                               instances, {},
-                                               self.locality, None, None)
+        for locality in ('soft-affinity', 'soft-anti-affinity'):
+            with self.subTest(locality=locality):
+                body['cluster']['locality'] = locality
+                self.controller.create(req, body, tenant_id)
+
+                mock_cluster_create.assert_called_with(
+                    context, 'products', datastore, datastore_version,
+                    instances, {}, locality, None, None)
 
     @patch.object(Cluster, 'load')
     def test_show_cluster(self,

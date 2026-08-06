@@ -202,3 +202,10 @@ class TestUtils(trove_testtools.TestCase):
         self.assertRaises(exception.InvalidValue,
                           utils.validate_command,
                           string5)
+
+    def test_validate_locality_rejects_invalid_value(self):
+        self.assertRaisesRegex(
+            exception.BadRequest,
+            "Invalid locality 'invalid-locality'",
+            utils.validate_locality,
+            'invalid-locality')

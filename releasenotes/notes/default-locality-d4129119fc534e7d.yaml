@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Adds the ``default_locality`` configuration option. Operators can use it
+    to apply a Nova server group policy when an instance create request omits
+    ``locality``. The default is ``None`` for backward compatibility.

@@ -29,6 +29,7 @@ from oslo_middleware import cors
 from osprofiler import opts as profiler
 
 from trove.common import cache
+from trove.common import constants
 from trove.common.i18n import _
 from trove.version import version_info as version
 
@@ -269,6 +270,11 @@ common_opts = [
                help='The default datastore id or name to use if one is not '
                'provided by the user. If the default value is None, the field '
                'becomes required in the instance create request.'),
+    cfg.StrOpt('default_locality', default=None,
+               choices=constants.VALID_LOCALITIES,
+               help='Default Nova server group policy for new database '
+                    'instances. If None, no server group is created unless '
+                    'locality is specified in the request.'),
     cfg.StrOpt('datastore_manager', default=None,
                help='Manager class in the Guest Agent, set up by the '
                     'Taskmanager on instance provision.'),
