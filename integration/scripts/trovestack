@@ -769,6 +769,12 @@ function cmd_build_image() {
     else
       sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu-utils git kpartx debootstrap squashfs-tools python3-pip python3-setuptools python3-venv
     fi
+    # Embedding docker images in the guest image (DIB_TROVE_DOCKER_IMAGES)
+    # needs a working docker daemon on the build host.
+    if [[ -n "${DIB_TROVE_DOCKER_IMAGES:-}" ]] && ! which docker >/dev/null 2>&1; then
+        cmd_install_docker
+    fi
+
     python3 -m venv ~/diskimage-builder-env
     sudo $HTTP_PROXY ~/diskimage-builder-env/bin/pip3 install setuptools diskimage-builder
     source ~/diskimage-builder-env/bin/activate

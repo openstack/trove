@@ -457,6 +457,27 @@ function configure_tempest_for_trove {
     iniset $TEMPEST_CONFIG database remove_swift_account False
 }
 
+# Compute the docker image references to embed in the guest image and
+# export them as DIB_TROVE_DOCKER_IMAGES for the guest-agent element, which
+# fetches and tags them (see extra-data.d/70-trove-docker-images). Entries
+# are [source=]target references: the guest-visible target names (e.g. the
+# local registry) can't be pulled at build time, so the element pulls the
+# source and tags it as the target.
+function prepare_embedded_docker_images_vars {
+    local quay_alias=${TROVE_DATASTORE_TYPE}
+    [[ "${quay_alias}" == "postgresql" ]] && quay_alias="postgres"
+
+    local image_var="TROVE_DATABASE_IMAGE_${TROVE_DATASTORE_TYPE^^}"
+    local backup_var="TROVE_DATABASE_BACKUP_IMAGE_${TROVE_DATASTORE_TYPE^^}"
+
+    local pairs="quay.io/openstack.trove/${quay_alias}:${TROVE_DATASTORE_VERSION}=${!image_var}:${TROVE_DATASTORE_VERSION}"
+    if [[ "${TROVE_BUILD_BACKUP_IMAGES}" == "True" ]]; then
+        pairs+=" quay.io/openstack.trove/db-backup-${TROVE_DATASTORE_TYPE}:${TROVE_DATASTORE_VERSION}=${!backup_var}:${TROVE_DATASTORE_VERSION}"
+    fi
+
+    export DIB_TROVE_DOCKER_IMAGES="${pairs}"
+}
+
 # Use trovestack to create guest image and register the image in the datastore.
 function create_guest_image {
     TROVE_ENABLE_IMAGE_BUILD=`echo ${TROVE_ENABLE_IMAGE_BUILD,,}`
@@ -783,6 +804,10 @@ if is_service_enabled trove; then
         config_trove_network
         if [ "$TROVE_HOST_GATEWAY" != "$MGMT_PORT_IP" ]; then
             config_network_isolation
+        fi
+        if [[ "${TROVE_EMBED_DATASTORE_IMAGES}" == "True" && \
+              -n "${TROVE_DATASTORE_TYPE:-}" && -n "${TROVE_DATASTORE_VERSION:-}" ]]; then
+            prepare_embedded_docker_images_vars
         fi
         create_guest_image
         if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ] ; then

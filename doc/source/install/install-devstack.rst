@@ -141,6 +141,36 @@ If you don't need local registry and network_isolation, then simply run:
 
     ./stack.sh
 
+Guest image variables
+~~~~~~~~~~~~~~~~~~~~~
+
+``TROVE_EMBED_DATASTORE_IMAGES`` (default ``True``)
+    Embed the datastore docker images into the guest image at build time,
+    fully extracted into the image's containerd store. Guest instances then
+    start without pulling or extracting any images, which considerably
+    speeds up instance creation and removes a network dependency from the
+    instance boot path. Embedding requires ``TROVE_DATASTORE_TYPE`` and
+    ``TROVE_DATASTORE_VERSION`` to be set (as the CI jobs do) and is
+    silently skipped otherwise. The embedded images add roughly 1-1.5GB to
+    the guest image size (the devstack plugin raises the glance image size
+    quota accordingly).
+
+``DIB_TROVE_DOCKER_IMAGES``
+    The docker image references to embed: a space separated list of
+    ``[source=]target`` entries. The target is the reference the images
+    are embedded under and must match the
+    ``docker_image``/``backup_docker_image`` values the guest agent is
+    configured with; when a source is given, it is pulled and tagged as
+    the target (used when the target name cannot be pulled at build time,
+    e.g. a local registry that only the guest instances can reach). The
+    devstack plugin sets this automatically from the configured datastore
+    when ``TROVE_EMBED_DATASTORE_IMAGES`` is enabled; when building
+    images with ``trovestack build-image`` directly, export it manually.
+    When the variable is set, embedding must succeed: any failure (an
+    image that cannot be fetched, or the extraction into the image
+    failing) fails the build, rather than silently producing an image
+    that pulls at boot. Leave it unset to build without embedded images.
+
 Reinstall and cleanup
 ~~~~~~~~~~~~~~~~~~~~~
 

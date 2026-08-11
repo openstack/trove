@@ -85,6 +85,18 @@ TROVE_NON_DEV_IMAGE_URL=${TROVE_NON_DEV_IMAGE_URL:-""}
 # Build backup docker image by default
 TROVE_BUILD_BACKUP_IMAGES=${TROVE_BUILD_BACKUP_IMAGES:-"True"}
 
+# Embed the datastore docker images into the guest image at build time so
+# guest instances don't need to pull them at create time.
+TROVE_EMBED_DATASTORE_IMAGES=${TROVE_EMBED_DATASTORE_IMAGES:-"True"}
+
+# With embedded datastore images the guest image is ~2.5GB, which exceeds
+# devstack's default 2000MiB glance image size quota (glance returns 413 on
+# upload). Raise the floor; note lib/glance is sourced before plugin
+# settings, so a :- default here would have no effect.
+if [[ "${GLANCE_LIMIT_IMAGE_SIZE_TOTAL:-2000}" -lt 5000 ]]; then
+    GLANCE_LIMIT_IMAGE_SIZE_TOTAL=5000
+fi
+
 # Customized database container images
 if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ] ; then
     TROVE_DATABASE_IMAGE_MYSQL=${TROVE_DATABASE_IMAGE_MYSQL:-"$TROVE_HOST_GATEWAY:4000/trove-datastores/mysql"}

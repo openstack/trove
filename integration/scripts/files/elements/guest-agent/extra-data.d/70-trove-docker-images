@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# Fetch the docker images listed in DIB_TROVE_DOCKER_IMAGES with the build
+# host's docker daemon and save them into a tarball in the hooks directory.
+# post-install.d extracts it into the image's containerd image store, so
+# guest instances don't have to pull the images over the network (and,
+# worse, decompress them on an emulated CPU in the gate) at instance
+# create time. The tarball itself never enters the image.
+#
+# Entries are space separated [source=]target references. The target is
+# the name the guest agent is configured to use, which is what gets saved;
+# when a source is given, it is pulled and tagged as the target (used when
+# the target name is not pullable at build time, e.g. a local registry
+# that only the guests can reach).
+#
+# When DIB_TROVE_DOCKER_IMAGES is set, embedding is expected to work: any
+# failure here fails the build rather than silently producing an image
+# that falls back to pulling at boot. Leave the variable unset to build
+# without embedded images.
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+[ -z "${DIB_TROVE_DOCKER_IMAGES:-}" ] && exit 0
+
+if ! sudo docker info >/dev/null 2>&1; then
+    echo "ERROR: DIB_TROVE_DOCKER_IMAGES is set but docker is not usable" \
+         "on the build host."
+    exit 1
+fi
+
+targets=""
+for entry in ${DIB_TROVE_DOCKER_IMAGES}; do
+    source=${entry%%=*}
+    target=${entry##*=}
+
+    if ! sudo docker image inspect "${target}" >/dev/null 2>&1; then
+        if ! sudo docker image inspect "${source}" >/dev/null 2>&1; then
+            # docker retries failed layer downloads internally, so no
+            # extra retrying here.
+            if ! sudo docker pull "${source}"; then
+                echo "ERROR: unable to pull ${source} for embedding."
+                exit 1
+            fi
+        fi
+        if [ "${source}" != "${target}" ]; then
+            sudo docker tag "${source}" "${target}"
+        fi
+    fi
+    targets="${targets} ${target}"
+done
+
+echo "Embedding docker images in the guest image:${targets}"
+sudo docker save -o ${TMP_HOOKS_PATH}/trove-docker-images.tar ${targets}
+sudo chmod 0644 ${TMP_HOOKS_PATH}/trove-docker-images.tar

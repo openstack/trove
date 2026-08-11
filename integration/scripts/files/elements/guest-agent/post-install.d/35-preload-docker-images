@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# Extract the docker image tarball produced by
+# extra-data.d/70-trove-docker-images into the image's containerd image
+# store, by running the image's own containerd and dockerd inside the
+# chroot (as plain binaries - systemd is not running here). Instances then
+# boot with the images fully extracted: no docker pull at instance create
+# time, which in the gate runs on an emulated CPU and dominates instance
+# provisioning time.
+#
+# containerd is started first and dockerd is pointed at it, mirroring how
+# the guest runs at boot (containerd.service + docker.service): docker
+# stores images in the containerd instance it is connected to, so a
+# dockerd-managed containerd here would strand the images under
+# /var/lib/docker/containerd where the booted guest would never see them.
+#
+# The dib chroot needs accommodations, all undone on every exit path:
+# a cgroup2 hierarchy at /sys/fs/cgroup (dockerd refuses to start without
+# one: "Devices cgroup isn't mounted"; cgroup2 is a single hierarchy that
+# may be mounted at multiple points, so this doesn't disturb the build
+# host), and self bind-mounts of the containerd and docker state roots
+# (the chroot root is not a mountpoint, so containerd's mountinfo lookups
+# fail without them).
+#
+# When embedding was requested, it must work: any failure here fails the
+# build. A silent fallback would produce an image that pulls at boot,
+# reintroducing exactly the behaviour this element exists to remove.
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+# The tarball lives in the bind-mounted hooks directory and never enters
+# the image itself. Absent tarball means embedding was not requested (the
+# extra-data.d hook fails the build if it was requested and could not be
+# prepared).
+TARBALL=/tmp/in_target.d/trove-docker-images.tar
+[ -f ${TARBALL} ] || exit 0
+
+CONTAINERD_SOCK=/run/containerd/containerd.sock
+SOCK=unix:///run/dib-docker.sock
+LOG=/tmp/dib-dockerd.log
+CLOG=/tmp/dib-containerd.log
+DOCKERD_PID=""
+CONTAINERD_PID=""
+CGROUP_MOUNTED=""
+BIND_MOUNTS=""
+
+stop_daemon() {
+    local pid=$1
+    if [ -n "${pid}" ] && kill -0 ${pid} 2>/dev/null; then
+        kill ${pid}
+        wait ${pid} 2>/dev/null || true
+    fi
+}
+
+cleanup() {
+    stop_daemon "${DOCKERD_PID}"; DOCKERD_PID=""
+    stop_daemon "${CONTAINERD_PID}"; CONTAINERD_PID=""
+    rm -f /run/dib-docker.pid /run/dib-docker.sock ${CONTAINERD_SOCK}
+    local m
+    for m in ${BIND_MOUNTS}; do
+        umount ${m} || true
+    done
+    BIND_MOUNTS=""
+    if [ -n "${CGROUP_MOUNTED}" ]; then
+        umount /sys/fs/cgroup || true
+        CGROUP_MOUNTED=""
+    fi
+    :
+}
+trap cleanup EXIT
+
+fail() {
+    echo "ERROR: $*"
+    echo "--- containerd log ---"
+    cat ${CLOG} 2>/dev/null || true
+    echo "--- dockerd log ---"
+    cat ${LOG} 2>/dev/null || true
+    exit 1
+}
+
+setup_chroot_env() {
+    if ! mountpoint -q /sys/fs/cgroup; then
+        mkdir -p /sys/fs/cgroup
+        mount -t cgroup2 cgroup2 /sys/fs/cgroup
+        CGROUP_MOUNTED=1
+    fi
+
+    local d
+    for d in /var/lib/containerd /var/lib/docker; do
+        mkdir -p ${d}
+        mount --bind ${d} ${d}
+        BIND_MOUNTS="${d} ${BIND_MOUNTS}"
+    done
+}
+
+start_containerd() {
+    mkdir -p $(dirname ${CONTAINERD_SOCK})
+    containerd > ${CLOG} 2>&1 &
+    CONTAINERD_PID=$!
+
+    local i
+    for i in $(seq 30); do
+        [ -S ${CONTAINERD_SOCK} ] && return 0
+        kill -0 ${CONTAINERD_PID} 2>/dev/null || return 1
+        sleep 1
+    done
+    return 1
+}
+
+start_dockerd() {
+    dockerd --host=${SOCK} \
+        --pidfile=/run/dib-docker.pid \
+        --containerd=${CONTAINERD_SOCK} \
+        --bridge=none --iptables=false --ip6tables=false \
+        > ${LOG} 2>&1 &
+    DOCKERD_PID=$!
+
+    local i
+    for i in $(seq 60); do
+        if docker -H ${SOCK} info >/dev/null 2>&1; then
+            return 0
+        fi
+        # Bail out early if dockerd already died.
+        kill -0 ${DOCKERD_PID} 2>/dev/null || return 1
+        sleep 1
+    done
+    return 1
+}
+
+setup_chroot_env
+start_containerd || fail "containerd did not start in the chroot"
+start_dockerd || fail "dockerd did not start in the chroot"
+docker -H ${SOCK} load -i ${TARBALL} || fail "docker load failed"
+echo "Preloaded embedded docker images into the containerd image store"
