@@ -50,6 +50,7 @@ function build_guest_image() {
     # Prepare elements for diskimage-builder
     export DIB_CLOUD_INIT_ETC_HOSTS="localhost"
     local elementes="base vm"
+    elementes="$elementes openstack-ci-mirrors"
 
     # Only support ubuntu at the moment.
     if [[ "${guest_os}" == "ubuntu" ]]; then
