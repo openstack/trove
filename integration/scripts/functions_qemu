@@ -32,6 +32,22 @@ function build_guest_image() {
     export ESCAPED_PATH_TROVE=$(echo ${PATH_TROVE} | sed 's/\//\\\//g')
     export DEV_MODE=${dev_mode,,}
 
+    # Use the local trove repo as the source of the guest-agent code instead
+    # of cloning from ${GIT_BASE} over the network. In the gate this bakes the
+    # change under test into the image and avoids spurious failures when the
+    # git server is unavailable.
+    if [[ -z "${DIB_REPOLOCATION_guest_agent:-}" && -d "${PATH_TROVE}/.git" ]]; then
+        export DIB_REPOLOCATION_guest_agent="${PATH_TROVE}"
+        export DIB_REPOREF_guest_agent=$(git -C "${PATH_TROVE}" rev-parse HEAD)
+    fi
+
+    # Likewise, prefer the local requirements repo for upper-constraints,
+    # which is always present on devstack nodes.
+    local uc_file="${PATH_DEVSTACK_OUTPUT:-/opt/stack}/requirements/upper-constraints.txt"
+    if [[ -z "${DIB_REPOLOCATION_upper_constraints:-}" && -f "${uc_file}" ]]; then
+        export DIB_REPOLOCATION_upper_constraints="file://${uc_file}"
+    fi
+
     # In dev mode, the trove guest agent needs to download trove code from
     # trove-taskmanager host during service initialization.
     if [[ "${DEV_MODE}" == "true" ]]; then
