@@ -120,6 +120,7 @@
         TROVE_DATASTORE_VERSION: 8.0
         TROVE_AGENT_CALL_HIGH_TIMEOUT: 1800
         TROVE_MGMT_GATEWAY: "192.168.254.1"
+        GUEST_IMAGESIZE: 7
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -203,6 +204,7 @@
     vars:
       devstack_localrc:
         TROVE_BUILD_BACKUP_IMAGES: True
+        GUEST_IMAGESIZE: 7
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_backup
 
 - job:
@@ -224,6 +226,7 @@
     vars:
       devstack_localrc:
         TROVE_BUILD_BACKUP_IMAGES: True
+        GUEST_IMAGESIZE: 7
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_replication
 
 - job:
@@ -311,6 +314,7 @@
         # Prevent "Secret creation attempt not allowed - please review your user/project privileges"
         # In Zuul, barbican works correctly only with enforce_new_defaults = True
         ENFORCE_SCOPE: True
+        GUEST_IMAGESIZE: 7
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance_ssl\..*test_ssl_replication
 
 - job:
