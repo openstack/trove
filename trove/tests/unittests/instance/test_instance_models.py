@@ -32,6 +32,7 @@ from trove.instance.models import DetailInstance
 from trove.instance.models import Instance
 from trove.instance.models import instance_encryption_key_cache
 from trove.instance.models import InstanceServiceStatus
+from trove.instance.models import InstanceStatus
 from trove.instance.models import SimpleInstance
 from trove.instance.service_status import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
@@ -595,3 +596,20 @@ class TestDetailInstance(trove_testtools.TestCase):
         self.assertEqual(instance.volume_total, 0.95)
         self.assertIsNone(instance.volume_used_percent)
         self.assertIsNone(instance.mgr_extra_info, None)
+
+    def test_load_guest_info_skipped_while_deleting(self):
+        db_info = DBInstance(InstanceTasks.DELETING, name="TestInstance")
+        db_info.id = '1'
+        db_info.datastore_version_id = None
+        db_info.server_status = 'ACTIVE'
+        instance = DetailInstance(
+            self.context, db_info,
+            InstanceServiceStatus(ServiceStatuses.HEALTHY))
+        instance.context = self.context
+        self.assertEqual(InstanceStatus.SHUTDOWN, instance.status)
+
+        instance = models.load_guest_info(instance, self.context, None)
+
+        self.guest_client_mock.assert_not_called()
+        self.assertIsNone(instance.volume_used)
+        self.assertIsNone(instance.volume_total)

@@ -66,7 +66,7 @@ LOG = logging.getLogger(__name__)
 
 # Invalid states to contact the agent
 AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE", "PROMOTE", "EJECT",
-                          "UPGRADE"]
+                          "UPGRADE", "SHUTDOWN"]
 
 CLOUDINIT_HEADER = "#cloud-config\n"
 
