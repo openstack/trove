@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    Fixed a typo in the default storage driver name (``swfit`` instead of
+    ``swift``) in the task manager backup creation path. When a backup
+    request arrived without ``storage_driver`` in its metadata, the Swift
+    endpoint URL was not injected and the guest agent rejected the backup
+    with "Missing swift_url in backup metadata", leaving the backup record
+    stuck in the ``NEW`` state.

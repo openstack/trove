@@ -1258,7 +1258,7 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
     def create_backup(self, backup_info):
         LOG.info("Initiating backup for instance %s, backup_info: %s", self.id,
                  backup_info)
-        storage_driver = backup_info.get('storage_driver', 'swfit')
+        storage_driver = backup_info.get('storage_driver', 'swift')
         if storage_driver in ["cinder"]:
             SnapshotTasks(self, backup_info)._create_snapshot()
         else:

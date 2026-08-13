@@ -985,6 +985,43 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     def tearDown(self):
         super(BuiltInstanceTasksTest, self).tearDown()
 
+    @patch.object(taskmanager_models.clients, 'swift_client')
+    def test_create_backup_default_storage_driver(self, mock_swift_client):
+        # A backup_info without 'storage_driver' must default to swift so
+        # that swift_url is injected before the request reaches the guest.
+        mock_swift_client.return_value = MagicMock(
+            url='http://swift/v1/AUTH_project')
+        backup_info = {'id': 'backup-id-1'}
+        self.instance_task.create_backup(backup_info)
+        self.instance_task._guest.create_backup.assert_called_once_with(
+            backup_info)
+        sent_info = self.instance_task._guest.create_backup.call_args[0][0]
+        self.assertEqual('http://swift/v1/AUTH_project',
+                         sent_info['swift_url'])
+
+    @patch.object(taskmanager_models.clients, 'swift_client')
+    def test_create_backup_swift_storage_driver(self, mock_swift_client):
+        mock_swift_client.return_value = MagicMock(
+            url='http://swift/v1/AUTH_project')
+        backup_info = {'id': 'backup-id-1', 'storage_driver': 'swift'}
+        self.instance_task.create_backup(backup_info)
+        self.instance_task._guest.create_backup.assert_called_once_with(
+            backup_info)
+        sent_info = self.instance_task._guest.create_backup.call_args[0][0]
+        self.assertEqual('http://swift/v1/AUTH_project',
+                         sent_info['swift_url'])
+
+    @patch.object(taskmanager_models.clients, 'swift_client')
+    @patch.object(taskmanager_models, 'SnapshotTasks')
+    def test_create_backup_cinder_storage_driver(self, mock_snapshot_tasks,
+                                                 mock_swift_client):
+        backup_info = {'id': 'backup-id-1', 'storage_driver': 'cinder'}
+        self.instance_task.create_backup(backup_info)
+        mock_snapshot_tasks.return_value._create_snapshot\
+            .assert_called_once_with()
+        self.instance_task._guest.create_backup.assert_not_called()
+        mock_swift_client.assert_not_called()
+
     @patch('trove.common.utils.poll_until')
     def test_resize_flavor(self, mock_poll_until):
         mock_poll_until.side_effect = self._poll_until_no_delay
