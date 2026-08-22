@@ -459,10 +459,11 @@ function configure_tempest_for_trove {
 
 # Compute the docker image references to embed in the guest image and
 # export them as DIB_TROVE_DOCKER_IMAGES for the guest-agent element, which
-# fetches and tags them (see extra-data.d/70-trove-docker-images). Entries
-# are [source=]target references: the guest-visible target names (e.g. the
-# local registry) can't be pulled at build time, so the element pulls the
-# source and tags it as the target.
+# pulls them directly into the image's containerd store at build time (see
+# post-install.d/35-preload-docker-images). Entries are [source=]target
+# references: the guest-visible target names (e.g. the local registry) can't
+# be pulled at build time, so the element pulls the source and tags it as the
+# target.
 function prepare_embedded_docker_images_vars {
     local quay_alias=${TROVE_DATASTORE_TYPE}
     [[ "${quay_alias}" == "postgresql" ]] && quay_alias="postgres"
