@@ -182,18 +182,6 @@
               database:
                 default_datastore_versions: mysql:5.7
 
-# TODO(gmann): As per the 2025.1 testing runtime, we need to run at least
-# one job on jammy. This job can be removed as per the future testing
-# runtime (whenever we start testing Ubuntu 26.04 as default version).
-- job:
-    name: trove-tempest-ubuntu-base-mysql5.7-jammy
-    description: This is integrated job testing on Ubuntu jammy(22.04)
-    parent: trove-tempest-ubuntu-base-mysql5.7
-    nodeset: trove-ubuntu-jammy
-    vars:
-      devstack_localrc:
-        TEMPEST_VENV_UPPER_CONSTRAINTS: '/opt/stack/requirements/upper-constraints.txt'
-
 - job:
     name: trove-tempest-ubuntu-backup-mysql5.7
     parent: trove-tempest-ubuntu-backup
