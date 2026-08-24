@@ -222,14 +222,7 @@ class ClusterController(wsgi.Controller):
                               "modules": modules})
 
         locality = body['cluster'].get('locality')
-        if locality:
-            locality_domain = ['affinity', 'anti-affinity']
-            locality_domain_msg = ("Invalid locality '%s'. "
-                                   "Must be one of ['%s']" %
-                                   (locality,
-                                    "', '".join(locality_domain)))
-            if locality not in locality_domain:
-                raise exception.BadRequest(message=locality_domain_msg)
+        utils.validate_locality(locality)
 
         configuration = body['cluster'].get('configuration')
 

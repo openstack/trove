@@ -413,6 +413,9 @@ class InstanceController(wsgi.Controller):
             volume_size = None
             volume_type = None
 
+        if not slave_of_id and locality is None:
+            locality = CONF.default_locality
+
         if slave_of_id:
             try:
                 replica_source = models.DBInstance.find_by(
@@ -490,16 +493,7 @@ class InstanceController(wsgi.Controller):
                 raise exception.BadRequest(message=msg)
             self._check_nic(context, nic)
 
-        if locality:
-            locality_domain = [
-                'affinity', 'soft-affinity',
-                'anti-affinity', 'soft-anti-affinity']
-            locality_domain_msg = ("Invalid locality '%s'. "
-                                   "Must be one of ['%s']" %
-                                   (locality,
-                                    "', '".join(locality_domain)))
-            if locality not in locality_domain:
-                raise exception.BadRequest(message=locality_domain_msg)
+        utils.validate_locality(locality)
 
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,

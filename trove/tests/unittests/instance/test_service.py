@@ -282,3 +282,71 @@ class TestInstanceController(trove_testtools.TestCase):
 
         self.assertEqual('ACTIVE', ret_instance.get('status'))
         self.assertEqual('ERROR', ret_instance.get('operating_status'))
+
+    @mock.patch.object(clients, 'create_glance_client')
+    @mock.patch('trove.instance.models.Instance.create')
+    def test_create_applies_default_locality(
+            self, mock_model_create, mock_create_client):
+        self.patch_conf_property('default_locality', 'soft-anti-affinity')
+        body = {
+            'instance': {
+                'name': self.random_name('instance'),
+                'flavorRef': self.random_uuid(),
+                'datastore': {
+                    'type': self.ds_name,
+                    'version': self.ds_version_imageid.id
+                }
+            }
+        }
+
+        self.controller.create(mock.MagicMock(), body, mock.ANY)
+
+        locality = mock_model_create.call_args.kwargs['locality']
+        self.assertEqual('soft-anti-affinity', locality)
+
+    @mock.patch.object(clients, 'create_glance_client')
+    @mock.patch('trove.instance.models.Instance.create')
+    def test_create_request_locality_overrides_default(
+            self, mock_model_create, mock_create_client):
+        self.patch_conf_property('default_locality', 'soft-anti-affinity')
+        body = {
+            'instance': {
+                'name': self.random_name('instance'),
+                'flavorRef': self.random_uuid(),
+                'datastore': {
+                    'type': self.ds_name,
+                    'version': self.ds_version_imageid.id
+                },
+                'locality': 'affinity'
+            }
+        }
+
+        self.controller.create(mock.MagicMock(), body, mock.ANY)
+
+        locality = mock_model_create.call_args.kwargs['locality']
+        self.assertEqual('affinity', locality)
+
+    @mock.patch.object(clients, 'create_glance_client')
+    @mock.patch(
+        'trove.instance.service.backup_model.verify_swift_auth_token')
+    @mock.patch('trove.instance.models.DBInstance.find_by')
+    @mock.patch('trove.instance.models.Instance.create')
+    def test_create_does_not_apply_default_locality_to_replica(
+            self, mock_model_create, mock_find_by, mock_verify_swift,
+            mock_create_client):
+        self.patch_conf_property('default_locality', 'soft-anti-affinity')
+        replica_source = mock_find_by.return_value
+        replica_source.flavor_id = self.random_uuid()
+        replica_source.datastore_version_id = self.ds_version_imageid.id
+        replica_source.slave_of_id = None
+        replica_source.ssl_mode = 'None'
+        body = {
+            'instance': {
+                'name': self.random_name('replica'),
+                'replica_of': self.random_uuid()
+            }
+        }
+
+        self.controller.create(mock.MagicMock(), body, mock.ANY)
+
+        self.assertIsNone(mock_model_create.call_args.kwargs['locality'])

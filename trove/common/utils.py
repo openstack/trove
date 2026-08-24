@@ -32,6 +32,7 @@ from oslo_utils import importutils
 from oslo_utils import strutils
 
 from trove.common import cfg
+from trove.common import constants
 from trove.common import crypto_utils
 from trove.common import exception
 from trove.common.i18n import _
@@ -430,3 +431,10 @@ def validate_command(string):
     """
     if string != shlex.quote(string):
         raise exception.InvalidValue(value=string)
+
+
+def validate_locality(locality):
+    if locality and locality not in constants.VALID_LOCALITIES:
+        message = ("Invalid locality '%s'. Must be one of ['%s']" %
+                   (locality, "', '".join(constants.VALID_LOCALITIES)))
+        raise exception.BadRequest(message=message)

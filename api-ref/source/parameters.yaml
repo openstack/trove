@@ -651,9 +651,10 @@ local_storage_used:
   type: float
 locality:
   description: |
-    The scheduler hint when creating underlying
-    Nova instances. Valide values are:
-    ``affinity``, ``anti-affinity``.
+    The scheduler hint when creating underlying Nova instances.
+    Valid values are ``affinity``, ``soft-affinity``,
+    ``anti-affinity``, and ``soft-anti-affinity``. If omitted, the
+    deployment may supply a default policy.
   in: body
   required: false
   type: string
