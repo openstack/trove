@@ -1494,12 +1494,12 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
     def update_access(self, access):
         LOG.info(f"Updating access for instance {self.id}, access {access}")
 
-        new_is_public = access.get('is_public', False)
-        new_allowed_cidrs = access.get('allowed_cidrs', [])
-        is_public = (self.access.get('is_public', False) if self.access
-                     else None)
-        allowed_cidrs = (self.access.get('allowed_cidrs', []) if self.access
-                         else None)
+        current_access = self.access or {}
+        is_public = current_access.get('is_public', False)
+        allowed_cidrs = current_access.get('allowed_cidrs', [])
+
+        new_is_public = access.get('is_public', is_public)
+        new_allowed_cidrs = access.get('allowed_cidrs', allowed_cidrs)
 
         ports = self.neutron_client.list_ports(
             name='trove-%s' % self.id)['ports']

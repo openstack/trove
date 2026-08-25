@@ -89,21 +89,23 @@ ssl_include_cert:
 # variables in body
 access:
   description: |
-    A ``access`` object defines how the database service is exposed.
+    An ``access`` object defines how the database service is exposed.
   in: body
   required: false
   type: object
 access_allowed_cidrs:
   description: |
     A list of IPv4, IPv6 or mix of both CIDRs that restrict access to the
-    database service. ``0.0.0.0/0`` is used by default if this parameter is not
-    provided.
+    database service. When creating an instance, ``0.0.0.0/0`` is used by
+    default if this parameter is not provided. When updating instance access,
+    omitting this parameter preserves the current list.
   in: body
   required: false
   type: array
 access_is_public:
   description: |
-    Whether the database service is exposed to the public.
+    Whether the database service is exposed to the public. When updating
+    instance access, omitting this parameter preserves the current value.
   in: body
   required: false
   type: boolean

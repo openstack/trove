@@ -474,17 +474,18 @@ Request Example
 
 
 
-Update instance accessbility
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update instance accessibility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  PUT /v1.0/{project_id}/instances/{instanceId}
 
 The following operations are supported:
 
-* If the instance should be exposed to public or not. Not providing
-  ``is_public`` means private.
-* The list of CIDRs that are allowed to access the database service. Not
-  providing ``allowed_cidrs`` means allowing everything.
+* Whether the instance should be exposed to the public. If ``is_public`` is
+  not provided, the current value is preserved.
+* The list of CIDRs that are allowed to access the database service.
+  If ``allowed_cidrs`` is not provided, the current list is preserved.
+  Provide an empty list to explicitly clear the allowed CIDRs.
 
 Normal response codes: 202
 

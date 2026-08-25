@@ -1197,6 +1197,126 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                          _fix_device_path("vdb/dev"))
 
 
+class BuiltInstanceTasksAccessTest(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(BuiltInstanceTasksAccessTest, self).setUp()
+        self.instance_task = MagicMock()
+        self.instance_task.id = INST_ID
+        self.instance_task.tenant_id = 'tenant-id'
+        self.instance_task.datastore.name = 'mysql'
+        self.instance_task.neutron_client.list_ports.return_value = {
+            'ports': [{
+                'id': 'port-id',
+                'network_id': 'user-network-id'
+            }]
+        }
+        self.instance_task.neutron_client.list_security_groups.return_value = {
+            'security_groups': [{'id': 'security-group-id'}]
+        }
+        self.ensure_port_access = self._patch_neutron('ensure_port_access')
+        self.clear_rules = self._patch_neutron(
+            'clear_ingress_security_group_rules')
+        self.create_rule = self._patch_neutron('create_security_group_rule')
+
+    def _patch_neutron(self, method):
+        patcher = patch.object(taskmanager_models.neutron, method)
+        mocked_method = patcher.start()
+        self.addCleanup(patcher.stop)
+        return mocked_method
+
+    def _update_access(self, access):
+        taskmanager_models.BuiltInstanceTasks.update_access(
+            self.instance_task, access)
+
+    def test_update_access_preserves_allowed_cidrs(self):
+        allowed_cidrs = ['192.0.2.0/24']
+        self.instance_task.access = {
+            'is_public': False,
+            'allowed_cidrs': allowed_cidrs
+        }
+
+        self._update_access({'is_public': True})
+
+        self.ensure_port_access.assert_called_once_with(
+            self.instance_task.neutron_client,
+            'port-id', True, self.instance_task.tenant_id)
+        self.clear_rules.assert_not_called()
+        self.create_rule.assert_not_called()
+        self.instance_task.update_db.assert_called_once_with(
+            task_status=InstanceTasks.NONE,
+            access={
+                'is_public': True,
+                'allowed_cidrs': allowed_cidrs
+            })
+
+    def test_update_access_preserves_is_public(self):
+        new_allowed_cidrs = ['198.51.100.0/24']
+        self.instance_task.access = {
+            'is_public': True,
+            'allowed_cidrs': ['192.0.2.0/24']
+        }
+
+        self._update_access({'allowed_cidrs': new_allowed_cidrs})
+
+        self.ensure_port_access.assert_not_called()
+        self.clear_rules.assert_called_once_with(
+            self.instance_task.neutron_client, 'security-group-id')
+        self.create_rule.assert_has_calls([
+            call(self.instance_task.neutron_client, 'security-group-id',
+                 'tcp', cfg.CONF.get('mysql').tcp_ports, new_allowed_cidrs),
+            call(self.instance_task.neutron_client, 'security-group-id',
+                 'udp', cfg.CONF.get('mysql').udp_ports, new_allowed_cidrs)
+        ])
+        self.instance_task.update_db.assert_called_once_with(
+            task_status=InstanceTasks.NONE,
+            access={
+                'is_public': True,
+                'allowed_cidrs': new_allowed_cidrs
+            })
+
+    def test_update_access_applies_explicit_false_and_empty_list(self):
+        self.instance_task.access = {
+            'is_public': True,
+            'allowed_cidrs': ['192.0.2.0/24']
+        }
+
+        self._update_access({
+            'is_public': False,
+            'allowed_cidrs': []
+        })
+
+        self.ensure_port_access.assert_called_once_with(
+            self.instance_task.neutron_client,
+            'port-id', False, self.instance_task.tenant_id)
+        self.clear_rules.assert_called_once_with(
+            self.instance_task.neutron_client, 'security-group-id')
+        self.create_rule.assert_not_called()
+        self.instance_task.update_db.assert_called_once_with(
+            task_status=InstanceTasks.NONE,
+            access={
+                'is_public': False,
+                'allowed_cidrs': []
+            })
+
+    def test_update_access_without_current_access(self):
+        self.instance_task.access = None
+
+        self._update_access({'is_public': True})
+
+        self.ensure_port_access.assert_called_once_with(
+            self.instance_task.neutron_client,
+            'port-id', True, self.instance_task.tenant_id)
+        self.clear_rules.assert_not_called()
+        self.create_rule.assert_not_called()
+        self.instance_task.update_db.assert_called_once_with(
+            task_status=InstanceTasks.NONE,
+            access={
+                'is_public': True,
+                'allowed_cidrs': []
+            })
+
+
 class BackupTasksTest(trove_testtools.TestCase):
 
     def setUp(self):
