@@ -1,26 +1,21 @@
 #!/bin/bash
 #
-# Extract the docker image tarball produced by
-# extra-data.d/70-trove-docker-images into the image's containerd image
-# store, by running the image's own containerd and dockerd inside the
-# chroot (as plain binaries - systemd is not running here). Instances then
-# boot with the images fully extracted: no docker pull at instance create
-# time, which in the gate runs on an emulated CPU and dominates instance
-# provisioning time.
+# Pull docker images listed in DIB_TROVE_DOCKER_IMAGES directly into the
+# image's containerd store using ctr, by running containerd inside the
+# chroot (systemd is not running here). Instances then boot with the images
+# fully extracted: no docker pull at instance create time, which in the
+# gate runs on an emulated CPU and dominates instance provisioning time.
 #
-# containerd is started first and dockerd is pointed at it, mirroring how
-# the guest runs at boot (containerd.service + docker.service): docker
-# stores images in the containerd instance it is connected to, so a
-# dockerd-managed containerd here would strand the images under
-# /var/lib/docker/containerd where the booted guest would never see them.
+# Images are pulled into containerd's "moby" namespace, which is what Docker
+# CE uses at boot (containerd.service + docker.service).
 #
-# The dib chroot needs accommodations, all undone on every exit path:
-# a cgroup2 hierarchy at /sys/fs/cgroup (dockerd refuses to start without
-# one: "Devices cgroup isn't mounted"; cgroup2 is a single hierarchy that
-# may be mounted at multiple points, so this doesn't disturb the build
-# host), and self bind-mounts of the containerd and docker state roots
-# (the chroot root is not a mountpoint, so containerd's mountinfo lookups
-# fail without them).
+# Entries are space separated [source=]target references. When a source is
+# given it is pulled and tagged as the target (used when the target name is
+# not pullable at build time, e.g. a local registry only guests can reach).
+#
+# The dib chroot needs a self bind-mount of the containerd state root (the
+# chroot root is not a mountpoint, so containerd's mountinfo lookups fail
+# without it); undone on every exit path.
 #
 # When embedding was requested, it must work: any failure here fails the
 # build. A silent fallback would produce an image that pulls at boot,
@@ -32,21 +27,13 @@ fi
 set -eu
 set -o pipefail
 
-# The tarball lives in the bind-mounted hooks directory and never enters
-# the image itself. Absent tarball means embedding was not requested (the
-# extra-data.d hook fails the build if it was requested and could not be
-# prepared).
-TARBALL=/tmp/in_target.d/trove-docker-images.tar
-[ -f ${TARBALL} ] || exit 0
+[ -z "${DIB_TROVE_DOCKER_IMAGES:-}" ] && exit 0
 
 CONTAINERD_SOCK=/run/containerd/containerd.sock
-SOCK=unix:///run/dib-docker.sock
-LOG=/tmp/dib-dockerd.log
 CLOG=/tmp/dib-containerd.log
-DOCKERD_PID=""
 CONTAINERD_PID=""
-CGROUP_MOUNTED=""
 BIND_MOUNTS=""
+CTR="ctr -n moby"
 
 stop_daemon() {
     local pid=$1
@@ -57,18 +44,13 @@ stop_daemon() {
 }
 
 cleanup() {
-    stop_daemon "${DOCKERD_PID}"; DOCKERD_PID=""
     stop_daemon "${CONTAINERD_PID}"; CONTAINERD_PID=""
-    rm -f /run/dib-docker.pid /run/dib-docker.sock ${CONTAINERD_SOCK}
+    rm -f ${CONTAINERD_SOCK}
     local m
     for m in ${BIND_MOUNTS}; do
         umount ${m} || true
     done
     BIND_MOUNTS=""
-    if [ -n "${CGROUP_MOUNTED}" ]; then
-        umount /sys/fs/cgroup || true
-        CGROUP_MOUNTED=""
-    fi
     :
 }
 trap cleanup EXIT
@@ -77,24 +59,15 @@ fail() {
     echo "ERROR: $*"
     echo "--- containerd log ---"
     cat ${CLOG} 2>/dev/null || true
-    echo "--- dockerd log ---"
-    cat ${LOG} 2>/dev/null || true
     exit 1
 }
 
 setup_chroot_env() {
-    if ! mountpoint -q /sys/fs/cgroup; then
-        mkdir -p /sys/fs/cgroup
-        mount -t cgroup2 cgroup2 /sys/fs/cgroup
-        CGROUP_MOUNTED=1
-    fi
-
-    local d
-    for d in /var/lib/containerd /var/lib/docker; do
-        mkdir -p ${d}
-        mount --bind ${d} ${d}
-        BIND_MOUNTS="${d} ${BIND_MOUNTS}"
-    done
+    # containerd's mountinfo lookups fail when the chroot root is not a
+    # mountpoint; a self bind-mount makes /var/lib/containerd visible there.
+    mkdir -p /var/lib/containerd
+    mount --bind /var/lib/containerd /var/lib/containerd
+    BIND_MOUNTS="/var/lib/containerd"
 }
 
 start_containerd() {
@@ -111,28 +84,31 @@ start_containerd() {
     return 1
 }
 
-start_dockerd() {
-    dockerd --host=${SOCK} \
-        --pidfile=/run/dib-docker.pid \
-        --containerd=${CONTAINERD_SOCK} \
-        --bridge=none --iptables=false --ip6tables=false \
-        > ${LOG} 2>&1 &
-    DOCKERD_PID=$!
-
-    local i
-    for i in $(seq 60); do
-        if docker -H ${SOCK} info >/dev/null 2>&1; then
-            return 0
-        fi
-        # Bail out early if dockerd already died.
-        kill -0 ${DOCKERD_PID} 2>/dev/null || return 1
-        sleep 1
-    done
-    return 1
+pull_image() {
+    local ref=$1
+    if ${CTR} images pull "${ref}"; then
+        return 0
+    fi
+    echo "Retrying ${ref} with --plain-http (insecure local registry)"
+    ${CTR} images pull --plain-http "${ref}"
 }
 
 setup_chroot_env
 start_containerd || fail "containerd did not start in the chroot"
-start_dockerd || fail "dockerd did not start in the chroot"
-docker -H ${SOCK} load -i ${TARBALL} || fail "docker load failed"
+
+for entry in ${DIB_TROVE_DOCKER_IMAGES}; do
+    source=${entry%%=*}
+    target=${entry##*=}
+
+    echo "Embedding docker image ${source} as ${target}"
+    if ! pull_image "${source}"; then
+        fail "unable to pull ${source} for embedding"
+    fi
+    if [ "${source}" != "${target}" ]; then
+        if ! ${CTR} images tag "${source}" "${target}"; then
+            fail "unable to tag ${source} as ${target}"
+        fi
+    fi
+done
+
 echo "Preloaded embedded docker images into the containerd image store"
