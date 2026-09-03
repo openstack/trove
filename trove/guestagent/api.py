@@ -454,7 +454,7 @@ class API(object):
             stop_args['do_not_start_on_reboot'] = do_not_start_on_reboot
             version = '1.0'
 
-        self._call("stop_db", self.agent_low_timeout,
+        self._call("stop_db", self.agent_high_timeout,
                    version=version, **stop_args)
 
     def get_volume_info(self):
