@@ -11,5 +11,5 @@ if [ "$DIB_INIT_SYSTEM" == "systemd" ]; then
 fi
 
 if [[ ${SYNC_LOG_TO_CONTROLLER} == "True" ]]; then
-    systemctl enable guest-log-collection.timer
+    systemctl enable guest-log-collection.service
 fi
