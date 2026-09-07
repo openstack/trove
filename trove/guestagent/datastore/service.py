@@ -120,6 +120,10 @@ class BaseDbStatus(object):
 
     def get_actual_db_status(self):
         """Check database service status."""
+        status = docker_util.get_container_status(self.docker_client)
+        if status == "exited":
+            return service_status.ServiceStatuses.SHUTDOWN
+
         health = docker_util.get_container_health(self.docker_client)
         LOG.debug('container health status: %s', health)
         if health == "healthy":
@@ -130,12 +134,7 @@ class BaseDbStatus(object):
         elif health == "not running":
             return service_status.ServiceStatuses.SHUTDOWN
         elif health == "unhealthy":
-            # In case the container was stopped
-            status = docker_util.get_container_status(self.docker_client)
-            if status == "exited":
-                return service_status.ServiceStatuses.SHUTDOWN
-            else:
-                return service_status.ServiceStatuses.CRASHED
+            return service_status.ServiceStatuses.CRASHED
 
         return service_status.ServiceStatuses.UNKNOWN
 
