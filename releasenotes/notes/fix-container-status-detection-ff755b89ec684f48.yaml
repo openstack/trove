@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixed database status detection for stopped containers that retain a
+    ``healthy`` Docker health status. Trove now identifies an ``exited``
+    container as ``SHUTDOWN`` before evaluating its health status.
