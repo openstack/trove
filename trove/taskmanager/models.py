@@ -1405,6 +1405,16 @@ class BuiltInstanceTasks(Instance, NotifyMixin, ConfigurationMixin):
         LOG.info("Initiating datastore restart on instance %s.", self.id)
         try:
             self.guest.restart()
+        except GuestTimeout:
+            LOG.error("Timed out restarting datastore on instance %s.",
+                      self.id)
+            self._refresh_datastore_status()
+            if (self.datastore_status.status ==
+                    srvstatus.ServiceStatuses.RESTARTING):
+                self.datastore_status.set_status(
+                    srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
+                self.datastore_status.save()
+            raise
         except GuestError:
             LOG.error("Failed to initiate datastore restart on instance "
                       "%s.", self.id)

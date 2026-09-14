@@ -630,6 +630,7 @@ def load_instance(cls, context, id, needs_server=False,
                                                 id)
 
     service_status = InstanceServiceStatus.find_by(instance_id=id)
+    update_service_status(db_info.task_status, service_status, id)
     LOG.debug("Instance %(instance_id)s service status is %(service_status)s.",
               {'instance_id': id, 'service_status': service_status.status})
 
@@ -1668,7 +1669,7 @@ class Instance(BuiltInstance):
         task_api.API(self.context).reboot(self.id)
 
     def restart(self):
-        self.validate_can_perform_action()
+        self.validate_can_perform_restart()
         LOG.info("Restarting datastore on instance %s.", self.id)
         if self.db_info.cluster_id is not None and not self.context.is_admin:
             raise exception.ClusterInstanceOperationNotSupported()
@@ -1736,11 +1737,16 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.MIGRATING)
         task_api.API(self.context).migrate(self.id, host)
 
-    def validate_can_perform_action(self):
+    def validate_can_perform_action(self, allowed_service_statuses=None):
         """
         Raises exception if an instance action cannot currently be performed.
+
+        :param allowed_service_statuses: Additional datastore service statuses
+            that are safe for the requested action.
         """
         # cases where action cannot be performed
+        allowed_service_statuses = allowed_service_statuses or ()
+        datastore_status = self.datastore_status.status
         status_type = 'instance'
         if self.db_info.server_status not in ['ACTIVE', 'HEALTHY']:
             status = self.db_info.server_status
@@ -1748,8 +1754,10 @@ class Instance(BuiltInstance):
               self.db_info.task_status != InstanceTasks.RESTART_REQUIRED):
             status_type = 'task'
             status = self.db_info.task_status.action
-        elif not self.datastore_status.status.action_is_allowed:
-            status = self.status
+        elif (not datastore_status.action_is_allowed and
+              datastore_status not in allowed_service_statuses):
+            status_type = 'datastore service'
+            status = datastore_status.description
         elif Backup.running(self.id):
             status = InstanceStatus.BACKUP
         else:
@@ -1768,6 +1776,13 @@ class Instance(BuiltInstance):
             'action_status': status}
         LOG.error(log_fmt, msg_content)
         raise exception.UnprocessableEntity(exc_fmt % msg_content)
+
+    def validate_can_perform_restart(self):
+        self.validate_can_perform_action(
+            allowed_service_statuses=(
+                srvstatus.ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
+            )
+        )
 
     def _validate_can_perform_assign(self):
         """
