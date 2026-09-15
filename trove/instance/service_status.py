@@ -106,7 +106,7 @@ class ServiceStatuses(object):
                                      'RESTART_REQUIRED')
     HEALTHY = ServiceStatus(0x21, 'healthy', 'HEALTHY')
     UPGRADING = ServiceStatus(0x22, 'upgrading', 'UPGRADING')
-    RESTARTING = ServiceStatus(0x22, 'restarting', 'RESTARTING')
+    RESTARTING = ServiceStatus(0x23, 'restarting', 'RESTARTING')
 
 
 # Dissuade further additions at run-time.
