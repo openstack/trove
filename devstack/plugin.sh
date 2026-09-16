@@ -594,7 +594,7 @@ function add_image_to_glance {
 
 function prepare_docker {
     echo "Install and prepare docker service."
-    sudo mkdir /etc/docker
+    sudo mkdir -p /etc/docker
     # Without disabling ip-forward, Docker will disable iptables FORWARD to DROP, which
     # will cause absense of connectivity in guest instances.
     sudo tee /etc/docker/daemon.json >/dev/null <<EOF
