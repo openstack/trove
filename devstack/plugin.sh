@@ -203,7 +203,6 @@ manage_etc_hosts: "localhost"
 write_files:
   - path: /etc/trove/controller.conf
     content: |
-      TROVE_MGMT_GATEWAY=${TROVE_MGMT_GATEWAY}
       CONTROLLER=${SERVICE_HOST}
       DB_BACKUP_IMAGE=${TROVE_BUILD_BACKUP_IMAGES}
 ${ETC_HOSTS_APPEND}
