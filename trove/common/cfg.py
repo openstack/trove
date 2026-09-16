@@ -1696,14 +1696,15 @@ def get_ignored_dbs():
         return []
 
 
-def get_ignored_users():
+def get_ignored_users(datastore_manager=None):
     try:
-        return get_configuration_property('ignore_users')
+        return get_configuration_property(
+            'ignore_users', datastore_manager=datastore_manager)
     except NoSuchOptError:
         return []
 
 
-def get_configuration_property(property_name):
+def get_configuration_property(property_name, datastore_manager=None):
     """
     Get a configuration property.
     Try to get it from the datastore-specific section first.
@@ -1713,7 +1714,7 @@ def get_configuration_property(property_name):
     # Fake-integration tests do not define 'CONF.datastore_manager'.
     # *MySQL* options will
     # be loaded. This should never occur in a production environment.
-    datastore_manager = CONF.datastore_manager
+    datastore_manager = datastore_manager or CONF.datastore_manager
     if not datastore_manager:
         datastore_manager = 'mysql'
         LOG.warning("Manager name ('datastore_manager') not defined, "

@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixed user validation against the ``ignore_users`` option to use the
+    configuration for the instance's datastore manager. This prevents a
+    reserved-user list for one datastore from being applied to another.

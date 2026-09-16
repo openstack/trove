@@ -340,3 +340,21 @@ class DatastoreUserTest(trove_testtools.TestCase):
         self.assertRaises(ValueError, user.check_reserved)
         self.assertRaises(ValueError, user.check_create)
         self.assertRaises(ValueError, user.check_delete)
+
+    @mock.patch.object(models.cfg, 'get_ignored_users')
+    def test_check_reserved_with_datastore_manager(self, mock_ignored_users):
+        mock_ignored_users.return_value = [self.username]
+        user = models.DatastoreUser(
+            self.username, datastore_manager='postgresql')
+
+        self.assertRaises(ValueError, user.check_reserved)
+        mock_ignored_users.assert_has_calls(
+            [mock.call('postgresql'), mock.call('postgresql')])
+        self.assertNotIn('_datastore_manager', user.serialize())
+
+    def test_check_reserved_root_user(self):
+        user = models.DatastoreUser(
+            self.username, datastore_manager='postgresql')
+        user.make_root()
+
+        user.check_reserved()

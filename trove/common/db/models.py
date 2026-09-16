@@ -231,12 +231,13 @@ class DatastoreUser(DatastoreModelsBase):
     root_username = 'root'
 
     def __init__(self, name=None, password=None, host=None, databases=None,
-                 deserializing=False):
+                 deserializing=False, datastore_manager=None):
         self._name = None
         self._password = None
         self._host = self._HOSTNAME_WILDCARD
         self._databases = []
         self._is_root = False
+        self._datastore_manager = datastore_manager
         if not deserializing:
             self.name = name
             if password:
@@ -245,6 +246,11 @@ class DatastoreUser(DatastoreModelsBase):
                 self.host = host
             if databases:
                 self.databases = databases
+
+    def serialize(self):
+        data = super().serialize().copy()
+        data.pop('_datastore_manager', None)
+        return data
 
     @classmethod
     def root(cls, name=None, password=None, *args, **kwargs):
@@ -410,7 +416,7 @@ class DatastoreUser(DatastoreModelsBase):
     def ignored_users(self):
         if self._is_root:
             return []
-        return cfg.get_ignored_users()
+        return cfg.get_ignored_users(getattr(self, '_datastore_manager', None))
 
     @property
     def is_ignored(self):

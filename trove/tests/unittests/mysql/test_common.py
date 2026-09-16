@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from unittest import mock
+
 from testtools.matchers import Equals
 from testtools.matchers import Is
 from trove.common.exception import DatabaseForUserNotInDatabaseListError
@@ -62,6 +64,16 @@ class MySqlCommonTest(trove_testtools.TestCase):
         self.assertThat(len(result), Is(1))
         self.assertThat(result[0]['_name'], Equals('bob'))
         self.assertThat(result[0]['_password'], Equals('x'))
+
+    @mock.patch('trove.common.db.models.cfg.get_ignored_users')
+    def test_populate_users_uses_datastore_manager(self, mock_ignored_users):
+        mock_ignored_users.return_value = ['bob']
+        users = [{'name': 'bob', 'password': 'x'}]
+
+        self.assertRaises(
+            ValueError, populate_users, users, datastore_manager='postgresql')
+        mock_ignored_users.assert_has_calls(
+            [mock.call('postgresql'), mock.call('postgresql')])
 
     def test_populate_users_unique_host(self):
         users = [{'name': 'bob', 'password': 'x', 'host': '127.0.0.1'},
