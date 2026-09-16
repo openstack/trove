@@ -578,8 +578,9 @@ class SchemaController(ExtensionController):
                   "body": body})
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.authorize_target_action(
+        instance = self.authorize_target_action(
             context, 'database:create', instance_id)
+        datastore_manager = instance.datastore_version.manager
         schemas = body['databases']
         context.notification = notification.DBaaSDatabaseCreate(context,
                                                                 request=req)
@@ -587,8 +588,11 @@ class SchemaController(ExtensionController):
                                dbname=".".join([db['name']
                                                 for db in schemas])):
             try:
-                model_schemas = populate_validated_databases(schemas)
-                models.Schema.create(context, instance_id, model_schemas)
+                model_schemas = populate_validated_databases(
+                    schemas, datastore_manager=datastore_manager)
+                models.Schema.create(
+                    context, instance_id, model_schemas,
+                    datastore_manager=datastore_manager)
             except (ValueError, AttributeError) as e:
                 raise exception.BadRequest(_("Database create error: %(e)s")
                                            % {'e': e})
@@ -599,15 +603,19 @@ class SchemaController(ExtensionController):
                  "req : '%(req)s'\n\n",
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.authorize_target_action(
+        instance = self.authorize_target_action(
             context, 'database:delete', instance_id)
+        datastore_manager = instance.datastore_version.manager
         context.notification = notification.DBaaSDatabaseDelete(
             context, request=req)
         with StartNotification(context, instance_id=instance_id, dbname=id):
             try:
-                schema = guest_models.DatastoreSchema(name=id)
+                schema = guest_models.DatastoreSchema(
+                    name=id, datastore_manager=datastore_manager)
                 schema.check_delete()
-                if not models.Schemas.find(context, instance_id, id):
+                if not models.Schemas.find(
+                        context, instance_id, id,
+                        datastore_manager=datastore_manager):
                     raise exception.DatabaseNotFound(uuid=id)
                 models.Schema.delete(context, instance_id, schema.serialize())
             except (ValueError, AttributeError) as e:

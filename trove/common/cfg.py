@@ -1689,9 +1689,10 @@ def parse_args(argv, default_config_files=None):
              default_config_files=default_config_files)
 
 
-def get_ignored_dbs():
+def get_ignored_dbs(datastore_manager=None):
     try:
-        return get_configuration_property('ignore_dbs')
+        return get_configuration_property(
+            'ignore_dbs', datastore_manager=datastore_manager)
     except NoSuchOptError:
         return []
 

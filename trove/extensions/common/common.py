@@ -18,7 +18,7 @@ from trove.common.db import models as guest_models
 from trove.common import exception
 
 
-def populate_validated_databases(dbs):
+def populate_validated_databases(dbs, datastore_manager=None):
     """
     Create a serializable request with user provided data
     for creating new databases.
@@ -27,7 +27,9 @@ def populate_validated_databases(dbs):
         databases = []
         unique_identities = set()
         for database in dbs:
-            mydb = guest_models.DatastoreSchema(name=database.get('name', ''))
+            mydb = guest_models.DatastoreSchema(
+                name=database.get('name', ''),
+                datastore_manager=datastore_manager)
             mydb.check_reserved()
             if mydb.name in unique_identities:
                 raise exception.DatabaseInitialDatabaseDuplicateError()

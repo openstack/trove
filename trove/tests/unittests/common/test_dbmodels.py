@@ -102,6 +102,16 @@ class DatastoreSchemaTest(trove_testtools.TestCase):
         self.assertRaises(ValueError, database.check_create)
         self.assertRaises(ValueError, database.check_delete)
 
+    @mock.patch.object(models.cfg, 'get_ignored_dbs')
+    def test_checks_with_datastore_manager(self, mock_ignored_dbs):
+        mock_ignored_dbs.return_value = [self.dbname]
+        database = models.DatastoreSchema(
+            self.dbname, datastore_manager='postgresql')
+
+        self.assertRaises(ValueError, database.check_reserved)
+        self.assertRaises(ValueError, database.check_delete)
+        mock_ignored_dbs.assert_called_with('postgresql')
+
 
 class DatastoreUserTest(trove_testtools.TestCase):
 

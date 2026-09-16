@@ -92,10 +92,12 @@ class DatastoreModelsBase(object):
 class DatastoreSchema(DatastoreModelsBase):
     """Represents a database schema."""
 
-    def __init__(self, name=None, deserializing=False):
+    def __init__(self, name=None, deserializing=False, datastore_manager=None):
         self._name = None
         self._collate = None
         self._character_set = None
+        if datastore_manager is not None:
+            self._datastore_manager = datastore_manager
         # If both or neither are passed in this is a bug.
         if bool(deserializing) == bool(name):
             raise RuntimeError(_("Bug in DatastoreSchema()"))
@@ -179,7 +181,7 @@ class DatastoreSchema(DatastoreModelsBase):
 
     @property
     def ignored_dbs(self):
-        return cfg.get_ignored_dbs()
+        return cfg.get_ignored_dbs(getattr(self, '_datastore_manager', None))
 
     def is_ignored(self):
         return self.name in self.ignored_dbs
