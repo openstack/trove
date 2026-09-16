@@ -1,13 +1,20 @@
 [Unit]
 Description=OpenStack Trove Guest Log Collection Service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=oneshot
-User=ubuntu
-Group=ubuntu
+Type=simple
 
 EnvironmentFile=/etc/trove/controller.conf
-
 EnvironmentFile=/etc/trove/conf.d/guest_info.conf
 
-ExecStart=/bin/bash -c "sudo rsync -e 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /home/GUEST_USERNAME/.ssh/id_rsa' -az --exclude='.*' --exclude='README' /var/log /var/lib/docker/containers HOST_SCP_USERNAME@$CONTROLLER:/var/log/guest-agent-logs/$guest_id"
+# All source directories should be present
+ExecStartPre=/usr/bin/mkdir -p /var/lib/docker/containers /var/log/trove
+ExecStart=/usr/bin/lsyncd -nodaemon -log scarce /etc/lsyncd.conf.lua
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
