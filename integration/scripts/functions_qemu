@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # Additional functions that would mostly just pertain to a Ubuntu + Qemu setup
+# This file should be designed for a safe include in both
+# trovestack and devstack/plugin.sh environments.
 #
 
 function build_guest_image() {
@@ -96,9 +98,15 @@ function build_guest_image() {
       --image-cache ${GUEST_CACHEDIR} \
       $elementes
 
+    local rc=$?
+
     # out of $TEMP
     popd > /dev/null
     sudo rm -rf $TEMP
+
+    if [ $rc -ne 0 ]; then
+        return $rc
+    fi
 
     exclaim "Image ${image_output} was built successfully."
 }

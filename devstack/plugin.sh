@@ -216,6 +216,12 @@ EOF
     done
 }
 
+# Include library files with required methods.
+# These files should be designed in a way for safe include in both
+# trovestack and devstack plugin environments
+. $DEST/trove/integration/scripts/functions-common
+. $DEST/trove/integration/scripts/functions_qemu
+
 # configure_trove() - Set config files, create data dirs, etc
 function configure_trove {
     setup_develop $TROVE_DIR
@@ -297,12 +303,14 @@ function configure_trove {
     configure_cloudinit
 }
 
+function configure_stack_sudoers() {
+    echo "Changing stack user sudoers"
+    echo "stack ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/60_stack_sh_allow_all
+}
+
 # install_trove() - Collect source and prepare
 function install_trove {
     install_package jq
-
-    echo "Changing stack user sudoers"
-    echo "stack ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/60_stack_sh_allow_all
 
     setup_develop $TROVE_DIR
 
@@ -480,6 +488,17 @@ function prepare_embedded_docker_images_vars {
 }
 
 # Use trovestack to create guest image and register the image in the datastore.
+function install_dib_requirements {
+    echo "Install and prepare Disk Image Builder (DIB)"
+    if is_fedora; then
+      _install_epel
+      install_package qemu-img git kpartx debootstrap squashfs-tools python3-pip python3-setuptools zstd
+    else
+      install_package qemu-utils git kpartx debootstrap squashfs-tools python3-pip python3-setuptools python3-venv
+    fi
+}
+
+# Use diskimage-builder-env directly to create guest image
 function create_guest_image {
     TROVE_ENABLE_IMAGE_BUILD=`echo ${TROVE_ENABLE_IMAGE_BUILD,,}`
     if [[ ${TROVE_ENABLE_IMAGE_BUILD} == "false" ]]; then
@@ -487,40 +506,58 @@ function create_guest_image {
         return 0
     fi
 
-    image_name="trove-guest-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}"
-    mkdir -p $HOME/images
-    image_file=$HOME/images/${image_name}.qcow2
+    image_name=${TROVE_IMAGE_NAME:-"trove-guest-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}"}
+    image_file=${TROVE_IMAGE_FILE:-"$HOME/images/${image_name}.qcow2"}
+    mkdir -p $(dirname "$image_file")
 
     if [[ -n ${TROVE_NON_DEV_IMAGE_URL} ]]; then
         echo "Downloading guest image from ${TROVE_NON_DEV_IMAGE_URL}"
         curl -sSL ${TROVE_NON_DEV_IMAGE_URL} -o ${image_file}
     else
         echo "Starting to create guest image"
+        export PATH_TROVE="${DEST}/trove"
         export SYNC_LOG_TO_CONTROLLER=${SYNC_LOG_TO_CONTROLLER:-"False"}
-        $DEST/trove/integration/scripts/trovestack \
-          build-image \
-          ${TROVE_IMAGE_OS} \
-          ${TROVE_IMAGE_OS_RELEASE} \
-          true \
-          ${TROVE_IMAGE_OS} \
-          ${image_file}
+
+        rm -rf "$HOME/diskimage-builder-env"
+        python3 -m venv "$HOME/diskimage-builder-env"
+        $HOME/diskimage-builder-env/bin/pip3 install setuptools diskimage-builder
+        # This code will be executed asynchronously with async_runfunc, so
+        # side effects from shell pollution will not affect the main process
+        source "${HOME}/diskimage-builder-env/bin/activate"
+
+        build_guest_image \
+            ${TROVE_IMAGE_OS} \
+            ${TROVE_IMAGE_OS_RELEASE} \
+            true \
+            ${TROVE_IMAGE_OS} \
+            ${image_file}
     fi
 
     if [[ ! -f ${image_file} ]]; then
         echo "Image file was not found at ${image_file}"
-        exit 1
+        return 1
     fi
+}
+
+function add_image_to_glance {
+    wait_for_service 300 $KEYSTONE_SERVICE_URI
+    wait_for_service 300 $GLANCE_URL
 
     echo "Add the image to glance"
-    glance_image_id=$(openstack --os-cloud trove \
-      image create ${image_name} \
-      --disk-format qcow2 --container-format bare \
-      --tag trove \
-      --property hw_rng_model='virtio' \
-      --file ${image_file} \
-      --debug \
-      -c id -f value)
-     echo "Glance image ${glance_image_id} uploaded"
+    image_name=${TROVE_IMAGE_NAME:-"trove-guest-${TROVE_IMAGE_OS}-${TROVE_IMAGE_OS_RELEASE}"}
+    image_file=${TROVE_IMAGE_FILE:-"$HOME/images/${image_name}.qcow2"}
+    if ! glance_image_id=$(openstack --os-cloud trove \
+          image create "$image_name" \
+          --disk-format qcow2 --container-format bare \
+          --tag trove \
+          --property hw_rng_model='virtio' \
+          --file "$image_file" \
+          --debug \
+          -c id -f value); then
+        echo "Failed to create Glance image: ${image_name}"
+        return 1
+    fi
+    echo "Glance image ${glance_image_id} uploaded"
 
     echo "Register the image in datastore"
     for ds in $TROVE_DATASTORES; do
@@ -555,14 +592,27 @@ function create_guest_image {
     fi
 }
 
-function create_registry_container {
+function prepare_docker {
+    echo "Install and prepare docker service."
+    sudo mkdir /etc/docker
+    # Without disabling ip-forward, Docker will disable iptables FORWARD to DROP, which
+    # will cause absense of connectivity in guest instances.
+    sudo tee /etc/docker/daemon.json >/dev/null <<EOF
+{
+    "bridge": "none",
+    "ip-forward": false,
+    "iptables": false
+}
+EOF
     # install docker on the host.
-    local ret='0'
-    which docker >/dev/null 2>&1 || { local ret='1'; }
-    if [[ "$ret" -ne 0 ]]; then
-        echo "Installing docker on the host"
-        $DEST/trove/integration/scripts/trovestack install-docker
+    if is_fedora; then
+        install_package docker
+    else
+        install_package docker.io
     fi
+}
+
+function create_registry_container {
     # running a docker registry container
     echo "Running a docker registry container..."
     container=$(sudo docker ps -a --format "{{.Names}}" --filter name=registry)
@@ -572,6 +622,16 @@ function create_registry_container {
         for img in $TROVE_DATASTORES; do
             datastore=${img%%:*}
             version=${img##*:}
+
+            # Filter by datastore type if single datastore type is set, e.g. for Zuul jobs
+            if [[ -n "$TROVE_DATASTORE_TYPE" && "$datastore" != "$TROVE_DATASTORE_TYPE" ]]; then
+                continue
+            fi
+
+            # Filter by datastore version if single datastore version is set, e.g. for Zuul jobs
+            if [[ -n "$TROVE_DATASTORE_VERSION" && "$version" != "$TROVE_DATASTORE_VERSION" ]]; then
+                continue
+            fi
 
             [[ "$datastore" == "postgresql" ]] && quay_alias="postgres" || quay_alias="$datastore"
             quay_img="$quay_alias:$version"
@@ -600,7 +660,15 @@ function create_registry_container {
         # clean up backup images.
         sudo docker image prune -a -f
     fi
-    iniset $TROVE_CONF DEFAULT docker_insecure_registries "$TROVE_HOST_GATEWAY:$REGISTRY_PORT,$LOCAL_HOSTNAME:$REGISTRY_PORT"
+}
+
+function config_registry {
+    # Trove configuration may not be available during registry
+    # setup, so we need to configure it here
+    if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ]; then
+        iniset $TROVE_CONF DEFAULT docker_insecure_registries \
+            "$TROVE_HOST_GATEWAY:$REGISTRY_PORT,$LOCAL_HOSTNAME:$REGISTRY_PORT"
+    fi
 }
 
 # NOTE(mangust404): Ensure that messaging and Docker image traffic go through
@@ -783,21 +851,65 @@ function config_quotas {
     openstack quota set --secgroup-rules 300 service
 }
 
+function create_registry_and_guest_image {
+    if [[ "${TROVE_EMBED_DATASTORE_IMAGES}" == "True" && \
+          -n "${TROVE_DATASTORE_TYPE:-}" && -n "${TROVE_DATASTORE_VERSION:-}" ]]; then
+        prepare_embedded_docker_images_vars
+    fi
+
+    # Registry preparation and guest image building should run sequentially
+    if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ]; then
+        create_registry_container
+    fi
+
+    # Most time-consuming task
+    create_guest_image
+}
+
 # Dispatcher for trove plugin
 if is_service_enabled trove; then
-    if [[ "$1" == "stack" && "$2" == "install" ]]; then
+    if [[ "$1" == "stack" && "$2" == "pre-install" ]]; then
+        echo_summary "Pre-install Trove tools for guest image build"
+        time_start "trove.pre-install"
+        # Prepare eveything required for creating image registry
+        # and guest image build.
+        prepare_docker
+        if [[ "${TROVE_ENABLE_IMAGE_BUILD,,}" != "false" ]]; then
+            install_dib_requirements
+        fi
+        configure_stack_sudoers
+        time_stop "trove.pre-install"
+        # Hint: if an error in the async call occurs, the entire
+        # job will stuck. To see what's wrong, remove async_runfunc
+        # keyword to run the task synchronously for debugging.
+        async_runfunc create_registry_and_guest_image
+    elif [[ "$1" == "stack" && "$2" == "install" ]]; then
         echo_summary "Installing Trove"
+        time_start "trove.install"
         install_trove
         install_python_troveclient
+        time_stop "trove.install"
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
+        time_start "trove.post-config"
         if is_service_enabled key; then
             create_trove_accounts
         fi
 
         echo_summary "Configuring Trove"
         configure_trove
+        time_stop "trove.post-config"
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
+        time_start "trove.extra"
+
+        async_wait create_registry_and_guest_image
+        # trove database should be present for registering datastore
+        # manager and datastore version correctly
         init_trove_db
+        # Current installation logic doesn't rely on uploaded image id,
+        # it uses tags: ["trove"], so glance image may be uploaded
+        # asynchronously
+        async_runfunc add_image_to_glance
+
         config_nova_keypair
         config_cinder_volume_type
         config_mgmt_security_group
@@ -806,14 +918,7 @@ if is_service_enabled trove; then
         if [ "$TROVE_HOST_GATEWAY" != "$MGMT_PORT_IP" ]; then
             config_network_isolation
         fi
-        if [[ "${TROVE_EMBED_DATASTORE_IMAGES}" == "True" && \
-              -n "${TROVE_DATASTORE_TYPE:-}" && -n "${TROVE_DATASTORE_VERSION:-}" ]]; then
-            prepare_embedded_docker_images_vars
-        fi
-        create_guest_image
-        if [ "$TROVE_ENABLE_LOCAL_REGISTRY" == "True" ] ; then
-            create_registry_container
-        fi
+        config_registry
 
         echo_summary "Starting Trove"
         start_trove
@@ -829,9 +934,15 @@ if is_service_enabled trove; then
             echo "Set group to kvm for /dev/kvm device"
             sudo chgrp kvm /dev/kvm
         fi
+        time_stop "trove.extra"
     elif [[ "$1" == "stack" && "$2" == "test-config" ]]; then
+        time_start "trove.test-config"
         echo_summary "Configuring Tempest for Trove"
         configure_tempest_for_trove
+
+        async_wait add_image_to_glance
+        time_stop "trove.test-config"
+        sudo iptables-save
     fi
 
     if [[ "$1" == "unstack" ]]; then

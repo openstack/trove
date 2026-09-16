@@ -62,6 +62,7 @@ function get_default_host_ip() {
 # Load functions devstack style
 . $TROVESTACK_SCRIPTS/functions
 . $TROVESTACK_SCRIPTS/functions_qemu
+. $TROVESTACK_SCRIPTS/functions-common
 
 # Pre-set DISTRO and RELEASE variables based on host OS
 # Can be overridden by env vars DISTRO and RELEASE
@@ -135,18 +136,6 @@ PKG_UPDATE_ARG="update"
 ###############################################################################
 # Utility functions
 ###############################################################################
-
-# Colors that can be used in 'exclaim'
-COLOR_RED='\033[0;31m'
-COLOR_GREEN='\033[0;32m'
-COLOR_BLUE='\033[0;34m'
-COLOR_NONE='\033[0m'
-
-function exclaim () {
-    echo "*******************************************************************************"
-    echo -e "$@"
-    echo "*******************************************************************************"
-}
 
 function pkg_install () {
     echo Installing $@...
