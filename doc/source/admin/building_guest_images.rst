@@ -123,7 +123,7 @@ Building Guest Images
 =====================
 
 Since Victoria release, a single trove guest image can be used for different
-datastores, it's unnecessary to maintain different images for differnt
+datastores, it's unnecessary to maintain different images for different
 datastores.
 
 -----------------------------
