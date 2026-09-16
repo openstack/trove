@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Assigns a unique service status code to the ``RESTARTING`` state.
+    Previously, ``RESTARTING`` and ``UPGRADING`` shared the ``0x22`` code,
+    which made them indistinguishable in code-based status comparisons and
+    lookups.
