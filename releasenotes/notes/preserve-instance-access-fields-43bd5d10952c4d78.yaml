@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixed instance access updates to preserve the current ``is_public`` and
+    ``allowed_cidrs`` values when the corresponding fields are omitted from
+    the request.
