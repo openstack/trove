@@ -1,6 +1,6 @@
 [mysqld]
 log_bin = /var/lib/mysql/data/mysql-bin.log
-binlog_format = MIXED
+binlog_format = ROW
 relay_log = /var/lib/mysql/data/mysql-relay-bin.log
 {% if datastore.semantic_version.major < 8 %}
 relay_log_info_repository = TABLE
