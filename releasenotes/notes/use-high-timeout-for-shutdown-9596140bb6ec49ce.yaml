@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Database shutdown requests now use ``agent_call_high_timeout`` instead of
+    ``agent_call_low_timeout``. This provides more time for a database under
+    load to stop before the guest agent call times out.
