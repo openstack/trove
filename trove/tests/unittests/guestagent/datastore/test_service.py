@@ -19,10 +19,27 @@ from trove.guestagent.datastore.mariadb import service
 from trove.guestagent.datastore.mysql import service as mysql_service
 from trove.guestagent.datastore import service as base_service
 from trove.guestagent.utils import docker as docker_util
+from trove.instance import service_status
 from trove.tests.unittests import trove_testtools
 
 
 CONF = cfg.CONF
+
+
+class TestBaseDbStatus(trove_testtools.TestCase):
+    @mock.patch.object(docker_util, "get_container_health")
+    @mock.patch.object(docker_util, "get_container_status")
+    def test_exited_container_is_shutdown(
+            self, mock_get_container_status, mock_get_container_health):
+        mock_get_container_status.return_value = "exited"
+        mock_get_container_health.return_value = "healthy"
+
+        status = base_service.BaseDbStatus(mock.MagicMock())
+
+        self.assertEqual(
+            service_status.ServiceStatuses.SHUTDOWN,
+            status.get_actual_db_status())
+        mock_get_container_health.assert_not_called()
 
 
 class TestService(trove_testtools.TestCase):
