@@ -205,3 +205,37 @@ class DatastoreVersionController(wsgi.Controller):
             models.update_datastore(datastore.name, None)
         datastore_version.delete()
         return wsgi.Result(None, 202)
+
+
+class DatastoreVersionFlavorController(wsgi.Controller):
+    """Controller for datastore version flavor associations."""
+
+    schemas = apischema.mgmt_datastore_version_flavor
+
+    @admin_context
+    def index(self, req, tenant_id, version_id):
+        """List flavor associations for a datastore version."""
+        datastore_version = models.DatastoreVersion.load_by_uuid(version_id)
+        associations = models.DBDatastoreVersionMetadata.find_all(
+            datastore_version_id=datastore_version.id,
+            key='flavor', deleted=False)
+        flavor_ids = [association.value for association in associations]
+        return wsgi.Result({'flavor_ids': flavor_ids}, 200)
+
+    @admin_context
+    def create(self, req, body, tenant_id, version_id):
+        """Add flavor associations to a datastore version."""
+        datastore_version = models.DatastoreVersion.load_by_uuid(version_id)
+        metadata = models.DatastoreVersionMetadata
+        metadata.add_datastore_version_flavor_association(
+            datastore_version.id, body['flavor_ids'])
+        return wsgi.Result(None, 202)
+
+    @admin_context
+    def delete(self, req, tenant_id, version_id, id):
+        """Delete a flavor association from a datastore version."""
+        datastore_version = models.DatastoreVersion.load_by_uuid(version_id)
+        metadata = models.DatastoreVersionMetadata
+        metadata.delete_datastore_version_flavor_association(
+            datastore_version.id, id)
+        return wsgi.Result(None, 204)

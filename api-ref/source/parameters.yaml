@@ -35,6 +35,12 @@ datastore_version_id:
   in: path
   required: false
   type: string
+flavor_id:
+  description: |
+    The ID of the flavor.
+  in: path
+  required: true
+  type: string
 flavorId:
   description: |
     The ID of the flavor.
@@ -418,6 +424,18 @@ flavor:
   in: body
   required: true
   type: object
+flavor_ids:
+  description: |
+    The list of flavor IDs to associate with the datastore version.
+  in: body
+  required: true
+  type: array
+flavor_ids_response:
+  description: |
+    The list of flavor IDs associated with the datastore version.
+  in: body
+  required: true
+  type: array
 flavor_link_href:
   description: |
     The ``href`` attribute of a flavor link.

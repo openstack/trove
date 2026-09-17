@@ -408,3 +408,94 @@ Request
 
    - project_id: project_id
    - datastore_version_id: datastore_version_id
+
+
+
+
+List datastore version flavor associations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  GET /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/flavors
+
+Admin only API. List flavor associations for a datastore version.
+
+Normal response codes: 200
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+
+Response Parameters
+-------------------
+
+.. rest_parameters:: parameters.yaml
+
+   - flavor_ids: flavor_ids_response
+
+Response Example
+----------------
+
+.. literalinclude:: samples/datastore-version-mgmt-flavors-list-response.json
+   :language: javascript
+
+
+
+
+Add datastore version flavor associations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  POST /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/flavors
+
+Admin only API. Add one or more flavor associations to a datastore version.
+Existing flavor associations are preserved.
+
+The request must contain a non-empty list of unique, non-empty flavor IDs. The
+API does not verify that the specified IDs correspond to existing flavors in
+Nova.
+
+Flavor IDs are processed in the order in which they are specified. If a flavor
+is already associated with the datastore version, the request returns a ``400
+Bad Request`` response. Associations added before the existing association was
+encountered are preserved, and the remaining IDs are not processed.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+   - flavor_ids: flavor_ids
+
+Request Example
+---------------
+
+.. literalinclude:: samples/datastore-version-mgmt-flavors-request.json
+   :language: javascript
+
+
+
+
+Delete a datastore version flavor association
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/flavors/{flavor_id}
+
+Admin only API. Delete a flavor association from a datastore version.
+
+Normal response codes: 204
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+   - flavor_id: flavor_id
