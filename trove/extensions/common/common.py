@@ -44,13 +44,14 @@ def populate_validated_databases(dbs):
         raise exception.BadRequest(safe_string)
 
 
-def populate_users(users, initial_databases=None):
+def populate_users(users, initial_databases=None, datastore_manager=None):
     """Create a serializable request containing users."""
     users_data = []
     unique_identities = set()
     for user in users:
         u = guest_models.DatastoreUser(name=user.get('name', ''),
-                                       host=user.get('host', '%'))
+                                       host=user.get('host', '%'),
+                                       datastore_manager=datastore_manager)
         u.check_reserved()
         user_identity = (u.name, u.host)
         if user_identity in unique_identities:

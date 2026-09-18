@@ -188,9 +188,12 @@ class User(object):
 
     @classmethod
     def load(cls, context, instance_id, username, hostname, root_user=False):
-        load_and_verify(context, instance_id,
-                        enabled_datastore=['mysql', 'mariadb', 'postgresql'])
-        validate = guest_models.DatastoreUser(name=username, host=hostname)
+        instance = load_and_verify(
+            context, instance_id,
+            enabled_datastore=['mysql', 'mariadb', 'postgresql'])
+        validate = guest_models.DatastoreUser(
+            name=username, host=hostname,
+            datastore_manager=instance.datastore_version.manager)
         if root_user:
             validate.make_root()
         validate.check_reserved()
@@ -206,7 +209,7 @@ class User(object):
                    database_names)
 
     @classmethod
-    def create(cls, context, instance_id, users):
+    def create(cls, context, instance_id, users, datastore_manager=None):
         # Load InstanceServiceStatus to verify if it's running
         load_and_verify(context, instance_id,
                         enabled_datastore=['mysql', 'mariadb', 'postgresql'])
@@ -219,7 +222,8 @@ class User(object):
                 client,
                 limit=1,
                 marker=userhost,
-                include_marker=True)
+                include_marker=True,
+                datastore_manager=datastore_manager)
             if (len(existing_users) > 0 and
                     str(existing_users[0].name) == str(user_name) and
                     str(existing_users[0].host) == str(host_name)):
@@ -280,7 +284,7 @@ class User(object):
     @classmethod
     def update_attributes(cls, context, instance_id, username, hostname,
                           user_attrs):
-        load_and_verify(context, instance_id)
+        instance = load_and_verify(context, instance_id)
         client = create_guest_client(context, instance_id)
 
         user_changed = user_attrs.get('name')
@@ -289,7 +293,9 @@ class User(object):
         user = user_changed or username
         host = host_changed or hostname
 
-        validate = guest_models.DatastoreUser(name=user, host=host)
+        validate = guest_models.DatastoreUser(
+            name=user, host=host,
+            datastore_manager=instance.datastore_version.manager)
         validate.check_reserved()
 
         userhost = "%s@%s" % (user, host)
@@ -298,7 +304,8 @@ class User(object):
                 client,
                 limit=1,
                 marker=userhost,
-                include_marker=True)
+                include_marker=True,
+                datastore_manager=instance.datastore_version.manager)
             if (len(existing_users) > 0 and
                     existing_users[0].name == user and
                     existing_users[0].host == host):
@@ -316,16 +323,18 @@ class Users(object):
         return load_via_context(cls, context, instance_id)
 
     @classmethod
-    def load_with_client(cls, client, limit, marker, include_marker):
+    def load_with_client(cls, client, limit, marker, include_marker,
+                         datastore_manager=None):
         user_list, next_marker = client.list_users(
             limit=limit,
             marker=marker,
             include_marker=include_marker)
+        ignored_users = cfg.get_ignored_users(datastore_manager)
         model_users = []
         for user in user_list:
             guest_user = guest_models.DatastoreUser.deserialize(user,
                                                                 verify=False)
-            if guest_user.name in cfg.get_ignored_users():
+            if guest_user.name in ignored_users:
                 continue
             # TODO(hub-cap): databases are not being returned in the
             # reference agent

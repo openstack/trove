@@ -456,8 +456,9 @@ class InstanceController(wsgi.Controller):
         database_names = [database.get('_name', '') for database in databases]
         users = None
         try:
-            users = populate_users(body['instance'].get('users', []),
-                                   database_names)
+            users = populate_users(
+                body['instance'].get('users', []), database_names,
+                datastore_manager=datastore_version.manager)
         except ValueError as ve:
             raise exception.BadRequest(message=str(ve))
         if slave_of_id and (databases or users):

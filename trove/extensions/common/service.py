@@ -72,6 +72,7 @@ class ExtensionController(wsgi.Controller):
         policy.authorize_on_target(
             context, '%s:extension:%s' % (target_type, target_rule_name),
             {'tenant': target.tenant_id})
+        return target
 
 
 class BaseDatastoreRootController(ExtensionController, metaclass=abc.ABCMeta):
@@ -319,7 +320,9 @@ class UserController(ExtensionController):
                   "req": strutils.mask_password(req),
                   "body": strutils.mask_password(body)})
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.authorize_target_action(context, 'user:create', instance_id)
+        instance = self.authorize_target_action(
+            context, 'user:create', instance_id)
+        datastore_manager = instance.datastore_version.manager
         context.notification = notification.DBaaSUserCreate(context,
                                                             request=req)
         users = body['users']
@@ -327,8 +330,11 @@ class UserController(ExtensionController):
                                username=",".join([user['name']
                                                   for user in users])):
             try:
-                model_users = populate_users(users)
-                models.User.create(context, instance_id, model_users)
+                model_users = populate_users(
+                    users, datastore_manager=datastore_manager)
+                models.User.create(
+                    context, instance_id, model_users,
+                    datastore_manager=datastore_manager)
             except (ValueError, AttributeError) as e:
                 raise exception.BadRequest(_("User create error: %(e)s")
                                            % {'e': e})
