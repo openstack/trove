@@ -54,7 +54,7 @@ publish-docs/
 
 # Editors
 *~
-.*.swp
+.*.sw?
 .bak
 .idea/
 
