@@ -335,6 +335,52 @@ class CreateInstanceTest(trove_testtools.TestCase):
             locality=self.locality)
         self.assertIsNotNone(instance)
 
+    def test_exception_on_configuration_datastore_version_mismatch(self):
+        configuration = models.Configuration.create(
+            "configuration",
+            "",
+            self.tenant_id,
+            self.datastore,
+            # some random datastore version id
+            str(uuid.uuid4()),
+        )
+
+        self.addCleanup(configuration.delete)
+
+        exc = self.assertRaises(
+            exception.ConfigurationDatastoreNotMatchInstance,
+            models.Instance.create,
+            self.context, self.name, self.flavor_id,
+            self.image_id, self.databases, self.users,
+            self.datastore, self.datastore_version,
+            self.volume_size, None,
+            self.az, self.nics, configuration.id
+        )
+
+        self.assertIn(
+            "Datastore Version on Configuration",
+            str(exc)
+        )
+
+    def test_no_exception_on_configuration_datastore_version_match(self):
+        configuration = models.Configuration.create(
+            "configuration",
+            "",
+            self.tenant_id,
+            self.datastore,
+            self.datastore_version.id,
+        )
+
+        self.addCleanup(configuration.delete)
+
+        models.Instance.create(
+            self.context, self.name, self.flavor_id,
+            self.image_id, self.databases, self.users,
+            self.datastore, self.datastore_version,
+            self.volume_size, None,
+            self.az, self.nics, configuration.id
+        )
+
 
 class TestInstanceUpgrade(trove_testtools.TestCase):
 
