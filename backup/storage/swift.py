@@ -174,7 +174,7 @@ class StreamReader(object):
         # Phase 2: Serve data from the buffered temporary file
         data = self._current_segment_buffer.read(chunk_size)
         self._buffer_read_offset += len(data)
-        # start new segment if the orignal stream is not exhausted
+        # start new segment if the original stream is not exhausted
         if not data and not self.end_of_file:
             LOG.info("StreamReader: Finished serving data for segment %s. "
                      "Preparing for next.", self.segment)
