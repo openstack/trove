@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds management API endpoints to list, add, and delete volume type
+    associations for datastore versions.

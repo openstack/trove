@@ -85,6 +85,12 @@ version:
   in: path
   required: false
   type: string
+volume_type_id:
+  description: |
+    The ID of the volume type.
+  in: path
+  required: true
+  type: string
 # variables in query
 ssl_include_cert:
   description: |
@@ -1133,6 +1139,18 @@ volume_type:
   in: body
   required: false
   type: string
+volume_type_ids:
+  description: |
+    The list of volume type IDs to associate with the datastore version.
+  in: body
+  required: true
+  type: array
+volume_type_ids_response:
+  description: |
+    The list of volume type IDs associated with the datastore version.
+  in: body
+  required: true
+  type: array
 volume_used:
   description: |
     The used space of the volume, in gigabytes (GB).

@@ -239,3 +239,38 @@ class DatastoreVersionFlavorController(wsgi.Controller):
         metadata.delete_datastore_version_flavor_association(
             datastore_version.id, id)
         return wsgi.Result(None, 204)
+
+
+class DatastoreVersionVolumeTypeController(wsgi.Controller):
+    """Controller for datastore version volume type associations."""
+
+    schemas = apischema.mgmt_datastore_version_volume_type
+
+    @admin_context
+    def index(self, req, tenant_id, version_id):
+        """List volume type associations for a datastore version."""
+        datastore_version = models.DatastoreVersion.load_by_uuid(version_id)
+        metadata = models.DatastoreVersionMetadata
+        associations = (
+            metadata.list_datastore_version_volume_type_associations(
+                datastore_version.id))
+        volume_type_ids = [association.value for association in associations]
+        return wsgi.Result({'volume_type_ids': volume_type_ids}, 200)
+
+    @admin_context
+    def create(self, req, body, tenant_id, version_id):
+        """Add volume type associations to a datastore version."""
+        datastore_version = models.DatastoreVersion.load_by_uuid(version_id)
+        metadata = models.DatastoreVersionMetadata
+        metadata.add_datastore_version_volume_type_association(
+            datastore_version.id, body['volume_type_ids'])
+        return wsgi.Result(None, 202)
+
+    @admin_context
+    def delete(self, req, tenant_id, version_id, id):
+        """Delete a volume type association from a datastore version."""
+        datastore_version = models.DatastoreVersion.load_by_uuid(version_id)
+        metadata = models.DatastoreVersionMetadata
+        metadata.delete_datastore_version_volume_type_association(
+            datastore_version.id, id)
+        return wsgi.Result(None, 204)
