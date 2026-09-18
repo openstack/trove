@@ -78,7 +78,14 @@ function build_guest_image() {
     fi
 
     export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive, OpenStack"}
-    elementes="$elementes cloud-init-datasources"
+
+    # Use PyPI mirror provided by CI, pass env variable to pypi element
+    DIB_PYPI_MIRROR_URL=$(
+        python3 -m pip config --global get global.index-url 2>/dev/null
+    )
+    export DIB_PYPI_MIRROR_URL
+
+    elementes="$elementes cloud-init-datasources pypi"
 
     elementes="$elementes pip-cache"
     elementes="$elementes guest-agent"
