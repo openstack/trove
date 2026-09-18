@@ -40,6 +40,11 @@ configuration_data_types = {
     "pattern": "integer|string"
 }
 
+configuration_update_all_data_types = {
+    "type": "string",
+    "enum": ["boolean", "float", "integer", "list", "string"]
+}
+
 configuration_integer_size = {
     "type": "string",
     "maxLength": 40,
@@ -911,6 +916,33 @@ mgmt_configuration = {
                     "restart_required": boolean_string,
                     "max": configuration_integer_size,
                     "min": configuration_integer_size,
+                }
+            }
+        }
+    },
+    "update_all": {
+        "name": "configuration_parameter:update_all",
+        "type": "object",
+        "required": ["configuration-parameters"],
+        "properties": {
+            "configuration-parameters": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["name", "restart_required", "type"],
+                    "properties": {
+                        "name": configuration_non_empty_string,
+                        "type": configuration_update_all_data_types,
+                        "restart_required": {
+                            "type": "boolean"
+                        },
+                        "max": {
+                            "type": "number"
+                        },
+                        "min": {
+                            "type": "number"
+                        },
+                    }
                 }
             }
         }

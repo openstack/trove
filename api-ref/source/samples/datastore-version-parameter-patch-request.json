@@ -1,0 +1,30 @@
+{
+    "configuration-parameters": [
+        {
+          "name": "array_nulls",
+          "restart_required": false,
+          "type": "boolean"
+        },
+        {
+          "name": "authentication_timeout",
+          "restart_required": false,
+          "type": "string"
+        },
+        {
+          "name": "autovacuum",
+          "restart_required": false,
+          "type": "boolean"
+        },
+        {
+          "name": "autovacuum_analyze_scale_factor",
+          "restart_required": false,
+          "type": "string"
+        },
+        {
+          "name": "autovacuum_analyze_threshold",
+          "restart_required": false,
+          "min": 0,
+          "type": "integer"
+        }
+    ]
+}

@@ -76,7 +76,11 @@ class Mgmt(extensions.ExtensionDescriptor):
         datastore_configuration_parameters = extensions.ResourceExtension(
             '{tenant_id}/mgmt/datastores/versions/{version_id}/parameters',
             conf_service.ConfigurationsParameterController(),
-            member_actions={})
+            member_actions={},
+            collection_actions={
+                'update_all': 'PATCH',
+                'delete_all': 'DELETE'
+            })
         resources.append(datastore_configuration_parameters)
 
         datastore_version = extensions.ResourceExtension(
