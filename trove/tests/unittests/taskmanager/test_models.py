@@ -45,6 +45,7 @@ from trove.backup import models as backup_models
 from trove.backup import state
 from trove.common import exception
 from trove.common.exception import GuestError
+from trove.common.exception import GuestTimeout
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common import timeutils
@@ -1067,6 +1068,52 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.instance_task._guest.stop_db.assert_any_call()
         self.instance_task.server.reboot.assert_any_call()
         self.instance_task._guest.restart.assert_any_call()
+
+    @patch.object(taskmanager_models, 'LOG')
+    def test_restart_guest_timeout_sets_service_status(self, mock_log):
+        timeout = GuestTimeout()
+        self.instance_task._guest.restart.side_effect = timeout
+        service_status = InstanceServiceStatus(ServiceStatuses.RESTARTING)
+        service_status.save = Mock()
+
+        with (
+            patch.object(InstanceServiceStatus, 'find_by',
+                         return_value=service_status),
+            patch.object(self.instance_task, 'reset_task_status')
+            as mock_reset_task_status,
+        ):
+            error = self.assertRaises(
+                GuestTimeout, self.instance_task.restart)
+
+        self.assertIs(timeout, error)
+        self.assertEqual(
+            ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
+            service_status.status)
+        service_status.save.assert_called_once_with()
+        mock_reset_task_status.assert_called_once_with()
+        mock_log.error.assert_called_once_with(
+            "Timed out restarting datastore on instance %s.",
+            self.instance_task.id)
+
+    @patch.object(taskmanager_models, 'LOG')
+    def test_restart_guest_timeout_preserves_upgrading_status(
+            self, mock_log):
+        self.instance_task._guest.restart.side_effect = GuestTimeout()
+        service_status = InstanceServiceStatus(ServiceStatuses.UPGRADING)
+        service_status.save = Mock()
+
+        with (
+            patch.object(InstanceServiceStatus, 'find_by',
+                         return_value=service_status),
+            patch.object(self.instance_task, 'reset_task_status'),
+        ):
+            self.assertRaises(GuestTimeout, self.instance_task.restart)
+
+        self.assertEqual(ServiceStatuses.UPGRADING, service_status.status)
+        service_status.save.assert_not_called()
+        mock_log.error.assert_called_once_with(
+            "Timed out restarting datastore on instance %s.",
+            self.instance_task.id)
 
     @patch.object(BaseInstance, 'update_db')
     def test_detach_replica(self, mock_update_db):

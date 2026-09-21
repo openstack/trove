@@ -525,6 +525,100 @@ class TestReplication(trove_testtools.TestCase):
                           None, slave_of_id=str(uuid.uuid4()))
 
 
+class TestInstanceActionValidation(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(TestInstanceActionValidation, self).setUp()
+        self.context = trove_testtools.TroveTestContext(self)
+        self.db_info = Mock(
+            id='instance-id',
+            cluster_id=None,
+            datastore_version_id=None,
+            server_status='ACTIVE',
+            task_status=InstanceTasks.NONE,
+        )
+        self.service_status = InstanceServiceStatus(
+            ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
+        self.instance = Instance(
+            self.context, self.db_info, Mock(), self.service_status)
+
+    @patch.object(backup_models.Backup, 'running', return_value=False)
+    def test_validation_reports_datastore_service_status(
+            self, mock_backup_running):
+        with patch.object(models, 'LOG') as mock_log:
+            error = self.assertRaises(
+                exception.UnprocessableEntity,
+                self.instance.validate_can_perform_action)
+
+        self.assertIn(
+            '(datastore service status was guestagent error)', str(error))
+        mock_backup_running.assert_not_called()
+        mock_log.error.assert_called_once()
+
+    @patch.object(backup_models.Backup, 'running', return_value=False)
+    def test_validation_allows_additional_service_status(
+            self, mock_backup_running):
+        self.instance.validate_can_perform_action(
+            allowed_service_statuses=(
+                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
+            )
+        )
+
+        mock_backup_running.assert_called_once_with(self.instance.id)
+
+    def test_restart_validation_allows_guestagent_timeout_status(self):
+        with patch.object(
+                self.instance, 'validate_can_perform_action') as mock_validate:
+            self.instance.validate_can_perform_restart()
+
+        mock_validate.assert_called_once_with(
+            allowed_service_statuses=(
+                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
+            )
+        )
+
+    def test_restart_uses_restart_validation(self):
+        with (
+            patch.object(self.instance, 'validate_can_perform_restart')
+            as mock_validate,
+            patch.object(self.instance, 'update_db') as mock_update_db,
+            patch.object(self.instance, 'set_servicestatus_restart')
+            as mock_set_restart,
+            patch.object(task_api, 'API') as mock_task_api,
+        ):
+            self.instance.restart()
+
+        mock_validate.assert_called_once_with()
+        mock_update_db.assert_called_once_with(
+            task_status=InstanceTasks.REBOOTING)
+        mock_set_restart.assert_called_once_with()
+        mock_task_api.return_value.restart.assert_called_once_with(
+            self.instance.id)
+
+    @patch.object(models, 'load_simple_instance_addresses')
+    @patch.object(models, 'load_simple_instance_server_status')
+    @patch.object(InstanceServiceStatus, 'find_by')
+    @patch.object(models, 'get_db_info')
+    @patch.object(models, 'LOG')
+    def test_action_load_uses_expired_heartbeat_status(
+            self, mock_log, mock_get_db_info, mock_find_status,
+            mock_load_server_status, mock_load_addresses):
+        service_status = InstanceServiceStatus(ServiceStatuses.HEALTHY)
+        service_status.is_uptodate = Mock(return_value=False)
+        service_status.save = Mock()
+        mock_get_db_info.return_value = self.db_info
+        mock_find_status.return_value = service_status
+
+        instance = models.load_instance(
+            Instance, self.context, self.db_info.id)
+
+        self.assertEqual(
+            ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
+            instance.datastore_status.status)
+        service_status.save.assert_not_called()
+        mock_log.warning.assert_called_once()
+
+
 def trivial_key_function(id):
     return id * id
 

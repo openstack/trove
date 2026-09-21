@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fixes an instance becoming unable to retry a datastore restart after the
+    guest agent times out. The instance action validator now uses the same
+    effective guest-agent status as the instance detail API and reports the
+    datastore service status that blocked an action.

@@ -190,6 +190,10 @@ Reset instance status
 Set instance service status to ``ERROR`` and clear the current task status.
 Mark any running backup operations as ``FAILED``.
 
+The ``reset-status`` action does not restore the instance to an actionable
+state. It clears the task status and marks the instance as ``ERROR`` so that
+it can be deleted.
+
 Normal response codes: 202
 
 Request
