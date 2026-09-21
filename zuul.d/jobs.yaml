@@ -55,6 +55,7 @@
         TROVE_BUILD_BACKUP_IMAGES: False
         # Lightweight kernel version without firmware
         DIB_UBUNTU_KERNEL: linux-image-virtual
+        TROVE_DIB_EXTRA_ELEMENTS: "openstack-ci-mirrors pypi"
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -125,6 +126,7 @@
         GUEST_IMAGESIZE: 8
         # Lightweight kernel version without firmware
         DIB_UBUNTU_KERNEL: linux-image-virtual
+        TROVE_DIB_EXTRA_ELEMENTS: "openstack-ci-mirrors pypi"
       devstack_local_conf:
         post-config:
           $TROVE_CONF:
@@ -211,6 +213,7 @@
         GUEST_IMAGESIZE: 8
         # Lightweight kernel version without firmware
         DIB_UBUNTU_KERNEL: linux-image-virtual
+        TROVE_DIB_EXTRA_ELEMENTS: "openstack-ci-mirrors pypi"
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_backup
 
 - job:
@@ -235,6 +238,7 @@
         GUEST_IMAGESIZE: 8
         # Lightweight kernel version without firmware
         DIB_UBUNTU_KERNEL: linux-image-virtual
+        TROVE_DIB_EXTRA_ELEMENTS: "openstack-ci-mirrors pypi"
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_replication
 
 - job:
@@ -325,6 +329,7 @@
         GUEST_IMAGESIZE: 8
         # Lightweight kernel version without firmware
         DIB_UBUNTU_KERNEL: linux-image-virtual
+        TROVE_DIB_EXTRA_ELEMENTS: "openstack-ci-mirrors pypi"
       tempest_test_regex: ^trove_tempest_plugin\.tests\.scenario\.test_instance_ssl\..*test_ssl_replication
 
 - job:
