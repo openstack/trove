@@ -75,6 +75,7 @@ function build_guest_image() {
         export DIB_RELEASE=${guest_release}
         export DISTRO_NAME="ubuntu"
         elementes="$elementes ubuntu-minimal"
+        export DIB_UBUNTU_KERNEL=${DIB_UBUNTU_KERNEL:-"linux-image-generic"}
     fi
 
     export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive, OpenStack"}
