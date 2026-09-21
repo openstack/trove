@@ -1,0 +1,14 @@
+---
+fixes:
+  - |
+    Removes ``character_set_client``, ``character_set_connection``,
+    ``character_set_database``, ``character_set_results``,
+    ``collation_connection``, and ``collation_database`` from the shipped
+    MariaDB configuration parameter validation rules. These variables are
+    not valid MariaDB server option-file settings and can prevent an instance
+    from starting when used in a configuration group.
+
+    Rules already loaded for existing datastore versions are not changed
+    automatically. Cloud administrators should remove these parameters from
+    each affected MariaDB datastore version with the management API, or
+    delete and reload that version's complete validation rule set.
