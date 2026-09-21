@@ -149,7 +149,7 @@ The trove guest image could be created by running the following command:
         ${guest_username} \
         ${output_image_path}
 
-* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=jammy`` are fully
+* Currently, only ``guest_os=ubuntu`` and ``guest_os_release=noble`` are fully
   tested and supported.
 
 * Default input values:
@@ -157,7 +157,7 @@ The trove guest image could be created by running the following command:
   .. code-block:: ini
 
       guest_os=ubuntu
-      guest_os_release=jammy
+      guest_os_release=noble
       dev_mode=true
       guest_username=ubuntu
       output_image_path=$HOME/images/trove-guest-${guest_os}-${guest_os_release}-dev.qcow2
@@ -182,29 +182,29 @@ The trove guest image could be created by running the following command:
   extension, e.g. to build a raw image, you can specify
   ``$your-image-name.raw`` as the ``output_image_path`` parameter.
 
-For example, in order to build a guest image for Ubuntu jammy operating
+For example, in order to build a guest image for Ubuntu noble operating
 system in development mode:
 
 .. code-block:: console
 
-    $ ./trovestack build-image ubuntu jammy true ubuntu
+    $ ./trovestack build-image ubuntu noble true ubuntu
 
 Once the image build is finished, the cloud administrator needs to register the
 image in Glance and register a new datastore or version in Trove using
-``trove-manage`` command, e.g. after building an image for MySQL 5.7.29:
+``trove-manage`` command, e.g. after building an image for MySQL 8.4:
 
 .. code-block:: console
 
-    $ openstack image create trove-guest-ubuntu-jammy \
+    $ openstack image create trove-guest-ubuntu-noble \
       --private \
       --disk-format qcow2 \
       --container-format bare \
       --tag trove --tag mysql \
-      --file ~/images/trove-guest-ubuntu-jammy-dev.qcow2
-    $ openstack datastore version create 5.7.29 mysql mysql "" \
+      --file ~/images/trove-guest-ubuntu-noble-dev.qcow2
+    $ openstack datastore version create 8.4 mysql mysql "" \
       --image-tags trove,mysql \
       --active --default
-    $ trove-manage db_load_datastore_config_parameters mysql 5.7.29 ${trove_repo_dir}/trove/templates/mysql/validation-rules.json
+    $ trove-manage db_load_datastore_config_parameters mysql 8.4 ${trove_repo_dir}/trove/templates/mysql/validation-rules.json
 
 .. note::
 
@@ -247,7 +247,7 @@ For mysql users, you can pull and push your own images to your own registry as f
 .. code-block:: console
 
     $ DATABASE_NAME=mysql
-    $ DATABASE_VERSION=5.7
+    $ DATABASE_VERSION=8.4
     $ TROVE_DATABASE_IMAGE=${YOUR_REGISTRY_REPO_NAME}/${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker pull ${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker tag ${DATABASE_NAME}:${DATABASE_VERSION} ${YOUR_REGISTRY_HTTP_ADDR}/${TROVE_DATABASE_IMAGE}
