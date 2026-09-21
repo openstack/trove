@@ -93,6 +93,8 @@ pull_image() {
     ${CTR} images pull --plain-http "${ref}"
 }
 
+# Print out disk usage for debugging
+df -h
 setup_chroot_env
 start_containerd || fail "containerd did not start in the chroot"
 
@@ -109,6 +111,8 @@ for entry in ${DIB_TROVE_DOCKER_IMAGES}; do
             fail "unable to tag ${source} as ${target}"
         fi
     fi
+    # Print out disk usage for debugging
+    df -h
 done
 
 echo "Preloaded embedded docker images into the containerd image store"

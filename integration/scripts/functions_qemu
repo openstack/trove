@@ -65,6 +65,14 @@ function build_guest_image() {
     TEMP=$(mktemp -d ${working_dir}/diskimage-create.XXXXXXX)
     pushd $TEMP > /dev/null
 
+    # DIB uses tmpfs for the target root, with a size of half the total RAM.
+    # When embedding Docker images into the guest image, instances with 8 GB
+    # of RAM may fail with "No space left on device". By setting
+    # DIB_MIN_TMPFS=6, we tell DIB to use the disk instead of tmpfs if the
+    # available tmpfs size is less than 6 GB. This results in a slower job
+    # execution instead of filling up the tmpfs and failing the build.
+    export DIB_MIN_TMPFS=6
+
     # Prepare elements for diskimage-builder
     export DIB_CLOUD_INIT_ETC_HOSTS="localhost"
     local elementes="base vm"
