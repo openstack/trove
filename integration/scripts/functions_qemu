@@ -89,10 +89,11 @@ function build_guest_image() {
     export DIB_CLOUD_INIT_DATASOURCES=${DIB_CLOUD_INIT_DATASOURCES:-"ConfigDrive, OpenStack"}
 
     # Use PyPI mirror provided by CI, pass env variable to pypi element
-    DIB_PYPI_MIRROR_URL=$(
+    if DIB_PYPI_MIRROR_URL=$(
         python3 -m pip config --global get global.index-url 2>/dev/null
-    )
-    export DIB_PYPI_MIRROR_URL
+    ); then
+        export DIB_PYPI_MIRROR_URL
+    fi
 
     # Allow pip to tolerate transient network/mirror failures during DIB.
     # Package downloads may occasionally fail with incomplete reads or timeouts.
