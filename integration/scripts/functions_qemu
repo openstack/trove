@@ -85,6 +85,11 @@ function build_guest_image() {
     )
     export DIB_PYPI_MIRROR_URL
 
+    # Allow pip to tolerate transient network/mirror failures during DIB.
+    # Package downloads may occasionally fail with incomplete reads or timeouts.
+    export PIP_RETRIES=5
+    export PIP_TIMEOUT=60
+
     elementes="$elementes cloud-init-datasources pypi"
 
     elementes="$elementes pip-cache"
