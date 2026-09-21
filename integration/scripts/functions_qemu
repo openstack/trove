@@ -76,7 +76,6 @@ function build_guest_image() {
     # Prepare elements for diskimage-builder
     export DIB_CLOUD_INIT_ETC_HOSTS="localhost"
     local elementes="base vm"
-    elementes="$elementes openstack-ci-mirrors"
 
     # Only support ubuntu at the moment.
     if [[ "${guest_os}" == "ubuntu" ]]; then
@@ -99,7 +98,7 @@ function build_guest_image() {
     export PIP_RETRIES=5
     export PIP_TIMEOUT=60
 
-    elementes="$elementes cloud-init-datasources pypi"
+    elementes="$elementes cloud-init-datasources"
 
     elementes="$elementes pip-cache"
     elementes="$elementes guest-agent"
@@ -110,6 +109,8 @@ function build_guest_image() {
         export DIB_PASSWORD=${root_password}
     fi
 
+    TROVE_DIB_EXTRA_ELEMENTS=${TROVE_DIB_EXTRA_ELEMENTS:-""}
+
     # Build the image
     disk-image-create -x \
       -a amd64 \
@@ -117,7 +118,7 @@ function build_guest_image() {
       -t ${image_type} \
       --image-size ${GUEST_IMAGESIZE} \
       --image-cache ${GUEST_CACHEDIR} \
-      $elementes
+      $elementes $TROVE_DIB_EXTRA_ELEMENTS
 
     local rc=$?
 
