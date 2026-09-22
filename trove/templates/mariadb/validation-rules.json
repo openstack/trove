@@ -195,42 +195,12 @@
             "type": "integer"
         },
         {
-            "name": "character_set_client",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "character_set_connection",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "character_set_database",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
             "name": "character_set_filesystem",
             "restart_required": false,
             "type": "string"
         },
         {
-            "name": "character_set_results",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
             "name": "character_set_server",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "collation_connection",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "collation_database",
             "restart_required": false,
             "type": "string"
         },
