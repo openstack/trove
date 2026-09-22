@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes backup deletion failures caused by comparing an offset-aware
+    current time with an offset-naive backup creation timestamp.
+    `LP#2166063 <https://bugs.launchpad.net/trove/+bug/2166063>`__
