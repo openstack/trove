@@ -1480,7 +1480,7 @@ rpcapi_cap_opts = [
         'taskmanager', default='latest',
         help='Set a version cap for messages sent to taskmanager services'),
     cfg.StrOpt(
-        'guestagent', default='latest',
+        'guestagent', default='hibiscus',
         help='Set a version cap for messages sent to guestagent services'),
     cfg.StrOpt(
         'conductor', default='latest',
