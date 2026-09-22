@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    MySQL replication instances now use the ``ROW`` binary logging format
+    instead of ``MIXED``. Previously, enabling replication changed
+    ``binlog_format`` to ``MIXED`` on the replication source and replicas,
+    which would override the default ``ROW`` value on existing instances.
+    Existing replication setups are not modified. Rebuilding existing
+    MySQL instance will change ``MIXED`` value to ``ROW``.
