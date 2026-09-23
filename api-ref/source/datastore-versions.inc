@@ -179,8 +179,8 @@ Response Example
 
 
 
-Create datastore version configuration parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create datastore version configuration parameter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  POST /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters
 
@@ -214,8 +214,8 @@ Response Example
 
 
 
-Update a datastore version configuration parameter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Update datastore version configuration parameter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  PUT /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/{parameter_name}
 
@@ -248,8 +248,8 @@ Response Example
 
 
 
-Delete a datastore version configuration parameter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Delete datastore version configuration parameter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/{parameter_name}
 
@@ -266,6 +266,61 @@ Request
    - project_id: project_id
    - datastore_version_id: datastore_version_id
    - parameter_name: parameter_name
+
+
+
+
+Update datastore version configuration parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  PATCH /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/update_all
+
+Admin only API. Create or update the configuration parameters supplied
+for the specified datastore version. Existing parameters omitted from
+the request remain unchanged.
+
+Normal response codes: 202
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
+   - configuration-parameters: configuration-parameters
+   - configuration-parameters.name: configuration_parameter_name
+   - configuration-parameters.restart_required: configuration_parameter_restart_required
+   - configuration-parameters.type: configuration_parameter_type
+   - configuration-parameters.max: configuration_parameter_max
+   - configuration-parameters.min: configuration_parameter_min
+
+Request Example
+---------------
+
+.. literalinclude:: samples/datastore-version-parameter-patch-request.json
+   :language: javascript
+
+
+
+
+Delete all datastore version configuration parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/delete_all
+
+Admin only API. Delete all the configuration parameters associated with
+the specified datastore version ID.
+
+Normal response codes: 204
+
+Request
+-------
+
+.. rest_parameters:: parameters.yaml
+
+   - project_id: project_id
+   - datastore_version_id: datastore_version_id
 
 
 
@@ -392,69 +447,14 @@ Request Example
 
 
 
-Delete a datastore version
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Delete datastore version
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}
 
 Admin only API. Delete a specific datastore version.
 
 Normal response codes: 202
-
-Request
--------
-
-.. rest_parameters:: parameters.yaml
-
-   - project_id: project_id
-   - datastore_version_id: datastore_version_id
-
-
-
-
-Set datastore version configuration parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. rest_method::  PATCH /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/update_all
-
-Admin only API. Create or update the configuration parameters supplied
-for the specified datastore version. Existing parameters omitted from
-the request remain unchanged.
-
-Normal response codes: 202
-
-Request
--------
-
-.. rest_parameters:: parameters.yaml
-
-   - project_id: project_id
-   - datastore_version_id: datastore_version_id
-   - configuration-parameters: configuration-parameters
-   - configuration-parameters.name: configuration_parameter_name
-   - configuration-parameters.restart_required: configuration_parameter_restart_required
-   - configuration-parameters.type: configuration_parameter_type
-   - configuration-parameters.max: configuration_parameter_max
-   - configuration-parameters.min: configuration_parameter_min
-
-Request Example
----------------
-
-.. literalinclude:: samples/datastore-version-parameter-patch-request.json
-   :language: javascript
-
-
-
-
-Delete datastore version configuration parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastores/versions/{datastore_version_id}/parameters/delete_all
-
-Admin only API. Delete all the config parameters associated with
-the specified datastore version ID.
-
-Normal response codes: 204
 
 Request
 -------
@@ -537,8 +537,8 @@ Request Example
 
 
 
-Delete a datastore version flavor association
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Delete datastore version flavor association
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/flavors/{flavor_id}
 
@@ -627,8 +627,8 @@ Request Example
 
 
 
-Delete a datastore version volume type association
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Delete datastore version volume type association
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. rest_method::  DELETE /v1.0/{project_id}/mgmt/datastore-versions/{datastore_version_id}/volume-types/{volume_type_id}
 
