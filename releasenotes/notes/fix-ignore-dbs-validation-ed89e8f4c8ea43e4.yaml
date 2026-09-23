@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixed database validation against the ``ignore_dbs`` option to use the
+    configuration for the instance's datastore manager. This prevents a
+    reserved-database list for one datastore from being applied to another.

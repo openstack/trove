@@ -452,7 +452,8 @@ class InstanceController(wsgi.Controller):
         LOG.info(f'Using image {image_id} for creating instance')
 
         databases = populate_validated_databases(
-            body['instance'].get('databases', []))
+            body['instance'].get('databases', []),
+            datastore_manager=datastore_version.manager)
         database_names = [database.get('_name', '') for database in databases]
         users = None
         try:

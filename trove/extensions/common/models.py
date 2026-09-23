@@ -365,7 +365,7 @@ class Schema(object):
         self.character_set = character_set
 
     @classmethod
-    def create(cls, context, instance_id, schemas):
+    def create(cls, context, instance_id, schemas, datastore_manager=None):
         load_and_verify(context, instance_id,
                         enabled_datastore=['mysql', 'mariadb', 'postgresql'])
         client = create_guest_client(context, instance_id)
@@ -375,7 +375,8 @@ class Schema(object):
                 client,
                 limit=1,
                 marker=schema_name,
-                include_marker=True)
+                include_marker=True,
+                datastore_manager=datastore_manager)
             if (len(existing_schema) > 0 and
                     str(existing_schema[0].name) == str(schema_name)):
                 raise exception.DatabaseAlreadyExists(name=schema_name)
@@ -397,16 +398,18 @@ class Schemas(object):
         return load_via_context(cls, context, instance_id)
 
     @classmethod
-    def load_with_client(cls, client, limit, marker, include_marker):
+    def load_with_client(cls, client, limit, marker, include_marker,
+                         datastore_manager=None):
         schemas, next_marker = client.list_databases(
             limit=limit,
             marker=marker,
             include_marker=include_marker)
+        ignored_dbs = cfg.get_ignored_dbs(datastore_manager)
         model_schemas = []
         for schema in schemas:
             guest_schema = guest_models.DatastoreSchema.deserialize(
                 schema, verify=False)
-            if guest_schema.name in cfg.get_ignored_dbs():
+            if guest_schema.name in ignored_dbs:
                 continue
 
             model_schemas.append(Schema(guest_schema.name,
@@ -415,11 +418,13 @@ class Schemas(object):
         return model_schemas, next_marker
 
     @classmethod
-    def find(cls, context, instance_id, schema_id):
+    def find(cls, context, instance_id, schema_id, datastore_manager=None):
         load_and_verify(context, instance_id,
                         enabled_datastore=['mysql', 'mariadb', 'postgresql'])
         client = create_guest_client(context, instance_id)
-        model_schemas, _ = cls.load_with_client(client, 1, schema_id, True)
+        model_schemas, _ = cls.load_with_client(
+            client, 1, schema_id, True,
+            datastore_manager=datastore_manager)
         if model_schemas and model_schemas[0].name == schema_id:
             return model_schemas[0]
 

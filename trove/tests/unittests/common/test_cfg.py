@@ -35,3 +35,18 @@ class ConfigurationPropertyTest(trove_testtools.TestCase):
         mock_conf.get.assert_called_once_with('postgresql')
         datastore_config.get.assert_called_once_with('ignore_users')
         mock_warning.assert_not_called()
+
+    @mock.patch.object(cfg.LOG, 'warning')
+    @mock.patch.object(cfg, 'CONF')
+    def test_get_ignored_dbs_uses_datastore_manager(
+            self, mock_conf, mock_warning):
+        mock_conf.datastore_manager = 'mysql'
+        datastore_config = mock_conf.get.return_value
+        datastore_config.get.return_value = ['os_admin', 'postgres']
+
+        ignored_dbs = cfg.get_ignored_dbs(datastore_manager='postgresql')
+
+        self.assertEqual(['os_admin', 'postgres'], ignored_dbs)
+        mock_conf.get.assert_called_once_with('postgresql')
+        datastore_config.get.assert_called_once_with('ignore_dbs')
+        mock_warning.assert_not_called()

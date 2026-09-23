@@ -16,6 +16,7 @@ from unittest import mock
 
 from testtools.matchers import Equals
 from testtools.matchers import Is
+from trove.common.exception import BadRequest
 from trove.common.exception import DatabaseForUserNotInDatabaseListError
 from trove.common.exception import DatabaseInitialDatabaseDuplicateError
 from trove.common.exception import DatabaseInitialUserDuplicateError
@@ -42,6 +43,17 @@ class MySqlCommonTest(trove_testtools.TestCase):
         result = populate_validated_databases(databases)
         self.assertThat(len(result), Is(1))
         self.assertThat(result[0]['_name'], Equals('one_db'))
+
+    @mock.patch('trove.common.db.models.cfg.get_ignored_dbs')
+    def test_initial_databases_uses_datastore_manager(self, mock_ignored_dbs):
+        mock_ignored_dbs.return_value = ['one_db']
+        databases = [{'name': 'one_db'}]
+
+        self.assertRaises(
+            BadRequest, populate_validated_databases, databases,
+            datastore_manager='postgresql')
+        mock_ignored_dbs.assert_has_calls(
+            [mock.call('postgresql'), mock.call('postgresql')])
 
     def test_initial_databases_unique(self):
         databases = [{'name': 'one_db'}, {'name': 'diff_db'}]
