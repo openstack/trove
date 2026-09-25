@@ -341,7 +341,7 @@ class Backup(object):
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)
             if backup.is_running:
-                delta = (timeutils.utcnow_aware() - backup.created).days
+                delta = (timeutils.utcnow() - backup.created).days
                 if delta < CONF.running_backups_expires:
                     msg = _(
                         "Backup %s cannot be deleted"
