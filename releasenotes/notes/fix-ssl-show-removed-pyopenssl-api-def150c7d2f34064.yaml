@@ -1,0 +1,13 @@
+---
+fixes:
+  - |
+    Fixed ``ssl show`` failing with pyOpenSSL 26.2 and newer after the
+    removal of ``X509.get_extension()``. Certificate details are now read
+    with ``cryptography``.
+upgrade:
+  - |
+    The ``ssl show`` ``ssl.certificate.san`` field now contains only DNS names
+    and IP addresses. Other SAN types are omitted. If the certificate has
+    a general name type that ``cryptography`` cannot parse, the field is
+    ``null`` even when DNS or IP entries are also present. DNS names are
+    listed before IP addresses, and IPv6 addresses use normalized notation.

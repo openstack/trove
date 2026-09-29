@@ -13,11 +13,11 @@
 #    under the License.
 
 from barbicanclient import exceptions as barbican_exceptions
+from cryptography import x509
 from cryptography.hazmat.primitives.serialization \
     import pkcs12, Encoding, PrivateFormat, NoEncryption
 from cryptography.hazmat.backends import default_backend
-from datetime import datetime
-import OpenSSL.crypto as crypto
+from cryptography.x509.oid import ExtensionOID, NameOID
 from oslo_log import log as logging
 from trove.common import cfg
 from trove.common.clients import barbican_client
@@ -72,26 +72,30 @@ class TroveSSL(object):
             'ca': ca_pems}
 
     def certificate_details(self, cert_payload):
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_payload)
+        if isinstance(cert_payload, str):
+            cert_payload = cert_payload.encode('utf-8')
+        cert = x509.load_pem_x509_certificate(cert_payload, default_backend())
+        common_names = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
 
-        subject = cert.get_subject()
-        expiry_bytes = cert.get_notAfter()
-        expiry_str = expiry_bytes.decode("ascii")
-        expiry = datetime.strptime(expiry_str, "%Y%m%d%H%M%SZ")
-
-        # Extract SANs
         san_list = []
-        # Loop through all extensions in the certificate
-        for i in range(cert.get_extension_count()):
-            ext = cert.get_extension(i)
-            # Check if the extension is 'subjectAltName'
-            if ext.get_short_name() == b"subjectAltName":
-                san_str = str(ext)
-                san_list = [item.strip() for item in san_str.split(",")]
+        try:
+            san = cert.extensions.get_extension_for_oid(
+                ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
+        except (x509.ExtensionNotFound, x509.UnsupportedGeneralNameType):
+            # Unsupported SAN types must not make ssl_show fail.
+            pass
+        else:
+            san_list = [
+                'DNS:%s' % name
+                for name in san.get_values_for_type(x509.DNSName)
+            ] + [
+                'IP Address:%s' % address
+                for address in san.get_values_for_type(x509.IPAddress)
+            ]
 
         return {
-            'cn': subject.CN,
-            'expire_at': expiry,
+            'cn': common_names[0].value if common_names else None,
+            'expire_at': cert.not_valid_after,
             'san': san_list if san_list else None
         }
 
