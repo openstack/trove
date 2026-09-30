@@ -18,13 +18,13 @@ stored in Glance. This document shows you the steps to build the guest images.
 
     For testing purpose, the Trove guest images of some specific databases are
     periodically built and published in
-    http://tarballs.openstack.org/trove/images/ in Trove upstream CI.
+    https://tarballs.opendev.org/openstack/trove/images/ in Trove upstream CI.
 
     Since Victoria release, Trove supports to run database service as docker
     container inside the guest instance, so that we don't need to maintain
     multiple images for different database service. That's the reason that you
     can see images for MySQL and MariaDB for Ussuri and Train releases in
-    http://tarballs.openstack.org/trove/images/.
+    https://tarballs.opendev.org/openstack/trove/images/
 
     Additionally, if you install Trove in devstack environment, the guest image
     is created and registered in Glance automatically, unless it's disabled by
@@ -58,7 +58,7 @@ Docker
 Since Vitoria, the database service is running as docker container inside the
 trove guest instance, so docker should be installed when building the guest
 image. This also means the trove guest instance should be able to pull docker
-images from the image registry(either from user port or trove management port),
+images from the image registry (either from user port or trove management port),
 the related options for container images are:
 
 .. code-block:: ini
@@ -91,18 +91,18 @@ Trove guest agent is responsible for datastore docker container management.
 Injected Configuration for the Guest Agent
 ------------------------------------------
 
-When TaskManager launches the guest VM it injects config files into the
+When TaskManager launches the guest instance it injects config files into the
 VM, including:
 
 * ``/etc/trove/conf.d/guest_info.conf``: Contains some information about
-  the guest, e.g. the guest identifier, the tenant ID, etc.
+  the guest, e.g. the guest identifier, the project ID, etc.
 * ``/etc/trove/conf.d/trove-guestagent.conf``: The config file for the
   guest agent service.
 
 In addition to these config files, Trove supports to inject user data when
 launching the instance for customization on boot time, e.g. network
 configuration, hosts file settings, etc. The user data files are located inside
-the directory configured by ``cloudinit_location``, for mysql, the file name is
+the directory configured by ``cloudinit_location``, for MySQL, the file name is
 ``mysql.cloudinit``
 
 ------------------------------
@@ -114,10 +114,10 @@ The database stores data on persistent storage on Cinder (if
 database service is accessible over the tenant network provided when creating
 the database instance.
 
-The cloud administrator is able to config management
+Operator is able to config management
 networks(``CONF.management_networks``) that is invisible to the cloud tenants,
 but used for communication between database instance and the control plane
-services(e.g. the message queue).
+services (e.g. the message queue).
 
 Building Guest Images
 =====================
@@ -175,7 +175,7 @@ The trove guest image could be created by running the following command:
 * Some other global variables:
 
   * ``HOST_SCP_USERNAME``: Only used in dev mode, this is the user name used by
-    guest agent to connect to the controller host, e.g. in devstack
+    guest agent to connect to the controller host, e.g. in DevStack
     environment, it should be the ``stack`` user.
 
 * The image type can be easily changed by specifying a different image file
@@ -217,6 +217,7 @@ openstack-discuss@lists.openstack.org mailing list.
 --------------------------
 Use your own Docker Images
 --------------------------
+
 A Docker registry is a locally-hosted registry that replaces the need to pull
 from a public registry to get images.
 You can pull and push your own images when you use a private Docker registry.
@@ -262,13 +263,12 @@ You can build and push your backup image to your own registry as follows:
     $ docker build -t ${TROVE_DATABASE_BACKUP_IMAGE} --build-arg DATASTORE=${DATABASE_NAME} --build-arg DATASTORE_VERSION=${DATABASE_VERSION} .
     $ docker push ${TROVE_DATABASE_BACKUP_IMAGE}
 
-
-For mariadb users, you can pull and push your own images to your own registry as follows:
+For MariaDB users, you can pull and push your own images to your own registry as follows:
 
 .. code-block:: console
 
     $ DATABASE_NAME=mariadb
-    $ DATABASE_VERSION=10.4
+    $ DATABASE_VERSION=11.8
     $ TROVE_DATABASE_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker pull ${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker tag ${DATABASE_NAME}:${DATABASE_VERSION} ${TROVE_DATABASE_IMAGE}
@@ -283,17 +283,16 @@ You can build and push your backup image to your own registry as follows:
     $ docker build -t ${TROVE_DATABASE_BACKUP_IMAGE} --build-arg DATASTORE=${DATABASE_NAME} --build-arg DATASTORE_VERSION=${DATABASE_VERSION} .
     $ docker push ${TROVE_DATABASE_BACKUP_IMAGE}
 
-For postgres users, you can pull and push your own images to your own registry as follows:
+For PostgreSQL users, you can pull and push your own images to your own registry as follows:
 
 .. code-block:: console
 
     $ DATABASE_NAME=postgres
-    $ DATABASE_VERSION=12
+    $ DATABASE_VERSION=18
     $ TROVE_DATABASE_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker pull ${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker tag ${DATABASE_NAME}:${DATABASE_VERSION} ${TROVE_DATABASE_IMAGE}
     $ docker push ${TROVE_DATABASE_IMAGE}
-
 
 You can build and push your backup image to your own registry as follows:
 
@@ -303,7 +302,6 @@ You can build and push your backup image to your own registry as follows:
     $ TROVE_DATABASE_BACKUP_IMAGE=${YOUR_REGISTRY_HTTP_ADDR}/${YOUR_REGISTRY_REPO_NAME}/db-backup-${DATABASE_NAME}:${DATABASE_VERSION}
     $ docker build -t ${TROVE_DATABASE_BACKUP_IMAGE} --build-arg DATASTORE=${DATABASE_NAME} --build-arg DATASTORE_VERSION=${DATABASE_VERSION} .
     $ docker push ${TROVE_DATABASE_BACKUP_IMAGE}
-
 
 After adding your own docker images to your docker registry, you should modify the configuration files and restart Trove processes.
 
@@ -334,4 +332,3 @@ After adding your own docker images to your docker registry, you should modify t
       container_registry = 10.x.y.z:4000
       container_registry_username =
       container_registry_password =
-
