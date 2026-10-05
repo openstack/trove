@@ -560,3 +560,130 @@ class OneFileOverrideStrategy(ConfigurationOverrideStrategy):
         operating_system.write_file(
             self._base_config_path, updated_revision, codec=self._codec,
             as_root=self._requires_root)
+
+
+class IndexOverrideStrategy(ImportOverrideStrategy):
+    """Index strategy keeps overrides in separate files and maintains
+    an index file listing all active override files.
+
+    This strategy is used for configuration formats that allow including
+    other files only by explicit path and do not support wildcard
+    patterns (e.g. '*.conf').
+
+    Override files are stored in a dedicated directory and referenced
+    from 'index.conf'. When a new override file is created its path is
+    added to the index file, and removed when the override is deleted.
+    """
+    INDEX_FILE_NAME = "index.conf"
+
+    def __init__(self, revision_dir, revision_ext, index_keyword="include "):
+        super().__init__(revision_dir, revision_ext)
+        self._index_keyword = index_keyword
+        self._index_file = guestagent_utils.build_file_path(
+            revision_dir, self.INDEX_FILE_NAME)
+
+    def configure(self, base_config_path, owner, group, codec, requires_root):
+        super().configure(base_config_path, owner, group, codec, requires_root)
+
+        if not operating_system.exists(self._index_file,
+                                       as_root=self._requires_root):
+            operating_system.write_file(
+                self._index_file, "", as_root=self._requires_root)
+            operating_system.chown(
+                self._index_file, self._owner, self._group,
+                as_root=self._requires_root)
+            operating_system.chmod(
+                self._index_file, FileMode.ADD_READ_ALL,
+                as_root=self._requires_root)
+
+    def apply(self, group_name, change_id, options):
+        self._initialize_import_directory()
+
+        revision_file = self._find_revision_file(group_name, change_id)
+        created = False
+
+        if revision_file is None:
+            last_revision_index = self._get_last_file_index(group_name)
+            revision_file = guestagent_utils.build_file_path(
+                self._revision_dir,
+                '%s-%03d-%s' % (group_name, last_revision_index + 1,
+                                change_id),
+                self._revision_ext)
+            created = True
+        else:
+            current = operating_system.read_file(
+                revision_file, codec=self._codec,
+                as_root=self._requires_root)
+            for key, value in options.items():
+                if value is None:
+                    if key in current:
+                        del current[key]
+                else:
+                    current[key] = value
+            options = current
+
+        operating_system.write_file(
+            revision_file, options, codec=self._codec,
+            as_root=self._requires_root)
+
+        operating_system.chown(
+            revision_file, self._owner, self._group,
+            as_root=self._requires_root)
+
+        operating_system.chmod(
+            revision_file, FileMode.ADD_READ_ALL,
+            as_root=self._requires_root)
+
+        if created:
+            self._add_to_index(revision_file)
+
+    def remove(self, group_name, change_id=None):
+        removed = set()
+
+        if change_id:
+            revision_file = self._find_revision_file(group_name, change_id)
+            if revision_file:
+                removed.add(revision_file)
+        else:
+            removed = set(self._collect_revision_files(group_name))
+
+        for path in removed:
+            self._remove_from_index(path)
+            operating_system.remove(path, force=True,
+                                    as_root=self._requires_root)
+
+    def _read_index(self):
+        if not operating_system.exists(self._index_file,
+                                       as_root=self._requires_root):
+            return []
+
+        content = operating_system.read_file(
+            self._index_file,
+            as_root=self._requires_root)
+
+        return [line.strip() for line in content.splitlines() if line.strip()]
+
+    def _write_index(self, lines):
+        new_content = "\n".join(lines) + "\n" if lines else ""
+
+        operating_system.write_file(
+            self._index_file,
+            new_content,
+            as_root=self._requires_root)
+
+    def _add_to_index(self, path):
+        lines = self._read_index()
+        record = self._index_keyword + path
+
+        if record not in lines:
+            lines.append(record)
+
+        self._write_index(lines)
+
+    def _remove_from_index(self, path):
+        lines = self._read_index()
+        record = self._index_keyword + path
+
+        lines = [line for line in lines if line != record]
+
+        self._write_index(lines)

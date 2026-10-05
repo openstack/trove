@@ -38,6 +38,8 @@ SERVICE_PARSERS = {
     'postgresql': configurations.PostgresqlConfParser,
     'cassandra': configurations.CassandraConfParser,
     'redis': configurations.RedisConfParser,
+    'keydb': configurations.RedisConfParser,
+    'valkey': configurations.RedisConfParser,
     'vertica': configurations.VerticaConfParser,
     'db2': configurations.DB2ConfParser,
 }

@@ -1,0 +1,102 @@
+# valkey jobs
+- job:
+    name: trove-tempest-ubuntu-base-valkey
+    parent: trove-tempest-ubuntu-base
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(mysql.*|postgres|mariadb|keydb.*)/.*$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: valkey
+          TROVE_DATASTORE_VERSION: 9
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                enabled_datastores: "valkey"
+                default_datastore_versions: valkey:9
+
+- job:
+    name: trove-tempest-ubuntu-backup-valkey
+    parent: trove-tempest-ubuntu-backup
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(mysql.*|postgres|mariadb|keydb.*)/.*$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: valkey
+          TROVE_DATASTORE_VERSION: 9
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: valkey:9
+
+- job:
+    name: trove-tempest-ubuntu-replication-valkey
+    parent: trove-tempest-ubuntu-replication
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(mysql.*|postgres|mariadb|keydb)/.*$
+      - ^trove/guestagent/strategies/replication/(postgresql.*|mysql.*|mariadb.*|keydb.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: valkey
+          TROVE_DATASTORE_VERSION: 9
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: valkey:9
+
+- job:
+    name: trove-tempest-cinder-storage-driver-valkey
+    parent:  trove-tempest-snapshot
+    irrelevant-files: !inherit
+      - ^trove/guestagent/datastore/(postgres|mariadb|mysql|keydb)/.*$
+      - ^trove/guestagent/strategies/replication/(postgresql.*|mysql.*|mariadb.*|keydb.*)\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: valkey
+          TROVE_DATASTORE_VERSION: 9
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: valkey:9
+
+- job:
+    name: trove-tempest-ubuntu-ssl-valkey
+    parent: trove-tempest-ubuntu-ssl-base
+    files: !inherit
+      - ^trove/guestagent/.*valkey.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: valkey
+          TROVE_DATASTORE_VERSION: 9
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: valkey:9
+
+- job:
+    name: trove-tempest-ubuntu-ssl-replication-valkey
+    parent: trove-tempest-ubuntu-ssl-replication
+    files: !inherit
+      - ^trove/guestagent/.*valkey.*\.py$
+    vars:
+        devstack_localrc:
+          TROVE_DATASTORE_TYPE: valkey
+          TROVE_DATASTORE_VERSION: 9
+          TROVE_STATE_CHANGE_WAIT_TIME: 900
+        devstack_local_conf:
+          test-config:
+            $TEMPEST_CONFIG:
+              database:
+                backup_wait_timeout: 1200
+                default_datastore_versions: valkey:9

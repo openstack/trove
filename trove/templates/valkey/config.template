@@ -1,0 +1,7 @@
+port 6379
+protected-mode no
+unixsocket /var/run/valkey/valkey.sock
+unixsocketperm 777
+dir /var/lib/valkey
+
+include /etc/valkey/conf.d/index.conf

@@ -167,6 +167,10 @@ function configure_docker_images {
     iniset $TROVE_GUESTAGENT_CONF mariadb backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_MARIADB}
     iniset $TROVE_GUESTAGENT_CONF postgresql docker_image ${TROVE_DATABASE_IMAGE_POSTGRESQL}
     iniset $TROVE_GUESTAGENT_CONF postgresql backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_POSTGRESQL}
+    iniset $TROVE_GUESTAGENT_CONF keydb docker_image ${TROVE_DATABASE_IMAGE_KEYDB}
+    iniset $TROVE_GUESTAGENT_CONF keydb backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_KEYDB}
+    iniset $TROVE_GUESTAGENT_CONF valkey docker_image ${TROVE_DATABASE_IMAGE_VALKEY}
+    iniset $TROVE_GUESTAGENT_CONF valkey backup_docker_image ${TROVE_DATABASE_BACKUP_IMAGE_VALKEY}
 }
 
 function configure_cloudinit {
@@ -209,7 +213,7 @@ ${ETC_HOSTS_APPEND}
 EOF
 
     # NOTE(lxkong): Remove this when we support common cloud-init file for all datastores.
-    for datastore in "mysql" "mariadb" "postgresql"
+    for datastore in "mysql" "mariadb" "postgresql" "keydb" "valkey"
     do
         sudo cp ${common_cloudinit} /etc/trove/cloudinit/${datastore}.cloudinit
     done
@@ -281,6 +285,8 @@ function configure_trove {
     iniset $TROVE_CONF postgresql tcp_ports 5432
     iniset $TROVE_CONF pxc tcp_ports 3306,4444,4567,4568
     iniset $TROVE_CONF redis tcp_ports 6379,16379
+    iniset $TROVE_CONF keydb tcp_ports 6379,6380
+    iniset $TROVE_CONF valkey tcp_ports 6379,6380
     iniset $TROVE_CONF vertica tcp_ports 5433,5434,5444,5450,4803
 
     write_uwsgi_config "$TROVE_UWSGI_CONF" "$TROVE_UWSGI" "/database" "" "trove"
@@ -452,7 +458,7 @@ function configure_tempest_for_trove {
     if [[ -n "$TROVE_DATASTORE_TYPE" ]]; then
         iniset $TEMPEST_CONFIG database enabled_datastores $TROVE_DATASTORE_TYPE
     else
-        iniset $TEMPEST_CONFIG database enabled_datastores mysql,mariadb,postgresql
+        iniset $TEMPEST_CONFIG database enabled_datastores mysql,mariadb,postgresql,keydb,valkey
     fi
     if [[ -n "$TROVE_DATASTORE_TYPE" && -n "$TROVE_DATASTORE_VERSION" ]]; then
         iniset $TEMPEST_CONFIG database default_datastore_versions $TROVE_DATASTORE_TYPE:$TROVE_DATASTORE_VERSION
@@ -701,9 +707,13 @@ function config_network_isolation {
         TROVE_DATABASE_IMAGE_MYSQL="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/mysql"
         TROVE_DATABASE_IMAGE_MARIADB="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/mariadb"
         TROVE_DATABASE_IMAGE_POSTGRESQL="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/postgresql"
+        TROVE_DATABASE_IMAGE_KEYDB="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/keydb"
+        TROVE_DATABASE_IMAGE_VALKEY="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/valkey"
         TROVE_DATABASE_BACKUP_IMAGE_MYSQL="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/db-backup-mysql"
         TROVE_DATABASE_BACKUP_IMAGE_MARIADB="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/db-backup-mariadb"
         TROVE_DATABASE_BACKUP_IMAGE_POSTGRESQL="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/db-backup-postgresql"
+        TROVE_DATABASE_BACKUP_IMAGE_KEYDB="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/db-backup-keydb"
+        TROVE_DATABASE_BACKUP_IMAGE_VALKEY="$LOCAL_HOSTNAME:$REGISTRY_PORT/trove-datastores/db-backup-valkey"
 
         configure_docker_images
     fi

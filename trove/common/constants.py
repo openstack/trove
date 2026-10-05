@@ -30,5 +30,9 @@ REGISTRY_EXT_DEFAULTS = {
     'mariadb':
         'trove.guestagent.datastore.mariadb.manager.Manager',
     'postgresql':
-        'trove.guestagent.datastore.postgres.manager.PostgresManager'
+        'trove.guestagent.datastore.postgres.manager.PostgresManager',
+    'keydb':
+        'trove.guestagent.datastore.keydb.manager.Manager',
+    'valkey':
+        'trove.guestagent.datastore.valkey.manager.Manager',
 }

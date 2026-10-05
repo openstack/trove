@@ -13,6 +13,7 @@ handling complex administrative tasks.
    instance-status.rst
    create-db.rst
    manage-db-and-users.rst
+   manage-db-and-users-in-valkey-and-keydb.rst
    backup-db.rst
    manage-db-config.rst
    set-up-replication.rst

@@ -42,6 +42,8 @@
         - { source: "mysql", dest: "mysql", tag: "8.4" }
         - { source: "postgres", dest: "postgres", tag: "17" }
         - { source: "postgres", dest: "postgres", tag: "18" }
+        - { source: "eqalpha/keydb", dest: "keydb", tag: "6.3.3" }
+        - { source: "valkey/valkey", dest: "valkey", tag: "9" }
 
     - name: build and push trove backup images
       become: true

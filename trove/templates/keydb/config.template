@@ -1,0 +1,9 @@
+port 6379
+protected-mode no
+unixsocket /var/run/keydb/keydb.sock
+unixsocketperm 777
+dir /var/lib/keydb
+
+{% set server_threads = (1 if flavor['vcpus'] < 2 else flavor['vcpus'] - 1) %}
+server-threads {{ server_threads|int }}
+include /etc/keydb/conf.d/index.conf
