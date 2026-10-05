@@ -51,5 +51,5 @@ valkey>=6.1.1 # MIT
 
 # for trove network driver
 Flask>=2.2.3 # BSD
-pyroute2>=0.7.7;sys_platform!='win32' # Apache-2.0 (+ dual licensed GPL2)
+pyroute2>=0.7.7 # Apache-2.0 (+ dual licensed GPL2)
 gunicorn>=20.1.0 # MIT
