@@ -65,6 +65,19 @@ but they haven't undergone full testing.
      - 11.8
      - 6.3.3
      - 9
+   * - 2027.1 Indri
+     - ✘
+     - ✔
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
+     - ✘
+     - ✔
+     - ✔
+     - ✔
+     - ✔
    * - 2026.2 Hibiscus
      - ✘
      - ✔
@@ -76,8 +89,8 @@ but they haven't undergone full testing.
      - ✘
      - ✔
      - ✔
-     - ✔
-     - ✔
+     - ✘
+     - ✘
    * - 2026.1 Gazpacho
      - ✘
      - ✔
