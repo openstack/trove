@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Updates the datastore version in ``guest_info.conf`` after a successful
+    database upgrade. This keeps the guest agent configuration in sync with
+    the running datastore version.

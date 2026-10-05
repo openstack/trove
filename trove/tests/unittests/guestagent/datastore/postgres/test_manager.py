@@ -188,3 +188,28 @@ class TestPostgresManager(trove_testtools.TestCase):
         self.assertEqual(
             expected_owner,
             general_def[self.pg_manager.GUEST_LOG_USER_LABEL])
+
+    def test_upgrade_updates_guest_info(self):
+        upgrade_info = {'datastore_version': '8.4.4'}
+        self.pg_manager.app = mock.Mock()
+        self.pg_manager.override_guest_info = mock.Mock()
+
+        self.pg_manager.upgrade(None, upgrade_info)
+
+        self.pg_manager.app.upgrade.assert_called_once_with(upgrade_info)
+        self.pg_manager.override_guest_info.assert_called_once_with(
+            datastore_version='8.4.4')
+
+    def test_upgrade_does_not_update_guest_info_on_failure(self):
+        upgrade_info = {'datastore_version': '8.4.4'}
+        self.pg_manager.app = mock.Mock()
+        self.pg_manager.app.upgrade.side_effect = RuntimeError
+        self.pg_manager.override_guest_info = mock.Mock()
+
+        self.assertRaises(
+            RuntimeError,
+            self.pg_manager.upgrade,
+            None,
+            upgrade_info)
+
+        self.pg_manager.override_guest_info.assert_not_called()
