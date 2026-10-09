@@ -1,9 +1,14 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
+parallel = True
 
-source=trove
-omit=trove/tests/*
+source=
+    trove
+    backup
+omit=
+    trove/tests/*,
+    backup/tests/*
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -24,6 +29,7 @@ exclude_lines =
     if __name__ == .__main__.:
 
 ignore_errors = False
+show_missing = True
 
 [html]
 directory=cover
