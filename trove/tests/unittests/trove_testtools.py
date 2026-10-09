@@ -15,9 +15,10 @@
 
 import abc
 import random
-import testtools
 from unittest import mock
 import uuid
+
+from oslotest import base
 
 from trove.common import cfg
 from trove.common.context import TroveContext
@@ -58,7 +59,7 @@ class TroveTestContext(TroveContext):
         patch_notifier(test_case)
 
 
-class TestCase(testtools.TestCase):
+class TestCase(base.BaseTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestCase, cls).setUpClass()
