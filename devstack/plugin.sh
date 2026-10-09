@@ -689,10 +689,6 @@ function config_network_isolation {
         fi
     done
 
-    TROVE_AUTH_ENDPOINT="${TROVE_AUTH_ENDPOINT//\/\/*\//\/\/$LOCAL_HOSTNAME\/}"
-    echo "Set auth_url to $TROVE_AUTH_ENDPOINT"
-    iniset $TROVE_GUESTAGENT_CONF service_credentials auth_url $TROVE_AUTH_ENDPOINT
-
     echo "Switch transport_url to $MGMT_PORT_IP"
     iniset $TROVE_GUESTAGENT_CONF DEFAULT transport_url rabbit://$RABBIT_USERID:$RABBIT_PASSWORD@$LOCAL_HOSTNAME:$AMQP_PORT/
 
