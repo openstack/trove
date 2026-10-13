@@ -24,8 +24,9 @@ class LimitView(object):
         self.rate_limit = rate_limit
 
     def data(self):
-        get_utc = datetime.datetime.utcfromtimestamp
-        next_avail = get_utc(self.rate_limit.get("resetTime", 0))
+        next_avail = datetime.datetime.fromtimestamp(
+            self.rate_limit.get("resetTime", 0),
+            tz=datetime.timezone.utc).replace(tzinfo=None)
 
         return {"limit": {
             "nextAvailable": timeutils.isotime(next_avail),
