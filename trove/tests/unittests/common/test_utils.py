@@ -209,3 +209,12 @@ class TestUtils(trove_testtools.TestCase):
             "Invalid locality 'invalid-locality'",
             utils.validate_locality,
             'invalid-locality')
+
+    def test_filter_nova_tags(self):
+        short = 'trove_instance_id_%s' % ('b' * 36)
+        too_long = 'trove_user_id_%s' % ('a' * 64)
+        exactly_60 = 'x' * 60
+        self.assertEqual(
+            ['trove_instance', short, exactly_60],
+            utils.filter_nova_tags(
+                ['trove_instance', short, too_long, exactly_60]))

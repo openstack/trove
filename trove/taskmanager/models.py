@@ -1091,9 +1091,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     userdata)
             files = {}
 
-        tags = ['trove_instance', f'trove_{datastore_manager}'] + [
-            f"{key}_{value}" for key, value in metadata.items()
-        ]
+        tags = utils.filter_nova_tags(
+            ['trove_instance', f'trove_{datastore_manager}'] + [
+                f"{key}_{value}" for key, value in metadata.items()
+            ])
 
         server = self.nova_client.servers.create(
             self.name, image_id, flavor_id, key_name=key_name, nics=nics,

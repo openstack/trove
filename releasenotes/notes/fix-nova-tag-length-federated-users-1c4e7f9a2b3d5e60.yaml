@@ -1,0 +1,10 @@
+---
+fixes:
+  - |
+    Trove no longer sets Nova server tags longer than 60 characters, the
+    maximum Nova accepts. The ``trove_user_id_<user id>`` tag is 78
+    characters for federated Keystone users (64 characters long ids), which
+    made every instance create by such a user fail with HTTP 400 at server
+    boot, made ``trove-manage set_nova_tags`` skip their servers, and got
+    those instances listed as ``SHUTDOWN``. Tags that are too long are now
+    left out; the user id is still stored in the server metadata.

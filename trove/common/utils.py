@@ -438,3 +438,23 @@ def validate_locality(locality):
         message = ("Invalid locality '%s'. Must be one of ['%s']" %
                    (locality, "', '".join(constants.VALID_LOCALITIES)))
         raise exception.BadRequest(message=message)
+
+
+def filter_nova_tags(tags):
+    """Drop the tags Nova would reject because they are too long.
+
+    Nova limits a server tag to 60 characters and rejects the whole request
+    (server create or set tags) if any tag is longer. Some of the tags Trove
+    builds embed a Keystone id, and ids of federated users are 64 hex
+    characters long, so ``trove_user_id_<id>`` ends up at 78 characters.
+    Trove only reads back ``trove_instance_id_*`` and ``trove_project_id_*``,
+    so it is safe to leave the long ones out.
+    """
+    kept = []
+    for tag in tags:
+        if len(tag) > constants.NOVA_MAX_TAG_LENGTH:
+            LOG.warning("Not setting Nova tag %s, it is longer than %d "
+                        "characters", tag, constants.NOVA_MAX_TAG_LENGTH)
+            continue
+        kept.append(tag)
+    return kept

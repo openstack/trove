@@ -223,6 +223,12 @@ class BaseFreshInstanceTasksTest(trove_testtools.TestCase):
             None, MagicMock(), None, None)
         self.freshinstancetasks.context = trove.common.context.TroveContext(
             user_id='test_user')
+        # Real-looking ids: the Nova tags built from them must stay within
+        # Nova's 60 characters limit.
+        self.freshinstancetasks.db_info.tenant_id = (
+            '0a1b2c3d4e5f60718293a4b5c6d7e8f9')
+        self.freshinstancetasks.db_info.id = (
+            '2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d')
 
     def tearDown(self):
         super(BaseFreshInstanceTasksTest, self).tearDown()
@@ -418,6 +424,35 @@ class FreshInstanceTasksTest(BaseFreshInstanceTasksTest):
             meta=meta,
             tags=tags,
         )
+
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'hostname',
+                  new_callable=PropertyMock,
+                  return_value='fake-hostname')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'name',
+                  new_callable=PropertyMock,
+                  return_value='fake-name')
+    def test_servers_create_federated_user_tags(self, mock_hostname,
+                                                mock_name):
+        # Federated users have 64 characters long ids, the resulting
+        # trove_user_id_<id> tag is longer than what Nova accepts.
+        user_id = 'a' * 64
+        self.freshinstancetasks.context = trove.common.context.TroveContext(
+            user_id=user_id)
+        self.freshinstancetasks.prepare_userdata = Mock(return_value=None)
+        mock_nova_client = self.freshinstancetasks.nova_client = Mock()
+        mock_servers_create = mock_nova_client.servers.create
+        self.freshinstancetasks._create_server('fake-flavor', 'fake-image',
+                                               'mysql', None, None, None)
+        kwargs = mock_servers_create.call_args.kwargs
+        # The metadata keeps the user id, only the tag is left out.
+        self.assertEqual(user_id, kwargs['meta']['trove_user_id'])
+        self.assertEqual(
+            ['trove_instance', 'trove_mysql',
+             f'trove_project_id_{self.freshinstancetasks.tenant_id}',
+             f'trove_instance_id_{self.freshinstancetasks.id}'],
+            kwargs['tags'])
+        for tag in kwargs['tags']:
+            self.assertLessEqual(len(tag), 60)
 
     @patch.object(InstanceServiceStatus, 'find_by',
                   return_value=fake_InstanceServiceStatus.find_by())

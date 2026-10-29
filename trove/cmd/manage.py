@@ -260,7 +260,8 @@ class Commands(object):
                 'trove_instance',
                 f'trove_{datastore_version.datastore_name}'] + [
                 f"{key}_{value}" for key, value in server.metadata.items()]
-            tags = list(set(current_tags) | set(trove_tags))
+            tags = list(set(current_tags) |
+                        set(utils.filter_nova_tags(trove_tags)))
             nova_client.servers.set_tags(server.id, tags)
 
         for instance in DBInstance.find_all(deleted=False).all():

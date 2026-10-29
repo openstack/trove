@@ -36,3 +36,6 @@ REGISTRY_EXT_DEFAULTS = {
     'valkey':
         'trove.guestagent.datastore.valkey.manager.Manager',
 }
+
+# Nova refuses server tags longer than this (nova.objects.tag.MAX_TAG_LENGTH).
+NOVA_MAX_TAG_LENGTH = 60
