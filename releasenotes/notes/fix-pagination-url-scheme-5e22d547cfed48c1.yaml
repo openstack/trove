@@ -1,0 +1,12 @@
+---
+fixes:
+  - |
+    Fix pagination continuation URLs and resource self and bookmark links to
+    preserve the request URL's scheme instead of forcing HTTPS. This allows
+    clients to follow links when Trove is deployed with an HTTP API endpoint.
+    See `story 2011941
+    <https://storyboard.openstack.org/#!/story/2011941>`_ for details.
+
+    When relying on forwarded headers behind a trusted TLS-terminating proxy,
+    enable ``enable_proxy_headers_parsing`` in ``[oslo_middleware]`` and have
+    the proxy forward the public scheme and host so links retain HTTPS.

@@ -22,7 +22,40 @@ from trove.common import pagination
 from trove.tests.unittests import trove_testtools
 
 
+class TestAppUrl(trove_testtools.TestCase):
+
+    def test_change_query_params_preserves_url(self):
+        for scheme in ('http', 'https'):
+            for authority in ('example.com', 'example.com:8779'):
+                for query in ('limit=1', 'limit=1&marker=old-marker'):
+                    with self.subTest(scheme=scheme, authority=authority,
+                                      query=query):
+                        base_url = ('%s://%s/database/v1.0/project/'
+                                    'configurations;params' %
+                                    (scheme, authority))
+                        url = pagination.AppUrl(base_url + '?' + query +
+                                                '#fragment')
+
+                        result = url.change_query_params(marker='next-marker')
+
+                        self.assertEqual(
+                            base_url + '?limit=1&marker=next-marker#fragment',
+                            str(result))
+
+
 class TestPaginatedDataView(trove_testtools.TestCase):
+
+    def test_next_link_preserves_scheme(self):
+        for scheme in ('http', 'https'):
+            with self.subTest(scheme=scheme):
+                url = ('%s://example.com:8779/v1.0/project/configurations'
+                       '?limit=1' % scheme)
+                view = pagination.PaginatedDataView(
+                    'configurations', [], url, next_page_marker='next-marker')
+
+                self.assertEqual(
+                    [{'rel': 'next', 'href': url + '&marker=next-marker'}],
+                    view._links())
 
     def test_creation_with_string_marker(self):
         view = pagination.PaginatedDataView("TestType", [],
@@ -124,3 +157,23 @@ class TestPaginatedDataView(trove_testtools.TestCase):
                                                include_marker=True)
         self.assertEqual(l[0], li[0])
         self.assertEqual(m, 'db1')
+
+
+class TestSimplePaginatedDataView(trove_testtools.TestCase):
+
+    def test_next_link_preserves_scheme(self):
+        for scheme in ('http', 'https'):
+            with self.subTest(scheme=scheme):
+                url = ('%s://example.com/database/v1.0/project/configurations'
+                       '?limit=1' % scheme)
+                configurations = [{'id': 'configuration-id'}]
+                view = Mock()
+                view.data.return_value = {'configurations': configurations}
+                paged = pagination.SimplePaginatedDataView(
+                    url, 'configurations', view, 'next-marker')
+
+                self.assertEqual(
+                    {'configurations': configurations,
+                     'links': [{'rel': 'next',
+                                'href': url + '&marker=next-marker'}]},
+                    paged.data())

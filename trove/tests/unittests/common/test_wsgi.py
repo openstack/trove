@@ -14,11 +14,16 @@
 #    under the License.
 #
 from unittest.mock import Mock, patch
+
+from oslo_config import cfg
+from oslo_middleware import http_proxy_to_wsgi
 from testtools.matchers import Equals, Is, Not
 import webob.exc
 
 from trove.common import base_wsgi
 from trove.common import exception
+from trove.common import pagination
+from trove.common import views
 from trove.common import wsgi
 from trove.tests.unittests import trove_testtools
 import webob
@@ -45,6 +50,50 @@ class TestWsgi(trove_testtools.TestCase):
         self.assertThat(ctx.user_id, Equals(user_id))
         self.assertThat(ctx.auth_token, Equals(token))
         self.assertEqual(0, len(ctx.service_catalog))
+
+
+class TestProxyLinks(trove_testtools.TestCase):
+
+    def test_links_use_forwarded_https_scheme(self):
+        conf = cfg.ConfigOpts()
+        middleware = http_proxy_to_wsgi.HTTPProxyToWSGI(None, conf=conf)
+        conf.set_override('enable_proxy_headers_parsing', True,
+                          group='oslo_middleware')
+        proxy_headers = (
+            {'X-Forwarded-Proto': 'https',
+             'X-Forwarded-Host': 'public.example.com'},
+            {'Forwarded': 'proto=https;host=public.example.com'},
+        )
+        for headers in proxy_headers:
+            with self.subTest(headers=headers):
+                req = wsgi.Request.blank(
+                    'http://backend:8779/v1.0/project/instances?limit=1',
+                    headers=headers)
+                req.environ[wsgi.CONTEXT_KEY] = Mock(project_id='project')
+
+                middleware.process_request(req)
+
+                self.assertEqual(
+                    [{'rel': 'self',
+                      'href': 'https://public.example.com/v1.0/project/'
+                      'instances/instance-id'},
+                     {'rel': 'bookmark',
+                      'href': 'https://public.example.com/'
+                      'instances/instance-id'}],
+                    views.create_links('instances', req, 'instance-id'))
+                expected_next_links = [
+                    {'rel': 'next',
+                     'href': 'https://public.example.com/v1.0/project/'
+                     'instances?limit=1&marker=next-marker'}]
+                paged = pagination.PaginatedDataView(
+                    'instances', [], req.url, next_page_marker='next-marker')
+                self.assertEqual(expected_next_links, paged._links())
+                view = Mock()
+                view.data.return_value = {'instances': []}
+                simple_paged = pagination.SimplePaginatedDataView(
+                    req.url, 'instances', view, 'next-marker')
+                self.assertEqual(expected_next_links,
+                                 simple_paged.data()['links'])
 
 
 class TestController(trove_testtools.TestCase):

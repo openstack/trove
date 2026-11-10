@@ -21,6 +21,7 @@ def create_links(resource_path, request, id):
     """Creates the links dictionary in the format typical of most resources."""
     context = request.environ[wsgi.CONTEXT_KEY]
     link_info = {
+        'scheme': request.scheme,
         'host': request.host,
         'version': request.url_version,
         'tenant_id': context.project_id,
@@ -29,12 +30,13 @@ def create_links(resource_path, request, id):
     }
     return [
         {
-            "href": "https://%(host)s/v%(version)s/%(tenant_id)s"
+            "href": "%(scheme)s://%(host)s/v%(version)s/%(tenant_id)s"
                     "/%(resource_path)s/%(id)s" % link_info,
             "rel": "self"
         },
         {
-            "href": "https://%(host)s/%(resource_path)s/%(id)s" % link_info,
+            "href": "%(scheme)s://%(host)s/%(resource_path)s/%(id)s" %
+                    link_info,
             "rel": "bookmark"
         }
     ]
